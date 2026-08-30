@@ -53,7 +53,17 @@ export function prepareLaunch(harness: HarnessId, workspace: string): Launch {
       '',
     ].join('\n'))
     env.CODEX_HOME = codexHome
-    return { command: ['codex', '--dangerously-bypass-approvals-and-sandbox', '--model', gatewayModel, prompt], env }
+    return {
+      command: [
+        'codex',
+        '--dangerously-bypass-approvals-and-sandbox',
+        '--dangerously-bypass-hook-trust',
+        '--model',
+        gatewayModel,
+        prompt,
+      ],
+      env,
+    }
   }
 
   if (harness === 'claude-code') {
