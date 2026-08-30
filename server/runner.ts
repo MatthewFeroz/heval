@@ -4,15 +4,17 @@ import { join } from 'node:path'
 
 export type HarnessId = 'claude-code' | 'codex' | 'opencode' | 'pi-agent'
 export type Chunk = { at: number; data: string }
+export type Grade = { passed: boolean; exitCode: number; output: string }
 export type Run = {
   id: string
   harness: HarnessId
   model: string
   gateway: 'merge-gateway'
-  status: 'running' | 'complete' | 'failed'
+  status: 'running' | 'complete' | 'failed' | 'cancelled'
   startedAt: string
   exitCode?: number
   chunks: Chunk[]
+  grade?: Grade
   terminal?: Bun.Terminal
   cancel?: () => void
 }
@@ -113,6 +115,7 @@ export function prepareLaunch(harness: HarnessId, workspace: string): Launch {
 
 export const runs = new Map<string, Run>()
 export const subscribers = new Map<string, Set<{ send(data: string): unknown }>>()
+const runWorkspaces = new Map<string, string>()
 
 function emit(run: Run, message: object) {
   const payload = JSON.stringify(message)
@@ -129,6 +132,7 @@ export function startRun(harness: HarnessId) {
   const launch = prepareLaunch(harness, workspace)
   const run: Run = { id, harness, model: gatewayModel, gateway: 'merge-gateway', status: 'running', startedAt: new Date().toISOString(), chunks: [] }
   runs.set(id, run)
+  runWorkspaces.set(id, workspace)
   mkdirSync(join(import.meta.dir, '..', 'recordings'), { recursive: true })
 
   const proc = Bun.spawn(launch.command, {
@@ -149,7 +153,7 @@ export function startRun(harness: HarnessId) {
   run.cancel = () => proc.kill()
   void proc.exited.then((exitCode) => {
     run.exitCode = exitCode
-    run.status = exitCode === 0 ? 'complete' : 'failed'
+    if (run.status === 'running') run.status = exitCode === 0 ? 'complete' : 'failed'
     run.terminal?.close()
     run.terminal = undefined
     run.cancel = undefined
@@ -161,8 +165,27 @@ export function startRun(harness: HarnessId) {
 
 export function cancelRun(run: Run) {
   if (run.status !== 'running') return false
+  run.status = 'cancelled'
   run.cancel?.()
   return true
+}
+
+export async function gradeRun(run: Run) {
+  if (run.grade) return run.grade
+  const workspace = runWorkspaces.get(run.id)
+  if (!workspace) throw new Error('Run workspace is unavailable')
+  const proc = Bun.spawn(['bun', 'test'], { cwd: workspace, stdout: 'pipe', stderr: 'pipe' })
+  const [stdout, stderr, exitCode] = await Promise.all([
+    new Response(proc.stdout).text(),
+    new Response(proc.stderr).text(),
+    proc.exited,
+  ])
+  const grade = { passed: exitCode === 0, exitCode, output: `${stdout}${stderr}`.slice(-16_000) }
+  run.grade = grade
+  run.status = grade.passed ? 'complete' : 'failed'
+  run.cancel?.()
+  emit(run, { type: 'grade', grade, status: run.status })
+  return grade
 }
 
 export function isHarness(value: unknown): value is HarnessId {

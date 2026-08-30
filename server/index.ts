@@ -1,4 +1,4 @@
-import { cancelRun, isHarness, runs, startRun, subscribers } from './runner'
+import { cancelRun, gradeRun, isHarness, runs, startRun, subscribers } from './runner'
 
 type SocketData = { runId: string }
 const port = Number(process.env.PORT || 4173)
@@ -23,6 +23,13 @@ const server = Bun.serve<SocketData>({
       if (!isHarness(body.harness)) return Response.json({ error: 'Unknown harness' }, { status: 400 })
       const run = startRun(body.harness)
       return Response.json({ id: run.id, harness: run.harness, status: run.status })
+    }
+    const gradeMatch = url.pathname.match(/^\/api\/runs\/([^/]+)\/grade$/)
+    if (gradeMatch && req.method === 'POST') {
+      if (!authorized(req)) return Response.json({ error: 'Unauthorized' }, { status: 403 })
+      const run = runs.get(gradeMatch[1])
+      if (!run) return Response.json({ error: 'Not found' }, { status: 404 })
+      return Response.json(await gradeRun(run))
     }
     const runMatch = url.pathname.match(/^\/api\/runs\/([^/]+)$/)
     if (runMatch) {
