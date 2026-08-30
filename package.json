@@ -14,7 +14,7 @@
     "preview": "vite preview --host 0.0.0.0"
   },
   "dependencies": {
-    "@mariozechner/pi-coding-agent": "^0.73.1",
+    "@earendil-works/pi-coding-agent": "0.84.4",
     "@vitejs/plugin-react": "latest",
     "@xterm/xterm": "^6.0.0",
     "lucide-react": "latest",

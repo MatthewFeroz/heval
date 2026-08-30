@@ -133,8 +133,7 @@ export function prepareLaunch(harness: HarnessId, workspace: string): Launch {
         name: 'Merge Gateway',
         baseUrl: mergeOpenAIBaseUrl,
         api: 'openai-completions',
-        // Pi 0.73 resolves a bare value as an environment-variable name.
-        apiKey: 'MERGE_GATEWAY_API_KEY',
+        apiKey: '$MERGE_GATEWAY_API_KEY',
         compat: { supportsReasoningEffort: false },
         models: [{
           id: gatewayModel,
