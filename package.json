@@ -1,0 +1,38 @@
+{
+  "name": "heval",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "bun@1.4.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "tsc -b && vite build",
+    "start": "bun run build && bun server/index.ts",
+    "serve": "bun server/index.ts",
+    "lint": "eslint .",
+    "test:e2e": "playwright test",
+    "preview": "vite preview --host 0.0.0.0"
+  },
+  "dependencies": {
+    "@mariozechner/pi-coding-agent": "^0.73.1",
+    "@vitejs/plugin-react": "latest",
+    "@xterm/xterm": "^6.0.0",
+    "lucide-react": "latest",
+    "react": "latest",
+    "react-dom": "latest",
+    "vite": "latest"
+  },
+  "devDependencies": {
+    "@eslint/js": "latest",
+    "@playwright/test": "^1.55.1",
+    "@types/bun": "^1.4.0",
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "eslint": "latest",
+    "eslint-plugin-react-hooks": "latest",
+    "eslint-plugin-react-refresh": "latest",
+    "globals": "latest",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "latest"
+  }
+}
