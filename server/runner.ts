@@ -14,6 +14,7 @@ export type Run = {
   exitCode?: number
   chunks: Chunk[]
   terminal?: Bun.Terminal
+  cancel?: () => void
 }
 
 const prompt = 'Fix the race condition in the async cache and make the full test suite pass. Preserve the public API.'
@@ -89,7 +90,8 @@ export function prepareLaunch(harness: HarnessId, workspace: string): Launch {
         name: 'Merge Gateway',
         baseUrl: mergeOpenAIBaseUrl,
         api: 'openai-completions',
-        apiKey: '$MERGE_GATEWAY_API_KEY',
+        // Pi 0.73 resolves a bare value as an environment-variable name.
+        apiKey: 'MERGE_GATEWAY_API_KEY',
         compat: { supportsReasoningEffort: false },
         models: [{
           id: gatewayModel,
@@ -138,21 +140,29 @@ export function startRun(harness: HarnessId) {
       data(_terminal, bytes) {
         const chunk = { at: Math.round(performance.now() - started), data: new TextDecoder().decode(bytes) }
         run.chunks.push(chunk)
-        writeFileSync(join(import.meta.dir, '..', 'recordings', `${id}.json`), JSON.stringify({ ...run, terminal: undefined }))
+        writeFileSync(join(import.meta.dir, '..', 'recordings', `${id}.json`), JSON.stringify({ ...run, terminal: undefined, cancel: undefined }))
         emit(run, { type: 'data', ...chunk })
       },
     },
   })
   run.terminal = proc.terminal
+  run.cancel = () => proc.kill()
   void proc.exited.then((exitCode) => {
     run.exitCode = exitCode
     run.status = exitCode === 0 ? 'complete' : 'failed'
     run.terminal?.close()
     run.terminal = undefined
+    run.cancel = undefined
     void Bun.write(join(import.meta.dir, '..', 'recordings', `${id}.json`), JSON.stringify(run))
     emit(run, { type: 'exit', exitCode, status: run.status })
   })
   return run
+}
+
+export function cancelRun(run: Run) {
+  if (run.status !== 'running') return false
+  run.cancel?.()
+  return true
 }
 
 export function isHarness(value: unknown): value is HarnessId {

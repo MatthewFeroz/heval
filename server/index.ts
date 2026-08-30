@@ -1,4 +1,4 @@
-import { isHarness, runs, startRun, subscribers } from './runner'
+import { cancelRun, isHarness, runs, startRun, subscribers } from './runner'
 
 type SocketData = { runId: string }
 const port = Number(process.env.PORT || 4173)
@@ -28,6 +28,10 @@ const server = Bun.serve<SocketData>({
     if (runMatch) {
       if (!authorized(req)) return Response.json({ error: 'Unauthorized' }, { status: 403 })
       const run = runs.get(runMatch[1])
+      if (req.method === 'DELETE') {
+        if (!run) return Response.json({ error: 'Not found' }, { status: 404 })
+        return Response.json({ cancelled: cancelRun(run) })
+      }
       return run ? Response.json({ ...run, terminal: undefined }) : Response.json({ error: 'Not found' }, { status: 404 })
     }
     const socketMatch = url.pathname.match(/^\/api\/runs\/([^/]+)\/stream$/)
