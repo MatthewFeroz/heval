@@ -145,7 +145,7 @@ function terminalFrame(runner: Runner, events: RunEvent[], isDone: boolean) {
     return out
   }
 
-  let out = line(` ${ansi.bold}${ansi.teal}pi${ansi.reset}${ansi.darkGray} v0.73.1${ansi.reset}`)
+  let out = line(` ${ansi.bold}${ansi.teal}pi${ansi.reset}${ansi.darkGray} v0.84.4${ansi.reset}`)
   out += line(` ${ansi.darkGray}escape${ansi.gray} interrupt · ${ansi.darkGray}ctrl+c/ctrl+d${ansi.gray} clear/exit · ${ansi.darkGray}/${ansi.gray} commands · ${ansi.darkGray}!${ansi.gray} bash${ansi.reset}`)
   out += line(` ${ansi.darkGray}Press ctrl+o to show full startup help and loaded resources.${ansi.reset}`)
   out += line()
@@ -363,7 +363,7 @@ function Scoreboard() {
         </div>
         <div className="metrics-grid">
           <Stat icon={<Trophy size={18} />} value="1/1" label="Tests passed" />
-          <Stat icon={<Gauge size={18} />} value="25s" label="Fastest observed" />
+          <Stat icon={<Gauge size={18} />} value="32s" label="Fastest observed" />
           <Stat icon={<Coins size={18} />} value="Pending" label="Gateway cost join" />
           <Stat icon={<TimerReset size={18} />} value="4/4" label="Harnesses passed" />
         </div>

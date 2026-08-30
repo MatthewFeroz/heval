@@ -61,3 +61,7 @@ One real attempt from each harness passed the executable grader on August 30, 20
 run metadata is stored in [`results/concurrent-cache-v1-smoke.json`](../results/concurrent-cache-v1-smoke.json).
 This is pipeline validation, not a publishable ranking: it has one attempt per harness, one exposed
 grader test, approximate completion durations, and no joined provider-cost records yet.
+
+After updating Codex to 0.151.0 and Pi to the renamed `@earendil-works/pi-coding-agent` package at
+0.84.4, both were rerun and passed. The merged snapshot containing current versions of all four
+harnesses is [`results/concurrent-cache-v1-current.json`](../results/concurrent-cache-v1-current.json).

@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "kind": "smoke-evaluation",
+  "supersedes": "concurrent-cache-v1-smoke.json",
+  "task": "concurrent-cache-v1",
+  "model": "anthropic/claude-sonnet-4-5-20250929",
+  "gateway": "merge-gateway",
+  "terminal": { "columns": 96, "rows": 24 },
+  "attemptsPerHarness": 1,
+  "limitations": [
+    "One attempt per harness",
+    "The current fixture contains one executable grader test",
+    "Duration includes the interval between agent completion and external grading",
+    "Provider usage and cost have not yet been joined to the run manifests"
+  ],
+  "runs": [
+    {
+      "harness": "codex",
+      "harnessVersion": "0.151.0",
+      "runId": "b3bf1cc4-5b8f-4587-aa56-087360525005",
+      "passed": true,
+      "durationMs": 31873,
+      "ptyChunks": 1155,
+      "ptyBytes": 75427,
+      "notes": ["Codex used fallback model metadata for the third-party model slug"]
+    },
+    {
+      "harness": "pi-agent",
+      "harnessVersion": "0.84.4",
+      "runId": "30f6291a-52c5-4860-bb38-9968e79acdb6",
+      "passed": true,
+      "durationMs": 38584,
+      "ptyChunks": 426,
+      "ptyBytes": 364248
+    },
+    {
+      "harness": "claude-code",
+      "harnessVersion": "2.1.251",
+      "runId": "2b2c9293-809a-4d67-b9ad-562b2d533117",
+      "passed": true,
+      "durationMs": 39709,
+      "ptyChunks": 236,
+      "ptyBytes": 22908
+    },
+    {
+      "harness": "opencode",
+      "harnessVersion": "1.18.25",
+      "runId": "85e99ac1-57ba-48f7-a573-5e6259f742b6",
+      "passed": true,
+      "durationMs": 44361,
+      "ptyChunks": 855,
+      "ptyBytes": 232113
+    }
+  ]
+}
