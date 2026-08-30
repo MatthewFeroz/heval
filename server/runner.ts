@@ -70,6 +70,25 @@ export function prepareLaunch(harness: HarnessId, workspace: string): Launch {
   }
 
   if (harness === 'claude-code') {
+    const claudeHome = join(configRoot, 'claude-home')
+    mkdirSync(claudeHome, { recursive: true })
+    writeFileSync(join(claudeHome, '.claude.json'), JSON.stringify({
+      hasCompletedOnboarding: true,
+      projects: {
+        [workspace]: {
+          allowedTools: [],
+          mcpContextUris: [],
+          mcpServers: {},
+          enabledMcpjsonServers: [],
+          disabledMcpjsonServers: [],
+          hasTrustDialogAccepted: true,
+          hasClaudeMdExternalIncludesApproved: false,
+          hasClaudeMdExternalIncludesWarningShown: false,
+        },
+      },
+    }))
+    env.HOME = claudeHome
+    env.CLAUDE_CONFIG_DIR = join(claudeHome, '.claude')
     env.ANTHROPIC_BASE_URL = mergeAnthropicBaseUrl
     env.ANTHROPIC_AUTH_TOKEN = process.env[gatewayKeyEnv]
     env.ANTHROPIC_API_KEY = ''
