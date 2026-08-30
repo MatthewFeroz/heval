@@ -73,7 +73,10 @@ export function prepareLaunch(harness: HarnessId, workspace: string): Launch {
     const claudeHome = join(configRoot, 'claude-home')
     const claudeConfig = join(claudeHome, '.claude')
     mkdirSync(claudeConfig, { recursive: true })
-    writeFileSync(join(claudeConfig, 'settings.json'), JSON.stringify({ theme: 'dark' }))
+    writeFileSync(join(claudeConfig, 'settings.json'), JSON.stringify({
+      theme: 'dark',
+      skipDangerousModePermissionPrompt: true,
+    }))
     writeFileSync(join(claudeConfig, '.claude.json'), JSON.stringify({
       hasCompletedOnboarding: true,
       lastOnboardingVersion: '2.0.64',
