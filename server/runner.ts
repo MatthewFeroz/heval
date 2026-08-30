@@ -71,9 +71,15 @@ export function prepareLaunch(harness: HarnessId, workspace: string): Launch {
 
   if (harness === 'claude-code') {
     const claudeHome = join(configRoot, 'claude-home')
-    mkdirSync(claudeHome, { recursive: true })
+    const claudeConfig = join(claudeHome, '.claude')
+    mkdirSync(claudeConfig, { recursive: true })
+    writeFileSync(join(claudeConfig, 'settings.json'), JSON.stringify({ theme: 'dark' }))
     writeFileSync(join(claudeHome, '.claude.json'), JSON.stringify({
       hasCompletedOnboarding: true,
+      lastOnboardingVersion: '2.0.64',
+      lastReleaseNotesSeen: '2.1.251',
+      installMethod: 'global',
+      numStartups: 1,
       projects: {
         [workspace]: {
           allowedTools: [],
@@ -88,7 +94,7 @@ export function prepareLaunch(harness: HarnessId, workspace: string): Launch {
       },
     }))
     env.HOME = claudeHome
-    env.CLAUDE_CONFIG_DIR = join(claudeHome, '.claude')
+    env.CLAUDE_CONFIG_DIR = claudeConfig
     env.ANTHROPIC_BASE_URL = mergeAnthropicBaseUrl
     env.ANTHROPIC_AUTH_TOKEN = process.env[gatewayKeyEnv]
     env.ANTHROPIC_API_KEY = ''
