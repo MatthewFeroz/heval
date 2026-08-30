@@ -29,7 +29,7 @@ import { localStorageAdapter } from './storage'
 
 const maxTime = Math.max(...featuredExperiment.runners.map((runner) => runner.duration))
 
-const formatTokens = (tokens: number) => `${(tokens / 1000).toFixed(1)}k`
+const formatTokens = (tokens: number | null) => tokens === null ? 'pending' : `${(tokens / 1000).toFixed(1)}k`
 
 function Brand() {
   return (
@@ -229,9 +229,9 @@ function RunnerLane({ runner, time, focused, onFocus, rawData, liveStatus, onLiv
       </div>
       <div className="lane-progress"><span style={{ width: `${progress}%` }} /></div>
       <div className="lane-stats">
-        <span><Coins size={13} /> ${((runner.cost * Math.min(time, runner.duration)) / runner.duration).toFixed(2)}</span>
+        <span><Coins size={13} /> {runner.cost === null ? 'pending' : `$${((runner.cost * Math.min(time, runner.duration)) / runner.duration).toFixed(2)}`}</span>
         <span><Clock3 size={13} /> {Math.min(time, runner.duration)}s</span>
-        <span><Zap size={13} /> {formatTokens(Math.round((runner.tokens * Math.min(time, runner.duration)) / runner.duration))}</span>
+        <span><Zap size={13} /> {runner.tokens === null ? formatTokens(null) : formatTokens(Math.round((runner.tokens * Math.min(time, runner.duration)) / runner.duration))}</span>
       </div>
     </article>
   )
@@ -327,7 +327,7 @@ function RaceStage() {
       {finished && (
         <div className="race-verdict">
           <Trophy size={18} />
-          <span><strong>Codex CLI wins this task.</strong> Same result as Claude Code, 26% faster and 45% cheaper.</span>
+          <span><strong>All four harnesses passed.</strong> Codex had the fastest observed trajectory, but one attempt is not a ranking.</span>
           <button onClick={() => { setTime(0); setPlaying(true) }}>Replay <RotateCcw size={13} /></button>
         </div>
       )}
@@ -340,7 +340,7 @@ function Stat({ icon, value, label }: { icon: React.ReactNode; value: string; la
 }
 
 function Scoreboard() {
-  const sorted = useMemo(() => [...featuredExperiment.runners].sort((a, b) => b.score - a.score), [])
+  const sorted = useMemo(() => [...featuredExperiment.runners].sort((a, b) => a.duration - b.duration), [])
 
   return (
     <section className="score-section shell section-pad">
@@ -350,22 +350,22 @@ function Scoreboard() {
       </div>
       <div className="score-layout">
         <div className="leaderboard-card">
-          <div className="card-head"><span>Task ranking</span><small>Deterministic tests + blinded review</small></div>
+          <div className="card-head"><span>Smoke result</span><small>One deterministic attempt per harness</small></div>
           {sorted.map((runner, index) => (
             <div className="score-row" key={runner.id}>
               <span className="rank">0{index + 1}</span>
               <span className="score-avatar" style={{ '--runner-color': runner.color } as React.CSSProperties}><img src={runner.logo} alt="" /></span>
               <span className="score-name"><strong>{runner.name}</strong><small>{runner.model}</small></span>
               <span className="score-bar"><i style={{ width: `${runner.score}%`, background: runner.color }} /></span>
-              <strong className="score-value">{runner.score}</strong>
+              <strong className="score-value">PASS</strong>
             </div>
           ))}
         </div>
         <div className="metrics-grid">
-          <Stat icon={<Trophy size={18} />} value="96" label="Best quality" />
-          <Stat icon={<Gauge size={18} />} value="68s" label="Fastest pass" />
-          <Stat icon={<Coins size={18} />} value="$0.21" label="Cheapest pass" />
-          <Stat icon={<TimerReset size={18} />} value="3/4" label="Stacks passed" />
+          <Stat icon={<Trophy size={18} />} value="1/1" label="Tests passed" />
+          <Stat icon={<Gauge size={18} />} value="25s" label="Fastest observed" />
+          <Stat icon={<Coins size={18} />} value="Pending" label="Gateway cost join" />
+          <Stat icon={<TimerReset size={18} />} value="4/4" label="Harnesses passed" />
         </div>
       </div>
     </section>

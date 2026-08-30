@@ -7,7 +7,7 @@ How do current coding-agent stacks differ when repairing the same TypeScript con
 This produces two explicitly different result sets:
 
 1. **Stack race:** each harness with its recommended/native model. This answers what a developer should use, but does not isolate the harness as the cause.
-2. **Harness isolation:** Codex, OpenCode, and Pi with the same OpenAI model and budget. Claude Code is excluded because it cannot run that model.
+2. **Harness isolation:** Claude Code, Codex, OpenCode, and Pi with the same dated Anthropic model and budget through Merge Gateway. Merge exposes the Anthropic Messages surface Claude Code needs and the OpenAI-compatible surfaces used by the other harnesses.
 
 ## Task
 
@@ -40,11 +40,24 @@ A result is not public unless it contains:
 - Model usage and cost when the provider exposes them
 - Explicit limitations
 
-## Required authentication
+## Merge Gateway authentication
 
-- Claude Code: configured
-- Codex: configured
-- OpenCode: provider login required
-- Pi: `/login` with ChatGPT Plus/Pro (Codex) required
+- Claude Code: `ANTHROPIC_BASE_URL` plus `ANTHROPIC_AUTH_TOKEN`; inherited `ANTHROPIC_API_KEY` must be cleared.
+- Codex: isolated `model_providers.merge-gateway` configuration using the Responses wire API.
+- OpenCode: registered `merge-gateway` provider plus `MERGE_GATEWAY_API_KEY`.
+- Pi: isolated `models.json` custom provider plus `MERGE_GATEWAY_API_KEY`.
+
+Pi's API-key syntax is version-sensitive. Current Pi 0.84.x uses
+`"apiKey": "$MERGE_GATEWAY_API_KEY"`. The pinned legacy
+`@mariozechner/pi-coding-agent` 0.73.1 used in the first smoke run requires the bare environment
+variable name: `"apiKey": "MERGE_GATEWAY_API_KEY"`. Merge's main documentation example should
+remain current, but should state the minimum supported Pi version and include this legacy note.
 
 No paid trial should be started until all requested configurations resolve to the intended model IDs.
+
+## First smoke result
+
+One real attempt from each harness passed the executable grader on August 30, 2026. The measured
+run metadata is stored in [`results/concurrent-cache-v1-smoke.json`](../results/concurrent-cache-v1-smoke.json).
+This is pipeline validation, not a publishable ranking: it has one attempt per harness, one exposed
+grader test, approximate completion durations, and no joined provider-cost records yet.
