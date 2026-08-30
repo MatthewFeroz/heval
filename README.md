@@ -44,6 +44,10 @@ The Bun runner in `server/` is the capture path for the first local evaluation. 
 3. Normalize those records into immutable run manifests rather than hand-authored UI events.
 4. Store raw artifacts outside the web bundle and expose them through a small local API.
 
-Real runs require model-provider credentials and Docker. Cloud execution and object storage can wait until local runs demonstrate audience demand.
+Real runs route model traffic through Merge Gateway. Set `HEVAL_GATEWAY_API_KEY` and
+optionally `HEVAL_GATEWAY_MODEL`; the default is the dated, reproducible
+`anthropic/claude-sonnet-4-5-20250929`. The runner creates isolated harness configs for each
+run and never writes the gateway credential to recordings. Cloud execution and object storage
+can wait until local runs demonstrate audience demand.
 
 See [the first evaluation plan](docs/first-eval.md) and [the product architecture](docs/architecture.md).
