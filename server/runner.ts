@@ -51,6 +51,9 @@ export function prepareLaunch(harness: HarnessId, workspace: string): Launch {
       'env_key = "MERGE_GATEWAY_API_KEY"',
       'wire_api = "responses"',
       '',
+      `[projects.${JSON.stringify(workspace)}]`,
+      'trust_level = "trusted"',
+      '',
     ].join('\n'))
     env.CODEX_HOME = codexHome
     return {
