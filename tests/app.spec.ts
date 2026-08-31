@@ -13,9 +13,9 @@ test('replays a benchmark and reveals its verdict', async ({ page }) => {
   await page.getByRole('button', { name: 'Play replay' }).click()
   await expect.poll(async () => Number(await timeline.inputValue())).toBeGreaterThan(0)
 
-  await timeline.fill('104')
+  await timeline.fill(await timeline.getAttribute('max') || '0')
 
-  await expect(page.getByText('Codex CLI wins this task.')).toBeVisible()
+  await expect(page.getByText('All four harnesses passed.')).toBeVisible()
 })
 
 test('focuses a runner and stores an early-access signup', async ({ page }) => {
