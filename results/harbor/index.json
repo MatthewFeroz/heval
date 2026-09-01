@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "jobs": [
+    {
+      "job": "terminal-bench-glm53-smoke",
+      "file": "terminal-bench-glm53-smoke.json",
+      "generatedAt": "2026-09-01T19:00:09.324Z",
+      "trials": 4,
+      "agents": [
+        "claude-code",
+        "codex"
+      ],
+      "models": [
+        "anthropic/claude-sonnet-4-5-20250929",
+        "zai/glm-5.3-flash"
+      ],
+      "tasks": [
+        "fix-git"
+      ]
+    }
+  ]
+}

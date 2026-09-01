@@ -1,0 +1,58 @@
+# Harness isolation: Codex versus Claude Code on identical Terminal-Bench tasks
+# through Merge Gateway, with the model, environment, and budget held constant.
+#
+# Requires Harbor 0.22.0 (see ../toolchain.json).
+#
+# Secrets are NOT stored here. Harbor resolves agent config `env` first and
+# os.environ second, so base URLs are pinned below while the key is supplied at
+# run time:
+#
+#   HEVAL_GATEWAY_API_KEY=...            # your Merge Gateway key
+#   OPENAI_API_KEY=$HEVAL_GATEWAY_API_KEY      # consumed by the codex agent
+#   ANTHROPIC_AUTH_TOKEN=$HEVAL_GATEWAY_API_KEY # consumed by the claude-code agent
+#
+# Validate without spending anything:
+#   harbor run -c harbor/jobs/terminal-bench-codex-vs-claude.yaml --print-config
+#
+# Run:
+#   harbor run -c harbor/jobs/terminal-bench-codex-vs-claude.yaml --env-file .env.local
+
+job_name: terminal-bench-codex-vs-claude
+
+# docs/first-eval.md protocol: three attempts per stack.
+n_attempts: 3
+n_concurrent_trials: 2
+
+environment:
+  type: docker
+  # Honor the per-task cpus/memory_mb pinned in each task.toml rather than
+  # silently running with whatever the host offers.
+  cpu_enforcement_policy: limit
+  memory_enforcement_policy: limit
+  delete: true
+
+agents:
+  # Codex resolves provider "openai" unconditionally (default_provider="openai"),
+  # so the gateway is reached via OPENAI_BASE_URL regardless of the model slug.
+  # Harbor writes this into $CODEX_HOME/config.toml as openai_base_url because
+  # Codex does not honor the env var alone.
+  - name: codex
+    model_name: anthropic/claude-sonnet-4-5-20250929
+    env:
+      OPENAI_BASE_URL: https://api-gateway.merge.dev/v1/openai
+
+  # Claude Code resolves provider "anthropic" unconditionally and accepts
+  # ANTHROPIC_AUTH_TOKEN as an alternative to ANTHROPIC_API_KEY.
+  - name: claude-code
+    model_name: anthropic/claude-sonnet-4-5-20250929
+    env:
+      ANTHROPIC_BASE_URL: https://api-gateway.merge.dev/v1/anthropic
+
+# Content-addressed task packages already cached under ~/.cache/harbor.
+# The digest in each path is the pin: identical paths mean identical tasks.
+tasks:
+  - path: /Users/mattferoz/.cache/harbor/tasks/packages/terminal-bench/build-cython-ext/38e42b5662bb3c6b8610d193d5ef1b47ee3a8f4bd07eb860ceaab17e9406a368
+  - path: /Users/mattferoz/.cache/harbor/tasks/packages/terminal-bench/fix-git/66be7179f07f1aa8f0d60f88800a883a68c1ffb7a349aae76aa60fa679485473
+  - path: /Users/mattferoz/.cache/harbor/tasks/packages/terminal-bench/nginx-request-logging/f5eaf57c493462fbeaa8a7b5c4155739ee4ce8e8fab037eae6512788885014f6
+  - path: /Users/mattferoz/.cache/harbor/tasks/packages/terminal-bench/regex-log/72f5f52d6b523a00380cb088fcf0ba83a2e2f7b478fdad6515598ab43584e337
+  - path: /Users/mattferoz/.cache/harbor/tasks/packages/terminal-bench/sqlite-db-truncate/35f3ced08035d07527d186bdcfd668bb36fbd8996acf02457e08bfa2e0ce40b6

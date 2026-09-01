@@ -1,0 +1,48 @@
+# Model sweep: one harness held constant, models varied, through Merge Gateway.
+#
+# Slug verified 2026-08-31 against the live Merge Gateway catalog:
+# zai/glm-5.3-flash -> "GLM-5.3 Flash", provider zai, status available,
+# supports_tool_calling true. Anthropic /v1/messages, OpenAI /chat/completions
+# and OpenAI /responses all return 200 for it.
+#
+# NOTE: this sweep varies the model with the harness held at codex. To attribute
+# a result to the model rather than to the harness, prefer the 2x2 grid in
+# terminal-bench-glm53-2x2.yaml.
+#
+# Harbor resolves the provider from the slug prefix unless the agent pins one.
+# Both codex and claude-code DO pin theirs (openai and anthropic respectively),
+# so the prefix here is a label for reporting, not a routing instruction — the
+# gateway does the routing, and both agents reach it via the base URLs below.
+#
+# Validate without spending anything:
+#   harbor run -c harbor/jobs/terminal-bench-model-sweep.yaml --print-config
+
+job_name: terminal-bench-model-sweep
+
+n_attempts: 3
+n_concurrent_trials: 2
+
+environment:
+  type: docker
+  cpu_enforcement_policy: limit
+  memory_enforcement_policy: limit
+  delete: true
+
+agents:
+  # Baseline: the model the published smoke snapshot already used.
+  - name: codex
+    model_name: anthropic/claude-sonnet-4-5-20250929
+    env:
+      OPENAI_BASE_URL: https://api-gateway.merge.dev/v1/openai
+
+  # Subject model. Reasoning model: do not tighten the output token cap or it
+  # returns empty content with a `reasoning_exhausted` warning.
+  - name: codex
+    model_name: zai/glm-5.3-flash
+    env:
+      OPENAI_BASE_URL: https://api-gateway.merge.dev/v1/openai
+
+tasks:
+  - path: /Users/mattferoz/.cache/harbor/tasks/packages/terminal-bench/fix-git/66be7179f07f1aa8f0d60f88800a883a68c1ffb7a349aae76aa60fa679485473
+  - path: /Users/mattferoz/.cache/harbor/tasks/packages/terminal-bench/regex-log/72f5f52d6b523a00380cb088fcf0ba83a2e2f7b478fdad6515598ab43584e337
+  - path: /Users/mattferoz/.cache/harbor/tasks/packages/terminal-bench/sqlite-db-truncate/35f3ced08035d07527d186bdcfd668bb36fbd8996acf02457e08bfa2e0ce40b6
