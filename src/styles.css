@@ -1,22 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Manrope:wght@400;500;600;700;800&display=swap');
-
-:root {
-  color-scheme: dark;
-  font-family: 'Manrope', system-ui, sans-serif;
-  color: #f2f1ed;
-  background: #080909;
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  --bg: #080909;
-  --panel: #101111;
-  --panel-2: #141515;
-  --line: #292b2b;
-  --line-soft: #1c1e1e;
-  --muted: #8d9290;
-  --faint: #5c605f;
-  --white: #f2f1ed;
-  --accent: #d8ff5f;
-}
+@import './tokens.css';
 
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }

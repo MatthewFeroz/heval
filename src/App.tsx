@@ -66,6 +66,7 @@ function Nav({ auth }: { auth: AppAuth }) {
           <a href="#compare">Compare</a>
           <a href="#reports">Reports</a>
           <a href="#methodology">Methodology</a>
+          <a href="/studio">Studio</a>
           <a className="github-link" href="https://github.com" target="_blank" rel="noreferrer"><GitFork size={16} /> GitHub</a>
         </div>
         {auth.configured && (auth.user
@@ -480,7 +481,7 @@ function Footer() {
     <footer className="footer shell">
       <Brand />
       <p>An independent performance index for coding-agent stacks.</p>
-      <div><a href="#methodology">Methodology</a><a href="#reports">Reports</a><a href="https://github.com" target="_blank" rel="noreferrer">GitHub</a></div>
+      <div><a href="#methodology">Methodology</a><a href="#reports">Reports</a><a href="/studio">Studio</a><a href="https://github.com" target="_blank" rel="noreferrer">GitHub</a></div>
       <small>© 2026 Heval</small>
     </footer>
   )

@@ -13,11 +13,20 @@
  *
  *   light  #ffffff surface  -> ALL CHECKS PASS
  *          worst all-pairs CVD dE 11.0 (protan), normal-vision dE 22.0
- *   dark   #3a3833 surface  -> ALL CHECKS PASS
+ *   dark   validated on #3a3833 -> ALL CHECKS PASS
  *          worst all-pairs CVD dE 7.3 (deutan) - the 6-8 floor band, which is
  *          legal ONLY with secondary encoding. Every recipe therefore ships a
  *          legend, direct labels (<= 4 series), and a table view; do not remove
  *          those to "clean up" a dark chart.
+ *
+ * SURFACE NOTE. The dark theme now renders on Heval's product surface (#101111
+ * panel on #080909 page, the same tokens as src/tokens.css) rather than the
+ * #3a3833 it was validated on. Pairwise series distances do not depend on the
+ * surface, and every series and ink step is lighter than either surface, so
+ * mark-vs-surface contrast only rises on the darker panel. Grid and ink were
+ * re-picked from the product tokens. Re-run the validator against #101111
+ * before treating the dark column as re-certified; until then it is
+ * "validated on #3a3833, shown on #101111".
  *
  * A fifth categorical value is never a generated hue. `recipes.ts` refuses the
  * color channel past four values and tells the user to facet instead.
@@ -27,7 +36,7 @@
  *
  * Re-validate after any change:
  *   node <dataviz>/scripts/validate_palette.js "<hex,...>" --mode light --surface "#ffffff" --pairs all
- *   node <dataviz>/scripts/validate_palette.js "<hex,...>" --mode dark  --surface "#3a3833" --pairs all
+ *   node <dataviz>/scripts/validate_palette.js "<hex,...>" --mode dark  --surface "#101111" --pairs all
  */
 
 export type ThemeMode = 'light' | 'dark'
@@ -48,7 +57,12 @@ export type Theme = {
   font: string
 }
 
-const FONT = 'system-ui, sans-serif'
+/**
+ * Manrope is the product typeface (src/tokens.css). Vega measures text with an
+ * estimator rather than the real font, and Manrope runs a touch wider than
+ * system-ui at 11px, which is why the recipes leave label headroom.
+ */
+const FONT = 'Manrope, system-ui, sans-serif'
 
 export const THEMES: Record<ThemeMode, Theme> = {
   light: {
@@ -64,11 +78,11 @@ export const THEMES: Record<ThemeMode, Theme> = {
   },
   dark: {
     mode: 'dark',
-    bg: '#2c2a25',
-    surface: '#3a3833',
-    ink: '#f5f2ee',
-    inkMuted: '#abaaa8',
-    grid: '#565551',
+    bg: '#080909',
+    surface: '#101111',
+    ink: '#f2f1ed',
+    inkMuted: '#8d9290',
+    grid: '#292b2b',
     series: ['#179fd4', '#c7692c', '#bf77a7', '#5da56e'],
     sequential: ['#25414d', '#1f5a70', '#027495', '#198db3', '#4aa5c8', '#78bcd9', '#a2d3e9'],
     font: FONT,

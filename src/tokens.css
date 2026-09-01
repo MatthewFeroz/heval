@@ -1,0 +1,42 @@
+/*
+ * Heval design tokens - the one place the brand lives as CSS.
+ *
+ * Imported by the landing page (styles.css), the chart studio (studio/studio.css)
+ * and inlined verbatim into the static report by harbor/report/build-report.ts,
+ * so a change here reaches every surface Heval renders. Chart-internal colors are
+ * a separate, validator-chosen set in charts/palette.ts; its dark theme is
+ * built on the same --bg / --panel / --line values below.
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Manrope:wght@400;500;600;700;800&display=swap');
+
+:root {
+  color-scheme: dark;
+  font-family: 'Manrope', system-ui, sans-serif;
+  color: #f2f1ed;
+  background: #080909;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+
+  --bg: #080909;
+  --panel: #101111;
+  --panel-2: #141515;
+  --panel-3: #181a19;
+  --line: #292b2b;
+  --line-soft: #1c1e1e;
+  --line-strong: #343737;
+  --muted: #8d9290;
+  --faint: #5c605f;
+  --white: #f2f1ed;
+  --accent: #d8ff5f;
+  --accent-ink: #11130d;
+  --pass: #95bf69;
+  --pass-text: #84a75e;
+  --fail: #d57a70;
+  --fail-text: #b26e67;
+  --warn: #d7bd72;
+
+  --mono: 'DM Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --sans: 'Manrope', system-ui, sans-serif;
+}
