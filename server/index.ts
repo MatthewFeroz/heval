@@ -66,7 +66,11 @@ const server = Bun.serve<SocketData>({
       if (!runs.has(socketMatch[1])) return new Response('Not found', { status: 404 })
       return server.upgrade(req, { data: { runId: socketMatch[1] }, headers: { 'Sec-WebSocket-Protocol': 'heval' } }) ? undefined : new Response('Upgrade failed', { status: 400 })
     }
-    const path = url.pathname === '/' ? '/index.html' : url.pathname
+    // Pretty URLs for the two pages; everything else is a dist asset. The
+    // studio's job exports are copied into dist/results by the Vite build.
+    const path = url.pathname === '/' ? '/index.html'
+      : url.pathname === '/studio' ? '/studio.html'
+      : url.pathname
     const file = Bun.file(`${dist}${path}`)
     if (await file.exists()) return new Response(file)
     return new Response(Bun.file(`${dist}/index.html`))

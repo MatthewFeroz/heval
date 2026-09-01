@@ -1,0 +1,183 @@
+/*
+ * Studio chrome. The tokens mirror src/charts/palette.ts so the page around a
+ * chart is the same surface the chart was validated against - a chart checked
+ * on #ffffff must not be shown on some other card color.
+ */
+
+:root {
+  --bg: #f5f2ee;
+  --surface: #ffffff;
+  --ink: #2c2a25;
+  --muted: #807f7c;
+  --grid: #eaeae9;
+  --accent: #0087ae;
+}
+
+[data-theme='dark'] {
+  --bg: #2c2a25;
+  --surface: #3a3833;
+  --ink: #f5f2ee;
+  --muted: #abaaa8;
+  --grid: #565551;
+  --accent: #179fd4;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 14px/1.5 system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.studio { display: grid; grid-template-columns: 296px minmax(0, 1fr); min-height: 100vh; }
+
+/* -- sidebar ------------------------------------------------------------- */
+
+.side {
+  border-right: 1px solid var(--grid);
+  background: var(--surface);
+  padding: 20px 18px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  position: sticky;
+  top: 0;
+  align-self: start;
+  max-height: 100vh;
+  overflow-y: auto;
+}
+
+.brand { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
+.brand small { display: block; font-weight: 400; color: var(--muted); font-size: 12px; letter-spacing: 0; }
+
+.group { display: flex; flex-direction: column; gap: 9px; }
+.group > h3 {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.field { display: grid; grid-template-columns: 82px minmax(0, 1fr); align-items: center; gap: 10px; }
+.field > label { color: var(--muted); font-size: 12px; }
+
+select, input[type='text'], textarea {
+  width: 100%;
+  font: inherit;
+  font-size: 13px;
+  color: var(--ink);
+  background: var(--bg);
+  border: 1px solid var(--grid);
+  border-radius: 7px;
+  padding: 6px 8px;
+}
+
+select:focus-visible, input:focus-visible, textarea:focus-visible, button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.checks { display: flex; flex-wrap: wrap; gap: 12px; }
+.check { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink); }
+.check input { accent-color: var(--accent); }
+
+button {
+  font: inherit;
+  font-size: 13px;
+  color: var(--ink);
+  background: var(--bg);
+  border: 1px solid var(--grid);
+  border-radius: 7px;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+button:hover:not(:disabled) { border-color: var(--muted); }
+button:disabled { opacity: 0.5; cursor: default; }
+button.primary { background: var(--accent); border-color: var(--accent); color: #ffffff; }
+
+.row { display: flex; gap: 8px; flex-wrap: wrap; }
+.hint { color: var(--muted); font-size: 12px; margin: 0; }
+
+/* -- main ---------------------------------------------------------------- */
+
+.main { padding: 22px 26px 60px; min-width: 0; display: flex; flex-direction: column; gap: 14px; }
+
+.head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.head h1 { margin: 0; font-size: 19px; font-weight: 600; letter-spacing: -0.01em; }
+.head .meta { color: var(--muted); font-size: 12.5px; }
+
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--grid); flex-wrap: wrap; }
+.tab {
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: none;
+  padding: 7px 12px;
+  color: var(--muted);
+}
+.tab[aria-selected='true'] { color: var(--ink); border-bottom-color: var(--accent); font-weight: 500; }
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--grid);
+  border-radius: 12px;
+  padding: 20px;
+  overflow-x: auto;
+}
+
+.warn {
+  border-left: 2px solid var(--muted);
+  border-radius: 0 8px 8px 0;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 13px;
+  padding: 10px 14px;
+}
+
+table { border-collapse: collapse; width: 100%; font-size: 13px; }
+th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--grid); white-space: nowrap; }
+th { color: var(--muted); font-weight: 500; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+.spec {
+  width: 100%;
+  min-height: 60vh;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  resize: vertical;
+  white-space: pre;
+}
+
+.err { color: #c7402c; font-size: 13px; }
+[data-theme='dark'] .err { color: #e88a78; }
+
+.drop { border: 1px dashed var(--grid); border-radius: 12px; padding: 40px; text-align: center; color: var(--muted); }
+.studio.dragging .main { outline: 2px dashed var(--accent); outline-offset: -10px; }
+
+/* -- narrow viewports ---------------------------------------------------- */
+
+/* Below this the sidebar and the chart cannot both have usable width, so the
+   panel becomes a band above the chart instead of a column beside it. */
+@media (max-width: 900px) {
+  .studio { grid-template-columns: minmax(0, 1fr); }
+
+  .side {
+    position: static;
+    max-height: none;
+    border-right: 0;
+    border-bottom: 1px solid var(--grid);
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 18px 24px;
+    align-items: start;
+  }
+
+  .brand { grid-column: 1 / -1; }
+  .main { padding: 18px 16px 48px; }
+}

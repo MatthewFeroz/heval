@@ -71,6 +71,7 @@ Set `HEVAL_ENABLE_RUNNER=1` only where real harness execution should be allowed.
 | `bun run start` | Build, then start the Bun server |
 | `bun run lint` | Run ESLint |
 | `bun run test:e2e` | Run desktop and mobile Playwright tests |
+| `bun run report <job-dir>` | Normalize a Harbor job into `results/harbor/` and build its static report |
 
 Install Playwright's browser once before running end-to-end tests locally:
 
@@ -137,16 +138,54 @@ The Bun control plane in [`server/`](server/) predates this and duplicates much 
 (workspace isolation, harness configuration, grading, trial accounting). It remains the path the
 published `concurrent-cache-v1` snapshots were produced with.
 
+### Reading a job: report and chart studio
+
+A finished Harbor job is a directory of per-trial `config.json` / `result.json` files. One command
+turns it into a normalized export plus a self-contained report:
+
+```bash
+bun run report jobs/terminal-bench-glm53-smoke
+```
+
+That writes three things under `results/harbor/`:
+
+| File | Contents |
+| --- | --- |
+| `<job>.json` | Normalized `TrialRow[]` - one row per trial, the shape every chart reads |
+| `<job>.html` | Static report: four charts rendered to SVG in both themes, stat tiles, auto-detected limitations, per-trial table, provenance footer |
+| `index.json` | Catalog of exported jobs, read by the studio's job picker |
+
+The **chart studio** at `/studio` (`bun run dev`, then <http://localhost:5173/studio>) is the same
+charts, configurable. Pick a job, change the recipe, encodings, measure, aggregate, sort, labels and
+theme, and export SVG or PNG. The state lives in the URL, so every chart in the report links to the
+studio already configured, and a studio link can be pasted back to someone else. You can also drop a
+`<job>.json` export onto the page to inspect a run that was never committed.
+
+Both surfaces call `buildChart` from [`src/charts/recipes.ts`](src/charts/recipes.ts) - the report
+compiles the spec headlessly, the studio renders it with `vega-embed` - so a chart cannot look one
+way in the editor and another in the published report. The recipes also enforce the presentation
+rules: at most four categorical series (past that, color is dropped and the user is told to facet),
+Wilson 95% intervals on pass rates, a legend plus direct labels plus a table view so identity never
+rides on color alone, and light/dark palettes validated independently against their own surface.
+
+Charts do not hide the data's problems. A trial the gateway priced at `null`, a stack that ran with
+no prompt caching, fewer than three trials per cell, or a single task all surface as warnings in the
+studio and as a "Limitations" list in the report.
+
 ## Repository Layout
 
 ```text
-fixtures/   Pinned benchmark tasks and graders
-harbor/     Pinned eval toolchain and Harbor job configurations
-results/    Published machine-readable result snapshots
-server/     Bun control plane and harness adapters
-src/        React replay and reporting interface
-tests/      Playwright browser tests
-docs/       Evaluation protocol and architecture notes
+fixtures/         Pinned benchmark tasks and graders
+harbor/           Pinned eval toolchain, Harbor job configs, report builder
+jobs/             Raw Harbor job output (gitignored - large, per-trial sessions)
+results/          Published machine-readable result snapshots
+results/harbor/   Normalized job exports and generated reports
+server/           Bun control plane and harness adapters
+src/charts/       Chart recipes, palette and URL state - shared by report and studio
+src/studio/       The chart studio (configurable graph editor)
+src/              React replay and reporting interface
+tests/            Playwright browser tests
+docs/             Evaluation protocol and architecture notes
 ```
 
 Generated builds, local credentials, raw recordings, and Playwright artifacts are intentionally ignored by Git.
