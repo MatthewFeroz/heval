@@ -11,7 +11,8 @@
     "serve": "bun server/index.ts",
     "lint": "eslint .",
     "test:e2e": "playwright test",
-    "preview": "vite preview --host 0.0.0.0"
+    "preview": "vite preview --host 0.0.0.0",
+    "report": "bun harbor/report/build-report.ts"
   },
   "dependencies": {
     "@earendil-works/pi-coding-agent": "0.84.4",
@@ -22,6 +23,9 @@
     "lucide-react": "latest",
     "react": "latest",
     "react-dom": "latest",
+    "vega": "^6.4.0",
+    "vega-embed": "^7.1.0",
+    "vega-lite": "^6.4.3",
     "vite": "latest"
   },
   "devDependencies": {

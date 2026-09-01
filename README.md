@@ -38,6 +38,7 @@ See [`results/concurrent-cache-v1-current.json`](results/concurrent-cache-v1-cur
 
 - [Bun](https://bun.sh/) 1.4 or newer
 - A Chromium-compatible browser
+- [Harbor](https://pypi.org/project/harbor/) 0.22.0 and Docker, for Harbor-based evaluations (`uv tool install harbor==0.22.0`)
 
 ```bash
 git clone https://github.com/MatthewFeroz/heval.git
@@ -124,10 +125,23 @@ Executable fixture grader
 
 The planned production boundary uses Harbor for portable evaluation execution, a replaceable sandbox provider, and object storage for trajectories and artifacts. See [`docs/architecture.md`](docs/architecture.md).
 
+Harbor is now pinned and installed rather than planned. [`harbor/toolchain.json`](harbor/toolchain.json)
+records the runner, sandbox, and harness versions; [`harbor/jobs/`](harbor/jobs/) holds job
+configurations. Validate one without spending anything:
+
+```bash
+harbor run -c harbor/jobs/terminal-bench-codex-vs-claude.yaml --print-config
+```
+
+The Bun control plane in [`server/`](server/) predates this and duplicates much of what Harbor owns
+(workspace isolation, harness configuration, grading, trial accounting). It remains the path the
+published `concurrent-cache-v1` snapshots were produced with.
+
 ## Repository Layout
 
 ```text
 fixtures/   Pinned benchmark tasks and graders
+harbor/     Pinned eval toolchain and Harbor job configurations
 results/    Published machine-readable result snapshots
 server/     Bun control plane and harness adapters
 src/        React replay and reporting interface

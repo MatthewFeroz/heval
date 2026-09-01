@@ -19,6 +19,7 @@ The first publication will include the complete task and grader. Every later rer
 
 - Clean environment per trial
 - Fixed 96 × 24 PTY
+- Pinned evaluation runner: Harbor 0.22.0 (see [`harbor/toolchain.json`](../harbor/toolchain.json))
 - Pinned harness and model versions
 - Identical CPU, memory, timeout, and task files
 - Three attempts per stack for the first article
@@ -32,6 +33,7 @@ The first publication will include the complete task and grader. Every later rer
 A result is not public unless it contains:
 
 - Run manifest and content hashes
+- Pinned toolchain versions, including the Harbor and sandbox-provider versions
 - Raw timestamped trajectory
 - Initial and final filesystem state
 - Patch
@@ -55,8 +57,37 @@ remain current, but should state the minimum supported Pi version and include th
 
 No paid trial should be started until all requested configurations resolve to the intended model IDs.
 
+### Harbor agent wiring
+
+Harbor resolves provider credentials declaratively from `harbor/agents/model_connection.py`, so the
+gateway is configured through env vars on each agent rather than hand-written harness config files.
+Both relevant agents pin their provider and ignore the model slug prefix when routing:
+
+| Harbor agent | Pinned provider | Base URL var | Key var |
+| --- | --- | --- | --- |
+| `codex` | `openai` | `OPENAI_BASE_URL` | `OPENAI_API_KEY` |
+| `claude-code` | `anthropic` | `ANTHROPIC_BASE_URL` | `ANTHROPIC_API_KEY` or `ANTHROPIC_AUTH_TOKEN` |
+
+Agent config `env` takes precedence over the process environment, so base URLs are committed in the
+job configs under [`harbor/jobs/`](../harbor/jobs/) while keys are supplied at run time via
+`--env-file`. Codex does not honor `OPENAI_BASE_URL` alone; Harbor writes the resolved value into
+`$CODEX_HOME/config.toml` as `openai_base_url`, which replaces the hand-rolled
+`[model_providers.merge-gateway]` block with `wire_api = "responses"` used by the Bun runner.
+
+OpenCode and Pi are deferred rather than removed. `opencode --version` returns empty output on the
+current machine and Pi is absent until `bun install` runs, so neither installed version can be
+verified against its pin. Their gateway wiring notes above remain accurate for when they return.
+
 ## Current status
 
-No real evaluation has been completed or published. The JSON files in `results/` are development
-fixtures used to exercise the planned result shape; they are not measured benchmark evidence.
-The interface uses synthetic trajectories to demonstrate the replay and comparison experience.
+No evaluation has been published. The JSON files in `results/concurrent-cache-v1-*.json` are
+development fixtures used to exercise the planned result shape; they are not measured benchmark
+evidence, and the landing page's replay uses synthetic trajectories to demonstrate the product.
+
+Real Harbor trials do exist locally. `jobs/terminal-bench-glm53-smoke` is a 2 × 2 smoke run
+(Codex and Claude Code × Claude Sonnet 4.5 and GLM-5.3 Flash) on the Terminal-Bench `fix-git`
+task, one trial per cell, all four passing. Its normalized rows are exported under
+[`results/harbor/`](../results/harbor/) and are what the report builder and graph editor read.
+One trial per cell on one task is pipeline validation, not evidence; the full 2 × 2 job in
+[`harbor/jobs/terminal-bench-glm53-2x2.yaml`](../harbor/jobs/terminal-bench-glm53-2x2.yaml)
+(60 trials) is the first run intended to produce a spread worth reporting.
