@@ -29,6 +29,15 @@ test('focuses a runner and stores an early-access signup', async ({ page }) => {
   await expect.poll(async () => page.evaluate(() => localStorage.getItem('heval:preferences'))).toContain('dev@example.com')
 })
 
+test('keeps the showcase public while real runs require authentication', async ({ page }) => {
+  await expect(page.getByRole('heading', { name: 'Heval.' })).toBeVisible()
+  page.once('dialog', async (dialog) => {
+    expect(dialog.message()).toContain('WorkOS AuthKit')
+    await dialog.dismiss()
+  })
+  await page.getByRole('button', { name: 'RUN REAL' }).first().click()
+})
+
 test('opens the responsive navigation', async ({ page }, testInfo) => {
   test.skip(!testInfo.project.name.includes('mobile'), 'Mobile-only behavior')
   await page.getByRole('button', { name: 'Toggle navigation' }).click()

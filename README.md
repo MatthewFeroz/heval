@@ -5,7 +5,7 @@ Heval is a local-first evaluation workbench for comparing coding-agent stacks on
 It captures terminal trajectories, grades the resulting workspace with executable tests, and presents synchronized side-by-side replays for Claude Code, Codex, OpenCode, and Pi.
 
 > [!NOTE]
-> Heval is an early prototype. The landing-page replay is seeded demonstration data. The JSON files in [`results/`](results/) are real smoke-evaluation snapshots, but they are pipeline validation rather than a statistically meaningful ranking.
+> Heval is an early prototype. The landing-page replay and JSON files in [`results/`](results/) are development fixtures. **No real benchmark runs have been published yet.**
 
 ## Features
 
@@ -48,6 +48,18 @@ bun run dev
 
 Open `http://localhost:5173`.
 
+## Authentication
+
+The public showcase works without configuration. WorkOS AuthKit sign-in gates real evaluation controls and the Bun server verifies every runner access token against WorkOS's JWKS.
+
+1. In the WorkOS Dashboard, copy your environment's client ID into both `VITE_WORKOS_CLIENT_ID` and `WORKOS_CLIENT_ID` in `.env.local` (start from `.env.example`). The client ID is public; no WorkOS API key is used by this integration.
+2. Add `http://localhost:5173` as an allowed web origin and sign-in callback redirect URI.
+3. Add `http://localhost:5173/login` as the Sign-in URL.
+4. For the hosted app, add its exact HTTPS origin and root callback in the same places, plus `<origin>/login` as its Sign-in URL.
+5. If using a custom Authentication API domain, set `VITE_WORKOS_API_HOSTNAME` and `WORKOS_API_HOSTNAME` to the hostname only (for example, `auth.example.com`). Otherwise leave the browser value empty and keep the server value at `api.workos.com`.
+
+Set `HEVAL_ENABLE_RUNNER=1` only where real harness execution should be allowed. `HEVAL_GATEWAY_API_KEY` remains server-side and must never use a `VITE_` prefix.
+
 ## Commands
 
 | Command | Purpose |
@@ -67,15 +79,16 @@ bunx playwright install chromium
 
 ## Running Real Evaluations
 
-Real harness execution is disabled by default because agents run with broad permissions inside disposable fixture workspaces. Copy the example configuration and provide a long random runner token plus a Merge Gateway API key:
+Real harness execution is disabled by default because agents run with broad permissions inside disposable fixture workspaces. Copy the example configuration and provide the WorkOS client ID plus a Merge Gateway API key:
 
 ```bash
 cp .env.example .env.local
 ```
 
 ```dotenv
+VITE_WORKOS_CLIENT_ID=client_replace_me
+WORKOS_CLIENT_ID=client_replace_me
 HEVAL_ENABLE_RUNNER=1
-HEVAL_RUNNER_TOKEN=replace-with-a-long-random-token
 HEVAL_GATEWAY_API_KEY=your-key
 HEVAL_GATEWAY_MODEL=anthropic/claude-sonnet-4-5-20250929
 PORT=4173

@@ -16,7 +16,9 @@
   "dependencies": {
     "@earendil-works/pi-coding-agent": "0.84.4",
     "@vitejs/plugin-react": "latest",
+    "@workos-inc/authkit-react": "^0.16.2",
     "@xterm/xterm": "^6.0.0",
+    "jose": "^6.2.10",
     "lucide-react": "latest",
     "react": "latest",
     "react-dom": "latest",

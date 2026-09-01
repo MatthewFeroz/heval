@@ -15,6 +15,8 @@ import {
   GitFork,
   Layers3,
   Mail,
+  LogIn,
+  LogOut,
   Pause,
   Play,
   RotateCcw,
@@ -27,9 +29,21 @@ import {
 import { featuredExperiment, reports, type RunEvent, type Runner } from './data'
 import { localStorageAdapter } from './storage'
 
-const maxTime = Math.max(...featuredExperiment.runners.map((runner) => runner.duration))
+const runnerEnd = (runner: Runner) => Math.max(...runner.events.map((event) => event.at))
+const maxTime = Math.max(...featuredExperiment.runners.map(runnerEnd))
 
 const formatTokens = (tokens: number | null) => tokens === null ? 'pending' : `${(tokens / 1000).toFixed(1)}k`
+
+export type AppAuth = {
+  configured: boolean
+  isLoading: boolean
+  user: { email: string; firstName?: string | null } | null
+  signIn: () => void
+  signOut: () => void
+  getAccessToken: () => Promise<string | undefined>
+}
+
+const publicAuth: AppAuth = { configured: false, isLoading: false, user: null, signIn() {}, signOut() {}, async getAccessToken() { return undefined } }
 
 function Brand() {
   return (
@@ -41,7 +55,7 @@ function Brand() {
   )
 }
 
-function Nav() {
+function Nav({ auth }: { auth: AppAuth }) {
   const [open, setOpen] = useState(false)
 
   return (
@@ -54,7 +68,10 @@ function Nav() {
           <a href="#methodology">Methodology</a>
           <a className="github-link" href="https://github.com" target="_blank" rel="noreferrer"><GitFork size={16} /> GitHub</a>
         </div>
-        <a className="nav-cta" href="#early-access">Get early access <ArrowRight size={15} /></a>
+        {auth.configured && (auth.user
+          ? <button className="nav-cta auth-button" onClick={auth.signOut} title={`Sign out ${auth.user.email}`}>{auth.user.firstName || auth.user.email} <LogOut size={15} /></button>
+          : <button className="nav-cta auth-button" onClick={auth.signIn} disabled={auth.isLoading}>Sign in <LogIn size={15} /></button>)}
+        {!auth.configured && <a className="nav-cta" href="#early-access">Get early access <ArrowRight size={15} /></a>}
         <button className="menu-button" onClick={() => setOpen((value) => !value)} aria-label="Toggle navigation">
           {open ? <X size={19} /> : <span className="menu-lines" />}
         </button>
@@ -199,8 +216,10 @@ function HarnessTui({ runner, visibleEvents, isDone, rawData }: { runner: Runner
 
 function RunnerLane({ runner, time, focused, onFocus, rawData, liveStatus, onLiveRun }: { runner: Runner; time: number; focused: boolean; onFocus: () => void; rawData?: string; liveStatus?: string; onLiveRun: () => void }) {
   const visibleEvents = runner.events.filter((event) => event.at <= time)
-  const isDone = time >= runner.duration
-  const progress = Math.min((time / runner.duration) * 100, 100)
+  const replayDuration = runnerEnd(runner)
+  const progress = Math.min(time / replayDuration, 1)
+  const isDone = progress === 1
+  const elapsed = Math.round(runner.duration * progress)
 
   return (
     <article
@@ -227,17 +246,17 @@ function RunnerLane({ runner, time, focused, onFocus, rawData, liveStatus, onLiv
         <div className="terminal-top"><span /><span /><span /><small>~/benchmark/{featuredExperiment.task}</small></div>
         <HarnessTui runner={runner} visibleEvents={visibleEvents} isDone={isDone} rawData={rawData} />
       </div>
-      <div className="lane-progress"><span style={{ width: `${progress}%` }} /></div>
+      <div className="lane-progress"><span style={{ width: `${progress * 100}%` }} /></div>
       <div className="lane-stats">
-        <span><Coins size={13} /> {runner.cost === null ? 'pending' : `$${((runner.cost * Math.min(time, runner.duration)) / runner.duration).toFixed(2)}`}</span>
-        <span><Clock3 size={13} /> {Math.min(time, runner.duration)}s</span>
-        <span><Zap size={13} /> {runner.tokens === null ? formatTokens(null) : formatTokens(Math.round((runner.tokens * Math.min(time, runner.duration)) / runner.duration))}</span>
+        <span><Coins size={13} /> {runner.cost === null ? 'pending' : `$${(runner.cost * progress).toFixed(2)}`}</span>
+        <span><Clock3 size={13} /> {elapsed}s</span>
+        <span><Zap size={13} /> {runner.tokens === null ? formatTokens(null) : formatTokens(Math.round(runner.tokens * progress))}</span>
       </div>
     </article>
   )
 }
 
-function RaceStage() {
+function RaceStage({ auth }: { auth: AppAuth }) {
   const [time, setTime] = useState(0)
   const [playing, setPlaying] = useState(false)
   const [focused, setFocused] = useState<string | null>(null)
@@ -246,8 +265,13 @@ function RaceStage() {
   const finished = time >= maxTime
 
   async function startLiveRun(harness: string) {
+    if (!auth.user) {
+      if (auth.configured) auth.signIn()
+      else window.alert('Real runs require WorkOS AuthKit to be configured.')
+      return
+    }
     if (!window.confirm('This launches the real harness and may consume model credits. Continue?')) return
-    const token = window.prompt('Runner token')
+    const token = await auth.getAccessToken()
     if (!token) return
     const response = await fetch('/api/runs', { method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` }, body: JSON.stringify({ harness }) })
     if (!response.ok) { window.alert((await response.json()).error || 'Could not start runner'); return }
@@ -255,7 +279,7 @@ function RaceStage() {
     setLiveData((current) => ({ ...current, [harness]: '' }))
     setLiveStatus((current) => ({ ...current, [harness]: 'running' }))
     const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:'
-    const socket = new WebSocket(`${protocol}//${location.host}/api/runs/${run.id}/stream?token=${encodeURIComponent(token)}`)
+    const socket = new WebSocket(`${protocol}//${location.host}/api/runs/${run.id}/stream`, ['heval', `heval-auth.${token}`])
     socket.onmessage = (message) => {
       const event = JSON.parse(message.data) as { type: string; data?: string; status?: string }
       if (event.type === 'data') setLiveData((current) => ({ ...current, [harness]: (current[harness] || '') + (event.data || '') }))
@@ -291,7 +315,7 @@ function RaceStage() {
           <span>RUN #HI-0042</span>
           <span>{featuredExperiment.completedAt}</span>
         </div>
-        <button className="manifest-button">View manifest <ExternalLink size={13} /></button>
+        <a className="manifest-button" href="#methodology">View demo protocol <ExternalLink size={13} /></a>
       </div>
       <div className="task-strip">
         <div className="task-number">01</div>
@@ -345,12 +369,12 @@ function Scoreboard() {
   return (
     <section className="score-section shell section-pad">
       <div className="section-heading split-heading">
-        <div><span className="kicker">THE RESULT</span><h2>One task. Four very<br />different paths.</h2></div>
-        <p>The model is only half the system. Compare how each harness explores, edits, tests, and recovers—without flattening everything into one opaque score.</p>
+        <div><span className="kicker">ILLUSTRATIVE RESULT</span><h2>One task. Four very<br />different paths.</h2></div>
+        <p>This synthetic example shows how a completed comparison will read. It demonstrates the product, not measured harness performance.</p>
       </div>
       <div className="score-layout">
         <div className="leaderboard-card">
-          <div className="card-head"><span>Smoke result</span><small>One deterministic attempt per harness</small></div>
+          <div className="card-head"><span>Demo result</span><small>Illustrative data · not a benchmark</small></div>
           {sorted.map((runner, index) => (
             <div className="score-row" key={runner.id}>
               <span className="rank">0{index + 1}</span>
@@ -363,9 +387,9 @@ function Scoreboard() {
         </div>
         <div className="metrics-grid">
           <Stat icon={<Trophy size={18} />} value="1/1" label="Tests passed" />
-          <Stat icon={<Gauge size={18} />} value="32s" label="Fastest observed" />
-          <Stat icon={<Coins size={18} />} value="Pending" label="Gateway cost join" />
-          <Stat icon={<TimerReset size={18} />} value="4/4" label="Harnesses passed" />
+          <Stat icon={<Gauge size={18} />} value="32s" label="Example fastest" />
+          <Stat icon={<Coins size={18} />} value="Pending" label="Cost integration" />
+          <Stat icon={<TimerReset size={18} />} value="4/4" label="Demo outcomes" />
         </div>
       </div>
     </section>
@@ -377,8 +401,8 @@ function ReportSection() {
     <section className="reports-section section-pad" id="reports">
       <div className="shell">
         <div className="section-heading reports-heading">
-          <div><span className="kicker">FIELD NOTES</span><h2>Read the signal,<br />not the launch post.</h2></div>
-          <a href="#all-reports">View all reports <ArrowRight size={15} /></a>
+          <div><span className="kicker">UPCOMING FIELD NOTES</span><h2>Read the signal,<br />not the launch post.</h2></div>
+          <a href="#early-access">Get the first report <ArrowRight size={15} /></a>
         </div>
         <div className="report-grid">
           {reports.map((report, index) => (
@@ -391,7 +415,7 @@ function ReportSection() {
               </div>
               <h3>{report.title}</h3>
               <p>{report.summary}</p>
-              <div className="report-foot"><span>{report.readTime}</span><button aria-label={`Read ${report.title}`}><ArrowRight size={16} /></button></div>
+              <div className="report-foot"><span>{report.readTime}</span><span>Planned</span></div>
             </article>
           ))}
         </div>
@@ -445,7 +469,7 @@ function Signup() {
             <button>Get early access <ArrowRight size={15} /></button>
           </form>
         )}
-        <small>Join 412 developers watching the harness layer.</small>
+        <small>Be among the first to see a real harness comparison.</small>
       </div>
     </section>
   )
@@ -462,20 +486,20 @@ function Footer() {
   )
 }
 
-export default function App() {
+export default function App({ auth = publicAuth }: { auth?: AppAuth }) {
   return (
     <>
-      <Nav />
+      <Nav auth={auth} />
       <main id="top">
         <section className="hero shell">
           <div className="hero-badge"><Layers3 size={14} /> Harness evals for coding agents</div>
           <h1>Heval.</h1>
-          <p className="hero-copy">Watch coding-agent stacks solve the same task, side by side. Pinned versions, representative trajectories, cost, speed, and outcomes.</p>
-          <div className="hero-actions"><a className="primary-button" href="#compare"><Play size={15} fill="currentColor" /> Watch the latest race</a><a className="text-button" href="#reports">Explore the reports <ArrowRight size={15} /></a></div>
+          <p className="hero-copy">See how coding-agent stacks will be compared side by side—with pinned versions, replayable trajectories, cost, speed, and outcomes.</p>
+          <div className="hero-actions"><a className="primary-button" href="#compare"><Play size={15} fill="currentColor" /> Watch the product demo</a><a className="text-button" href="#methodology">See the methodology <ArrowRight size={15} /></a></div>
           <div className="hero-proof"><span>Pinned versions</span><span>Reproducible tasks</span><span>Full trajectories</span></div>
         </section>
-        <section className="race-area shell"><RaceStage /></section>
-        <div className="index-strip"><div className="shell"><span><Code2 size={14} /> 4 harnesses</span><span><BarChart3 size={14} /> 48 completed runs</span><span><TerminalSquare size={14} /> 12 executable tasks</span><span><Activity size={14} /> Updated Aug 28</span></div></div>
+        <section className="race-area shell"><RaceStage auth={auth} /></section>
+        <div className="index-strip"><div className="shell"><span><Code2 size={14} /> 4 harnesses modeled</span><span><BarChart3 size={14} /> Interactive replay</span><span><TerminalSquare size={14} /> 1 demo task</span><span><Activity size={14} /> Real runs coming soon</span></div></div>
         <Scoreboard />
         <ReportSection />
         <Methodology />

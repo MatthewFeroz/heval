@@ -45,7 +45,7 @@ export const featuredExperiment: Experiment = {
   task: 'concurrent-cache',
   language: 'TypeScript',
   difficulty: 'Medium',
-  completedAt: 'Aug 30, 2026',
+  completedAt: 'ILLUSTRATIVE DATA',
   runners: [
     {
       id: 'claude-code',
@@ -170,24 +170,24 @@ export const featuredExperiment: Experiment = {
 
 export const reports = [
   {
-    tag: 'New model',
-    date: 'Aug 28',
+    tag: 'Planned analysis',
+    date: 'Coming soon',
     title: 'GPT-5.6 is faster in Codex—but OpenCode recovers better',
     summary: 'Across 12 TypeScript maintenance tasks, the harness changed total cost by 31% and altered which failures were recoverable.',
-    readTime: '8 min read',
+    readTime: 'First benchmark',
   },
   {
-    tag: 'Version diff',
-    date: 'Aug 21',
+    tag: 'Planned analysis',
+    date: 'Coming soon',
     title: 'What changed between Codex 0.120 and 0.121?',
     summary: 'The newer release used fewer tool calls and finished faster, with one meaningful regression in long-context navigation.',
-    readTime: '6 min read',
+    readTime: 'Version study',
   },
   {
-    tag: 'Deep dive',
-    date: 'Aug 14',
+    tag: 'Planned analysis',
+    date: 'Coming soon',
     title: 'The hidden cost of retry loops in coding agents',
     summary: 'Success rate hides expensive recovery behavior. We inspected 184 failed tests to see which harnesses learn from them.',
-    readTime: '11 min read',
+    readTime: 'Failure analysis',
   },
 ]

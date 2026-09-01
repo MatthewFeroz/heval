@@ -55,13 +55,8 @@ remain current, but should state the minimum supported Pi version and include th
 
 No paid trial should be started until all requested configurations resolve to the intended model IDs.
 
-## First smoke result
+## Current status
 
-One real attempt from each harness passed the executable grader on August 30, 2026. The measured
-run metadata is stored in [`results/concurrent-cache-v1-smoke.json`](../results/concurrent-cache-v1-smoke.json).
-This is pipeline validation, not a publishable ranking: it has one attempt per harness, one exposed
-grader test, approximate completion durations, and no joined provider-cost records yet.
-
-After updating Codex to 0.151.0 and Pi to the renamed `@earendil-works/pi-coding-agent` package at
-0.84.4, both were rerun and passed. The merged snapshot containing current versions of all four
-harnesses is [`results/concurrent-cache-v1-current.json`](../results/concurrent-cache-v1-current.json).
+No real evaluation has been completed or published. The JSON files in `results/` are development
+fixtures used to exercise the planned result shape; they are not measured benchmark evidence.
+The interface uses synthetic trajectories to demonstrate the replay and comparison experience.
