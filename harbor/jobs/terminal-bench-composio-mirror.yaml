@@ -1,0 +1,193 @@
+# Composio mirror: 5 open-weight models plus a frontier control, one harness,
+# 30 hand-picked Terminal-Bench 2.0 tasks, through Merge Gateway.
+#
+# WHAT THIS MIRRORS. Composio's thread of 2026-08-27 tested 5 open-weight models
+# on 30 multi-step agentic tasks and reported completion, cost per success, and
+# median time per completed task:
+#
+#   completed    GLM 5.3 22/30 - GLM 5.3 Flash 21 - Kimi K3 21 - DS V4 Flash 20 - DS V4 Pro 19
+#   $/success    DS V4 Flash $0.028 - GLM 5.3 Flash ~$0.06 - DS V4 Pro $0.065 - GLM 5.3 $0.24 - Kimi K3 $0.70
+#   median time  DS V4 Flash 2m12s - Kimi K3 2m35s - GLM 5.3 2m54s - GLM 5.3 Flash 3m15s - DS V4 Pro 4m41s
+#
+# Same 5 models, same 30-task count, models on the x-axis with the harness held
+# fixed. The harness is codex because it spends turns more efficiently here: on
+# the smoke run it made 45 tool calls where claude-code made 9.
+#
+# WHAT THIS DOES NOT MIRROR. Composio's 30 tasks were their own multi-step SaaS
+# tool-calling scenarios against live accounts, not Terminal-Bench. TB2 is a
+# harder and differently-shaped suite, so absolute completion rates here will
+# not land on Composio's numbers and should not be presented as reproducing
+# them. What transfers is the comparison shape, not the scores.
+#
+# Requires Harbor 0.22.0 (see ../toolchain.json).
+#
+# ---------------------------------------------------------------------------
+# BEFORE RUNNING: start the vendor proxy, or every number below is unattributable.
+#
+#   bun harbor/proxy/vendor-proxy.ts --pins harbor/proxy/pins.json
+#
+# The gateway routes a model to a vendor of its choosing unless the request body
+# names one, and the choice is not the fastest: on zai/glm-5.3-flash, unpinned
+# traffic went to `zai` at ~36 tok/s while `particle` served the same model at
+# ~184 tok/s for the same price. Neither harness can set a body field, so the
+# proxy does it. Pins were validated against the live catalog on 2026-09-02 and
+# every model below was probed on /v1/openai/responses: all 200, all served by
+# the pinned vendor. See harbor/proxy/pins.json for the model -> vendor map.
+# ---------------------------------------------------------------------------
+#
+# SIZE. 6 models x 30 tasks x 3 attempts = 540 trials. At ~5 min per trial and
+# 2 concurrent that is roughly a day of wall clock. Concurrency is capped at 2
+# by Docker's 8 GB memory allocation, not by CPU (18 cores available): tasks pin
+# 2-4 GB each and memory_enforcement_policy is `limit`, so oversubscribing turns
+# into OOM kills that grade as task failures. Raising Docker's memory ceiling to
+# 16 GB would allow 4 concurrent and halve the wall clock.
+#
+# n_attempts is 3 per docs/first-eval.md, which is stricter than Composio's
+# single pass. The report draws Wilson intervals that are meaningless at n=1.
+# Drop to 1 for a cheap first look, but do not publish intervals from it.
+#
+# Validate without spending anything:
+#   harbor run -c harbor/jobs/terminal-bench-composio-mirror.yaml --print-config
+#
+# Run:
+#   harbor run -c harbor/jobs/terminal-bench-composio-mirror.yaml --env-file .env.local
+
+job_name: terminal-bench-composio-mirror
+
+n_attempts: 3
+n_concurrent_trials: 2
+
+environment:
+  type: docker
+  # Honor the per-task cpus/memory_mb pinned in each task.toml rather than
+  # silently running with whatever the host offers.
+  cpu_enforcement_policy: limit
+  memory_enforcement_policy: limit
+  delete: true
+
+# CODEX CONFIG. Harbor's codex agent only overrides `openai_base_url` and leaves
+# the built-in `openai` provider active. That provider has websockets enabled,
+# so codex opens wss://<base>/responses, which the gateway answers with 403 -
+# reproduced 2026-09-02: 8 failed connects, 5 reconnect attempts, then an HTTPS
+# fallback on every single trial. Declaring a custom provider with
+# `supports_websockets = false` removes it: same probe, 0 websocket attempts,
+# 0 403s, first-try HTTPS. Harbor merges this under its own `openai_base_url`
+# key, and the custom provider's base_url wins; that combined shape was the one
+# verified end to end. `config` rides in under `kwargs` because that is the
+# only channel Harbor's AgentConfig forwards to the agent constructor; a
+# top-level `config:` key parses without error and is then dropped.
+# All six agents are codex; only the model varies. Harbor resolves the provider
+# from the agent, not the slug prefix, so the prefix is a reporting label.
+agents:
+  # --- Composio's five open-weight models ---
+  - name: codex
+    model_name: zai/glm-5.3-flash
+    kwargs: &codex_kwargs
+      config:
+        model_provider: merge-gateway
+        model_providers:
+          merge-gateway:
+            name: Merge Gateway
+            base_url: http://host.docker.internal:8787/v1/openai
+            env_key: OPENAI_API_KEY
+            wire_api: responses
+            supports_websockets: false
+    env:
+      <<: &codex_env
+        OPENAI_BASE_URL: http://host.docker.internal:8787/v1/openai
+      # Provenance, not routing. The proxy does the pinning; this records which
+      # vendor it pinned so the report can attribute latency and price the
+      # tokens. Without it TrialRow.vendor is null, routeFor() refuses to guess
+      # a rate card, and every Codex row drops out of the cost chart.
+      HEVAL_VENDOR: particle
+
+  - name: codex
+    model_name: zai/glm-5.3
+    kwargs: *codex_kwargs
+    env:
+      <<: *codex_env
+      HEVAL_VENDOR: zai
+
+  - name: codex
+    model_name: moonshot/kimi-k3
+    kwargs: *codex_kwargs
+    env:
+      <<: *codex_env
+      HEVAL_VENDOR: moonshot
+
+  - name: codex
+    model_name: deepseek/deepseek-v4-pro-0813
+    kwargs: *codex_kwargs
+    env:
+      <<: *codex_env
+      HEVAL_VENDOR: deepseek
+
+  - name: codex
+    model_name: deepseek/deepseek-v4-flash
+    kwargs: *codex_kwargs
+    env:
+      <<: *codex_env
+      HEVAL_VENDOR: particle
+
+  # --- frontier control ---
+  # Without a closed-weight reference you cannot tell "these five models are
+  # close" from "this task set does not discriminate". Sonnet 5 replaces the
+  # sonnet-4-5 used in the earlier 2x2: same family, current generation, so it
+  # sits in the same era as the open-weight models rather than a year behind.
+  - name: codex
+    model_name: anthropic/claude-sonnet-5
+    kwargs: *codex_kwargs
+    env:
+      <<: *codex_env
+      HEVAL_VENDOR: anthropic
+
+# TASK SELECTION. `n_tasks: 30` takes the first 30 of 89 in registry order,
+# which is how the previous job drew gpt2-codegolf (2400 expert-minutes against
+# a 900 s agent cap - unwinnable by construction) and spent its whole budget
+# timing out on it. These 30 are picked from the pinned TB2 commit by the
+# metadata each task.toml carries:
+#
+#   expert_time_estimate_min in (0, 60]   - fits inside the agent cap
+#   agent timeout_sec <= 1800             - excludes the heavy-compute builds
+#   excluded: caffe-cifar-10 (expert=0, so its metadata carries no signal)
+#             prove-plus-comm (5 expert-minutes, but a formal-proof task that
+#             is near-impossible for an LLM - difficulty label is misleading)
+#
+# 46 of 89 tasks qualify; these 30 are drawn round-robin across category so no
+# single category dominates the score. Result: 2 easy / 26 medium / 2 hard
+# across 13 categories, aimed at landing the pass rate in a 50-80% band where
+# models can actually separate.
+datasets:
+  - name: terminal-bench
+    version: "2.0"
+    task_names:
+      - break-filter-js-from-html
+      - build-cython-ext
+      - chess-best-move
+      - cobol-modernization
+      - configure-git-webserver
+      - constraints-scheduling
+      - count-dataset-tokens
+      - crack-7z-hash
+      - custom-memory-heap-crash
+      - db-wal-recovery
+      - dna-insert
+      - extract-elf
+      - financial-document-processor
+      - fix-git
+      - hf-model-inference
+      - kv-store-grpc
+      - large-scale-text-editing
+      - largest-eigenval
+      - llm-inference-batching-scheduler
+      - merge-diff-arc-agi-task
+      - mteb-retrieve
+      - multi-source-data-merger
+      - nginx-request-logging
+      - openssl-selfsigned-cert
+      - pytorch-model-cli
+      - pytorch-model-recovery
+      - query-optimize
+      - raman-fitting
+      - regex-log
+      - tune-mjcf

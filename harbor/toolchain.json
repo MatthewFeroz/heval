@@ -31,7 +31,8 @@
       "status": "pinned",
       "gatewaySurface": "openai",
       "notes": [
-        "Host CLI now matches the pin. terminal-bench-glm53-smoke reported codex 0.151.0 from inside the sandbox."
+        "Host CLI now matches the pin. terminal-bench-glm53-smoke reported codex 0.151.0 from inside the sandbox.",
+        "Harbor's codex agent overrides only `openai_base_url` and leaves the built-in `openai` provider active. That provider has websockets enabled, so codex dials wss://<base>/responses, which Merge Gateway answers 403. Reproduced on 2026-09-02 with a bare `openai_base_url` config: 8 failed connects, 5 reconnects, then HTTPS fallback on every trial. Declaring a custom `[model_providers.merge-gateway]` with `supports_websockets = false` removes it (0 attempts, 0 403s, first-try HTTPS). Supplied per agent via `kwargs.config` in the job yaml; a top-level `config:` key is silently dropped."
       ]
     },
     "claude-code": {
@@ -80,6 +81,17 @@
       "notes": [
         "Never committed. Materialized into the gitignored .env.local for Harbor --env-file runs."
       ]
+    },
+    "vendorPinning": {
+      "mechanism": "harbor/proxy/vendor-proxy.ts",
+      "why": "The gateway picks the serving vendor unless the request body names one, and the default is not the fastest: on zai/glm-5.3-flash, unpinned traffic went to zai at ~36 tok/s while particle served the same model at ~184 tok/s for the same price. Vendor is therefore part of the eval specification, not an implementation detail.",
+      "whyProxy": "The pin is only accepted as a JSON body field (`vendor`); `x-merge-vendor` and `x-vendor` headers were probed and silently dropped. Neither Codex nor Claude Code can inject a body field, so a reverse proxy inserts it.",
+      "pinsFile": "harbor/proxy/pins.json",
+      "validatedOn": "2026-09-02",
+      "validation": "Every pin checked against the live catalog, then probed on /v1/openai/responses through the proxy: all six returned HTTP 200 with status=completed and an x-merge-vendor matching the pin.",
+      "containerReachability": "Containers reach the host proxy at http://host.docker.internal:8787 with no extra host mapping on Docker Desktop; verified 2026-09-02.",
+      "provenance": "The proxy pins the vendor but leaves no trace in Harbor's output, so each agent also sets HEVAL_VENDOR to the vendor its model is pinned to. harbor/report/trials.ts reads it into TrialRow.vendor; without it routeFor() refuses to guess a rate card and every Codex row drops out of the cost chart. The yaml's HEVAL_VENDOR values are checked against pins.json - they are two copies of one fact and must not drift.",
+      "smokeVerified": "2026-09-02, jobs/composio-mirror-smoke: 1/1 trials, reward 1.0, 2m29s. 19 proxy requests all HTTP 200 with served vendor == pinned vendor on every one, and 0 websocket/403/reconnect lines in the in-container codex log."
     }
   },
   "models": {
@@ -112,6 +124,68 @@
         "Reasoning model: spends output budget on thinking before emitting content. Under a tight max-token cap it returns empty content with a `reasoning_exhausted` warning, which grades as a task failure and misreads as weak model performance.",
         "Gateway lists four vendors at a 10x price spread (particle/zai $0.015/$0.05 per Mtok; wafer/baseten $0.15/$0.50). Vendor is not pinned, so it is an uncontrolled variable that must appear in snapshot limitations."
       ]
+    },
+    "composioMirrorSweep": {
+      "source": "https://x.com/composio/status/2092983288423927939 (2026-08-27): 5 open-weight models on 30 multi-step agentic tasks.",
+      "verifiedOn": "2026-09-02",
+      "verifiedAgainst": "https://api-gateway.merge.dev/v1/models",
+      "note": "Composio's tasks were their own SaaS tool-calling scenarios, not Terminal-Bench. The model lineup and comparison shape transfer; the absolute scores do not.",
+      "routes": {
+        "zai/glm-5.3-flash": {
+          "displayName": "GLM-5.3 Flash",
+          "vendor": "particle",
+          "inputPerMillion": 0.015,
+          "outputPerMillion": 0.05,
+          "contextWindow": 1000000,
+          "supportsToolCalling": true,
+          "role": "subject"
+        },
+        "zai/glm-5.3": {
+          "displayName": "GLM-5.3",
+          "vendor": "zai",
+          "inputPerMillion": 0.7,
+          "outputPerMillion": 2.2,
+          "contextWindow": 1000000,
+          "supportsToolCalling": true,
+          "role": "subject"
+        },
+        "moonshot/kimi-k3": {
+          "displayName": "Kimi K3",
+          "vendor": "moonshot",
+          "inputPerMillion": 2.9,
+          "outputPerMillion": 14,
+          "contextWindow": 1048576,
+          "supportsToolCalling": true,
+          "role": "subject"
+        },
+        "deepseek/deepseek-v4-pro-0813": {
+          "displayName": "DeepSeek V4 Pro 0813",
+          "vendor": "deepseek",
+          "inputPerMillion": 0.66,
+          "outputPerMillion": 1.98,
+          "contextWindow": 1000000,
+          "supportsToolCalling": true,
+          "role": "subject"
+        },
+        "deepseek/deepseek-v4-flash": {
+          "displayName": "DeepSeek V4 Flash",
+          "vendor": "particle",
+          "inputPerMillion": 0.035,
+          "outputPerMillion": 0.07,
+          "contextWindow": 1048576,
+          "supportsToolCalling": true,
+          "role": "subject"
+        },
+        "anthropic/claude-sonnet-5": {
+          "displayName": "Claude Sonnet 5",
+          "vendor": "anthropic",
+          "inputPerMillion": 3,
+          "outputPerMillion": 15,
+          "contextWindow": 1000000,
+          "supportsToolCalling": true,
+          "role": "control"
+        }
+      }
     }
   }
 }

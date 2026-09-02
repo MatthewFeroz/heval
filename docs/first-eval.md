@@ -71,8 +71,51 @@ Both relevant agents pin their provider and ignore the model slug prefix when ro
 Agent config `env` takes precedence over the process environment, so base URLs are committed in the
 job configs under [`harbor/jobs/`](../harbor/jobs/) while keys are supplied at run time via
 `--env-file`. Codex does not honor `OPENAI_BASE_URL` alone; Harbor writes the resolved value into
-`$CODEX_HOME/config.toml` as `openai_base_url`, which replaces the hand-rolled
-`[model_providers.merge-gateway]` block with `wire_api = "responses"` used by the Bun runner.
+`$CODEX_HOME/config.toml` as `openai_base_url`.
+
+Leaving it at that keeps Codex on its built-in `openai` provider, which has websockets enabled. Codex
+then dials `wss://api-gateway.merge.dev/v1/openai/responses`, the gateway answers 403, and every
+trial burns eight failed connects and five reconnect attempts before falling back to HTTPS. Declaring
+a custom provider with `supports_websockets = false` removes it — reproduced and fixed on 2026-09-02,
+0 websocket attempts and 0 403s afterwards:
+
+```yaml
+- name: codex
+  kwargs:                      # `config` is only forwarded through `kwargs`;
+    config:                    # a top-level `config:` key is silently dropped
+      model_provider: merge-gateway
+      model_providers:
+        merge-gateway:
+          base_url: http://host.docker.internal:8787/v1/openai
+          env_key: OPENAI_API_KEY
+          wire_api: responses
+          supports_websockets: false
+```
+
+Harbor merges its own `openai_base_url` on top of this; the custom provider's `base_url` wins, and
+that combined shape is the one verified end to end.
+
+### Serving vendor
+
+Merge Gateway chooses which vendor serves a model unless the request body names one, and the default
+is not the fastest. On `zai/glm-5.3-flash` the unpinned route went to `zai` at ~36 tok/s while
+`particle` served the same model at ~184 tok/s for the same price. Vendor is therefore part of the
+eval specification: unpinned latency and cost are not attributable to the model.
+
+The gateway accepts the pin only as a JSON body field (`vendor`) — `x-merge-vendor` and `x-vendor`
+headers were probed and silently dropped — and no harness can inject a body field. So
+[`harbor/proxy/vendor-proxy.ts`](../harbor/proxy/vendor-proxy.ts) inserts it, reading the model →
+vendor map in [`harbor/proxy/pins.json`](../harbor/proxy/pins.json). Pins are per-model because no
+single vendor serves every model in a sweep. Each response's `x-merge-vendor` is logged next to the
+pin that was sent, so the routing is auditable after the fact rather than assumed.
+
+### Task selection
+
+`n_tasks: N` takes the first N of the 89 Terminal-Bench 2.0 tasks in registry order, which is how an
+earlier run drew `gpt2-codegolf` — 2400 expert-minutes against a 900 s agent cap, unwinnable by
+construction — and spent its budget timing out. Tasks are instead selected on the metadata each
+`task.toml` carries: `expert_time_estimate_min` inside the agent cap, `timeout_sec` low enough to
+exclude heavy-compute builds, then drawn round-robin across `category` so no category dominates.
 
 OpenCode and Pi are deferred rather than removed. `opencode --version` returns empty output on the
 current machine and Pi is absent until `bun install` runs, so neither installed version can be
