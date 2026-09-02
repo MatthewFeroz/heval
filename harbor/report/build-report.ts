@@ -378,6 +378,14 @@ function limitations(exp: JobExport): string[] {
   const out: string[] = []
   const unpriced = rows.filter((r) => r.costUsd === null)
   if (unpriced.length) out.push(`${plural(unpriced.length, 'trial')} report no cost (${[...new Set(unpriced.map((r) => r.stack))].join(', ')}); the gateway exposes no pricing for that route. Cost comparisons exclude them.`)
+  // Unpinned routing is not a footnote. Measured 2026-09-02, the gateway's
+  // default vendor for zai/glm-5.3-flash was 6x slower than the fastest one
+  // serving the identical model, so an unpinned job's timings say more about
+  // routing than about the model.
+  const unpinned = rows.filter((r) => r.vendor === null)
+  if (unpinned.length) out.push(`${plural(unpinned.length, 'trial')} ran without a pinned serving vendor (${[...new Set(unpinned.map((r) => r.stack))].join(', ')}); the gateway chose the route. Latency and cost for those trials are not attributable to the model.`)
+  const vendors = new Set(rows.map((r) => r.vendor).filter((v): v is string => v !== null))
+  if (vendors.size > 1) out.push(`Trials span ${vendors.size} serving vendors (${[...vendors].sort().join(', ')}); vendor throughput varies several-fold for the same model, so cross-stack timing comparisons need to hold it fixed.`)
   const noCache = rows.filter((r) => (r.cacheTokens ?? 0) < 1000 && (r.inputTokens ?? 0) > 20000)
   if (noCache.length) out.push(`${plural(noCache.length, 'trial')} ran with effectively no prompt caching (${[...new Set(noCache.map((r) => r.stack))].join(', ')}). Their cost is not comparable to cached stacks on a per-token basis.`)
   for (const [agent, versions] of Object.entries(exp.agentVersions)) if (versions.length > 1) out.push(`${agent} ran at ${versions.length} different versions (${versions.join(', ')}) within this job.`)

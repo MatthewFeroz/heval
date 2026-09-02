@@ -41,6 +41,10 @@ export function readTrial(dir: string): TrialRow | null {
   const agentCfg = (cfg.agent ?? {}) as Json
   const agent = str(agentCfg.name)
   if (!agent) return null
+  // Harbor records the agent's configured env per trial, so the vendor the job
+  // pinned through the proxy survives as provenance rather than being asserted
+  // by whoever writes up the results.
+  const agentEnv = (agentCfg.env ?? {}) as Json
 
   const taskFull = str(res.task_name) ?? 'unknown'
   const model = str(agentCfg.model_name) ?? 'unknown'
@@ -67,6 +71,7 @@ export function readTrial(dir: string): TrialRow | null {
     model,
     modelShort,
     provider: model.includes('/') ? model.split('/')[0] : null,
+    vendor: str(agentEnv.HEVAL_VENDOR),
     stack: `${agent} / ${modelShort}`,
     reward,
     passed: reward >= 1 ? 1 : 0,

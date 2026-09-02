@@ -26,8 +26,19 @@ export type TrialRow = {
   model: string
   /** Model without the vendor prefix, e.g. `glm-5.3-flash`. */
   modelShort: string
-  /** Vendor prefix of the slug, e.g. `zai`, `anthropic`. */
+  /**
+   * Who *made* the model - the slug prefix, e.g. `zai` in `zai/glm-5.3-flash`.
+   * Not who served it: see `vendor`, which can hold the same string and mean
+   * something entirely different.
+   */
   provider: string | null
+  /**
+   * Who *served* the request, e.g. `particle`. Read from the `HEVAL_VENDOR` the
+   * job pinned through the proxy; null when the run left routing to the gateway,
+   * in which case the vendor is unknown and the timings are not comparable
+   * across trials.
+   */
+  vendor: string | null
   /** `agent / modelShort` - the unit the protocol calls a stack. */
   stack: string
   /** Verifier reward, 0..1. */
@@ -87,10 +98,9 @@ export type JobIndex = {
 }
 
 /** Dimensions a chart can group by. */
-export const DIMENSIONS = ['agent', 'model', 'modelShort', 'task', 'stack', 'provider', 'agentVersion'] as const
+export const DIMENSIONS = ['agent', 'model', 'modelShort', 'task', 'stack', 'provider', 'vendor', 'agentVersion'] as const
 export type Dimension = (typeof DIMENSIONS)[number]
 
-/** Measures a chart can aggregate. */
 /**
  * Tail-latency threshold, seconds. A trial whose agent step runs longer counts
  * toward `overSlow`. Five minutes because that is the line the published
@@ -98,6 +108,7 @@ export type Dimension = (typeof DIMENSIONS)[number]
  */
 export const SLOW_TRIAL_SECONDS = 300
 
+/** Measures a chart can aggregate. */
 export const MEASURES = [
   'passed',
   'reward',
@@ -119,7 +130,8 @@ export const DIMENSION_LABEL: Record<Dimension, string> = {
   modelShort: 'Model (short)',
   task: 'Task',
   stack: 'Stack (harness / model)',
-  provider: 'Provider',
+  provider: 'Model creator',
+  vendor: 'Serving vendor',
   agentVersion: 'Harness version',
 }
 
