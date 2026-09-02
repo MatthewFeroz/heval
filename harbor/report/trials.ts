@@ -8,7 +8,7 @@
 
 import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { basename, join, resolve } from 'node:path'
-import type { JobExport, TrialRow } from '../../src/charts/trial'
+import { SLOW_TRIAL_SECONDS, type JobExport, type TrialRow } from '../../src/charts/trial'
 
 type Json = Record<string, unknown>
 
@@ -51,6 +51,11 @@ export function readTrial(dir: string): TrialRow | null {
 
   const reward = findReward(res.verifier_result) ?? 0
   const inputTokens = num(usage.n_input_tokens), outputTokens = num(usage.n_output_tokens)
+  const agentSeconds = seconds(res.agent_execution)
+  const error = exc ? (str(exc.exception_type) ?? 'error') : null
+  // Harbor raises AgentTimeoutError when the agent step hits the task's cap.
+  // Matched on substring so a renamed or subclassed variant still counts.
+  const timedOut = error !== null && /timeout/i.test(error)
 
   return {
     trial: str(res.trial_name) ?? basename(dir),
@@ -65,15 +70,18 @@ export function readTrial(dir: string): TrialRow | null {
     stack: `${agent} / ${modelShort}`,
     reward,
     passed: reward >= 1 ? 1 : 0,
-    agentSeconds: seconds(res.agent_execution),
+    agentSeconds,
     totalSeconds: seconds(res),
+    // A timeout is over the line whether or not the span was recorded.
+    overSlow: timedOut || (agentSeconds !== null && agentSeconds > SLOW_TRIAL_SECONDS) ? 1 : 0,
+    timedOut: timedOut ? 1 : 0,
     inputTokens,
     cacheTokens: num(usage.n_cache_tokens),
     outputTokens,
     totalTokens: inputTokens !== null && outputTokens !== null ? inputTokens + outputTokens : null,
     costUsd: num(usage.cost_usd),
     startedAt: str(res.started_at),
-    error: exc ? (str(exc.exception_type) ?? 'error') : null,
+    error,
   }
 }
 

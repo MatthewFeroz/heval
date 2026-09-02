@@ -22,7 +22,7 @@ import { join } from 'node:path'
 import { THEMES, type ThemeMode } from '../../src/charts/palette'
 import { buildChart, formatValue, RECIPE_LABEL, type ChartState } from '../../src/charts/recipes'
 import { paramsFromState } from '../../src/charts/url'
-import { DIMENSION_LABEL, MEASURE_LABEL, type JobExport, type JobIndex, type Measure, type TrialRow } from '../../src/charts/trial'
+import { DIMENSION_LABEL, MEASURE_LABEL, SLOW_TRIAL_SECONDS, type JobExport, type JobIndex, type Measure, type TrialRow } from '../../src/charts/trial'
 import { renderSvg } from './render-svg'
 import { exportJob } from './trials'
 
@@ -52,6 +52,12 @@ const SECTIONS: Section[] = [
     state: { recipe: 'strip', x: 'agent', color: 'modelShort', measure: 'agentSeconds', aggregate: 'mean', labels: false },
   },
   {
+    id: 'tail-latency',
+    heading: `Share of trials over ${SLOW_TRIAL_SECONDS / 60} minutes`,
+    lede: 'Tail risk, not central tendency. A stack can hold a respectable median and still be unusable if it blows the budget on a third of tasks; timeouts are counted here as well as separately below.',
+    state: { recipe: 'bar', x: 'agent', color: 'modelShort', measure: 'overSlow', labels: true },
+  },
+  {
     id: 'per-task',
     heading: 'Per-task breakdown',
     lede: 'Single-hue ramp keyed to pass rate; the job here is magnitude, so one hue light-to-dark is correct. Tasks are the columns because a job has many of them and few stacks.',
@@ -69,6 +75,20 @@ const median = (xs: number[]) => {
   const s = [...xs].sort((a, b) => a - b), m = Math.floor(s.length / 2)
   return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2
 }
+/** Linear-interpolated quantile; `p` in 0..1. */
+const quantile = (xs: number[], p: number) => {
+  if (!xs.length) return null
+  const s = [...xs].sort((a, b) => a - b)
+  const i = (s.length - 1) * p, lo = Math.floor(i), hi = Math.ceil(i)
+  return lo === hi ? s[lo] : s[lo] + (s[hi] - s[lo]) * (i - lo)
+}
+/**
+ * Currency at the precision the number deserves. The shared `costUsd` format is
+ * two decimals, which rounds a $0.028 cost-per-success to $0.03 and collapses
+ * the gap between the cheap stacks - exactly the comparison this table exists
+ * to make.
+ */
+const usd = (n: number) => (n === 0 ? '$0' : n < 0.01 ? `$${n.toFixed(4)}` : n < 1 ? `$${n.toFixed(3)}` : `$${n.toFixed(2)}`)
 const nums = (rows: TrialRow[], key: keyof TrialRow) => rows.map((r) => r[key]).filter((v): v is number => typeof v === 'number')
 const fmtTokens = (n: number | null) => (n === null ? '-' : n >= 1e6 ? `${(n / 1e6).toFixed(2)}M` : n >= 1e3 ? `${(n / 1e3).toFixed(1)}k` : String(n))
 
@@ -139,6 +159,148 @@ function modelTiles(rows: TrialRow[]): string {
       </div>`
     })
     .join('')
+}
+
+/**
+ * Cost and speed normalized by success.
+ *
+ * Mean cost per *trial* (the tile above) flatters a stack that fails fast and
+ * cheaply. What a reader actually buys is a completed task, so the headline is
+ * total spend divided by passes, and the speed column is the median over
+ * passed trials only - a timed-out run has no meaningful duration to average.
+ */
+function efficiencyTable(rows: TrialRow[]): string {
+  const stacks = [...new Set(rows.map((r) => r.stack))].sort()
+  const entries = stacks.map((s) => {
+    const ts = rows.filter((r) => r.stack === s)
+    const passes = ts.filter((r) => r.passed)
+    const costs = nums(ts, 'costUsd')
+    // Sum over the trials that reported cost; unpriced trials are called out
+    // separately rather than silently treated as free.
+    const totalCost = costs.length ? costs.reduce((a, b) => a + b, 0) : null
+    return {
+      stack: s,
+      trials: ts.length,
+      passes: passes.length,
+      rate: ts.length ? passes.length / ts.length : 0,
+      totalCost,
+      unpriced: ts.length - costs.length,
+      perSuccess: totalCost !== null && passes.length ? totalCost / passes.length : null,
+      medianPassSecs: median(nums(passes, 'agentSeconds')),
+    }
+  })
+  // Cheapest per success first; stacks that never passed sort last.
+  entries.sort((a, b) => (a.perSuccess ?? Infinity) - (b.perSuccess ?? Infinity))
+
+  const body = entries
+    .map((e) => `<tr>
+      <td>${esc(e.stack)}</td>
+      <td class="num">${e.passes} / ${e.trials}</td>
+      <td class="num">${pct(e.rate)}</td>
+      <td class="num">${e.totalCost === null ? '-' : usd(e.totalCost)}</td>
+      <td class="num">${e.perSuccess === null ? `<span class="muted">${e.passes ? 'unpriced' : 'no passes'}</span>` : `<b>${usd(e.perSuccess)}</b>`}</td>
+      <td class="num">${e.medianPassSecs === null ? '-' : formatValue(e.medianPassSecs, 'agentSeconds')}</td>
+      <td class="num">${e.unpriced ? `<span class="muted">${e.unpriced}</span>` : '-'}</td>
+    </tr>`)
+    .join('')
+  return `<table>
+    <thead><tr>
+      <th>Stack</th><th class="num">Passed</th><th class="num">Pass rate</th>
+      <th class="num">Total cost</th><th class="num">Cost / success</th>
+      <th class="num">Median time (passed)</th><th class="num">Unpriced</th>
+    </tr></thead>
+    <tbody>${body}</tbody>
+  </table>`
+}
+
+/**
+ * The distribution's right tail, which a mean hides.
+ *
+ * A stack whose median looks fine but which blows the cap on a third of tasks
+ * is not usable, and that only shows up as counts. Timeouts are a subset of the
+ * over-threshold count, not a separate bucket.
+ */
+function tailLatencyTable(rows: TrialRow[]): string {
+  const stacks = [...new Set(rows.map((r) => r.stack))].sort()
+  const entries = stacks.map((s) => {
+    const ts = rows.filter((r) => r.stack === s)
+    const secs = nums(ts, 'agentSeconds')
+    return {
+      stack: s,
+      trials: ts.length,
+      slow: ts.filter((r) => r.overSlow).length,
+      timeouts: ts.filter((r) => r.timedOut).length,
+      median: median(secs),
+      p95: quantile(secs, 0.95),
+      max: secs.length ? Math.max(...secs) : null,
+    }
+  })
+  entries.sort((a, b) => b.timeouts - a.timeouts || b.slow - a.slow)
+
+  const secsCell = (v: number | null) => (v === null ? '-' : formatValue(v, 'agentSeconds'))
+  const body = entries
+    .map((e) => `<tr>
+      <td>${esc(e.stack)}</td>
+      <td class="num">${e.slow ? `<b>${e.slow}</b>` : '0'} <span class="muted">/ ${e.trials}</span></td>
+      <td class="num">${e.timeouts ? `<span class="pill fail"><i></i>${e.timeouts}</span>` : '0'}</td>
+      <td class="num">${secsCell(e.median)}</td>
+      <td class="num">${secsCell(e.p95)}</td>
+      <td class="num">${secsCell(e.max)}</td>
+    </tr>`)
+    .join('')
+  return `<table>
+    <thead><tr>
+      <th>Stack</th><th class="num">Over ${SLOW_TRIAL_SECONDS / 60} min</th><th class="num">Timeouts</th>
+      <th class="num">Median</th><th class="num">p95</th><th class="num">Slowest</th>
+    </tr></thead>
+    <tbody>${body}</tbody>
+  </table>`
+}
+
+/**
+ * Where the stacks agree and where they actually separate.
+ *
+ * Tasks every stack passed carry no signal, and tasks every stack failed are a
+ * statement about the suite rather than the stacks. What is left - especially a
+ * task exactly one stack solved - is the entire discriminating power of the job,
+ * and it is usually a handful of tasks out of thirty.
+ */
+function taskOverlap(rows: TrialRow[]): string {
+  const stacks = [...new Set(rows.map((r) => r.stack))].sort()
+  const tasks = [...new Set(rows.map((r) => r.task))].sort()
+  if (stacks.length < 2) return '<p class="empty">Overlap needs at least two stacks to compare.</p>'
+
+  // A stack passes a task if any of its attempts on that task passed.
+  const passers = new Map<string, string[]>()
+  for (const t of tasks) {
+    passers.set(t, stacks.filter((s) => rows.some((r) => r.task === t && r.stack === s && r.passed)))
+  }
+  const all = tasks.filter((t) => passers.get(t)!.length === stacks.length)
+  const none = tasks.filter((t) => passers.get(t)!.length === 0)
+  const unique = tasks.filter((t) => passers.get(t)!.length === 1)
+  const contested = tasks.length - all.length - none.length
+
+  const list = (ts: string[]) => (ts.length ? ts.map((t) => `<code>${esc(t)}</code>`).join(' ') : '<span class="muted">none</span>')
+  const uniqueRows = unique.length
+    ? unique.map((t) => `<tr><td><code>${esc(t)}</code></td><td>${esc(passers.get(t)![0])}</td></tr>`).join('')
+    : `<tr><td colspan="2"><span class="muted">No task was solved by exactly one stack.</span></td></tr>`
+
+  return `<div class="overlap">
+    <div class="overlap-stats">
+      <div class="stat"><div class="stat-head"><span class="eyebrow">Solved by all</span></div><strong>${all.length}</strong><small>of ${plural(tasks.length, 'task')} &middot; no signal</small></div>
+      <div class="stat"><div class="stat-head"><span class="eyebrow">Solved by none</span></div><strong>${none.length}</strong><small>suite ceiling for these stacks</small></div>
+      <div class="stat"><div class="stat-head"><span class="eyebrow">Discriminating</span></div><strong>${contested}</strong><small>separate at least one stack</small></div>
+      <div class="stat"><div class="stat-head"><span class="eyebrow">Unique wins</span></div><strong>${unique.length}</strong><small>solved by exactly one stack</small></div>
+    </div>
+    <table>
+      <thead><tr><th>Unique win</th><th>Only stack to pass</th></tr></thead>
+      <tbody>${uniqueRows}</tbody>
+    </table>
+    <div class="overlap-lists">
+      <p><span class="eyebrow">Passed by every stack</span>${list(all)}</p>
+      <p><span class="eyebrow">Failed by every stack</span>${list(none)}</p>
+    </div>
+  </div>`
 }
 
 async function chartBlock(job: string, rows: TrialRow[], section: Section, n: number): Promise<{ html: string; warnings: string[] }> {
@@ -387,6 +549,15 @@ const REPORT_CSS = `
   .limits li:last-child { border-bottom: 0; }
   .limits li span.n { flex: none; color: var(--warn); font: 500 10px var(--mono); margin-top: 3px; }
   .panel .empty { padding: 16px; color: var(--muted); font-size: 12.5px; }
+  .block > .lede { color: var(--muted); font-size: 12.5px; max-width: 78ch; margin-top: -2px; }
+  .muted { color: var(--faint); }
+  .overlap { display: flex; flex-direction: column; }
+  .overlap-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; padding: 14px 16px; border-bottom: 1px solid var(--line-soft); }
+  .overlap-stats .stat { background: none; border: 0; padding: 0; }
+  .overlap-lists { padding: 12px 16px; display: flex; flex-direction: column; gap: 10px; }
+  .overlap-lists p { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px; margin: 0; }
+  .overlap-lists .eyebrow { width: 100%; }
+  .overlap-lists code, .overlap code { font: 500 11px var(--mono); color: #b7bbb9; background: var(--panel-2); border: 1px solid var(--line-soft); border-radius: 4px; padding: 1px 5px; }
 
   table { border-collapse: collapse; width: 100%; font-size: 12.5px; }
   th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line-soft); white-space: nowrap; }
@@ -465,6 +636,24 @@ ${REPORT_CSS}
   </div>
 
   ${sections.join('\n')}
+
+  <div class="block" id="efficiency">
+    <div class="block-head"><div><span class="eyebrow">Normalized by success</span><h2>Cost and speed per completed task</h2></div></div>
+    <p class="lede">Mean cost per trial rewards a stack for failing cheaply. This divides total spend by passes instead, and takes the median duration over passed trials only.</p>
+    <div class="panel"><div class="card-body">${efficiencyTable(rows)}</div></div>
+  </div>
+
+  <div class="block" id="tail">
+    <div class="block-head"><div><span class="eyebrow">Right tail</span><h2>Slow trials and timeouts</h2></div></div>
+    <p class="lede">Counts, because this is where a usable median hides an unusable stack. Timeouts are a subset of the over-threshold column, not a separate bucket.</p>
+    <div class="panel"><div class="card-body">${tailLatencyTable(rows)}</div></div>
+  </div>
+
+  <div class="block" id="overlap">
+    <div class="block-head"><div><span class="eyebrow">Where stacks separate</span><h2>Task overlap</h2></div></div>
+    <p class="lede">Tasks every stack solved carry no signal and tasks none solved describe the suite, not the stacks. What remains is the job's entire discriminating power.</p>
+    <div class="panel">${taskOverlap(rows)}</div>
+  </div>
 
   <div class="block" id="limitations">
     <div class="block-head"><div><span class="eyebrow">Read before quoting</span><h2>Limitations</h2></div></div>

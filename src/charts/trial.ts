@@ -38,6 +38,14 @@ export type TrialRow = {
   agentSeconds: number | null
   /** Environment build + agent setup + agent + verifier, seconds. */
   totalSeconds: number | null
+  /**
+   * Agent step ran past `SLOW_TRIAL_SECONDS`. Stored as 0/1 so `mean` is a rate
+   * and `sum` is a count. A trial killed by the harness cap is over the line by
+   * definition, so timeouts are counted here too - the two measures overlap.
+   */
+  overSlow: 0 | 1
+  /** Harbor killed the agent step at the task's cap. Subset of `overSlow`. */
+  timedOut: 0 | 1
   inputTokens: number | null
   cacheTokens: number | null
   outputTokens: number | null
@@ -83,12 +91,21 @@ export const DIMENSIONS = ['agent', 'model', 'modelShort', 'task', 'stack', 'pro
 export type Dimension = (typeof DIMENSIONS)[number]
 
 /** Measures a chart can aggregate. */
+/**
+ * Tail-latency threshold, seconds. A trial whose agent step runs longer counts
+ * toward `overSlow`. Five minutes because that is the line the published
+ * cross-model comparisons draw, so our numbers stay readable against theirs.
+ */
+export const SLOW_TRIAL_SECONDS = 300
+
 export const MEASURES = [
   'passed',
   'reward',
   'costUsd',
   'agentSeconds',
   'totalSeconds',
+  'overSlow',
+  'timedOut',
   'inputTokens',
   'cacheTokens',
   'outputTokens',
@@ -112,6 +129,8 @@ export const MEASURE_LABEL: Record<Measure, string> = {
   costUsd: 'Cost (USD)',
   agentSeconds: 'Agent time (s)',
   totalSeconds: 'Total trial time (s)',
+  overSlow: `Over ${SLOW_TRIAL_SECONDS / 60} min`,
+  timedOut: 'Timeout rate',
   inputTokens: 'Input tokens',
   cacheTokens: 'Cache read tokens',
   outputTokens: 'Output tokens',
@@ -125,6 +144,9 @@ export const MEASURE_FORMAT: Record<Measure, string> = {
   costUsd: '$.2f',
   agentSeconds: '.0f',
   totalSeconds: '.0f',
+  // Rates like `passed`: correct under the default `mean`, wrong if summed.
+  overSlow: '.0%',
+  timedOut: '.0%',
   inputTokens: '~s',
   cacheTokens: '~s',
   outputTokens: '~s',
