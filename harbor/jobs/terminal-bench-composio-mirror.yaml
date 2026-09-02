@@ -93,6 +93,30 @@ job_name: terminal-bench-composio-mirror
 n_attempts: 1
 n_concurrent_trials: 8
 
+# Agent setup is `apt-get update && apt-get install -y curl bash nodejs npm
+# ripgrep` inside the task container, against a 360s base timeout. Tasks whose
+# image already ships node finish it in seconds; the rest download ~50MB on a
+# 1-CPU container (task.toml pins cpus=1 for many tasks, and the enforcement
+# policy below makes that a hard ceiling). With 8 of those running at once,
+# 360s is not a safe margin: the first launch lost all 6
+# llm-inference-batching-scheduler trials - one whole task column, every model -
+# to setup timeouts at exactly 360.0s while two multi-GB image pulls were
+# saturating the link.
+#
+# Doubling the base is the cheap half of the fix; it costs nothing when setup is
+# fast. The retry is the real one, because a transient infrastructure failure
+# should not read as a model result.
+agent_setup_timeout_multiplier: 2.0
+
+retry:
+  max_retries: 2
+  # Deliberately narrow. Retrying a model's own failure would mask it and
+  # inflate cost, and it would quietly break `n_attempts: 1` - the run would no
+  # longer be the single pass the Composio comparison is built on. Only the
+  # infrastructure failure gets another go.
+  include_exceptions:
+    - AgentSetupTimeoutError
+
 environment:
   type: docker
   # Honor the per-task cpus/memory_mb pinned in each task.toml rather than
