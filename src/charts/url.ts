@@ -56,6 +56,7 @@ export function stateFromParams(params: URLSearchParams): Partial<ChartState> {
   set('theme', pick(MODES, params.get('theme')))
   set('title', params.get('title') ?? undefined)
   set('subtitle', params.get('subtitle') ?? undefined)
+  set('format', params.get('format') ?? undefined)
   return out
 }
 

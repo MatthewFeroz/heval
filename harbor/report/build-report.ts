@@ -30,40 +30,114 @@ const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replac
 const pct = (n: number) => `${Math.round(n * 100)}%`
 const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`
 
-type Section = { id: string; heading: string; lede: string; state: Partial<ChartState> }
+type Section = {
+  id: string
+  heading: string
+  lede: string
+  state: Partial<ChartState>
+  /**
+   * Rows to chart, when the section's measure is not a plain per-trial field.
+   * Two cases need it, both of them measures Composio published: a median taken
+   * over passed trials only, and a ratio of two aggregates (spend / passes)
+   * that no single-measure aggregation can express.
+   */
+  derive?: (rows: TrialRow[]) => TrialRow[]
+}
 
-const SECTIONS: Section[] = [
-  {
-    id: 'pass-rate',
-    heading: 'Pass rate by harness and model',
-    lede: 'Color encodes the model and position the harness. Bars carry Wilson 95% intervals; with three trials per cell those are wide by design.',
-    state: { recipe: 'bar', x: 'agent', color: 'modelShort', measure: 'passed', intervals: true, labels: true },
-  },
-  {
-    id: 'quality-cost',
-    heading: 'Quality versus cost',
-    lede: 'Mean provider-reported cost per trial against pass rate, one point per stack. The muted line is the Pareto frontier: nothing above-left of it exists in this job.',
-    state: { recipe: 'scatter', x: 'agent', color: 'modelShort', measure: 'passed', xMeasure: 'costUsd', labels: true },
-  },
-  {
-    id: 'agent-time',
-    heading: 'Agent time per trial',
-    lede: 'Wall-clock of the agent step alone - environment build, harness install and verification are excluded. The tick is the group mean.',
-    state: { recipe: 'strip', x: 'agent', color: 'modelShort', measure: 'agentSeconds', aggregate: 'mean', labels: false },
-  },
-  {
-    id: 'tail-latency',
-    heading: `Share of trials over ${SLOW_TRIAL_SECONDS / 60} minutes`,
-    lede: 'Tail risk, not central tendency. A stack can hold a respectable median and still be unusable if it blows the budget on a third of tasks; timeouts are counted here as well as separately below.',
-    state: { recipe: 'bar', x: 'agent', color: 'modelShort', measure: 'overSlow', labels: true },
-  },
-  {
-    id: 'per-task',
-    heading: 'Per-task breakdown',
-    lede: 'Single-hue ramp keyed to pass rate; the job here is magnitude, so one hue light-to-dark is correct. Tasks are the columns because a job has many of them and few stacks.',
-    state: { recipe: 'matrix', x: 'task', row: 'stack', measure: 'passed', labels: true },
-  },
-]
+/**
+ * One synthetic row per group, carrying a pre-computed statistic in the field
+ * the chart will plot. The recipe system aggregates a per-trial field over a
+ * dimension, so a derived per-group number reaches a chart only by arriving as
+ * a group of one - `mean` of a single value is that value. Everything else on
+ * the row is inherited from a real member of the group so the dimension the
+ * chart groups by still resolves.
+ */
+function collapseTo(rows: TrialRow[], field: 'costUsd' | 'agentSeconds', value: (group: TrialRow[]) => number | null): TrialRow[] {
+  const out: TrialRow[] = []
+  for (const key of [...new Set(rows.map((r) => r.stack))].sort()) {
+    const group = rows.filter((r) => r.stack === key)
+    const v = value(group)
+    if (v !== null) out.push({ ...group[0], [field]: v })
+  }
+  return out
+}
+
+/**
+ * The charted sections, resolved against the data.
+ *
+ * The x dimension is not fixed. A 2x2 grid wants the harness on x with the
+ * model in color; a model sweep holds the harness constant, where `x: 'agent'`
+ * collapses to one column and six models exceed the palette's four validated
+ * series, so color is dropped and the chart says nothing. Picking x by
+ * cardinality keeps both shapes correct from the same report builder.
+ */
+function sectionsFor(rows: TrialRow[]): Section[] {
+  const manyAgents = new Set(rows.map((r) => r.agent)).size > 1
+  // When the harness varies it is the comparison and the model is the series.
+  // When it does not, the model is the comparison and there is no series -
+  // `color === x` is dropped by buildChart, so this needs no special case.
+  const x = manyAgents ? 'agent' : 'modelShort'
+  const color = manyAgents ? 'modelShort' : 'none'
+
+  return [
+    {
+      id: 'pass-rate',
+      heading: manyAgents ? 'Pass rate by harness and model' : 'Tasks completed per model',
+      lede: manyAgents
+        ? 'Color encodes the model and position the harness. Bars carry Wilson 95% intervals; with three trials per cell those are wide by design.'
+        : 'The headline number, and the one to read most carefully: bars carry Wilson 95% intervals, and at one attempt per task those intervals are wide enough to overlap across most of the field. Ranking is fair game; declaring an adjacent pair different is not.',
+      state: { recipe: 'bar', x, color, measure: 'passed', intervals: true, labels: true },
+    },
+    {
+      id: 'quality-cost',
+      heading: 'Quality versus cost',
+      lede: 'Mean cost per trial against pass rate, one point per stack. The muted line is the Pareto frontier: nothing above-left of it exists in this job. Cost per *completed* task is the fairer figure and is charted below - mean per-trial cost rewards a stack for failing cheaply.',
+      state: { recipe: 'scatter', x, color, measure: 'passed', xMeasure: 'costUsd', labels: true },
+    },
+    {
+      id: 'cost-per-success',
+      heading: 'Cost per completed task',
+      lede: 'Total spend divided by passes, which is what a reader actually buys. A stack that fails fast and cheaply looks good on mean per-trial cost and bad here. Stacks that never passed cannot be priced and are absent.',
+      // Four decimals, not the shared two: across a model sweep this spans three
+      // orders of magnitude, and `$.2f` prints every sub-cent model as `$0.00`.
+      state: { recipe: 'bar', x, color: 'none', measure: 'costUsd', aggregate: 'mean', sort: 'asc', intervals: false, labels: true, title: 'Cost per completed task', format: '$.4f' },
+      derive: (rs) =>
+        collapseTo(rs, 'costUsd', (g) => {
+          const costs = nums(g, 'costUsd')
+          const passes = g.filter((r) => r.passed).length
+          return costs.length && passes ? costs.reduce((a, b) => a + b, 0) / passes : null
+        }),
+    },
+    {
+      id: 'median-time-passed',
+      heading: 'Median time per completed task',
+      lede: 'Median agent-step wall clock over passed trials only. Failures are excluded on purpose: a timed-out run contributes the cap rather than a duration, which would rank a stack faster for giving up sooner.',
+      state: { recipe: 'bar', x, color: 'none', measure: 'agentSeconds', aggregate: 'mean', sort: 'asc', intervals: false, labels: true, title: 'Median time per completed task' },
+      derive: (rs) => collapseTo(rs.filter((r) => r.passed), 'agentSeconds', (g) => median(nums(g, 'agentSeconds'))),
+    },
+    {
+      id: 'agent-time',
+      heading: 'Agent time per trial',
+      lede: 'Every trial, passed or not - the spread the two medians above are drawn from. Wall-clock of the agent step alone; environment build, harness install and verification are excluded. The tick is the group mean.',
+      state: { recipe: 'strip', x, color, measure: 'agentSeconds', aggregate: 'mean', labels: false },
+    },
+    {
+      id: 'tail-latency',
+      heading: `Share of trials over ${SLOW_TRIAL_SECONDS / 60} minutes`,
+      lede: 'Tail risk, not central tendency. A stack can hold a respectable median and still be unusable if it blows the budget on a third of tasks; timeouts are counted here as well as separately below.',
+      state: { recipe: 'bar', x, color, measure: 'overSlow', labels: true },
+    },
+    {
+      id: 'per-task',
+      heading: 'Per-task breakdown',
+      lede: 'Single-hue ramp keyed to pass rate; the job here is magnitude, so one hue light-to-dark is correct. Tasks are the columns because a job has many of them and few stacks.',
+      // No color dimension: the matrix encodes the measure as a single-hue ramp,
+      // so leaving `modelShort` on color only earns a "too many series" warning
+      // for a channel this recipe never draws.
+      state: { recipe: 'matrix', x: 'task', row: 'stack', color: 'none', measure: 'passed', labels: true },
+    },
+  ]
+}
 
 function studioUrl(job: string, state: Partial<ChartState>): string {
   return `/studio?${paramsFromState(state, { job }).toString()}`
@@ -307,8 +381,9 @@ function taskOverlap(rows: TrialRow[]): string {
 async function chartBlock(job: string, rows: TrialRow[], section: Section, n: number): Promise<{ html: string; warnings: string[] }> {
   const warnings = new Set<string>()
   const svgs: Record<ThemeMode, string> = { light: '', dark: '' }
+  const charted = section.derive ? section.derive(rows) : rows
   for (const theme of ['light', 'dark'] as ThemeMode[]) {
-    const out = buildChart(rows, { ...section.state, theme })
+    const out = buildChart(charted, { ...section.state, theme })
     out.warnings.forEach((w) => warnings.add(w))
     svgs[theme] = await renderSvg(out.spec)
   }
@@ -328,7 +403,7 @@ async function chartBlock(job: string, rows: TrialRow[], section: Section, n: nu
       <div class="card-head">
         <div class="window-dots"><span></span><span></span><span></span></div>
         <div class="title"><span>${esc(RECIPE_LABEL[recipe])}</span></div>
-        <small>${esc(recipe)} &middot; ${plural(rows.length, 'trial')}</small>
+        <small>${esc(recipe)} &middot; ${plural(section.derive ? rows.length : charted.length, 'trial')}</small>
         <div class="right"><small class="only-dark">surface #101111</small><small class="only-light">surface #ffffff</small></div>
       </div>
       <div class="canvas">
@@ -597,7 +672,8 @@ async function render(exp: JobExport): Promise<string> {
   const tasks = [...new Set(rows.map((r) => r.task))].sort()
 
   const sections: string[] = []
-  for (const [i, s] of SECTIONS.entries()) sections.push((await chartBlock(exp.job, rows, s, i + 1)).html)
+  const jobSections = sectionsFor(rows)
+  for (const [i, s] of jobSections.entries()) sections.push((await chartBlock(exp.job, rows, s, i + 1)).html)
   const limits = limitations(exp)
 
   return `<!doctype html>
@@ -623,7 +699,7 @@ ${REPORT_CSS}
     </div>
     <span class="divider"></span>
     <a class="btn" href="./${esc(exp.job)}.json" download>Trials JSON</a>
-    <a class="btn primary" href="${studioUrl(exp.job, SECTIONS[0].state)}">Open in studio ${ARROW_ICON}</a>
+    <a class="btn primary" href="${studioUrl(exp.job, jobSections[0].state)}">Open in studio ${ARROW_ICON}</a>
   </div>
 </header>
 
@@ -672,7 +748,7 @@ ${REPORT_CSS}
   </div>
 
   <div class="block" id="table">
-    <div class="block-head"><div><span class="eyebrow">Every trial</span><h2>Table view</h2></div><a class="btn" href="${studioUrl(exp.job, SECTIONS[0].state)}">Explore in studio ${ARROW_ICON}</a></div>
+    <div class="block-head"><div><span class="eyebrow">Every trial</span><h2>Table view</h2></div><a class="btn" href="${studioUrl(exp.job, jobSections[0].state)}">Explore in studio ${ARROW_ICON}</a></div>
     <div class="panel"><div class="card-body">${tableView(rows)}</div></div>
   </div>
 
