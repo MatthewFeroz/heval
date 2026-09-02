@@ -12,7 +12,8 @@
     "lint": "eslint .",
     "test:e2e": "playwright test",
     "preview": "vite preview --host 0.0.0.0",
-    "report": "bun harbor/report/build-report.ts"
+    "report": "bun harbor/report/build-report.ts",
+    "status": "bash harbor/status.sh"
   },
   "dependencies": {
     "@earendil-works/pi-coding-agent": "0.84.4",
