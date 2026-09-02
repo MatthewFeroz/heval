@@ -314,9 +314,50 @@ export function vegaConfig(theme: Theme): Record<string, unknown> {
  * moving labels relative to the plot, and because both renderers share the same
  * estimator the correction keeps the report and the studio identical.
  */
+function estLabelWidth(labels: readonly string[], fontSize = 11): number {
+  return Math.max(0, ...labels.map((l) => l.length)) * fontSize * 0.55
+}
+
 function leftPadForLabels(labels: readonly string[], fontSize = 11): number {
-  const widest = Math.max(0, ...labels.map((l) => l.length)) * fontSize * 0.55
-  return Math.ceil(widest * 0.15) + 8
+  return Math.ceil(estLabelWidth(labels, fontSize) * 0.15) + 8
+}
+
+/** Air between neighbouring x labels before they read as one word. */
+const LABEL_GAP = 14
+
+/**
+ * Widest plot we will grow to in order to keep x labels upright.
+ *
+ * The report page is 1120px less its gutters, and the studio canvas is
+ * narrower still; past this the chart is scaled down to fit and the labels
+ * shrink with it, which defeats the point of widening for them.
+ */
+const MAX_PLOT_WIDTH = 900
+
+/** Matrix column width: comfortable for a stack label, capped by the budget. */
+const MATRIX_STEP = 180
+const MIN_MATRIX_STEP = 44
+
+/**
+ * Band width and label angle for a nominal x axis.
+ *
+ * Vega centres each label on its band and lets neighbours collide - it will
+ * not widen a band to fit its text. With the harness on x that never showed,
+ * because `codex` is 5 characters in a 72px band; with six model names on x,
+ * `deepseek-v4-pro-0813` renders 117px wide into 78px and three of the six
+ * labels overlap.
+ *
+ * Widening the band is the better fix where it fits: every label stays upright
+ * and the bars keep their air. It stops fitting once the axis is long - 20
+ * task names would demand a 3000px plot - so past MAX_PLOT_WIDTH the labels
+ * tilt instead. At 30 degrees adjacent baselines clear each other for any band
+ * wider than about 26px, so the tilt has slack the widening does not.
+ */
+function xAxisFit(domain: readonly string[], barStep: number): { step: number; labelAngle: number } {
+  const needed = Math.ceil(estLabelWidth(domain)) + LABEL_GAP
+  if (needed <= barStep) return { step: barStep, labelAngle: 0 }
+  if (needed * domain.length <= MAX_PLOT_WIDTH) return { step: needed, labelAngle: 0 }
+  return { step: barStep, labelAngle: -30 }
 }
 
 // -- spec builders ----------------------------------------------------------------
@@ -383,7 +424,11 @@ export function buildChart(rows: TrialRow[], input: Partial<ChartState>): ChartO
       const yMax = isRate ? 1.12 : Math.max(...values, 0) * 1.18 || 1
       const yScale = { domain: [0, yMax], nice: false }
       const yAxis = isRate ? { format: fmt(state.measure), values: [0, 0.25, 0.5, 0.75, 1] } : { format: fmt(state.measure), tickCount: 5 }
-      const encodingX = { field: state.x, type: 'nominal', sort: xDomain, title: null, axis: { labelAngle: 0 } }
+      // One 32px slot per 24px bar, plus air on each side of the group - then
+      // whatever more the x labels need to stay legible.
+      const xLabels = [...new Set(table.map((r) => String(r[state.x])))]
+      const { step, labelAngle } = xAxisFit(xLabels, Math.max(72, 32 * Math.max(series.length, 1) + 40))
+      const encodingX = { field: state.x, type: 'nominal', sort: xDomain, title: null, axis: { labelAngle, labelLimit: 420 } }
       const encodingXOffset = color !== 'none' ? { xOffset: { field: color, type: 'nominal', sort: series } } : {}
       const encodingColor = color !== 'none'
         ? { color: { field: color, type: 'nominal', scale: { domain: series, range: theme.series.slice(0, series.length) }, legend: { title: DIMENSION_LABEL[color] } } }
@@ -428,8 +473,6 @@ export function buildChart(rows: TrialRow[], input: Partial<ChartState>): ChartO
           },
         })
       }
-      // One 32px slot per 24px bar, plus air on each side of the group.
-      const step = Math.max(72, 32 * Math.max(series.length, 1) + 40)
       const inner: Record<string, unknown> = { width: { step }, height: 260, layer: layers }
       spec = state.facet !== 'none'
         ? { ...titleBlock, data: { values: table }, facet: { column: { field: state.facet, type: 'nominal', title: DIMENSION_LABEL[state.facet] } }, spec: inner, resolve: { scale: { y: 'shared' } } }
@@ -555,6 +598,14 @@ export function buildChart(rows: TrialRow[], input: Partial<ChartState>): ChartO
       // the anchor, so without this the tail of the label lands inside the cells.
       const labelLines = Math.max(1, ...(xDomain ?? []).map((v) => v.split(' / ').length))
       const lineHeight = 13
+      // 180px columns suit the handful of stacks this recipe was written for.
+      // A task axis is an order of magnitude longer - 20 of them ask for a
+      // 3600px plot, which the page then scales to a quarter size and renders
+      // the labels at 3px. Fit the columns to the budget instead and tilt the
+      // headers, which is the only way a long axis stays legible.
+      const colCount = Math.max(1, xDomain?.length ?? 1)
+      const roomy = MATRIX_STEP * colCount <= MAX_PLOT_WIDTH
+      const colStep = roomy ? MATRIX_STEP : Math.max(MIN_MATRIX_STEP, Math.floor(MAX_PLOT_WIDTH / colCount))
       const layers: Record<string, unknown>[] = [
         {
           mark: { type: 'rect' },
@@ -582,7 +633,7 @@ export function buildChart(rows: TrialRow[], input: Partial<ChartState>): ChartO
         ...titleBlock,
         data: { values: table },
         padding: { left: leftPadForLabels(sortedDomain(table, state.row, 'alpha') ?? []), top: 8, right: 8, bottom: 8 },
-        width: { step: 180 },
+        width: { step: colStep },
         height: { step: 44 },
         // x and y are shared by both layers, so they are declared once here.
         // Repeating them per layer makes Vega-Lite merge two axis definitions
@@ -595,14 +646,18 @@ export function buildChart(rows: TrialRow[], input: Partial<ChartState>): ChartO
             sort: xDomain,
             title: null,
             scale: { paddingInner: 0.05 },
-            axis: {
-              orient: 'top',
-              labelAngle: 0,
-              labelExpr: "split(datum.label, ' / ')",
-              labelLineHeight: lineHeight,
-              labelPadding: 8 + lineHeight * (labelLines - 1),
-              labelLimit: 175,
-            },
+            axis: roomy
+              ? {
+                  orient: 'top',
+                  labelAngle: 0,
+                  labelExpr: "split(datum.label, ' / ')",
+                  labelLineHeight: lineHeight,
+                  labelPadding: 8 + lineHeight * (labelLines - 1),
+                  labelLimit: MATRIX_STEP - 5,
+                }
+              // Tilted labels read along the diagonal, so they neither wrap nor
+              // need the reserved height - the anchor moves with the angle.
+              : { orient: 'top', labelAngle: -45, labelPadding: 8, labelLimit: 400, labelAlign: 'left', labelBaseline: 'middle' },
           },
           y: {
             field: state.row,
