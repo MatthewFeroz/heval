@@ -229,6 +229,27 @@
       "vendorLimitations": [
         "deepseek/deepseek-v4-pro-0813 is served at 2x its first-party price ($1.32/$3.96 on baseten vs $0.66/$1.98 on deepseek) because the first-party route is protocol-incompatible with Codex. Its cost column is therefore not the cheapest price at which this model can be run - it is the cheapest price at which it can be run through this harness. Every other model in the sweep is on its chosen-for-speed-or-price route, so cost is comparable across models only in the sense of what this harness actually paid.",
         "Reported input-token counts for identical work vary ~50% across vendors of the same model (448k baseten / 664k fireworks / 669k togetherai on one probe). Vendor therefore affects the measured cost through token accounting, not just the rate card, which is a further reason the vendor is pinned and recorded per trial."
+      ],
+      "runProvenance": {
+        "job": "terminal-bench-composio-mirror",
+        "stoppedEarly": true,
+        "stopReason": "Stopped deliberately at 20 of 30 tasks on cost grounds. The run was killed once the 20th task had results from all six models, so every published row is a complete paired comparison.",
+        "tasksCompleted": 20,
+        "tasksConfigured": 30,
+        "trialsPublished": 120,
+        "trialsParked": 13,
+        "parkedNote": "13 trial dirs from three tasks that never reached all six models (financial-document-processor, query-optimize, regex-log) are moved to jobs/terminal-bench-composio-mirror/_incomplete/. They are excluded, not deleted: scoring models on partially different task sets would break the paired design that makes n=20 workable at all.",
+        "knownDefects": [
+          "chess-best-move / deepseek-v4-pro-0813 is recorded as reward 0.0 but the trial never ran - a baseten HTTP 429 killed it at startup (agent_execution_time_sec: null). It was not retried because include_exceptions was scoped to AgentSetupTimeoutError only. Not re-run: chess-best-move scored 0/6 across every model that did execute, so the cell is non-discriminating and a repair would not move any published number."
+        ],
+        "effectiveN": 16,
+        "effectiveNNote": "4 of 20 tasks are unanimous (fix-git, hf-model-inference, multi-source-data-merger all 6/6; chess-best-move 0/6) and carry no ranking signal, so the effective sample for model comparison is 16, not 20."
+      },
+      "headlineFindings": [
+        "No pairwise model difference is statistically significant. Exact McNemar on the paired tasks puts glm-5.3 (the top scorer) against every other model at p >= 0.125; the closest is glm-5.3 vs glm-5.3-flash at 6-1 discordant, p=0.125. The capability column is a ranking nobody can defend at this sample size.",
+        "Cost separates the models by 546x per trial ($2.0491 sonnet vs $0.0039 glm-5.3-flash) and 393x per solved task ($3.4152 vs $0.0087). That axis is measured, paired, and not in doubt.",
+        "Failure tails dominate spend. One trial - claude-sonnet-5 on chess-best-move, a vision task - cost $28.36 to time out and score zero, 66% of the entire chess-best-move column and 46% of sonnet's total. Excluding it, sonnet is $0.56/trial rather than $2.05.",
+        "AgentTimeoutError is a budget event, not a verdict: 4 of the 17 timeouts still scored reward 1.0 because the model wrote a correct solution and then kept working until the cap."
       ]
     }
   },

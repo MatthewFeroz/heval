@@ -116,6 +116,13 @@ retry:
   # infrastructure failure gets another go.
   include_exceptions:
     - AgentSetupTimeoutError
+    # Added after run 3. Harbor's default exclude list does NOT contain
+    # ApiRateLimitError - it would have been retried for free - but an
+    # include list is a whitelist, so scoping to AgentSetupTimeoutError
+    # silently opted out of it. One baseten 429 (1 in ~1720 requests) killed
+    # deepseek-v4-pro on chess-best-move before the agent ever started, and
+    # that vendor-side failure was recorded as a model zero.
+    - ApiRateLimitError
 
 environment:
   type: docker
