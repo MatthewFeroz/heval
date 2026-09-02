@@ -35,16 +35,26 @@
 # the pinned vendor. See harbor/proxy/pins.json for the model -> vendor map.
 # ---------------------------------------------------------------------------
 #
-# SIZE. 6 models x 30 tasks x 3 attempts = 540 trials. At ~5 min per trial and
-# 2 concurrent that is roughly a day of wall clock. Concurrency is capped at 2
-# by Docker's 8 GB memory allocation, not by CPU (18 cores available): tasks pin
+# SIZE. 6 models x 30 tasks x 1 attempt = 180 trials. At 2.5-5 min per trial and
+# 2 concurrent that is 4-8 hours of wall clock. Concurrency is capped at 2 by
+# Docker's 8 GB memory allocation, not by CPU (18 cores available): tasks pin
 # 2-4 GB each and memory_enforcement_policy is `limit`, so oversubscribing turns
 # into OOM kills that grade as task failures. Raising Docker's memory ceiling to
 # 16 GB would allow 4 concurrent and halve the wall clock.
 #
-# n_attempts is 3 per docs/first-eval.md, which is stricter than Composio's
-# single pass. The report draws Wilson intervals that are meaningless at n=1.
-# Drop to 1 for a cheap first look, but do not publish intervals from it.
+# ATTEMPTS. One, which is what Composio ran and is looser than the 3 that
+# docs/first-eval.md asks for. Two consequences, and the first is the reason the
+# single pass is the better mirror here:
+#
+#   - The efficiency table reads `21 / 30`, directly comparable to Composio's
+#     "22/30". At 3 attempts it would read `63 / 90` against a different
+#     denominator.
+#   - Per-model pass rate is 30 Bernoulli trials, so its 95% Wilson interval is
+#     roughly +/-17 points. Composio's five models spanned 19-22 of 30, a range
+#     narrower than that interval. So this run can rank the models and price
+#     them; it cannot establish that two adjacent models differ. Report the
+#     ordering as provisional, and raise n_attempts to 3 before claiming any
+#     single pairwise gap is real.
 #
 # Validate without spending anything:
 #   harbor run -c harbor/jobs/terminal-bench-composio-mirror.yaml --print-config
@@ -54,7 +64,7 @@
 
 job_name: terminal-bench-composio-mirror
 
-n_attempts: 3
+n_attempts: 1
 n_concurrent_trials: 2
 
 environment:

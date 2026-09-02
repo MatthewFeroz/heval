@@ -185,7 +185,34 @@
           "supportsToolCalling": true,
           "role": "control"
         }
-      }
+      },
+      "attempts": 1,
+      "attemptsRationale": "One attempt, matching Composio's single pass. It also keeps the artifact directly comparable: the efficiency table reads `21 / 30` against Composio's `22/30`, where 3 attempts would read `63 / 90`. Cost: per-model pass rate is 30 Bernoulli trials, so its 95% Wilson interval is about +/-17 points - wider than the 19-22 of 30 span Composio's five models occupied. The run ranks and prices the models; it cannot establish that two adjacent models differ.",
+      "reportedByComposio": {
+        "note": "Composio's own figures, for shape comparison only. Their tasks were SaaS tool-calling scenarios, not Terminal-Bench, so these are not a target to reproduce.",
+        "completedOutOf30": {
+          "zai/glm-5.3": 22,
+          "zai/glm-5.3-flash": 21,
+          "moonshot/kimi-k3": 21,
+          "deepseek/deepseek-v4-flash": 20,
+          "deepseek/deepseek-v4-pro-0813": 19
+        },
+        "costPerSuccessUsd": {
+          "deepseek/deepseek-v4-flash": 0.028,
+          "zai/glm-5.3-flash": 0.06,
+          "deepseek/deepseek-v4-pro-0813": 0.065,
+          "zai/glm-5.3": 0.24,
+          "moonshot/kimi-k3": 0.7
+        },
+        "medianTimePerCompleted": {
+          "deepseek/deepseek-v4-flash": "2m12s",
+          "moonshot/kimi-k3": "2m35s",
+          "zai/glm-5.3": "2m54s",
+          "zai/glm-5.3-flash": "3m15s",
+          "deepseek/deepseek-v4-pro-0813": "4m41s"
+        }
+      },
+      "artifactMapping": "The three measures Composio published map onto panels the report already draws, in harbor/report/build-report.ts efficiencyTable(): completed -> `Passed` as passes/trials, cost per success -> total spend / passes, median time per completed task -> median agentSeconds over passed trials only. Rows are sorted cheapest-per-success first, as Composio ordered theirs."
     }
   }
 }
