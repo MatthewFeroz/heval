@@ -21,7 +21,18 @@
     "version": "29.7.2",
     "notes": [
       "Harbor default environment type. Daytona is the planned first hosted backend."
-    ]
+    ],
+    "hostAllocation": {
+      "memoryGiB": 18,
+      "swapGiB": 4,
+      "cpus": 18,
+      "observedMemTotalGiB": 17.54,
+      "changedOn": "2026-09-02",
+      "why": "Docker Desktop ran on stock defaults (7.9 GB) on a 24 GB host, which capped n_concurrent_trials at 2 and left 16 GB of the machine unreachable by the eval. Every TB2 task pins 2048 MB / 1.0 cpu with memory_enforcement_policy=limit, so memory bound concurrency while 16 of 18 cores idled.",
+      "mechanism": "MemoryMiB=18432 and SwapMiB=4096 written to ~/Library/Group Containers/group.com.docker/settings-store.json, then `docker desktop restart`. The pre-change file is backed up next to it as settings-store.json.heval-backup-20260902-124407; restore it to undo.",
+      "effect": "17.54 GiB usable / 2048 MB per task = 8 concurrent trials with ~1.5 GB VM headroom. Cuts the 180-trial mirror run from an estimated 4-8 h to roughly 1-2 h.",
+      "caveat": "Leaves 6 GB for macOS on a 24 GB host. Comfortable for a headless run; the machine will feel slow with many apps open."
+    }
   },
   "harnesses": {
     "codex": {
@@ -214,5 +225,51 @@
       },
       "artifactMapping": "The three measures Composio published map onto panels the report already draws, in harbor/report/build-report.ts efficiencyTable(): completed -> `Passed` as passes/trials, cost per success -> total spend / passes, median time per completed task -> median agentSeconds over passed trials only. Rows are sorted cheapest-per-success first, as Composio ordered theirs."
     }
+  },
+  "benchmark": {
+    "chosen": "terminal-bench@2.0",
+    "evaluatedOn": "2026-09-02",
+    "alternatives": {
+      "terminal-bench/terminal-bench@3.0.0": {
+        "tasks": 74,
+        "resolves": true
+      },
+      "terminal-bench/terminal-bench@4.0.0": {
+        "tasks": 66,
+        "resolves": true
+      }
+    },
+    "measuredComparison": {
+      "note": "Pins read from each task.toml in the downloaded packages. TB2 figures are from the cached package form; the 89-task export does not carry memory_mb.",
+      "tb2": {
+        "packageSizeMB": 46,
+        "memoryMbMedian": 2048,
+        "memoryMbMax": 2048,
+        "cpusMedian": 1,
+        "cpusMax": 1,
+        "multiContainerTasks": 0,
+        "agentCapMaxSec": 900,
+        "concurrencyAt17_5GiB": 8
+      },
+      "tb3": {
+        "packageSizeMB": 505,
+        "memoryMbMedian": 4096,
+        "memoryMbMax": 32768,
+        "cpusMedian": 2,
+        "cpusMax": 16,
+        "multiContainerTasks": 12,
+        "agentCapMaxSec": 18000,
+        "concurrencyAt17_5GiB": 4,
+        "tasksUnrunnableOn24GiBHost": 1,
+        "tasksAtOrUnder2048Mb": 12,
+        "tasksAtOrUnder4096Mb": 47
+      }
+    },
+    "whyNot3or4": [
+      "Cost. TB3 halves concurrency to 4 (median 4096 MB pin, max 32768 MB - one task exceeds the whole host) while making each trial longer, which puts the 180-trial run back over 4 hours and spends the entire memory upgrade above.",
+      "Discrimination. Frontier models score ~34% on TB3; these six are the budget open-weight tier. At 15-28% over 30 tasks each model lands 4-8 passes, and cost-per-success divides by exactly that count. The TB2 selection targets a 50-80% band (15-24 passes) - a steadier denominator and the regime Composio's 19-22 of 30 sat in.",
+      "TB2 is genuinely the aging choice: the tbench team built 3.0 because 2.0 saturated for frontier models. That saturation argument does not bind at this price tier, but it does mean these numbers should not be quoted as a frontier-capability claim."
+    ],
+    "followUp": "TB 4.0 as a separate, harder datapoint. 4.0 recalibrates task resources and revises 27 tasks, so its scores are not comparable to 3.0 and neither is comparable to these."
   }
 }

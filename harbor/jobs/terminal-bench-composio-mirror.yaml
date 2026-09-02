@@ -36,11 +36,37 @@
 # ---------------------------------------------------------------------------
 #
 # SIZE. 6 models x 30 tasks x 1 attempt = 180 trials. At 2.5-5 min per trial and
-# 2 concurrent that is 4-8 hours of wall clock. Concurrency is capped at 2 by
-# Docker's 8 GB memory allocation, not by CPU (18 cores available): tasks pin
-# 2-4 GB each and memory_enforcement_policy is `limit`, so oversubscribing turns
-# into OOM kills that grade as task failures. Raising Docker's memory ceiling to
-# 16 GB would allow 4 concurrent and halve the wall clock.
+# 8 concurrent that is roughly 1-2 hours of wall clock.
+#
+# Concurrency is bounded by memory, not CPU. Every TB2 task pins 2048 MB and 1.0
+# cpu, and memory_enforcement_policy is `limit`, so oversubscribing memory turns
+# into OOM kills that grade as task failures. Against 18 cores the CPU pin allows
+# 18 concurrent; memory is what binds.
+#
+# Docker Desktop was running on stock defaults (7.9 GB) on a 24 GB host, which
+# held this at 2 concurrent and left 16 GB of the machine unreachable. Raised to
+# 18 GB + 4 GB swap on 2026-09-02 via settings-store.json (backed up alongside);
+# `docker info` now reports 17.54 GB. 17.5 GB / 2048 MB = 8, leaving ~1.5 GB of
+# VM headroom. Restore the backup to undo.
+#
+# BENCHMARK VERSION. TB 3.0 (74 tasks) and 4.0 (66) both resolve in the registry
+# as `terminal-bench/terminal-bench@<ver>` and are the un-saturated successors -
+# 2.0 is the aging choice and the tbench team built 3.0 to say so. This job stays
+# on 2.0 anyway, for two measured reasons:
+#
+#   - Cost. TB3 pins a median of 4096 MB (max 32768, one task larger than this
+#     entire host) and a median of 2 cpus, with 12 multi-container tasks. That
+#     halves concurrency to 4 while making each trial longer, which puts the run
+#     back over 4 hours.
+#   - Discrimination. Frontier models score ~34% on TB3; these six are the budget
+#     open-weight tier. At 15-28% over 30 tasks each model lands 4-8 passes, and
+#     cost-per-success divides by exactly that number. The 2.0 selection below
+#     targets a 50-80% band, i.e. 15-24 passes, which is both a steadier
+#     denominator and the regime Composio's 19-22 of 30 sat in.
+#
+# TB 4.0 is the planned follow-up as a separate, harder datapoint. Note 4.0
+# recalibrates task resources and revises 27 tasks, so its scores are not
+# comparable to 3.0's - and neither is comparable to these.
 #
 # ATTEMPTS. One, which is what Composio ran and is looser than the 3 that
 # docs/first-eval.md asks for. Two consequences, and the first is the reason the
@@ -65,7 +91,7 @@
 job_name: terminal-bench-composio-mirror
 
 n_attempts: 1
-n_concurrent_trials: 2
+n_concurrent_trials: 8
 
 environment:
   type: docker
