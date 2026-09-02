@@ -171,12 +171,14 @@
         },
         "deepseek/deepseek-v4-pro-0813": {
           "displayName": "DeepSeek V4 Pro 0813",
-          "vendor": "deepseek",
-          "inputPerMillion": 0.66,
-          "outputPerMillion": 1.98,
+          "vendor": "baseten",
+          "inputPerMillion": 1.32,
+          "outputPerMillion": 3.96,
           "contextWindow": 1000000,
           "supportsToolCalling": true,
-          "role": "subject"
+          "role": "subject",
+          "vendorNote": "Repinned off first-party deepseek on 2026-09-02, mid-run. deepseek is cheaper ($0.66/$1.98) but rejects every turn after the first with \"The `reasoning_content` in the thinking mode must be passed back to the API\" (invalid_request_error, source=provider). Codex's `responses` wire client does not echo that field, so the route cannot complete a multi-turn agentic task at any reasoning effort - it failed after 315s of retries on every attempt.",
+          "vendorSelection": "Of the three non-first-party routes, all of which passed an identical 5-turn codex tool-calling probe with zero errors: baseten $1.32/$3.96, fireworks and togetherai both $1.74/$3.48. Chose baseten - cheapest on the probe once prompt-cache reads are priced in ($0.344 vs $0.384 fireworks, $0.569 togetherai), and it reported 33% fewer input tokens for identical work (448k vs ~666k)."
         },
         "deepseek/deepseek-v4-flash": {
           "displayName": "DeepSeek V4 Flash",
@@ -223,7 +225,11 @@
           "deepseek/deepseek-v4-pro-0813": "4m41s"
         }
       },
-      "artifactMapping": "The three measures Composio published map onto panels the report already draws, in harbor/report/build-report.ts efficiencyTable(): completed -> `Passed` as passes/trials, cost per success -> total spend / passes, median time per completed task -> median agentSeconds over passed trials only. Rows are sorted cheapest-per-success first, as Composio ordered theirs."
+      "artifactMapping": "The three measures Composio published map onto panels the report already draws, in harbor/report/build-report.ts efficiencyTable(): completed -> `Passed` as passes/trials, cost per success -> total spend / passes, median time per completed task -> median agentSeconds over passed trials only. Rows are sorted cheapest-per-success first, as Composio ordered theirs.",
+      "vendorLimitations": [
+        "deepseek/deepseek-v4-pro-0813 is served at 2x its first-party price ($1.32/$3.96 on baseten vs $0.66/$1.98 on deepseek) because the first-party route is protocol-incompatible with Codex. Its cost column is therefore not the cheapest price at which this model can be run - it is the cheapest price at which it can be run through this harness. Every other model in the sweep is on its chosen-for-speed-or-price route, so cost is comparable across models only in the sense of what this harness actually paid.",
+        "Reported input-token counts for identical work vary ~50% across vendors of the same model (448k baseten / 664k fireworks / 669k togetherai on one probe). Vendor therefore affects the measured cost through token accounting, not just the rate card, which is a further reason the vendor is pinned and recorded per trial."
+      ]
     }
   },
   "benchmark": {

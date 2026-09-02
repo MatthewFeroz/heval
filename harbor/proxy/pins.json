@@ -2,7 +2,7 @@
   "zai/glm-5.3-flash": "particle",
   "zai/glm-5.3": "zai",
   "moonshot/kimi-k3": "moonshot",
-  "deepseek/deepseek-v4-pro-0813": "deepseek",
+  "deepseek/deepseek-v4-pro-0813": "baseten",
   "deepseek/deepseek-v4-flash": "particle",
   "anthropic/claude-sonnet-5": "anthropic"
 }

@@ -156,7 +156,16 @@ agents:
     kwargs: *codex_kwargs
     env:
       <<: *codex_env
-      HEVAL_VENDOR: deepseek
+      # Not first-party deepseek, which is both cheaper ($0.66/$1.98) and the
+      # obvious default. Its API rejects every turn after the first with
+      # "The `reasoning_content` in the thinking mode must be passed back to
+      # the API" - Codex's `responses` wire client does not echo the field, so
+      # the model is unusable through this harness at any reasoning effort.
+      # The same probe (5 tool-call turns) succeeds on baseten, fireworks and
+      # togetherai, so the enforcement is first-party-only, not model-level.
+      # baseten is the cheapest of the three once prompt-cache reads are
+      # priced in: $0.344 vs $0.384 (fireworks) and $0.569 (togetherai).
+      HEVAL_VENDOR: baseten
 
   - name: codex
     model_name: deepseek/deepseek-v4-flash
