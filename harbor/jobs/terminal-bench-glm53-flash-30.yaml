@@ -1,0 +1,41 @@
+# GLM-5.3 Flash harness comparison on the same 30 Terminal-Bench 2.0 tasks.
+#
+# 2 harnesses x 30 tasks x 1 attempt = 60 trials.
+# The dataset version and resolved content digests are recorded by Harbor in
+# the job lock file. Each harness is capped at one live trial so Codex and
+# Claude Code run side by side without either harness occupying both slots.
+#
+# Validate without spending anything:
+#   harbor run -c harbor/jobs/terminal-bench-glm53-flash-30.yaml --print-config
+#
+# Run:
+#   harbor run -c harbor/jobs/terminal-bench-glm53-flash-30.yaml --env-file .env.local
+
+job_name: terminal-bench-glm53-flash-30
+
+n_attempts: 1
+n_concurrent_trials: 2
+
+environment:
+  type: docker
+  cpu_enforcement_policy: limit
+  memory_enforcement_policy: limit
+  delete: true
+
+agents:
+  - name: codex
+    model_name: zai/glm-5.3-flash
+    n_concurrent: 1
+    env:
+      OPENAI_BASE_URL: https://api-gateway.merge.dev/v1/openai
+
+  - name: claude-code
+    model_name: zai/glm-5.3-flash
+    n_concurrent: 1
+    env:
+      ANTHROPIC_BASE_URL: https://api-gateway.merge.dev/v1/anthropic
+
+datasets:
+  - name: terminal-bench
+    version: "2.0"
+    n_tasks: 30

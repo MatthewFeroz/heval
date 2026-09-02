@@ -187,6 +187,7 @@ function efficiencyTable(rows: TrialRow[]): string {
       unpriced: ts.length - costs.length,
       perSuccess: totalCost !== null && passes.length ? totalCost / passes.length : null,
       medianPassSecs: median(nums(passes, 'agentSeconds')),
+      derived: ts.filter((r) => r.costSource === 'derived').length,
     }
   })
   // Cheapest per success first; stacks that never passed sort last.
@@ -197,7 +198,7 @@ function efficiencyTable(rows: TrialRow[]): string {
       <td>${esc(e.stack)}</td>
       <td class="num">${e.passes} / ${e.trials}</td>
       <td class="num">${pct(e.rate)}</td>
-      <td class="num">${e.totalCost === null ? '-' : usd(e.totalCost)}</td>
+      <td class="num">${e.totalCost === null ? '-' : usd(e.totalCost)}${e.derived ? ` <span class="muted" title="priced from tokens against the gateway catalog">~</span>` : ''}</td>
       <td class="num">${e.perSuccess === null ? `<span class="muted">${e.passes ? 'unpriced' : 'no passes'}</span>` : `<b>${usd(e.perSuccess)}</b>`}</td>
       <td class="num">${e.medianPassSecs === null ? '-' : formatValue(e.medianPassSecs, 'agentSeconds')}</td>
       <td class="num">${e.unpriced ? `<span class="muted">${e.unpriced}</span>` : '-'}</td>
@@ -386,6 +387,8 @@ function limitations(exp: JobExport): string[] {
   if (unpinned.length) out.push(`${plural(unpinned.length, 'trial')} ran without a pinned serving vendor (${[...new Set(unpinned.map((r) => r.stack))].join(', ')}); the gateway chose the route. Latency and cost for those trials are not attributable to the model.`)
   const vendors = new Set(rows.map((r) => r.vendor).filter((v): v is string => v !== null))
   if (vendors.size > 1) out.push(`Trials span ${vendors.size} serving vendors (${[...vendors].sort().join(', ')}); vendor throughput varies several-fold for the same model, so cross-stack timing comparisons need to hold it fixed.`)
+  const derived = rows.filter((r) => r.costSource === 'derived')
+  if (derived.length) out.push(`${plural(derived.length, 'trial')} has cost derived from token counts priced against the gateway catalog rather than reported by the harness (${[...new Set(derived.map((r) => r.stack))].join(', ')}); marked with ~ in the cost table. Codex reports no cost of its own on this route.`)
   const noCache = rows.filter((r) => (r.cacheTokens ?? 0) < 1000 && (r.inputTokens ?? 0) > 20000)
   if (noCache.length) out.push(`${plural(noCache.length, 'trial')} ran with effectively no prompt caching (${[...new Set(noCache.map((r) => r.stack))].join(', ')}). Their cost is not comparable to cached stacks on a per-token basis.`)
   for (const [agent, versions] of Object.entries(exp.agentVersions)) if (versions.length > 1) out.push(`${agent} ran at ${versions.length} different versions (${versions.join(', ')}) within this job.`)

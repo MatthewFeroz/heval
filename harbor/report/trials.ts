@@ -9,6 +9,7 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { basename, join, resolve } from 'node:path'
 import { SLOW_TRIAL_SECONDS, type JobExport, type TrialRow } from '../../src/charts/trial'
+import { loadCatalog, priceTokens, routeFor, type Catalog } from '../gateway/catalog'
 
 type Json = Record<string, unknown>
 
@@ -33,7 +34,7 @@ function findReward(node: unknown): number | null {
   return null
 }
 
-export function readTrial(dir: string): TrialRow | null {
+export function readTrial(dir: string, catalog?: Catalog | null): TrialRow | null {
   const cfgPath = join(dir, 'config.json'), resPath = join(dir, 'result.json')
   if (!existsSync(cfgPath) || !existsSync(resPath)) return null
   const cfg = JSON.parse(readFileSync(cfgPath, 'utf8')) as Json
@@ -61,6 +62,20 @@ export function readTrial(dir: string): TrialRow | null {
   // Matched on substring so a renamed or subclassed variant still counts.
   const timedOut = error !== null && /timeout/i.test(error)
 
+  // Prefer the harness's own figure. Fall back to pricing the tokens against
+  // the catalog rate for the pinned route, which is the only way Codex trials
+  // get a cost at all - see priceTokens() for why.
+  const vendor = str(agentEnv.HEVAL_VENDOR)
+  const cacheTokens = num(usage.n_cache_tokens)
+  const reported = num(usage.cost_usd)
+  let cost = reported
+  let costSource: TrialRow['costSource'] = reported === null ? null : 'reported'
+  if (cost === null && catalog) {
+    const route = routeFor(model, vendor, catalog)
+    const derived = route ? priceTokens({ inputTokens, cacheTokens, outputTokens }, route) : null
+    if (derived !== null) { cost = derived; costSource = 'derived' }
+  }
+
   return {
     trial: str(res.trial_name) ?? basename(dir),
     task: taskFull.includes('/') ? taskFull.split('/').slice(1).join('/') : taskFull,
@@ -71,7 +86,7 @@ export function readTrial(dir: string): TrialRow | null {
     model,
     modelShort,
     provider: model.includes('/') ? model.split('/')[0] : null,
-    vendor: str(agentEnv.HEVAL_VENDOR),
+    vendor,
     stack: `${agent} / ${modelShort}`,
     reward,
     passed: reward >= 1 ? 1 : 0,
@@ -81,20 +96,21 @@ export function readTrial(dir: string): TrialRow | null {
     overSlow: timedOut || (agentSeconds !== null && agentSeconds > SLOW_TRIAL_SECONDS) ? 1 : 0,
     timedOut: timedOut ? 1 : 0,
     inputTokens,
-    cacheTokens: num(usage.n_cache_tokens),
+    cacheTokens,
     outputTokens,
     totalTokens: inputTokens !== null && outputTokens !== null ? inputTokens + outputTokens : null,
-    costUsd: num(usage.cost_usd),
+    costUsd: cost,
+    costSource,
     startedAt: str(res.started_at),
     error,
   }
 }
 
-export function loadTrials(jobDir: string): TrialRow[] {
+export function loadTrials(jobDir: string, catalog: Catalog | null = loadCatalog()): TrialRow[] {
   const rows: TrialRow[] = []
   for (const entry of readdirSync(jobDir, { withFileTypes: true })) {
     if (!entry.isDirectory()) continue
-    const row = readTrial(join(jobDir, entry.name))
+    const row = readTrial(join(jobDir, entry.name), catalog)
     if (row) rows.push(row)
   }
   return rows.sort((a, b) => a.trial.localeCompare(b.trial))

@@ -26,6 +26,8 @@ export type VendorRoute = {
   maxOutputTokens: number | null
   inputPerMillion: number | null
   outputPerMillion: number | null
+  /** Discounted rate for prompt-cache reads, when the route offers one. */
+  cacheReadPerMillion: number | null
   supportsToolCalling: boolean
   supportsReasoning: boolean
 }
@@ -67,6 +69,7 @@ function normalize(raw: Json): CatalogModel {
         maxOutputTokens: num(info.max_output_tokens),
         inputPerMillion: num(price.input_per_million),
         outputPerMillion: num(price.output_per_million),
+        cacheReadPerMillion: num(price.cache_read_per_million),
         supportsToolCalling: caps.supports_tool_calling === true,
         supportsReasoning: caps.supports_reasoning === true,
       }
@@ -117,6 +120,45 @@ export function checkPin(model: string, vendor: string, catalog: Catalog): strin
   if (hit.status && hit.status !== 'available') return `'${vendor}' serves '${model}' but is ${hit.status}`
   if (!hit.supportsToolCalling) return `'${vendor}/${model}' does not support tool calling and cannot drive a coding agent`
   return null
+}
+
+/**
+ * Prices a trial's token counts against the catalog rate for one route.
+ *
+ * WHY THIS IS NEEDED. Harbor gets `cost_usd` two different ways. Claude Code
+ * reports its own `total_cost_usd`, but Codex has no such field, so Harbor
+ * prices it through LiteLLM's static table - which has never heard of
+ * `zai/glm-5.3-flash` and leaves the cost null. That silently removes an entire
+ * harness from every cost chart. The gateway already publishes exact per-route
+ * rates, so we use those instead of teaching LiteLLM new slugs.
+ *
+ * `inputTokens` is Harbor's total prompt count and includes cache reads, so the
+ * fresh portion is billed at the input rate and the remainder at the (cheaper)
+ * cache-read rate when the route publishes one.
+ */
+export function priceTokens(
+  tokens: { inputTokens: number | null; cacheTokens: number | null; outputTokens: number | null },
+  route: VendorRoute,
+): number | null {
+  const { inputPerMillion, outputPerMillion } = route
+  if (inputPerMillion === null || outputPerMillion === null) return null
+  const input = tokens.inputTokens ?? 0
+  const output = tokens.outputTokens ?? 0
+  if (!input && !output) return null
+  const cached = Math.min(tokens.cacheTokens ?? 0, input)
+  const fresh = input - cached
+  const cacheRate = route.cacheReadPerMillion ?? inputPerMillion
+  return (fresh * inputPerMillion + cached * cacheRate + output * outputPerMillion) / 1e6
+}
+
+/** The catalog's rate card for one (model, vendor) pair, or null if unknown. */
+export function routeFor(model: string, vendor: string | null, catalog: Catalog): VendorRoute | null {
+  const routes = vendorsFor(model, catalog)
+  if (!routes.length) return null
+  // Without a pinned vendor there is no single correct rate; the cheapest route
+  // would understate cost and the dearest would overstate it, so refuse.
+  if (vendor === null) return null
+  return routes.find((r) => r.vendor === vendor) ?? null
 }
 
 // -- cli ------------------------------------------------------------------------------

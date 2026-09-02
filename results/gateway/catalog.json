@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "fetchedAt": "2026-09-02T15:39:30.914Z",
+  "fetchedAt": "2026-09-02T15:43:42.772Z",
   "source": "https://api-gateway.merge.dev",
   "models": [
     {
@@ -15,6 +15,7 @@
           "maxOutputTokens": 256000,
           "inputPerMillion": 2,
           "outputPerMillion": 8,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": false
         }
@@ -32,6 +33,7 @@
           "maxOutputTokens": 256000,
           "inputPerMillion": 0.2,
           "outputPerMillion": 0.4,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": false
         }
@@ -49,6 +51,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0,
           "outputPerMillion": 0,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": false
         }
@@ -66,6 +69,7 @@
           "maxOutputTokens": 64000,
           "inputPerMillion": 0.3,
           "outputPerMillion": 2.5,
+          "cacheReadPerMillion": 0.03,
           "supportsToolCalling": true,
           "supportsReasoning": false
         },
@@ -76,6 +80,7 @@
           "maxOutputTokens": 32000,
           "inputPerMillion": 0.38,
           "outputPerMillion": 3.16,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -93,6 +98,7 @@
           "maxOutputTokens": 10000,
           "inputPerMillion": 0.06,
           "outputPerMillion": 0.24,
+          "cacheReadPerMillion": 0.006,
           "supportsToolCalling": true,
           "supportsReasoning": false
         },
@@ -103,6 +109,7 @@
           "maxOutputTokens": 5000,
           "inputPerMillion": 0.069,
           "outputPerMillion": 0.28,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -120,6 +127,7 @@
           "maxOutputTokens": 10000,
           "inputPerMillion": 0.035,
           "outputPerMillion": 0.14,
+          "cacheReadPerMillion": 0.0035,
           "supportsToolCalling": true,
           "supportsReasoning": false
         },
@@ -130,6 +138,7 @@
           "maxOutputTokens": 5000,
           "inputPerMillion": 0.04,
           "outputPerMillion": 0.16,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -147,6 +156,7 @@
           "maxOutputTokens": 32000,
           "inputPerMillion": 3,
           "outputPerMillion": 15,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": false
         },
@@ -157,6 +167,7 @@
           "maxOutputTokens": 5120,
           "inputPerMillion": 2.5,
           "outputPerMillion": 12.5,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": false
         }
@@ -174,6 +185,7 @@
           "maxOutputTokens": 10000,
           "inputPerMillion": 0.8,
           "outputPerMillion": 3.2,
+          "cacheReadPerMillion": 0.08,
           "supportsToolCalling": true,
           "supportsReasoning": false
         },
@@ -184,6 +196,7 @@
           "maxOutputTokens": 5000,
           "inputPerMillion": 2.4,
           "outputPerMillion": 9.6,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -201,6 +214,7 @@
           "maxOutputTokens": 4096,
           "inputPerMillion": 0.8,
           "outputPerMillion": 1.6,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": false
         }
@@ -218,6 +232,7 @@
           "maxOutputTokens": 128000,
           "inputPerMillion": 10,
           "outputPerMillion": 50,
+          "cacheReadPerMillion": 1,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -235,6 +250,7 @@
           "maxOutputTokens": 128000,
           "inputPerMillion": 10,
           "outputPerMillion": 50,
+          "cacheReadPerMillion": 0.25,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -252,6 +268,7 @@
           "maxOutputTokens": 64000,
           "inputPerMillion": 1,
           "outputPerMillion": 5,
+          "cacheReadPerMillion": 0.1,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -262,6 +279,7 @@
           "maxOutputTokens": 64000,
           "inputPerMillion": 1,
           "outputPerMillion": 5,
+          "cacheReadPerMillion": 0.1,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -279,6 +297,7 @@
           "maxOutputTokens": 32000,
           "inputPerMillion": 15,
           "outputPerMillion": 75,
+          "cacheReadPerMillion": 1.5,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -296,6 +315,7 @@
           "maxOutputTokens": 64000,
           "inputPerMillion": 5,
           "outputPerMillion": 25,
+          "cacheReadPerMillion": 0.5,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -306,6 +326,7 @@
           "maxOutputTokens": 64000,
           "inputPerMillion": 5,
           "outputPerMillion": 25,
+          "cacheReadPerMillion": 0.5,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -323,6 +344,7 @@
           "maxOutputTokens": 128000,
           "inputPerMillion": 5,
           "outputPerMillion": 25,
+          "cacheReadPerMillion": 0.5,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -333,6 +355,7 @@
           "maxOutputTokens": 128000,
           "inputPerMillion": 5,
           "outputPerMillion": 25,
+          "cacheReadPerMillion": 0.5,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -350,6 +373,7 @@
           "maxOutputTokens": 128000,
           "inputPerMillion": 5,
           "outputPerMillion": 25,
+          "cacheReadPerMillion": 0.5,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -360,6 +384,7 @@
           "maxOutputTokens": 128000,
           "inputPerMillion": 6,
           "outputPerMillion": 30,
+          "cacheReadPerMillion": 0.6,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -377,6 +402,7 @@
           "maxOutputTokens": 128000,
           "inputPerMillion": 5,
           "outputPerMillion": 25,
+          "cacheReadPerMillion": 0.5,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -387,6 +413,7 @@
           "maxOutputTokens": 128000,
           "inputPerMillion": 6,
           "outputPerMillion": 30,
+          "cacheReadPerMillion": 0.6,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -404,6 +431,7 @@
           "maxOutputTokens": 128000,
           "inputPerMillion": 5,
           "outputPerMillion": 25,
+          "cacheReadPerMillion": 0.5,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -414,6 +442,7 @@
           "maxOutputTokens": 128000,
           "inputPerMillion": 5,
           "outputPerMillion": 25,
+          "cacheReadPerMillion": 0.5,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -431,6 +460,7 @@
           "maxOutputTokens": 64000,
           "inputPerMillion": 3,
           "outputPerMillion": 15,
+          "cacheReadPerMillion": 0.3,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -441,6 +471,7 @@
           "maxOutputTokens": 64000,
           "inputPerMillion": 3,
           "outputPerMillion": 15,
+          "cacheReadPerMillion": 0.3,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -458,6 +489,7 @@
           "maxOutputTokens": 128000,
           "inputPerMillion": 3,
           "outputPerMillion": 15,
+          "cacheReadPerMillion": 0.3,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -468,6 +500,7 @@
           "maxOutputTokens": 64000,
           "inputPerMillion": 3,
           "outputPerMillion": 15,
+          "cacheReadPerMillion": 0.3,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -485,6 +518,7 @@
           "maxOutputTokens": 128000,
           "inputPerMillion": 3,
           "outputPerMillion": 15,
+          "cacheReadPerMillion": 0.2,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -495,6 +529,7 @@
           "maxOutputTokens": 128000,
           "inputPerMillion": 2,
           "outputPerMillion": 10,
+          "cacheReadPerMillion": 0.2,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -512,6 +547,7 @@
           "maxOutputTokens": 65536,
           "inputPerMillion": 0.22,
           "outputPerMillion": 0.85,
+          "cacheReadPerMillion": 0.11,
           "supportsToolCalling": false,
           "supportsReasoning": true
         }
@@ -529,6 +565,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0,
           "outputPerMillion": 0,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": false
         }
@@ -546,6 +583,7 @@
           "maxOutputTokens": 128000,
           "inputPerMillion": 0.4,
           "outputPerMillion": 2.4,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": false
         }
@@ -563,6 +601,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0.5,
           "outputPerMillion": 3,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": false
         }
@@ -580,6 +619,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0.25,
           "outputPerMillion": 2,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": false
         },
@@ -590,6 +630,7 @@
           "maxOutputTokens": 128000,
           "inputPerMillion": 0.31,
           "outputPerMillion": 2.5,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": false
         }
@@ -607,6 +648,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0.1,
           "outputPerMillion": 0.4,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": false
         },
@@ -617,6 +659,7 @@
           "maxOutputTokens": 128000,
           "inputPerMillion": 0.12,
           "outputPerMillion": 0.5,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": false
         }
@@ -634,6 +677,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0.5,
           "outputPerMillion": 3,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": true
         },
@@ -644,6 +688,7 @@
           "maxOutputTokens": 128000,
           "inputPerMillion": 0.63,
           "outputPerMillion": 3.79,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": true
         }
@@ -661,6 +706,7 @@
           "maxOutputTokens": 32000,
           "inputPerMillion": 0.1,
           "outputPerMillion": 0.2,
+          "cacheReadPerMillion": 0.05,
           "supportsToolCalling": false,
           "supportsReasoning": false
         }
@@ -678,6 +724,7 @@
           "maxOutputTokens": 8000,
           "inputPerMillion": 2.5,
           "outputPerMillion": 10,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -695,6 +742,7 @@
           "maxOutputTokens": 4000,
           "inputPerMillion": 0.15,
           "outputPerMillion": 0.6,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -712,6 +760,7 @@
           "maxOutputTokens": 4000,
           "inputPerMillion": 2.5,
           "outputPerMillion": 10,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -729,6 +778,7 @@
           "maxOutputTokens": 4000,
           "inputPerMillion": 0.0375,
           "outputPerMillion": 0.15,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -746,6 +796,7 @@
           "maxOutputTokens": 40960,
           "inputPerMillion": 1.35,
           "outputPerMillion": 5.4,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": false
         }
@@ -763,6 +814,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 1.35,
           "outputPerMillion": 5.4,
+          "cacheReadPerMillion": 0.945,
           "supportsToolCalling": false,
           "supportsReasoning": true
         },
@@ -773,6 +825,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 1.35,
           "outputPerMillion": 5.4,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": true
         }
@@ -790,6 +843,7 @@
           "maxOutputTokens": 81920,
           "inputPerMillion": 0.58,
           "outputPerMillion": 1.68,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -807,6 +861,7 @@
           "maxOutputTokens": 41000,
           "inputPerMillion": 0.5,
           "outputPerMillion": 1.5,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -817,6 +872,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0.6,
           "outputPerMillion": 1.7,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": true
         }
@@ -834,6 +890,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0.56,
           "outputPerMillion": 1.68,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": true
         },
@@ -844,6 +901,7 @@
           "maxOutputTokens": 40960,
           "inputPerMillion": 0.62,
           "outputPerMillion": 1.85,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": false
         },
@@ -854,6 +912,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0.57,
           "outputPerMillion": 1.71,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -864,6 +923,7 @@
           "maxOutputTokens": 40960,
           "inputPerMillion": 0.28,
           "outputPerMillion": 0.45,
+          "cacheReadPerMillion": 0.14,
           "supportsToolCalling": false,
           "supportsReasoning": true
         }
@@ -881,6 +941,7 @@
           "maxOutputTokens": 384000,
           "inputPerMillion": 0.22,
           "outputPerMillion": 0.66,
+          "cacheReadPerMillion": 0.007,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -891,6 +952,7 @@
           "maxOutputTokens": 384000,
           "inputPerMillion": 0.035,
           "outputPerMillion": 0.07,
+          "cacheReadPerMillion": 0.007,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -901,6 +963,7 @@
           "maxOutputTokens": 384000,
           "inputPerMillion": 0.14,
           "outputPerMillion": 0.28,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -918,6 +981,7 @@
           "maxOutputTokens": 393216,
           "inputPerMillion": 0.14,
           "outputPerMillion": 0.28,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -928,6 +992,7 @@
           "maxOutputTokens": 4096,
           "inputPerMillion": 0.19,
           "outputPerMillion": 0.51,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": true
         },
@@ -938,6 +1003,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0.139,
           "outputPerMillion": 0.278,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": true
         }
@@ -955,6 +1021,7 @@
           "maxOutputTokens": 384000,
           "inputPerMillion": 0.22,
           "outputPerMillion": 0.66,
+          "cacheReadPerMillion": 0.007,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -965,6 +1032,7 @@
           "maxOutputTokens": 384000,
           "inputPerMillion": 0.035,
           "outputPerMillion": 0.07,
+          "cacheReadPerMillion": 0.007,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -975,6 +1043,7 @@
           "maxOutputTokens": 384000,
           "inputPerMillion": 0.13,
           "outputPerMillion": 0.26,
+          "cacheReadPerMillion": 0.028,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -985,6 +1054,7 @@
           "maxOutputTokens": 384000,
           "inputPerMillion": 0.09,
           "outputPerMillion": 0.195,
+          "cacheReadPerMillion": 0.0196,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -995,6 +1065,7 @@
           "maxOutputTokens": 393216,
           "inputPerMillion": 0.14,
           "outputPerMillion": 0.28,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -1005,6 +1076,7 @@
           "maxOutputTokens": 384000,
           "inputPerMillion": 0.14,
           "outputPerMillion": 0.28,
+          "cacheReadPerMillion": 0.03,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -1022,6 +1094,7 @@
           "maxOutputTokens": 384000,
           "inputPerMillion": 0.28,
           "outputPerMillion": 0.56,
+          "cacheReadPerMillion": 0.07,
           "supportsToolCalling": false,
           "supportsReasoning": false
         }
@@ -1039,6 +1112,7 @@
           "maxOutputTokens": 384000,
           "inputPerMillion": 0.66,
           "outputPerMillion": 1.98,
+          "cacheReadPerMillion": 0.022,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -1049,6 +1123,7 @@
           "maxOutputTokens": 262000,
           "inputPerMillion": 1.74,
           "outputPerMillion": 3.48,
+          "cacheReadPerMillion": 0.145,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -1066,6 +1141,7 @@
           "maxOutputTokens": 250000,
           "inputPerMillion": 1.75,
           "outputPerMillion": 4.5,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -1076,6 +1152,7 @@
           "maxOutputTokens": 393216,
           "inputPerMillion": 1.65,
           "outputPerMillion": 3.3,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -1086,6 +1163,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 1.74,
           "outputPerMillion": 3.48,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": true
         },
@@ -1096,6 +1174,7 @@
           "maxOutputTokens": 262144,
           "inputPerMillion": 1.74,
           "outputPerMillion": 3.48,
+          "cacheReadPerMillion": 0.145,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -1106,6 +1185,7 @@
           "maxOutputTokens": 128000,
           "inputPerMillion": 1.74,
           "outputPerMillion": 3.48,
+          "cacheReadPerMillion": 0.2,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -1123,6 +1203,7 @@
           "maxOutputTokens": 384000,
           "inputPerMillion": 0.66,
           "outputPerMillion": 1.98,
+          "cacheReadPerMillion": 0.022,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -1133,6 +1214,7 @@
           "maxOutputTokens": 262000,
           "inputPerMillion": 1.32,
           "outputPerMillion": 3.96,
+          "cacheReadPerMillion": 0.132,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -1143,6 +1225,7 @@
           "maxOutputTokens": 384000,
           "inputPerMillion": 1.74,
           "outputPerMillion": 3.48,
+          "cacheReadPerMillion": 0.003625,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -1153,6 +1236,7 @@
           "maxOutputTokens": 384000,
           "inputPerMillion": 1.74,
           "outputPerMillion": 3.48,
+          "cacheReadPerMillion": 0.003625,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -1170,6 +1254,7 @@
           "maxOutputTokens": 64000,
           "inputPerMillion": 1.25,
           "outputPerMillion": 10,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -1187,6 +1272,7 @@
           "maxOutputTokens": 65536,
           "inputPerMillion": 0.3,
           "outputPerMillion": 2.5,
+          "cacheReadPerMillion": 0.03,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -1197,6 +1283,7 @@
           "maxOutputTokens": 65536,
           "inputPerMillion": 0.3,
           "outputPerMillion": 2.5,
+          "cacheReadPerMillion": 0.03,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -1214,6 +1301,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0.3,
           "outputPerMillion": 2.5,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": false
         },
@@ -1224,6 +1312,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0.3,
           "outputPerMillion": 2.5,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": false
         }
@@ -1241,6 +1330,7 @@
           "maxOutputTokens": 65536,
           "inputPerMillion": 0.1,
           "outputPerMillion": 0.4,
+          "cacheReadPerMillion": 0.01,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -1258,6 +1348,7 @@
           "maxOutputTokens": 65536,
           "inputPerMillion": 1.25,
           "outputPerMillion": 10,
+          "cacheReadPerMillion": 0.125,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -1268,6 +1359,7 @@
           "maxOutputTokens": 65536,
           "inputPerMillion": 1.25,
           "outputPerMillion": 10,
+          "cacheReadPerMillion": 0.125,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -1285,6 +1377,7 @@
           "maxOutputTokens": 65536,
           "inputPerMillion": 0.5,
           "outputPerMillion": 3,
+          "cacheReadPerMillion": 0.05,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -1302,6 +1395,7 @@
           "maxOutputTokens": 65536,
           "inputPerMillion": 2,
           "outputPerMillion": 12,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": false
         },
@@ -1312,6 +1406,7 @@
           "maxOutputTokens": 65536,
           "inputPerMillion": 2,
           "outputPerMillion": 12,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": false
         }
@@ -1329,6 +1424,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0.5,
           "outputPerMillion": 3,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": false
         },
@@ -1339,6 +1435,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0.5,
           "outputPerMillion": 3,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": false
         }
@@ -1356,6 +1453,7 @@
           "maxOutputTokens": 65536,
           "inputPerMillion": 0.25,
           "outputPerMillion": 1.5,
+          "cacheReadPerMillion": 0.025,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -1373,6 +1471,7 @@
           "maxOutputTokens": 65536,
           "inputPerMillion": 2,
           "outputPerMillion": 12,
+          "cacheReadPerMillion": 0.2,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -1390,6 +1489,7 @@
           "maxOutputTokens": 65536,
           "inputPerMillion": 2,
           "outputPerMillion": 12,
+          "cacheReadPerMillion": 0.2,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -1407,6 +1507,7 @@
           "maxOutputTokens": 128000,
           "inputPerMillion": 1.5,
           "outputPerMillion": 9,
+          "cacheReadPerMillion": 0.15,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -1417,6 +1518,7 @@
           "maxOutputTokens": 65536,
           "inputPerMillion": 1.5,
           "outputPerMillion": 9,
+          "cacheReadPerMillion": 0.15,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -1434,6 +1536,7 @@
           "maxOutputTokens": 65536,
           "inputPerMillion": 0.3,
           "outputPerMillion": 2.5,
+          "cacheReadPerMillion": 0.03,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -1444,6 +1547,7 @@
           "maxOutputTokens": 65536,
           "inputPerMillion": 0.3,
           "outputPerMillion": 2.5,
+          "cacheReadPerMillion": 0.03,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -1461,6 +1565,7 @@
           "maxOutputTokens": 65536,
           "inputPerMillion": 1.5,
           "outputPerMillion": 7.5,
+          "cacheReadPerMillion": 0.15,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -1471,6 +1576,7 @@
           "maxOutputTokens": 65536,
           "inputPerMillion": 1.5,
           "outputPerMillion": 7.5,
+          "cacheReadPerMillion": 0.15,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -1488,6 +1594,7 @@
           "maxOutputTokens": 65536,
           "inputPerMillion": 0.75,
           "outputPerMillion": 3.75,
+          "cacheReadPerMillion": 0.075,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -1498,6 +1605,7 @@
           "maxOutputTokens": 65536,
           "inputPerMillion": 0.75,
           "outputPerMillion": 3.75,
+          "cacheReadPerMillion": 0.075,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -1515,6 +1623,7 @@
           "maxOutputTokens": 4096,
           "inputPerMillion": 0.15,
           "outputPerMillion": 0,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": false
         }
@@ -1532,6 +1641,7 @@
           "maxOutputTokens": 8192,
           "inputPerMillion": 0.09,
           "outputPerMillion": 0.29,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": false
         }
@@ -1549,6 +1659,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0.08,
           "outputPerMillion": 0.45,
+          "cacheReadPerMillion": 0.04,
           "supportsToolCalling": false,
           "supportsReasoning": false
         },
@@ -1559,6 +1670,7 @@
           "maxOutputTokens": 8192,
           "inputPerMillion": 0.23,
           "outputPerMillion": 0.38,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": false
         }
@@ -1576,6 +1688,7 @@
           "maxOutputTokens": 8192,
           "inputPerMillion": 0.04,
           "outputPerMillion": 0.08,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": false
         }
@@ -1593,6 +1706,7 @@
           "maxOutputTokens": 65536,
           "inputPerMillion": 0.13,
           "outputPerMillion": 0.4,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": true
         },
@@ -1603,6 +1717,7 @@
           "maxOutputTokens": 384000,
           "inputPerMillion": 0.1,
           "outputPerMillion": 0.34,
+          "cacheReadPerMillion": 0.034,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -1613,6 +1728,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0.05,
           "outputPerMillion": 0.29,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": false
         },
@@ -1623,6 +1739,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0.15,
           "outputPerMillion": 0.6,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": true
         },
@@ -1633,6 +1750,7 @@
           "maxOutputTokens": 65536,
           "inputPerMillion": 0.13,
           "outputPerMillion": 0.4,
+          "cacheReadPerMillion": 0.065,
           "supportsToolCalling": false,
           "supportsReasoning": true
         }
@@ -1650,6 +1768,7 @@
           "maxOutputTokens": 65536,
           "inputPerMillion": 0.14,
           "outputPerMillion": 0.4,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": true
         },
@@ -1660,6 +1779,7 @@
           "maxOutputTokens": 65536,
           "inputPerMillion": 0.14,
           "outputPerMillion": 0.4,
+          "cacheReadPerMillion": 0.07,
           "supportsToolCalling": false,
           "supportsReasoning": true
         },
@@ -1670,6 +1790,7 @@
           "maxOutputTokens": 65536,
           "inputPerMillion": 0.07,
           "outputPerMillion": 0.4,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -1680,6 +1801,7 @@
           "maxOutputTokens": 65536,
           "inputPerMillion": 0.14,
           "outputPerMillion": 0.4,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -1697,6 +1819,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0,
           "outputPerMillion": 0,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": false
         },
@@ -1707,6 +1830,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0,
           "outputPerMillion": 0,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": false
         }
@@ -1724,6 +1848,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0,
           "outputPerMillion": 0,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": false
         },
@@ -1734,6 +1859,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0,
           "outputPerMillion": 0,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": false
         }
@@ -1751,6 +1877,7 @@
           "maxOutputTokens": 8192,
           "inputPerMillion": 2.65,
           "outputPerMillion": 3.5,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": false
         }
@@ -1768,6 +1895,7 @@
           "maxOutputTokens": 8192,
           "inputPerMillion": 0.3,
           "outputPerMillion": 0.6,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": false
         }
@@ -1785,6 +1913,7 @@
           "maxOutputTokens": 2048,
           "inputPerMillion": 0.99,
           "outputPerMillion": 0.99,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -1802,6 +1931,7 @@
           "maxOutputTokens": 2048,
           "inputPerMillion": 0.22,
           "outputPerMillion": 0.22,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -1819,6 +1949,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 1.04,
           "outputPerMillion": 1.04,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": false
         },
@@ -1829,6 +1960,7 @@
           "maxOutputTokens": 4096,
           "inputPerMillion": 0.72,
           "outputPerMillion": 0.72,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": false
         },
@@ -1839,6 +1971,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0.72,
           "outputPerMillion": 0.72,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": false
         },
@@ -1849,6 +1982,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0.22,
           "outputPerMillion": 0.5,
+          "cacheReadPerMillion": 0.11,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -1866,6 +2000,7 @@
           "maxOutputTokens": 131072,
           "inputPerMillion": 0.35,
           "outputPerMillion": 1,
+          "cacheReadPerMillion": 0.175,
           "supportsToolCalling": true,
           "supportsReasoning": false
         },
@@ -1876,6 +2011,7 @@
           "maxOutputTokens": 4096,
           "inputPerMillion": 0.24,
           "outputPerMillion": 0.97,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -1893,6 +2029,7 @@
           "maxOutputTokens": 4096,
           "inputPerMillion": 0.17,
           "outputPerMillion": 0.66,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -1910,6 +2047,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0,
           "outputPerMillion": 0,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": false
         }
@@ -1927,6 +2065,7 @@
           "maxOutputTokens": 8192,
           "inputPerMillion": 0.3,
           "outputPerMillion": 1.2,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -1937,6 +2076,7 @@
           "maxOutputTokens": 8192,
           "inputPerMillion": 0.3,
           "outputPerMillion": 1.2,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": false
         },
@@ -1947,6 +2087,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0.3,
           "outputPerMillion": 1.2,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": true
         }
@@ -1964,6 +2105,7 @@
           "maxOutputTokens": 8192,
           "inputPerMillion": 0.3,
           "outputPerMillion": 1.2,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -1974,6 +2116,7 @@
           "maxOutputTokens": 8192,
           "inputPerMillion": 0.3,
           "outputPerMillion": 1.2,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -1991,6 +2134,7 @@
           "maxOutputTokens": 8192,
           "inputPerMillion": 0.6,
           "outputPerMillion": 2.4,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -2008,6 +2152,7 @@
           "maxOutputTokens": 8192,
           "inputPerMillion": 0.3,
           "outputPerMillion": 1.2,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -2018,6 +2163,7 @@
           "maxOutputTokens": 51000,
           "inputPerMillion": 0.3,
           "outputPerMillion": 1.2,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": false
         },
@@ -2028,6 +2174,7 @@
           "maxOutputTokens": 49152,
           "inputPerMillion": 0.3,
           "outputPerMillion": 1.2,
+          "cacheReadPerMillion": 0.15,
           "supportsToolCalling": false,
           "supportsReasoning": true
         }
@@ -2045,6 +2192,7 @@
           "maxOutputTokens": 8192,
           "inputPerMillion": 0.6,
           "outputPerMillion": 2.4,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -2062,6 +2210,7 @@
           "maxOutputTokens": 8192,
           "inputPerMillion": 0.3,
           "outputPerMillion": 1.2,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -2072,6 +2221,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0.15,
           "outputPerMillion": 0.6,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -2082,6 +2232,7 @@
           "maxOutputTokens": 49152,
           "inputPerMillion": 0.279,
           "outputPerMillion": 1.2,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -2099,6 +2250,7 @@
           "maxOutputTokens": 8192,
           "inputPerMillion": 0.6,
           "outputPerMillion": 2.4,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -2109,6 +2261,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0.3,
           "outputPerMillion": 1.2,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -2126,6 +2279,7 @@
           "maxOutputTokens": 128000,
           "inputPerMillion": 0.3,
           "outputPerMillion": 1.2,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -2136,6 +2290,7 @@
           "maxOutputTokens": 524288,
           "inputPerMillion": 0.225,
           "outputPerMillion": 0.9,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -2146,6 +2301,7 @@
           "maxOutputTokens": 128000,
           "inputPerMillion": 0.3,
           "outputPerMillion": 1.2,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -2156,6 +2312,7 @@
           "maxOutputTokens": 524288,
           "inputPerMillion": 0.3,
           "outputPerMillion": 1.2,
+          "cacheReadPerMillion": 0.059,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -2173,6 +2330,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0,
           "outputPerMillion": 0,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": false
         }
@@ -2190,6 +2348,7 @@
           "maxOutputTokens": 128000,
           "inputPerMillion": 0.3,
           "outputPerMillion": 0.9,
+          "cacheReadPerMillion": 0.03,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -2207,6 +2366,7 @@
           "maxOutputTokens": 256000,
           "inputPerMillion": 0.4,
           "outputPerMillion": 2,
+          "cacheReadPerMillion": 0.04,
           "supportsToolCalling": true,
           "supportsReasoning": false
         },
@@ -2217,6 +2377,7 @@
           "maxOutputTokens": 8192,
           "inputPerMillion": 0.4,
           "outputPerMillion": 2,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -2234,6 +2395,7 @@
           "maxOutputTokens": 128000,
           "inputPerMillion": 2,
           "outputPerMillion": 5,
+          "cacheReadPerMillion": 0.2,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -2251,6 +2413,7 @@
           "maxOutputTokens": 40000,
           "inputPerMillion": 2.6,
           "outputPerMillion": 6.5,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -2268,6 +2431,7 @@
           "maxOutputTokens": 128000,
           "inputPerMillion": 0.5,
           "outputPerMillion": 1.5,
+          "cacheReadPerMillion": 0.05,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -2278,6 +2442,7 @@
           "maxOutputTokens": 128000,
           "inputPerMillion": 0.5,
           "outputPerMillion": 1.5,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -2295,6 +2460,7 @@
           "maxOutputTokens": 256000,
           "inputPerMillion": 0.2,
           "outputPerMillion": 0.2,
+          "cacheReadPerMillion": 0.02,
           "supportsToolCalling": true,
           "supportsReasoning": false
         },
@@ -2305,6 +2471,7 @@
           "maxOutputTokens": 8192,
           "inputPerMillion": 0.2,
           "outputPerMillion": 0.2,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -2322,6 +2489,7 @@
           "maxOutputTokens": 256000,
           "inputPerMillion": 0.1,
           "outputPerMillion": 0.1,
+          "cacheReadPerMillion": 0.01,
           "supportsToolCalling": true,
           "supportsReasoning": false
         },
@@ -2332,6 +2500,7 @@
           "maxOutputTokens": 8192,
           "inputPerMillion": 0.1,
           "outputPerMillion": 0.1,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -2349,6 +2518,7 @@
           "maxOutputTokens": 256000,
           "inputPerMillion": 0.15,
           "outputPerMillion": 0.15,
+          "cacheReadPerMillion": 0.015,
           "supportsToolCalling": true,
           "supportsReasoning": false
         },
@@ -2359,6 +2529,7 @@
           "maxOutputTokens": 8192,
           "inputPerMillion": 0.15,
           "outputPerMillion": 0.15,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -2376,6 +2547,7 @@
           "maxOutputTokens": 256000,
           "inputPerMillion": 0.5,
           "outputPerMillion": 1.5,
+          "cacheReadPerMillion": 0.05,
           "supportsToolCalling": true,
           "supportsReasoning": false
         },
@@ -2386,6 +2558,7 @@
           "maxOutputTokens": 8192,
           "inputPerMillion": 0.5,
           "outputPerMillion": 1.5,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -2403,6 +2576,7 @@
           "maxOutputTokens": 128000,
           "inputPerMillion": 0.4,
           "outputPerMillion": 2,
+          "cacheReadPerMillion": 0.04,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -2420,6 +2594,7 @@
           "maxOutputTokens": 128000,
           "inputPerMillion": 0.4,
           "outputPerMillion": 2,
+          "cacheReadPerMillion": 0.04,
           "supportsToolCalling": true,
           "supportsReasoning": false
         },
@@ -2430,6 +2605,7 @@
           "maxOutputTokens": 40000,
           "inputPerMillion": 0.52,
           "outputPerMillion": 2.6,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -2447,6 +2623,7 @@
           "maxOutputTokens": 256000,
           "inputPerMillion": 1.5,
           "outputPerMillion": 7.5,
+          "cacheReadPerMillion": 0.15,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -2464,6 +2641,7 @@
           "maxOutputTokens": 256000,
           "inputPerMillion": 0.15,
           "outputPerMillion": 0.6,
+          "cacheReadPerMillion": 0.015,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -2474,6 +2652,7 @@
           "maxOutputTokens": 65536,
           "inputPerMillion": 0.15,
           "outputPerMillion": 0.6,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -2491,6 +2670,7 @@
           "maxOutputTokens": 128000,
           "inputPerMillion": 0.3,
           "outputPerMillion": 0.3,
+          "cacheReadPerMillion": 0.03,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -2508,6 +2688,7 @@
           "maxOutputTokens": 4096,
           "inputPerMillion": 0.04,
           "outputPerMillion": 0.04,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": false
         }
@@ -2525,6 +2706,7 @@
           "maxOutputTokens": 4096,
           "inputPerMillion": 0.1,
           "outputPerMillion": 0.3,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": false
         }
@@ -2542,6 +2724,7 @@
           "maxOutputTokens": 262144,
           "inputPerMillion": 0.6,
           "outputPerMillion": 3,
+          "cacheReadPerMillion": 0.1,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -2552,6 +2735,7 @@
           "maxOutputTokens": 262144,
           "inputPerMillion": 0.6,
           "outputPerMillion": 3.03,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": false
         },
@@ -2562,6 +2746,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0.6,
           "outputPerMillion": 3,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": true
         },
@@ -2572,6 +2757,7 @@
           "maxOutputTokens": 65500,
           "inputPerMillion": 0.6,
           "outputPerMillion": 3,
+          "cacheReadPerMillion": 0.12,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -2589,6 +2775,7 @@
           "maxOutputTokens": 262144,
           "inputPerMillion": 0.95,
           "outputPerMillion": 4,
+          "cacheReadPerMillion": 0.16,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -2599,6 +2786,7 @@
           "maxOutputTokens": 65536,
           "inputPerMillion": 1,
           "outputPerMillion": 4,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -2609,6 +2797,7 @@
           "maxOutputTokens": 16000,
           "inputPerMillion": 0.8939,
           "outputPerMillion": 3.7131,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -2619,6 +2808,7 @@
           "maxOutputTokens": 65536,
           "inputPerMillion": 1.2,
           "outputPerMillion": 4.5,
+          "cacheReadPerMillion": 0.2,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -2629,6 +2819,7 @@
           "maxOutputTokens": 65500,
           "inputPerMillion": 1,
           "outputPerMillion": 3.9,
+          "cacheReadPerMillion": 0.168421,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -2639,6 +2830,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0.95,
           "outputPerMillion": 4,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": true
         },
@@ -2649,6 +2841,7 @@
           "maxOutputTokens": 65536,
           "inputPerMillion": 0.95,
           "outputPerMillion": 4,
+          "cacheReadPerMillion": 0.168421,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -2666,6 +2859,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0.95,
           "outputPerMillion": 4,
+          "cacheReadPerMillion": 0.19,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -2676,6 +2870,7 @@
           "maxOutputTokens": 131072,
           "inputPerMillion": 0.95,
           "outputPerMillion": 4,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -2686,6 +2881,7 @@
           "maxOutputTokens": 65536,
           "inputPerMillion": 0.95,
           "outputPerMillion": 4,
+          "cacheReadPerMillion": 0.19,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -2703,6 +2899,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 1.9,
           "outputPerMillion": 8,
+          "cacheReadPerMillion": 0.38,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -2713,6 +2910,7 @@
           "maxOutputTokens": 131072,
           "inputPerMillion": 1.9,
           "outputPerMillion": 8,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -2730,6 +2928,7 @@
           "maxOutputTokens": 1048576,
           "inputPerMillion": 2.9,
           "outputPerMillion": 14,
+          "cacheReadPerMillion": 0.3,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -2740,6 +2939,7 @@
           "maxOutputTokens": 1048576,
           "inputPerMillion": 3,
           "outputPerMillion": 15,
+          "cacheReadPerMillion": 0.3,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -2750,6 +2950,7 @@
           "maxOutputTokens": 1048576,
           "inputPerMillion": 3,
           "outputPerMillion": 15,
+          "cacheReadPerMillion": 0.3,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -2760,6 +2961,7 @@
           "maxOutputTokens": 1048576,
           "inputPerMillion": 3,
           "outputPerMillion": 15,
+          "cacheReadPerMillion": 0.3,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -2770,6 +2972,7 @@
           "maxOutputTokens": 1000000,
           "inputPerMillion": 3,
           "outputPerMillion": 15,
+          "cacheReadPerMillion": 0.3,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -2780,6 +2983,7 @@
           "maxOutputTokens": 1048576,
           "inputPerMillion": 2.9,
           "outputPerMillion": 14,
+          "cacheReadPerMillion": 0.29,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -2790,6 +2994,7 @@
           "maxOutputTokens": 262144,
           "inputPerMillion": 3,
           "outputPerMillion": 15,
+          "cacheReadPerMillion": 0.3,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -2807,6 +3012,7 @@
           "maxOutputTokens": 131072,
           "inputPerMillion": 2,
           "outputPerMillion": 5,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -2824,6 +3030,7 @@
           "maxOutputTokens": 131072,
           "inputPerMillion": 2,
           "outputPerMillion": 5,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -2841,6 +3048,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 1,
           "outputPerMillion": 3,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -2858,6 +3066,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 1,
           "outputPerMillion": 3,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -2875,6 +3084,7 @@
           "maxOutputTokens": 8192,
           "inputPerMillion": 0.2,
           "outputPerMillion": 2,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -2892,6 +3102,7 @@
           "maxOutputTokens": 8192,
           "inputPerMillion": 0.2,
           "outputPerMillion": 2,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -2909,6 +3120,7 @@
           "maxOutputTokens": 131072,
           "inputPerMillion": 2,
           "outputPerMillion": 5,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -2926,6 +3138,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0.2,
           "outputPerMillion": 0.5,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": false
         }
@@ -2943,6 +3156,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0.8,
           "outputPerMillion": 1.2,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": false
         }
@@ -2960,6 +3174,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0.9,
           "outputPerMillion": 1.9,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": false
         }
@@ -2977,6 +3192,7 @@
           "maxOutputTokens": 50750,
           "inputPerMillion": 0.3,
           "outputPerMillion": 0.75,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -2994,6 +3210,7 @@
           "maxOutputTokens": 262144,
           "inputPerMillion": 0,
           "outputPerMillion": 0,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -3011,6 +3228,7 @@
           "maxOutputTokens": 4096,
           "inputPerMillion": 0.2,
           "outputPerMillion": 0.6,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": false
         }
@@ -3028,6 +3246,7 @@
           "maxOutputTokens": 8192,
           "inputPerMillion": 0.2,
           "outputPerMillion": 0.6,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": false
         }
@@ -3045,6 +3264,7 @@
           "maxOutputTokens": 8192,
           "inputPerMillion": 0.06,
           "outputPerMillion": 0.24,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -3062,6 +3282,7 @@
           "maxOutputTokens": 4096,
           "inputPerMillion": 0.06,
           "outputPerMillion": 0.23,
+          "cacheReadPerMillion": 0,
           "supportsToolCalling": false,
           "supportsReasoning": false
         }
@@ -3079,6 +3300,7 @@
           "maxOutputTokens": 8192,
           "inputPerMillion": 0.06,
           "outputPerMillion": 0.23,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": false
         }
@@ -3096,6 +3318,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0.15,
           "outputPerMillion": 0.65,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -3113,6 +3336,7 @@
           "maxOutputTokens": 4096,
           "inputPerMillion": 0.5,
           "outputPerMillion": 1.5,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": false
         }
@@ -3130,6 +3354,7 @@
           "maxOutputTokens": 4096,
           "inputPerMillion": 0.5,
           "outputPerMillion": 1.5,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": false
         }
@@ -3147,6 +3372,7 @@
           "maxOutputTokens": 4096,
           "inputPerMillion": 1,
           "outputPerMillion": 2,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": false
         }
@@ -3164,6 +3390,7 @@
           "maxOutputTokens": 4096,
           "inputPerMillion": 3,
           "outputPerMillion": 4,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -3181,6 +3408,7 @@
           "maxOutputTokens": 8192,
           "inputPerMillion": 30,
           "outputPerMillion": 60,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": false
         }
@@ -3198,6 +3426,7 @@
           "maxOutputTokens": 8192,
           "inputPerMillion": 30,
           "outputPerMillion": 60,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": false
         }
@@ -3215,6 +3444,7 @@
           "maxOutputTokens": 4096,
           "inputPerMillion": 10,
           "outputPerMillion": 30,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -3232,6 +3462,7 @@
           "maxOutputTokens": 4096,
           "inputPerMillion": 10,
           "outputPerMillion": 30,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -3249,6 +3480,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 2,
           "outputPerMillion": 8,
+          "cacheReadPerMillion": 0.5,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -3266,6 +3498,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 2,
           "outputPerMillion": 8,
+          "cacheReadPerMillion": 0.5,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -3283,6 +3516,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0.4,
           "outputPerMillion": 1.6,
+          "cacheReadPerMillion": 0.1,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -3300,6 +3534,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0.4,
           "outputPerMillion": 1.6,
+          "cacheReadPerMillion": 0.1,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -3317,6 +3552,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0.1,
           "outputPerMillion": 0.4,
+          "cacheReadPerMillion": 0.025,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -3334,6 +3570,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0.1,
           "outputPerMillion": 0.4,
+          "cacheReadPerMillion": 0.025,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -3351,6 +3588,7 @@
           "maxOutputTokens": 16384,
           "inputPerMillion": 2.5,
           "outputPerMillion": 10,
+          "cacheReadPerMillion": 1.25,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -3368,6 +3606,7 @@
           "maxOutputTokens": 4096,
           "inputPerMillion": 5,
           "outputPerMillion": 15,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -3385,6 +3624,7 @@
           "maxOutputTokens": 16384,
           "inputPerMillion": 2.5,
           "outputPerMillion": 10,
+          "cacheReadPerMillion": 1.25,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -3402,6 +3642,7 @@
           "maxOutputTokens": 16384,
           "inputPerMillion": 2.5,
           "outputPerMillion": 10,
+          "cacheReadPerMillion": 1.25,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -3419,6 +3660,7 @@
           "maxOutputTokens": 16384,
           "inputPerMillion": 0.15,
           "outputPerMillion": 0.6,
+          "cacheReadPerMillion": 0.075,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -3436,6 +3678,7 @@
           "maxOutputTokens": 16384,
           "inputPerMillion": 0.15,
           "outputPerMillion": 0.6,
+          "cacheReadPerMillion": 0.075,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -3453,6 +3696,7 @@
           "maxOutputTokens": 16384,
           "inputPerMillion": 0.15,
           "outputPerMillion": 0.6,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": false
         }
@@ -3470,6 +3714,7 @@
           "maxOutputTokens": 16384,
           "inputPerMillion": 0.15,
           "outputPerMillion": 0.6,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": false
         }
@@ -3487,6 +3732,7 @@
           "maxOutputTokens": 16384,
           "inputPerMillion": 2.5,
           "outputPerMillion": 10,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": false
         }
@@ -3504,6 +3750,7 @@
           "maxOutputTokens": 16384,
           "inputPerMillion": 2.5,
           "outputPerMillion": 10,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": false
         }
@@ -3521,6 +3768,7 @@
           "maxOutputTokens": 128000,
           "inputPerMillion": 1.25,
           "outputPerMillion": 10,
+          "cacheReadPerMillion": 0.125,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -3538,6 +3786,7 @@
           "maxOutputTokens": 128000,
           "inputPerMillion": 1.25,
           "outputPerMillion": 10,
+          "cacheReadPerMillion": 0.125,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -3555,6 +3804,7 @@
           "maxOutputTokens": 16384,
           "inputPerMillion": 1.25,
           "outputPerMillion": 10,
+          "cacheReadPerMillion": 0.125,
           "supportsToolCalling": false,
           "supportsReasoning": false
         }
@@ -3572,6 +3822,7 @@
           "maxOutputTokens": 128000,
           "inputPerMillion": 0.25,
           "outputPerMillion": 2,
+          "cacheReadPerMillion": 0.025,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -3589,6 +3840,7 @@
           "maxOutputTokens": 128000,
           "inputPerMillion": 0.25,
           "outputPerMillion": 2,
+          "cacheReadPerMillion": 0.025,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -3606,6 +3858,7 @@
           "maxOutputTokens": 128000,
           "inputPerMillion": 0.05,
           "outputPerMillion": 0.4,
+          "cacheReadPerMillion": 0.005,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -3623,6 +3876,7 @@
           "maxOutputTokens": 128000,
           "inputPerMillion": 0.05,
           "outputPerMillion": 0.4,
+          "cacheReadPerMillion": 0.005,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -3640,6 +3894,7 @@
           "maxOutputTokens": 128000,
           "inputPerMillion": 1.25,
           "outputPerMillion": 10,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -3657,6 +3912,7 @@
           "maxOutputTokens": 128000,
           "inputPerMillion": 1.25,
           "outputPerMillion": 10,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -3674,6 +3930,7 @@
           "maxOutputTokens": 128000,
           "inputPerMillion": 1.25,
           "outputPerMillion": 10,
+          "cacheReadPerMillion": 0.125,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -3691,6 +3948,7 @@
           "maxOutputTokens": 128000,
           "inputPerMillion": 1.25,
           "outputPerMillion": 10,
+          "cacheReadPerMillion": 0.125,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -3708,6 +3966,7 @@
           "maxOutputTokens": 16384,
           "inputPerMillion": 1.25,
           "outputPerMillion": 10,
+          "cacheReadPerMillion": 0.125,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -3725,6 +3984,7 @@
           "maxOutputTokens": 128000,
           "inputPerMillion": 1.75,
           "outputPerMillion": 14,
+          "cacheReadPerMillion": 0.175,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -3742,6 +4002,7 @@
           "maxOutputTokens": 128000,
           "inputPerMillion": 1.75,
           "outputPerMillion": 14,
+          "cacheReadPerMillion": 0.175,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -3759,6 +4020,7 @@
           "maxOutputTokens": 16384,
           "inputPerMillion": 1.75,
           "outputPerMillion": 14,
+          "cacheReadPerMillion": 0.175,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -3776,6 +4038,7 @@
           "maxOutputTokens": 16384,
           "inputPerMillion": 1.75,
           "outputPerMillion": 14,
+          "cacheReadPerMillion": 0.175,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -3793,6 +4056,7 @@
           "maxOutputTokens": 128000,
           "inputPerMillion": 2.5,
           "outputPerMillion": 15,
+          "cacheReadPerMillion": 0.25,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -3810,6 +4074,7 @@
           "maxOutputTokens": 128000,
           "inputPerMillion": 2.5,
           "outputPerMillion": 15,
+          "cacheReadPerMillion": 0.25,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -3827,6 +4092,7 @@
           "maxOutputTokens": 128000,
           "inputPerMillion": 0.75,
           "outputPerMillion": 4.5,
+          "cacheReadPerMillion": 0.075,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -3844,6 +4110,7 @@
           "maxOutputTokens": 128000,
           "inputPerMillion": 0.75,
           "outputPerMillion": 4.5,
+          "cacheReadPerMillion": 0.075,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -3861,6 +4128,7 @@
           "maxOutputTokens": 128000,
           "inputPerMillion": 0.2,
           "outputPerMillion": 1.25,
+          "cacheReadPerMillion": 0.02,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -3878,6 +4146,7 @@
           "maxOutputTokens": 128000,
           "inputPerMillion": 0.2,
           "outputPerMillion": 1.25,
+          "cacheReadPerMillion": 0.02,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -3895,6 +4164,7 @@
           "maxOutputTokens": 128000,
           "inputPerMillion": 5,
           "outputPerMillion": 30,
+          "cacheReadPerMillion": 0.5,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -3912,6 +4182,7 @@
           "maxOutputTokens": 128000,
           "inputPerMillion": 5,
           "outputPerMillion": 30,
+          "cacheReadPerMillion": 0.5,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -3929,6 +4200,7 @@
           "maxOutputTokens": 128000,
           "inputPerMillion": 0.2,
           "outputPerMillion": 1.2,
+          "cacheReadPerMillion": 0.02,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -3946,6 +4218,7 @@
           "maxOutputTokens": 128000,
           "inputPerMillion": 5,
           "outputPerMillion": 30,
+          "cacheReadPerMillion": 0.5,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -3963,6 +4236,7 @@
           "maxOutputTokens": 128000,
           "inputPerMillion": 2,
           "outputPerMillion": 12,
+          "cacheReadPerMillion": 0.2,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -3980,6 +4254,7 @@
           "maxOutputTokens": 16384,
           "inputPerMillion": 2.5,
           "outputPerMillion": 10,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -3997,6 +4272,7 @@
           "maxOutputTokens": 16384,
           "inputPerMillion": 0.6,
           "outputPerMillion": 2.4,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -4014,6 +4290,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 5,
           "outputPerMillion": 30,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": false
         }
@@ -4031,6 +4308,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0.09,
           "outputPerMillion": 0.36,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": false
         },
@@ -4041,6 +4319,7 @@
           "maxOutputTokens": 32000,
           "inputPerMillion": 0.1,
           "outputPerMillion": 0.5,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -4051,6 +4330,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0.1,
           "outputPerMillion": 0.75,
+          "cacheReadPerMillion": 0.05,
           "supportsToolCalling": false,
           "supportsReasoning": true
         },
@@ -4061,6 +4341,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0.06,
           "outputPerMillion": 0.4,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -4071,6 +4352,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0.15,
           "outputPerMillion": 0.6,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -4081,6 +4363,7 @@
           "maxOutputTokens": 128000,
           "inputPerMillion": 0.15,
           "outputPerMillion": 0.6,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": false
         },
@@ -4091,6 +4374,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0.1,
           "outputPerMillion": 0.5,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": true
         },
@@ -4101,6 +4385,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0.15,
           "outputPerMillion": 0.6,
+          "cacheReadPerMillion": 0.015,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -4118,6 +4403,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0.07,
           "outputPerMillion": 0.25,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": false
         },
@@ -4128,6 +4414,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0.04,
           "outputPerMillion": 0.2,
+          "cacheReadPerMillion": 0.02,
           "supportsToolCalling": false,
           "supportsReasoning": true
         },
@@ -4138,6 +4425,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0.05,
           "outputPerMillion": 0.2,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -4148,6 +4436,7 @@
           "maxOutputTokens": 128000,
           "inputPerMillion": 0.07,
           "outputPerMillion": 0.3,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -4165,6 +4454,7 @@
           "maxOutputTokens": 4096,
           "inputPerMillion": 0.15,
           "outputPerMillion": 0.6,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": false
         }
@@ -4182,6 +4472,7 @@
           "maxOutputTokens": 4096,
           "inputPerMillion": 0.07,
           "outputPerMillion": 0.2,
+          "cacheReadPerMillion": 0,
           "supportsToolCalling": false,
           "supportsReasoning": false
         }
@@ -4199,6 +4490,7 @@
           "maxOutputTokens": 100000,
           "inputPerMillion": 15,
           "outputPerMillion": 60,
+          "cacheReadPerMillion": 7.5,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -4216,6 +4508,7 @@
           "maxOutputTokens": 100000,
           "inputPerMillion": 15,
           "outputPerMillion": 60,
+          "cacheReadPerMillion": 7.5,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -4233,6 +4526,7 @@
           "maxOutputTokens": 100000,
           "inputPerMillion": 2,
           "outputPerMillion": 8,
+          "cacheReadPerMillion": 0.5,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -4250,6 +4544,7 @@
           "maxOutputTokens": 100000,
           "inputPerMillion": 2,
           "outputPerMillion": 8,
+          "cacheReadPerMillion": 0.5,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -4267,6 +4562,7 @@
           "maxOutputTokens": 100000,
           "inputPerMillion": 1.1,
           "outputPerMillion": 4.4,
+          "cacheReadPerMillion": 0.55,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -4284,6 +4580,7 @@
           "maxOutputTokens": 100000,
           "inputPerMillion": 1.1,
           "outputPerMillion": 4.4,
+          "cacheReadPerMillion": 0.55,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -4301,6 +4598,7 @@
           "maxOutputTokens": 100000,
           "inputPerMillion": 1.1,
           "outputPerMillion": 4.4,
+          "cacheReadPerMillion": 0.275,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -4318,6 +4616,7 @@
           "maxOutputTokens": 100000,
           "inputPerMillion": 1.1,
           "outputPerMillion": 4.4,
+          "cacheReadPerMillion": 0.275,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -4335,6 +4634,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0,
           "outputPerMillion": 0,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": false
         }
@@ -4352,6 +4652,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0,
           "outputPerMillion": 0,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": false
         }
@@ -4369,6 +4670,7 @@
           "maxOutputTokens": 4096,
           "inputPerMillion": 0,
           "outputPerMillion": 0,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": false
         }
@@ -4386,6 +4688,7 @@
           "maxOutputTokens": 250000,
           "inputPerMillion": 0.022,
           "outputPerMillion": 0.216,
+          "cacheReadPerMillion": 0.0044,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -4403,6 +4706,7 @@
           "maxOutputTokens": 250000,
           "inputPerMillion": 0.115,
           "outputPerMillion": 0.287,
+          "cacheReadPerMillion": 0.023,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -4420,6 +4724,7 @@
           "maxOutputTokens": 32000,
           "inputPerMillion": 0.8,
           "outputPerMillion": 1,
+          "cacheReadPerMillion": 0.4,
           "supportsToolCalling": false,
           "supportsReasoning": false
         }
@@ -4437,6 +4742,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0.144,
           "outputPerMillion": 1.434,
+          "cacheReadPerMillion": 0.0288,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -4454,6 +4760,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0.287,
           "outputPerMillion": 1.147,
+          "cacheReadPerMillion": 0.0574,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -4471,6 +4778,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0.287,
           "outputPerMillion": 0.92,
+          "cacheReadPerMillion": 0.0574,
           "supportsToolCalling": true,
           "supportsReasoning": false
         },
@@ -4481,6 +4789,7 @@
           "maxOutputTokens": 65536,
           "inputPerMillion": 0.2,
           "outputPerMillion": 0.6,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": false
         },
@@ -4491,6 +4800,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0.1,
           "outputPerMillion": 0.6,
+          "cacheReadPerMillion": 0.05,
           "supportsToolCalling": true,
           "supportsReasoning": false
         },
@@ -4501,6 +4811,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0.22,
           "outputPerMillion": 0.88,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": false
         }
@@ -4518,6 +4829,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0.287,
           "outputPerMillion": 2.3,
+          "cacheReadPerMillion": 0.0574,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -4535,6 +4847,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0.108,
           "outputPerMillion": 1.076,
+          "cacheReadPerMillion": 0.0216,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -4552,6 +4865,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0.108,
           "outputPerMillion": 0.431,
+          "cacheReadPerMillion": 0.0216,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -4569,6 +4883,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0.287,
           "outputPerMillion": 0.64,
+          "cacheReadPerMillion": 0.0574,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -4579,6 +4894,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0.15,
           "outputPerMillion": 0.6,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -4596,6 +4912,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0.072,
           "outputPerMillion": 0.287,
+          "cacheReadPerMillion": 0.0144,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -4613,6 +4930,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0.15,
           "outputPerMillion": 0.6,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": false
         },
@@ -4623,6 +4941,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0.216,
           "outputPerMillion": 0.861,
+          "cacheReadPerMillion": 0.0432,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -4640,6 +4959,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0.861,
           "outputPerMillion": 3.441,
+          "cacheReadPerMillion": 0.1722,
           "supportsToolCalling": true,
           "supportsReasoning": false
         },
@@ -4650,6 +4970,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0.22,
           "outputPerMillion": 1.8,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -4667,6 +4988,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0.22,
           "outputPerMillion": 1.8,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": false
         }
@@ -4684,6 +5006,7 @@
           "maxOutputTokens": 250000,
           "inputPerMillion": 0.144,
           "outputPerMillion": 0.574,
+          "cacheReadPerMillion": 0.0288,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -4701,6 +5024,7 @@
           "maxOutputTokens": 65536,
           "inputPerMillion": 0.15,
           "outputPerMillion": 0.8,
+          "cacheReadPerMillion": 0.075,
           "supportsToolCalling": false,
           "supportsReasoning": false
         },
@@ -4711,6 +5035,7 @@
           "maxOutputTokens": 65536,
           "inputPerMillion": 0.5,
           "outputPerMillion": 1.2,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -4728,6 +5053,7 @@
           "maxOutputTokens": 250000,
           "inputPerMillion": 0.574,
           "outputPerMillion": 2.294,
+          "cacheReadPerMillion": 0.1148,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -4745,6 +5071,7 @@
           "maxOutputTokens": 65536,
           "inputPerMillion": 1.08,
           "outputPerMillion": 5.52,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": false
         },
@@ -4755,6 +5082,7 @@
           "maxOutputTokens": 65536,
           "inputPerMillion": 0.359,
           "outputPerMillion": 1.434,
+          "cacheReadPerMillion": 0.0718,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -4772,6 +5100,7 @@
           "maxOutputTokens": 65536,
           "inputPerMillion": 1.08,
           "outputPerMillion": 4.8,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -4789,6 +5118,7 @@
           "maxOutputTokens": 65536,
           "inputPerMillion": 1.08,
           "outputPerMillion": 5.52,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -4806,6 +5136,7 @@
           "maxOutputTokens": 8192,
           "inputPerMillion": 0.15,
           "outputPerMillion": 1.2,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -4823,6 +5154,7 @@
           "maxOutputTokens": 65536,
           "inputPerMillion": 0.1,
           "outputPerMillion": 1.1,
+          "cacheReadPerMillion": 0.05,
           "supportsToolCalling": false,
           "supportsReasoning": false
         },
@@ -4833,6 +5165,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0.15,
           "outputPerMillion": 1.2,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": false
         },
@@ -4843,6 +5176,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0.144,
           "outputPerMillion": 0.574,
+          "cacheReadPerMillion": 0.0288,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -4860,6 +5194,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0.144,
           "outputPerMillion": 1.434,
+          "cacheReadPerMillion": 0.0288,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -4870,6 +5205,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0.15,
           "outputPerMillion": 1.2,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": true
         }
@@ -4887,6 +5223,7 @@
           "maxOutputTokens": 8192,
           "inputPerMillion": 0.53,
           "outputPerMillion": 2.66,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -4904,6 +5241,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0.287,
           "outputPerMillion": 1.147,
+          "cacheReadPerMillion": 0.15785,
           "supportsToolCalling": true,
           "supportsReasoning": false
         },
@@ -4914,6 +5252,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0.21,
           "outputPerMillion": 1.9,
+          "cacheReadPerMillion": 0.105,
           "supportsToolCalling": false,
           "supportsReasoning": false
         }
@@ -4931,6 +5270,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0.287,
           "outputPerMillion": 2.867,
+          "cacheReadPerMillion": 0.0574,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -4948,6 +5288,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0.108,
           "outputPerMillion": 0.43,
+          "cacheReadPerMillion": 0.0216,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -4965,6 +5306,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0.16,
           "outputPerMillion": 0.64,
+          "cacheReadPerMillion": 0.032,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -4982,6 +5324,7 @@
           "maxOutputTokens": 65536,
           "inputPerMillion": 0.25,
           "outputPerMillion": 0.75,
+          "cacheReadPerMillion": 0.125,
           "supportsToolCalling": false,
           "supportsReasoning": false
         },
@@ -4992,6 +5335,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0.072,
           "outputPerMillion": 0.287,
+          "cacheReadPerMillion": 0.0144,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -5009,6 +5353,7 @@
           "maxOutputTokens": 65536,
           "inputPerMillion": 0.022,
           "outputPerMillion": 0.215,
+          "cacheReadPerMillion": 0.0044,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -5026,6 +5371,7 @@
           "maxOutputTokens": 65536,
           "inputPerMillion": 0.143,
           "outputPerMillion": 1.434,
+          "cacheReadPerMillion": 0.0286,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -5043,6 +5389,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0.115,
           "outputPerMillion": 0.917,
+          "cacheReadPerMillion": 0.023,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -5053,6 +5400,7 @@
           "maxOutputTokens": 64000,
           "inputPerMillion": 0.115,
           "outputPerMillion": 0.917,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -5070,6 +5418,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0.086,
           "outputPerMillion": 0.688,
+          "cacheReadPerMillion": 0.0172,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -5080,6 +5429,7 @@
           "maxOutputTokens": 64000,
           "inputPerMillion": 0.086,
           "outputPerMillion": 0.688,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -5097,6 +5447,7 @@
           "maxOutputTokens": 64000,
           "inputPerMillion": 0.057,
           "outputPerMillion": 0.459,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -5107,6 +5458,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0.057,
           "outputPerMillion": 0.459,
+          "cacheReadPerMillion": 0.020357,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -5117,6 +5469,7 @@
           "maxOutputTokens": 65536,
           "inputPerMillion": 0.25,
           "outputPerMillion": 1,
+          "cacheReadPerMillion": 0.125,
           "supportsToolCalling": false,
           "supportsReasoning": true
         }
@@ -5134,6 +5487,7 @@
           "maxOutputTokens": 65536,
           "inputPerMillion": 0.6,
           "outputPerMillion": 3.6,
+          "cacheReadPerMillion": 0.3,
           "supportsToolCalling": false,
           "supportsReasoning": true
         },
@@ -5144,6 +5498,7 @@
           "maxOutputTokens": 65536,
           "inputPerMillion": 0.5,
           "outputPerMillion": 3.5,
+          "cacheReadPerMillion": 0.3,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -5154,6 +5509,7 @@
           "maxOutputTokens": 64000,
           "inputPerMillion": 0.172,
           "outputPerMillion": 1.032,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -5164,6 +5520,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0.172,
           "outputPerMillion": 1.032,
+          "cacheReadPerMillion": 0.0344,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -5181,6 +5538,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0.04,
           "outputPerMillion": 0.07,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -5198,6 +5556,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0.09,
           "outputPerMillion": 0.13,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -5215,6 +5574,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0.09,
           "outputPerMillion": 0.368,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -5225,6 +5585,7 @@
           "maxOutputTokens": 250000,
           "inputPerMillion": 0.029,
           "outputPerMillion": 0.287,
+          "cacheReadPerMillion": 0.0058,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -5242,6 +5603,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0.4,
           "outputPerMillion": 2.2,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -5259,6 +5621,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 1.4,
           "outputPerMillion": 8.3,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -5276,6 +5639,7 @@
           "maxOutputTokens": 65536,
           "inputPerMillion": 0.36,
           "outputPerMillion": 2.21,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -5286,6 +5650,7 @@
           "maxOutputTokens": 250000,
           "inputPerMillion": 0.115,
           "outputPerMillion": 0.688,
+          "cacheReadPerMillion": 0.023,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -5303,6 +5668,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0.289,
           "outputPerMillion": 2.4,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -5313,6 +5679,7 @@
           "maxOutputTokens": 64000,
           "inputPerMillion": 0.4126,
           "outputPerMillion": 2.4754,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -5330,6 +5697,7 @@
           "maxOutputTokens": 65536,
           "inputPerMillion": 0.248,
           "outputPerMillion": 1.485,
+          "cacheReadPerMillion": 0.0496,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -5347,6 +5715,7 @@
           "maxOutputTokens": 65536,
           "inputPerMillion": 0.25,
           "outputPerMillion": 1.5,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -5357,6 +5726,7 @@
           "maxOutputTokens": 250000,
           "inputPerMillion": 0.165,
           "outputPerMillion": 0.99,
+          "cacheReadPerMillion": 0.033,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -5374,6 +5744,7 @@
           "maxOutputTokens": 65536,
           "inputPerMillion": 1.31,
           "outputPerMillion": 7.88,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -5391,6 +5762,7 @@
           "maxOutputTokens": 65536,
           "inputPerMillion": 0.5,
           "outputPerMillion": 3,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -5401,6 +5773,7 @@
           "maxOutputTokens": 250000,
           "inputPerMillion": 0.276,
           "outputPerMillion": 1.651,
+          "cacheReadPerMillion": 0.0552,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -5411,6 +5784,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0.5,
           "outputPerMillion": 3,
+          "cacheReadPerMillion": 0.25,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -5428,6 +5802,7 @@
           "maxOutputTokens": 250000,
           "inputPerMillion": 0.825,
           "outputPerMillion": 2.4755,
+          "cacheReadPerMillion": 0.165,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -5438,6 +5813,7 @@
           "maxOutputTokens": 65536,
           "inputPerMillion": 2.5,
           "outputPerMillion": 7.5,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -5455,6 +5831,7 @@
           "maxOutputTokens": 65536,
           "inputPerMillion": 0.4,
           "outputPerMillion": 1.6,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -5465,6 +5842,7 @@
           "maxOutputTokens": 65536,
           "inputPerMillion": 0.4,
           "outputPerMillion": 1.6,
+          "cacheReadPerMillion": 0.08,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -5482,6 +5860,7 @@
           "maxOutputTokens": 1010000,
           "inputPerMillion": 2.5,
           "outputPerMillion": 6.25,
+          "cacheReadPerMillion": 0.5,
           "supportsToolCalling": false,
           "supportsReasoning": false
         }
@@ -5499,6 +5878,7 @@
           "maxOutputTokens": 131072,
           "inputPerMillion": 2,
           "outputPerMillion": 6,
+          "cacheReadPerMillion": 0.25,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -5509,6 +5889,7 @@
           "maxOutputTokens": 131072,
           "inputPerMillion": 2,
           "outputPerMillion": 6,
+          "cacheReadPerMillion": 0.25,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -5519,6 +5900,7 @@
           "maxOutputTokens": 131072,
           "inputPerMillion": 2.5,
           "outputPerMillion": 6.25,
+          "cacheReadPerMillion": 0.5,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -5536,6 +5918,7 @@
           "maxOutputTokens": 250000,
           "inputPerMillion": 5,
           "outputPerMillion": 30,
+          "cacheReadPerMillion": 0.5,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -5546,6 +5929,7 @@
           "maxOutputTokens": 131072,
           "inputPerMillion": 7.5,
           "outputPerMillion": 45,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -5563,6 +5947,7 @@
           "maxOutputTokens": 65536,
           "inputPerMillion": 0.95,
           "outputPerMillion": 4,
+          "cacheReadPerMillion": 0.15,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -5580,6 +5965,7 @@
           "maxOutputTokens": 32000,
           "inputPerMillion": 1,
           "outputPerMillion": 4.05,
+          "cacheReadPerMillion": 0.17,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -5597,6 +5983,7 @@
           "maxOutputTokens": 32000,
           "inputPerMillion": 2.5,
           "outputPerMillion": 10,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -5614,6 +6001,7 @@
           "maxOutputTokens": 250000,
           "inputPerMillion": 0.6,
           "outputPerMillion": 6,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -5631,6 +6019,7 @@
           "maxOutputTokens": 1000000,
           "inputPerMillion": 1.25,
           "outputPerMillion": 2.5,
+          "cacheReadPerMillion": 0.2,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -5648,6 +6037,7 @@
           "maxOutputTokens": 1000000,
           "inputPerMillion": 1.25,
           "outputPerMillion": 2.5,
+          "cacheReadPerMillion": 0.2,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -5665,6 +6055,7 @@
           "maxOutputTokens": 1000000,
           "inputPerMillion": 1.25,
           "outputPerMillion": 2.5,
+          "cacheReadPerMillion": 0.2,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -5682,6 +6073,7 @@
           "maxOutputTokens": 500000,
           "inputPerMillion": 2,
           "outputPerMillion": 6,
+          "cacheReadPerMillion": 0.5,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -5699,6 +6091,7 @@
           "maxOutputTokens": 500000,
           "inputPerMillion": 2,
           "outputPerMillion": 6,
+          "cacheReadPerMillion": 0.5,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -5716,6 +6109,7 @@
           "maxOutputTokens": 256000,
           "inputPerMillion": 1,
           "outputPerMillion": 2,
+          "cacheReadPerMillion": 0.2,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -5733,6 +6127,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0,
           "outputPerMillion": 0,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": false
         }
@@ -5750,6 +6145,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0,
           "outputPerMillion": 0,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": false
         }
@@ -5767,6 +6163,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0,
           "outputPerMillion": 0,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": false
         }
@@ -5784,6 +6181,7 @@
           "maxOutputTokens": 262144,
           "inputPerMillion": 0.14,
           "outputPerMillion": 0.28,
+          "cacheReadPerMillion": 0.0028,
           "supportsToolCalling": false,
           "supportsReasoning": true
         }
@@ -5801,6 +6199,7 @@
           "maxOutputTokens": 262144,
           "inputPerMillion": 0.435,
           "outputPerMillion": 0.87,
+          "cacheReadPerMillion": 0.0036,
           "supportsToolCalling": false,
           "supportsReasoning": true
         }
@@ -5818,6 +6217,7 @@
           "maxOutputTokens": 16384,
           "inputPerMillion": 0.1,
           "outputPerMillion": 0.1,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -5835,6 +6235,7 @@
           "maxOutputTokens": 98304,
           "inputPerMillion": 0.6,
           "outputPerMillion": 2.2,
+          "cacheReadPerMillion": 0.11,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -5852,6 +6253,7 @@
           "maxOutputTokens": 98304,
           "inputPerMillion": 0.2,
           "outputPerMillion": 1.1,
+          "cacheReadPerMillion": 0.03,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -5869,6 +6271,7 @@
           "maxOutputTokens": 98304,
           "inputPerMillion": 1.1,
           "outputPerMillion": 4.5,
+          "cacheReadPerMillion": 0.22,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -5886,6 +6289,7 @@
           "maxOutputTokens": 98304,
           "inputPerMillion": 2.2,
           "outputPerMillion": 8.9,
+          "cacheReadPerMillion": 0.45,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -5903,6 +6307,7 @@
           "maxOutputTokens": 32000,
           "inputPerMillion": 0.6,
           "outputPerMillion": 1.8,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -5920,6 +6325,7 @@
           "maxOutputTokens": 131072,
           "inputPerMillion": 0.6,
           "outputPerMillion": 2.2,
+          "cacheReadPerMillion": 0.11,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -5937,6 +6343,7 @@
           "maxOutputTokens": 131072,
           "inputPerMillion": 0.6,
           "outputPerMillion": 2.2,
+          "cacheReadPerMillion": 0.11,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -5947,6 +6354,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0.6,
           "outputPerMillion": 2.2,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": true
         },
@@ -5957,6 +6365,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 0.6,
           "outputPerMillion": 2.2,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": true
         },
@@ -5967,6 +6376,7 @@
           "maxOutputTokens": 128000,
           "inputPerMillion": 0.6,
           "outputPerMillion": 2.2,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": false
         },
@@ -5977,6 +6387,7 @@
           "maxOutputTokens": 50000,
           "inputPerMillion": 0.6,
           "outputPerMillion": 2.2,
+          "cacheReadPerMillion": 0.12,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -5994,6 +6405,7 @@
           "maxOutputTokens": 128000,
           "inputPerMillion": 0.07,
           "outputPerMillion": 0.4,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -6011,6 +6423,7 @@
           "maxOutputTokens": 131072,
           "inputPerMillion": 0.07,
           "outputPerMillion": 0.4,
+          "cacheReadPerMillion": 0.01,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -6028,6 +6441,7 @@
           "maxOutputTokens": 131072,
           "inputPerMillion": 1,
           "outputPerMillion": 3.2,
+          "cacheReadPerMillion": 0.2,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -6038,6 +6452,7 @@
           "maxOutputTokens": 32768,
           "inputPerMillion": 1,
           "outputPerMillion": 3.2,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": false,
           "supportsReasoning": true
         },
@@ -6048,6 +6463,7 @@
           "maxOutputTokens": 50688,
           "inputPerMillion": 1,
           "outputPerMillion": 3.2,
+          "cacheReadPerMillion": 0.5,
           "supportsToolCalling": false,
           "supportsReasoning": true
         },
@@ -6058,6 +6474,7 @@
           "maxOutputTokens": 50750,
           "inputPerMillion": 0.95,
           "outputPerMillion": 3.15,
+          "cacheReadPerMillion": 0.2,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -6068,6 +6485,7 @@
           "maxOutputTokens": 128000,
           "inputPerMillion": 1,
           "outputPerMillion": 3.2,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": false
         }
@@ -6085,6 +6503,7 @@
           "maxOutputTokens": 131072,
           "inputPerMillion": 1.2,
           "outputPerMillion": 4,
+          "cacheReadPerMillion": 0.24,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -6102,6 +6521,7 @@
           "maxOutputTokens": 131072,
           "inputPerMillion": 1.4,
           "outputPerMillion": 4.4,
+          "cacheReadPerMillion": 0.26,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -6112,6 +6532,7 @@
           "maxOutputTokens": 50688,
           "inputPerMillion": 1.4,
           "outputPerMillion": 4.4,
+          "cacheReadPerMillion": 0.7,
           "supportsToolCalling": false,
           "supportsReasoning": true
         },
@@ -6122,6 +6543,7 @@
           "maxOutputTokens": 50750,
           "inputPerMillion": 0.5,
           "outputPerMillion": 2.5,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -6132,6 +6554,7 @@
           "maxOutputTokens": 50500,
           "inputPerMillion": 0.825,
           "outputPerMillion": 3.301,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -6149,6 +6572,7 @@
           "maxOutputTokens": 131072,
           "inputPerMillion": 1.05,
           "outputPerMillion": 3.3,
+          "cacheReadPerMillion": 0.195,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -6159,6 +6583,7 @@
           "maxOutputTokens": 250000,
           "inputPerMillion": 0.5,
           "outputPerMillion": 2.5,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -6169,6 +6594,7 @@
           "maxOutputTokens": 50000,
           "inputPerMillion": 1.5,
           "outputPerMillion": 4.5,
+          "cacheReadPerMillion": 0.278571,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -6179,6 +6605,7 @@
           "maxOutputTokens": 131072,
           "inputPerMillion": 1.1,
           "outputPerMillion": 4.1,
+          "cacheReadPerMillion": 0.22,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -6189,6 +6616,7 @@
           "maxOutputTokens": 131072,
           "inputPerMillion": 1.4,
           "outputPerMillion": 4.4,
+          "cacheReadPerMillion": 0.26,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -6199,6 +6627,7 @@
           "maxOutputTokens": 131072,
           "inputPerMillion": 1.4,
           "outputPerMillion": 4.4,
+          "cacheReadPerMillion": null,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -6209,6 +6638,7 @@
           "maxOutputTokens": 128000,
           "inputPerMillion": 0.72,
           "outputPerMillion": 2.38,
+          "cacheReadPerMillion": 0.12,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -6219,6 +6649,7 @@
           "maxOutputTokens": 262144,
           "inputPerMillion": 1.4,
           "outputPerMillion": 4.4,
+          "cacheReadPerMillion": 0.14,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -6236,6 +6667,7 @@
           "maxOutputTokens": 131072,
           "inputPerMillion": 0.7,
           "outputPerMillion": 2.2,
+          "cacheReadPerMillion": 0.13,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }
@@ -6253,6 +6685,7 @@
           "maxOutputTokens": 131072,
           "inputPerMillion": 0.015,
           "outputPerMillion": 0.05,
+          "cacheReadPerMillion": 0.003,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -6263,6 +6696,7 @@
           "maxOutputTokens": 131000,
           "inputPerMillion": 0.015,
           "outputPerMillion": 0.05,
+          "cacheReadPerMillion": 0.003,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -6273,6 +6707,7 @@
           "maxOutputTokens": 262000,
           "inputPerMillion": 0.15,
           "outputPerMillion": 0.5,
+          "cacheReadPerMillion": 0.03,
           "supportsToolCalling": true,
           "supportsReasoning": true
         },
@@ -6283,6 +6718,7 @@
           "maxOutputTokens": 131072,
           "inputPerMillion": 0.15,
           "outputPerMillion": 0.5,
+          "cacheReadPerMillion": 0.03,
           "supportsToolCalling": true,
           "supportsReasoning": true
         }

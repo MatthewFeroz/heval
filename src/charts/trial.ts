@@ -62,8 +62,16 @@ export type TrialRow = {
   outputTokens: number | null
   /** Input + output. Cache reads are excluded so cost-per-token stays meaningful. */
   totalTokens: number | null
-  /** Provider-reported cost. Null when the gateway exposes no pricing. */
+  /** Cost in USD, however it was obtained. Null when neither route works. */
   costUsd: number | null
+  /**
+   * How `costUsd` was obtained. `reported` is the harness's own figure;
+   * `derived` is token counts priced against the gateway catalog, which is how
+   * Codex gets a cost at all (Harbor prices it via LiteLLM, which does not know
+   * these slugs). Mixing the two in one comparison is defensible; hiding which
+   * is which is not.
+   */
+  costSource: 'reported' | 'derived' | null
   startedAt: string | null
   /** Harbor exception type when the trial errored, else null. */
   error: string | null
