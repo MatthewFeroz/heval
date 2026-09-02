@@ -4,7 +4,7 @@
     {
       "job": "terminal-bench-glm53-smoke",
       "file": "terminal-bench-glm53-smoke.json",
-      "generatedAt": "2026-09-01T21:28:07.777Z",
+      "generatedAt": "2026-09-02T15:40:28.783Z",
       "trials": 4,
       "agents": [
         "claude-code",
