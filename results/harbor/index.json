@@ -4,7 +4,7 @@
     {
       "job": "terminal-bench-composio-mirror",
       "file": "terminal-bench-composio-mirror.json",
-      "generatedAt": "2026-09-02T21:04:37.316Z",
+      "generatedAt": "2026-09-02T21:17:43.943Z",
       "trials": 120,
       "agents": [
         "codex"

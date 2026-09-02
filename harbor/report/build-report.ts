@@ -482,6 +482,7 @@ const WARN_ICON = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" s
 const ARROW_ICON = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg>'
 const MOON_ICON = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>'
 const SUN_ICON = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>'
+const DOWNLOAD_ICON = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>'
 
 /**
  * The brand tokens are read from src/tokens.css at build time and inlined, so the
@@ -560,6 +561,29 @@ const REPORT_CSS = `
   .canvas-btn:has(input:checked) { background: var(--panel-3); color: var(--white); box-shadow: inset 0 0 0 1px var(--line); }
   .canvas-btn:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 1px; }
   .sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+  .menu { position: relative; }
+  .menu > summary { list-style: none; cursor: pointer; }
+  .menu > summary::-webkit-details-marker { display: none; }
+  .menu > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .menu[open] > summary { border-color: var(--line-strong); color: var(--white); background: var(--panel-3); }
+  /* Chrome hides a closed details' children; Safari still paints an absolutely
+     positioned one, so say it outright rather than leaning on the UA sheet. */
+  .menu:not([open]) .menu-pop { display: none; }
+  .menu-pop {
+    position: absolute; right: 0; top: calc(100% + 20px); z-index: 30; min-width: 214px;
+    display: flex; flex-direction: column; gap: 2px; padding: 5px;
+    border: 1px solid var(--line); border-radius: 11px; background: var(--panel);
+    box-shadow: 0 14px 34px rgba(0, 0, 0, .5);
+  }
+  .menu-pop button {
+    appearance: none; border: 0; background: none; color: var(--white); font: 500 12px var(--sans);
+    display: flex; flex-direction: column; gap: 2px; align-items: flex-start;
+    padding: 7px 9px; border-radius: 7px; text-align: left; cursor: pointer;
+  }
+  .menu-pop button:hover { background: var(--panel-3); }
+  .menu-pop button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+  .menu-pop small { color: var(--muted); font: 400 10px/1.4 var(--sans); }
 
   /* -- page ---------------------------------------------------------------- */
   .page { max-width: 1120px; margin: 0 auto; padding: 30px 26px 80px; display: flex; flex-direction: column; gap: 26px; }
@@ -698,7 +722,14 @@ ${REPORT_CSS}
       <label class="canvas-btn"><input type="radio" name="canvas" value="light" class="sr-only">${SUN_ICON}Light mode</label>
     </div>
     <span class="divider"></span>
-    <a class="btn" href="./${esc(exp.job)}.json" download>Trials JSON</a>
+    <details class="menu">
+      <summary class="btn">${DOWNLOAD_ICON}Export</summary>
+      <div class="menu-pop">
+        <button type="button" data-export="html">Standalone HTML<small>This page as one shareable file</small></button>
+        <button type="button" data-export="csv">Trials CSV<small>${plural(rows.length, 'row')} for a spreadsheet</small></button>
+        <button type="button" data-export="json">Trials JSON<small>Reload into the studio</small></button>
+      </div>
+    </details>
     <a class="btn primary" href="${studioUrl(exp.job, jobSections[0].state)}">Open in studio ${ARROW_ICON}</a>
   </div>
 </header>
@@ -765,7 +796,67 @@ ${REPORT_CSS}
     </div>
   </footer>
 </main>
-<script>
+
+<script type="application/json" id="heval-data" data-heval>${JSON.stringify(exp).replace(/</g, '\\u003c')}</script>
+<script data-heval>
+  (() => {
+    const data = JSON.parse(document.getElementById('heval-data').textContent)
+    const menu = document.querySelector('.menu')
+
+    const save = (name, mime, text) => {
+      const url = URL.createObjectURL(new Blob([text], { type: mime }))
+      const a = Object.assign(document.createElement('a'), { href: url, download: name })
+      a.click()
+      setTimeout(() => URL.revokeObjectURL(url), 1000)
+    }
+
+    const csv = () => {
+      const cols = Object.keys(data.rows[0] || {})
+      const cell = (v) => {
+        if (v === null || v === undefined) return ''
+        const s = String(v)
+        return /[",\\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s
+      }
+      return [cols.join(','), ...data.rows.map((r) => cols.map((c) => cell(r[c])).join(','))].join('\\n')
+    }
+
+    // Every link on this page that starts at the site root - the brand, the
+    // crumbs, the studio buttons - needs a server behind it, and a copy sent to
+    // someone has none. Drop the actions and flatten the nav to plain text so a
+    // shared file has nothing dead in it. The charts are inline SVG and the rows
+    // are embedded above, so once those links are gone the file is whole.
+    const standalone = () => {
+      const doc = document.documentElement.cloneNode(true)
+      doc.dataset.canvas = document.documentElement.dataset.canvas
+      doc.querySelectorAll('a[href^="/"]').forEach((a) => {
+        if (a.classList.contains('btn')) return a.remove()
+        const span = document.createElement('span')
+        span.className = a.className
+        span.innerHTML = a.innerHTML
+        a.replaceWith(span)
+      })
+      doc.querySelectorAll('details.menu').forEach((d) => d.removeAttribute('open'))
+      // Served through Vite in development, the page also carries an HMR client
+      // and a refresh preamble pointing at /@vite/. Those are the host's, not the
+      // report's, and they 404 the moment the file leaves this machine.
+      doc.querySelectorAll('script:not([data-heval]), link[rel="stylesheet"]').forEach((e) => e.remove())
+      return '<!doctype html>\\n' + doc.outerHTML
+    }
+
+    const exporters = {
+      html: () => save(data.job + '.html', 'text/html', standalone()),
+      csv: () => save(data.job + '.csv', 'text/csv', csv()),
+      json: () => save(data.job + '.json', 'application/json', JSON.stringify(data, null, 2)),
+    }
+
+    menu.querySelectorAll('[data-export]').forEach((b) =>
+      b.addEventListener('click', () => { exporters[b.dataset.export](); menu.removeAttribute('open') }))
+    document.addEventListener('click', (e) => { if (!menu.contains(e.target)) menu.removeAttribute('open') })
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') menu.removeAttribute('open') })
+  })()
+</script>
+
+<script data-heval>
   (() => {
     const html = document.documentElement
     const radios = document.querySelectorAll('input[name="canvas"]')
