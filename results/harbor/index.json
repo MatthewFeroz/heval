@@ -2,6 +2,21 @@
   "schemaVersion": 1,
   "jobs": [
     {
+      "job": "composio-mirror-smoke",
+      "file": "composio-mirror-smoke.json",
+      "generatedAt": "2026-09-02T16:29:40.075Z",
+      "trials": 1,
+      "agents": [
+        "codex"
+      ],
+      "models": [
+        "zai/glm-5.3-flash"
+      ],
+      "tasks": [
+        "fix-git"
+      ]
+    },
+    {
       "job": "terminal-bench-glm53-smoke",
       "file": "terminal-bench-glm53-smoke.json",
       "generatedAt": "2026-09-02T15:40:28.783Z",
