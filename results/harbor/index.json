@@ -2,6 +2,45 @@
   "schemaVersion": 1,
   "jobs": [
     {
+      "job": "terminal-bench-composio-mirror",
+      "file": "terminal-bench-composio-mirror.json",
+      "generatedAt": "2026-09-02T21:04:37.316Z",
+      "trials": 120,
+      "agents": [
+        "codex"
+      ],
+      "models": [
+        "anthropic/claude-sonnet-5",
+        "deepseek/deepseek-v4-flash",
+        "deepseek/deepseek-v4-pro-0813",
+        "moonshot/kimi-k3",
+        "zai/glm-5.3",
+        "zai/glm-5.3-flash"
+      ],
+      "tasks": [
+        "break-filter-js-from-html",
+        "chess-best-move",
+        "cobol-modernization",
+        "configure-git-webserver",
+        "count-dataset-tokens",
+        "crack-7z-hash",
+        "custom-memory-heap-crash",
+        "db-wal-recovery",
+        "extract-elf",
+        "fix-git",
+        "hf-model-inference",
+        "kv-store-grpc",
+        "largest-eigenval",
+        "llm-inference-batching-scheduler",
+        "merge-diff-arc-agi-task",
+        "mteb-retrieve",
+        "multi-source-data-merger",
+        "pytorch-model-cli",
+        "raman-fitting",
+        "tune-mjcf"
+      ]
+    },
+    {
       "job": "composio-mirror-smoke",
       "file": "composio-mirror-smoke.json",
       "generatedAt": "2026-09-02T16:29:40.075Z",
