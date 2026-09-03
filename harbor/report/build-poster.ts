@@ -1,0 +1,512 @@
+/**
+ * Normalized job -> individual poster graphs, sized for a social post.
+ *
+ *   bun harbor/report/build-poster.ts results/harbor/terminal-bench-composio-mirror.json
+ *   bun run poster results/harbor/terminal-bench-composio-mirror.json --open-weight
+ *
+ * Writes, under results/harbor/posters/<job>/ (override with --out <dir>):
+ *
+ *   <job>-<panel>.png    one graph per panel, the individual export
+ *   <job>-<panel>.html   the same graph as markup, if you want to nudge it
+ *   <job>-poster.png     all requested panels in one frame (--combined)
+ *
+ * The panel statistics come from src/charts/metrics.ts - the module the static
+ * report derives its own headline numbers from - so a poster and the report it
+ * was cut from cannot disagree. Layout and palette come from
+ * src/charts/poster.ts. This file is only the rendering: markup, fonts, and the
+ * headless screenshot.
+ *
+ * PNG rather than SVG because that is what the platforms accept. Chromium
+ * rasterizes it (Playwright is already a dev dependency for the e2e suite), so
+ * the text is laid out by a real font engine rather than Vega's estimator - a
+ * poster is mostly type, and the estimator's ~10% error is visible at 48px.
+ */
+
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { basename, join } from 'node:path'
+import { chromium } from 'playwright'
+import { nums } from '../../src/charts/metrics'
+import {
+  buildPanel,
+  labelLines,
+  PANEL_IDS,
+  PANELS,
+  POSTER_INK,
+  POSTER_MAX_SERIES,
+  POSTER_SERIES,
+  POSTER_SURFACE,
+  type PanelData,
+  type PanelId,
+} from '../../src/charts/poster'
+import type { JobExport, TrialRow } from '../../src/charts/trial'
+
+const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+
+// -- fonts ----------------------------------------------------------------------
+
+/**
+ * Google Fonts, fetched once and inlined as base64.
+ *
+ * The report links the stylesheet and lets the reader's browser fetch it. A
+ * poster cannot: the PNG is rasterized at build time, so a font that has not
+ * arrived is a font that is silently missing from the artifact, and the fallback
+ * metrics are different enough that the layout shifts rather than just looking
+ * plainer. Cached on disk so a poster rebuilt offline still gets real type.
+ */
+const FONT_CACHE = new URL('.fontcache/', import.meta.url)
+const ASSETS = new URL('assets/', import.meta.url)
+const FONT_FACES = [
+  { family: 'Inter', weights: '400;500;600;700' },
+]
+
+const localFont = (name: string, weight: number, file: string) =>
+  `@font-face{font-family:'${name}';font-weight:${weight};font-style:normal;src:url(data:font/otf;base64,${readFileSync(join(ASSETS.pathname, file)).toString('base64')}) format('opentype');}`
+
+const OSCAR_FONTS = [
+  localFont('FH Oscar Pro', 500, 'FHOscarPro-Medium.otf'),
+  localFont('FH Oscar Pro', 600, 'FHOscarPro-SemiBold.otf'),
+].join('\n')
+
+async function inlineFonts(): Promise<string> {
+  const cache = join(FONT_CACHE.pathname, 'merge-faces.css')
+  if (existsSync(cache)) return `${OSCAR_FONTS}\n${readFileSync(cache, 'utf8')}`
+
+  const query = FONT_FACES.map((f) => `family=${f.family.replace(/ /g, '+')}:wght@${f.weights}`).join('&')
+  const url = `https://fonts.googleapis.com/css2?${query}&display=swap`
+  try {
+    // A modern UA is what makes Google serve woff2 rather than legacy formats.
+    const css = await fetch(url, {
+      headers: { 'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/140 Safari/537.36' },
+    }).then((r) => {
+      if (!r.ok) throw new Error(`HTTP ${r.status}`)
+      return r.text()
+    })
+    const urls = [...new Set([...css.matchAll(/url\((https:[^)]+\.woff2)\)/g)].map((m) => m[1]))]
+    const data = new Map<string, string>()
+    await Promise.all(
+      urls.map(async (u) => {
+        const buf = Buffer.from(await fetch(u).then((r) => r.arrayBuffer()))
+        data.set(u, `data:font/woff2;base64,${buf.toString('base64')}`)
+      }),
+    )
+    const inlined = css.replace(/url\((https:[^)]+\.woff2)\)/g, (_m, u: string) => `url(${data.get(u) ?? u})`)
+    mkdirSync(FONT_CACHE.pathname, { recursive: true })
+    writeFileSync(cache, inlined)
+    return `${OSCAR_FONTS}\n${inlined}`
+  } catch (e) {
+    console.warn(`! could not fetch webfonts (${(e as Error).message}); falling back to system fonts.`)
+    console.warn('  FH Oscar Pro is embedded; Inter will use the system sans-serif fallback.')
+    return OSCAR_FONTS
+  }
+}
+
+const BRAND_BG = `data:image/svg+xml;base64,${readFileSync(join(ASSETS.pathname, 'brand-bg.svg')).toString('base64')}`
+const MERGE_LOCKUP = readFileSync(join(ASSETS.pathname, 'merge-lockup.svg'), 'utf8')
+
+// -- sizes ----------------------------------------------------------------------
+
+/**
+ * The two shapes worth exporting.
+ *
+ * `square` is the LinkedIn and in-feed shape and the default for a single
+ * graph; `landscape` is 16:9 for X and for the multi-panel frame, which needs
+ * the width. Nothing here is 1.91:1 - a link-preview crop is a different job
+ * and would cut the axis labels off this layout.
+ */
+const SIZES = {
+  square: { w: 1200, h: 1200 },
+  landscape: { w: 1600, h: 900 },
+} as const
+type SizeName = keyof typeof SIZES
+
+// -- markup ---------------------------------------------------------------------
+
+/** Scales the whole type and spacing ladder off one number, so both sizes agree. */
+type Scale = { unit: number; panels: number }
+
+function css(fonts: string, size: { w: number; h: number }, s: Scale): string {
+  const u = (n: number) => `${(n * s.unit).toFixed(2)}px`
+  return `${fonts}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { width: ${size.w}px; height: ${size.h}px; }
+body {
+  background: ${POSTER_SURFACE};
+  color: ${POSTER_INK.primary};
+  font-family: 'Inter', system-ui, sans-serif;
+  font-synthesis: none;
+  font-variant-ligatures: none;
+  font-feature-settings: 'liga' 0, 'calt' 0;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  display: flex;
+  flex-direction: column;
+  padding: ${u(4.5)} ${u(4.5)} ${u(3.25)};
+  position: relative;
+  overflow: hidden;
+}
+body::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: url('${BRAND_BG}') center / cover no-repeat;
+  opacity: 0.32;
+  pointer-events: none;
+}
+body > * { position: relative; z-index: 1; }
+.brand {
+  height: ${u(2.6)};
+  display: flex;
+  align-items: center;
+  gap: ${u(1.25)};
+}
+.brand svg { width: auto; height: ${u(1.9)}; display: block; }
+.brand-product {
+  font-size: ${u(1.45)};
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+.title {
+  margin-top: ${u(2.7)};
+  font-family: 'FH Oscar Pro', 'Inter', system-ui, sans-serif;
+  font-size: ${u(3.4)};
+  font-weight: 500;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+.kicker {
+  margin-top: ${u(1)};
+  font-size: ${u(0.95)};
+  font-weight: 400;
+  color: ${POSTER_INK.muted};
+}
+.panels {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(${s.panels}, minmax(0, 1fr));
+  gap: ${u(4)};
+  margin-top: ${u(3.4)};
+  min-height: 0;
+}
+.panel { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.panel-heading { font-family: 'FH Oscar Pro', 'Inter', system-ui, sans-serif; font-size: ${u(1.65)}; font-weight: 500; letter-spacing: -0.02em; }
+.single .panel-heading { display: none; }
+.panel-eyebrow {
+  margin-top: ${u(0.55)};
+  font-size: ${u(0.85)};
+  font-weight: 500;
+}
+.panel-eyebrow.higher { color: ${POSTER_INK.good}; }
+.panel-eyebrow.lower { color: ${POSTER_INK.muted}; }
+.panel-note {
+  margin-top: ${u(0.35)};
+  font-size: ${u(0.9)};
+  font-weight: 600;
+  color: ${POSTER_INK.muted};
+}
+.panel-rule { margin-top: ${u(0.9)}; height: 1px; background: ${POSTER_INK.line}; }
+
+/* Plot: a tick gutter on the left, bars in the rest. */
+.plot { flex: 1; display: flex; gap: ${u(0.9)}; margin-top: ${u(1.7)}; min-height: 0; }
+.ticks {
+  position: relative;
+  width: ${u(2.9)};
+  flex: none;
+  font-size: ${u(0.82)};
+  color: ${POSTER_INK.muted};
+  font-variant-numeric: tabular-nums;
+}
+.tick { position: absolute; right: 0; transform: translateY(-50%); white-space: nowrap; }
+.bars {
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: ${u(1.1)};
+  border-bottom: 1px solid ${POSTER_INK.line};
+  min-width: 0;
+}
+.bar-col { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; height: 100%; min-width: 0; }
+.bar-value {
+  font-size: ${u(1.25)};
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  text-align: center;
+  padding-bottom: ${u(0.45)};
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.bar-col:not(:first-child) .bar-value { color: ${POSTER_INK.muted}; font-weight: 500; }
+/* 4px rounded data-end at the free end only; the baseline end stays square so
+   the bar reads as anchored to zero. */
+.bar { border-radius: ${u(0.3)} ${u(0.3)} 0 0; width: 100%; }
+.bar-labels {
+  padding-top: ${u(0.7)};
+  text-align: center;
+  font-size: ${u(0.82)};
+  font-weight: 700;
+  line-height: 1.25;
+  color: ${POSTER_INK.secondary};
+}
+.bar-labels span { display: block; }
+.bar-labels span + span { color: ${POSTER_INK.muted}; font-weight: 600; }
+.foot {
+  margin-top: ${u(2.4)};
+  padding-top: ${u(1.15)};
+  border-top: 1px solid ${POSTER_INK.line};
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: ${u(2)};
+  font-size: ${u(0.82)};
+  font-weight: 400;
+  color: ${POSTER_INK.muted};
+}
+.foot .caveat { max-width: 60%; }
+`
+}
+
+function panelHtml(d: PanelData): string {
+  const ticks = d.ticks
+    .map((t) => `<div class="tick" style="bottom:${(t.frac * 100).toFixed(3)}%">${esc(t.label)}</div>`)
+    .join('')
+  const bars = d.bars
+    .map((b, index) => {
+      const color = POSTER_SERIES[index === 0 ? 0 : 1]
+      return `        <div class="bar-col">
+          <div class="bar-value">${esc(d.panel.format(b.value))}</div>
+          <div class="bar" style="height:${(b.frac * 100).toFixed(3)}%;background:${color}"></div>
+          <div class="bar-labels">${b.lines.map((l) => `<span>${esc(l)}</span>`).join('')}</div>
+        </div>`
+    })
+    .join('\n')
+  return `    <section class="panel">
+      <div class="panel-heading">${esc(d.panel.heading)}</div>
+      <div class="panel-eyebrow ${d.panel.better}">${esc(`${d.panel.better[0].toUpperCase()}${d.panel.better.slice(1)} is better`)}</div>
+      ${d.panel.note ? `<div class="panel-note">${esc(d.panel.note)}</div>` : ''}
+      <div class="panel-rule"></div>
+      <div class="plot">
+        <div class="ticks">${ticks}</div>
+        <div class="bars">
+${bars}
+        </div>
+      </div>
+    </section>`
+}
+
+type Frame = {
+  title: string
+  kicker: string
+  source: string
+  caveat: string
+  panels: PanelData[]
+  size: { w: number; h: number }
+}
+
+async function frameHtml(f: Frame, fonts: string): Promise<string> {
+  // Bar labels get tighter as panels multiply; one knob, applied everywhere.
+  const s: Scale = { unit: f.size.h / 1200 * (f.panels.length > 1 ? 15 : 20), panels: f.panels.length }
+  return `<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>${esc(f.title)}</title>
+<style>${css(fonts, f.size, s)}</style></head>
+<body class="${f.panels.length === 1 ? 'single' : 'combined'}">
+  <header>
+    <div class="brand">${MERGE_LOCKUP}<span class="brand-product">Gateway</span></div>
+    <h1 class="title">${esc(f.title)}</h1>
+    ${f.kicker ? `<div class="kicker">${esc(f.kicker)}</div>` : ''}
+  </header>
+  <div class="panels">
+${f.panels.map((p) => panelHtml(p)).join('\n')}
+  </div>
+  <footer class="foot">
+    <span class="caveat">${esc(f.caveat)}</span>
+    <span>${esc(f.source)}</span>
+  </footer>
+</body></html>`
+}
+
+// -- model selection --------------------------------------------------------------
+
+/**
+ * Model creators whose weights are published.
+ *
+ * A list, not a heuristic, because "open" is a licensing fact about a specific
+ * release and nothing in a slug encodes it. Matched against `provider` - the
+ * part of the slug before the slash, which is who *made* the model. Add a maker
+ * here only after checking the actual release.
+ */
+const OPEN_WEIGHT_PROVIDERS = new Set(['deepseek', 'zai', 'moonshot', 'meta', 'mistral', 'qwen', 'alibaba', 'nvidia', 'google-deepmind-oss', 'openai-oss'])
+
+const isOpenWeight = (r: TrialRow) => !!r.provider && OPEN_WEIGHT_PROVIDERS.has(r.provider)
+
+// -- cli --------------------------------------------------------------------------
+
+const args = process.argv.slice(2)
+/** Flags that consume the next argument. Everything else is a bare switch. */
+const VALUED = ['panels', 'size', 'models', 'exclude', 'title', 'kicker', 'source', 'caveat', 'out']
+const flag = (name: string): string | undefined => {
+  const i = args.indexOf(`--${name}`)
+  return i >= 0 ? args[i + 1] : undefined
+}
+const has = (name: string) => args.includes(`--${name}`)
+
+const input = args.find((a, i) => {
+  if (a.startsWith('--')) return false
+  const prev = args[i - 1]
+  return !(prev?.startsWith('--') && VALUED.includes(prev.slice(2)))
+})
+if (!input || has('help')) {
+  console.error(`usage: bun harbor/report/build-poster.ts <job.json> [options]
+
+  --panels <ids>     comma-separated, from: ${PANEL_IDS.join(', ')} (default: all)
+  --combined         also write every panel in one frame
+  --only-combined    write only the combined frame
+  --size <name>      ${Object.keys(SIZES).join(' | ')} (default: square single, landscape combined)
+  --open-weight      keep only models whose weights are published
+  --models <list>    comma-separated modelShort values, in the order to color them
+  --exclude <list>   comma-separated modelShort values to drop
+  --title <text>     frame title (default: derived from the selection)
+  --kicker <text>    the mono line under the title
+  --source <text>    the source stamp, bottom right
+  --caveat <text>    the plain-text line, bottom left
+  --out <dir>        default results/harbor/posters/<job>`)
+  process.exit(has('help') ? 0 : 2)
+}
+
+const jsonPath = existsSync(input) ? input : join('results/harbor', `${input}.json`)
+if (!existsSync(jsonPath)) {
+  console.error(`no such job export: ${jsonPath}`)
+  console.error('run `bun run report <job-dir>` first, or pass a path under results/harbor/.')
+  process.exit(2)
+}
+
+const exp = JSON.parse(readFileSync(jsonPath, 'utf8')) as JobExport
+if (!Array.isArray(exp.rows) || !exp.rows.length) {
+  console.error(`${jsonPath} has no rows - is it a Heval job export?`)
+  process.exit(1)
+}
+
+// -- select the models -------------------------------------------------------------
+
+let rows = exp.rows
+if (has('open-weight')) {
+  const dropped = [...new Set(rows.filter((r) => !isOpenWeight(r)).map((r) => r.modelShort))]
+  rows = rows.filter(isOpenWeight)
+  if (dropped.length) console.log(`open-weight only: dropped ${dropped.join(', ')}`)
+}
+const excluded = (flag('exclude') ?? '').split(',').map((s) => s.trim()).filter(Boolean)
+if (excluded.length) rows = rows.filter((r) => !excluded.includes(r.modelShort))
+
+const requested = (flag('models') ?? '').split(',').map((s) => s.trim()).filter(Boolean)
+if (requested.length) {
+  const known = new Set(rows.map((r) => r.modelShort))
+  const missing = requested.filter((m) => !known.has(m))
+  if (missing.length) {
+    console.error(`not in this job: ${missing.join(', ')}`)
+    console.error(`available: ${[...known].sort().join(', ')}`)
+    process.exit(2)
+  }
+  rows = rows.filter((r) => requested.includes(r.modelShort))
+}
+if (!rows.length) {
+  console.error('every trial was filtered out - loosen --models / --exclude / --open-weight.')
+  process.exit(1)
+}
+
+/**
+ * Series order, which fixes the palette assignment for every panel.
+ *
+ * `--models` order when given, else alphabetical - anything stable and
+ * independent of the values, so a model keeps its hue across panels and across
+ * a rebuild after more trials land.
+ */
+const order = requested.length ? requested : [...new Set(rows.map((r) => r.modelShort))].sort()
+if (order.length > POSTER_MAX_SERIES) {
+  console.error(`${order.length} models, and the validated poster palette has ${POSTER_MAX_SERIES} slots.`)
+  console.error('Cut the field with --models / --exclude and make a second poster; a generated 7th hue is not an option.')
+  process.exit(2)
+}
+
+const panelIds = (flag('panels') ?? PANEL_IDS.join(',')).split(',').map((s) => s.trim()).filter(Boolean) as PanelId[]
+const unknown = panelIds.filter((p) => !PANEL_IDS.includes(p))
+if (unknown.length) {
+  console.error(`unknown panel(s): ${unknown.join(', ')} - pick from ${PANEL_IDS.join(', ')}`)
+  process.exit(2)
+}
+
+const built = panelIds.map((id) => buildPanel(rows, PANELS[id], order))
+for (const d of built) {
+  if (d.omitted.length) {
+    console.warn(`! ${d.panel.id}: no value for ${d.omitted.join(', ')} - absent from the chart, not plotted as zero.`)
+  }
+}
+
+// -- frame text -------------------------------------------------------------------
+
+const tasks = new Set(rows.map((r) => r.task)).size
+const harnesses = [...new Set(rows.map((r) => r.agent))]
+const perCell = rows.length / (order.length * tasks)
+
+const title = flag('title') ?? `${order.length} models, compared`
+const kicker = flag('kicker') ?? `${rows.length} trials · ${tasks} tasks · ${harnesses.join(' + ')}`
+const source = flag('source') ?? `source: heval · ${exp.job}`
+/**
+ * The line the numbers cannot carry themselves.
+ *
+ * A poster is quoted without its caption, so the sample size travels inside the
+ * image. At one trial per cell the intervals overlap across most of the field,
+ * and a bar chart cannot say that - this line has to.
+ */
+const caveat =
+  flag('caveat') ??
+  (perCell < 3
+    ? `${perCell < 1.05 ? 'One attempt' : `${perCell.toFixed(1)} attempts`} per task per model. Treat small differences as directional`
+    : `${perCell.toFixed(1)} attempts per task per model`)
+
+// -- render ------------------------------------------------------------------------
+
+const outDir = flag('out') ?? join('results/harbor/posters', exp.job)
+mkdirSync(outDir, { recursive: true })
+
+const singleSize = SIZES[(flag('size') as SizeName) ?? 'square'] ?? SIZES.square
+const combinedSize = SIZES[(flag('size') as SizeName) ?? 'landscape'] ?? SIZES.landscape
+
+const fonts = await inlineFonts()
+const browser = await chromium.launch()
+const written: string[] = []
+
+async function shoot(f: Frame, stem: string) {
+  const html = await frameHtml(f, fonts)
+  const htmlPath = join(outDir, `${stem}.html`)
+  const pngPath = join(outDir, `${stem}.png`)
+  writeFileSync(htmlPath, html)
+  const page = await browser.newPage({ viewport: { width: f.size.w, height: f.size.h }, deviceScaleFactor: 2 })
+  await page.setContent(html, { waitUntil: 'load' })
+  await page.evaluate(() => document.fonts.ready)
+  // deviceScaleFactor 2 renders at 2x and the screenshot comes back at 2x, so
+  // the file is 2400x2400 for a 1200x1200 frame - the retina asset the
+  // platforms downsample from. Scaling down is lossless enough; up is not.
+  await page.screenshot({ path: pngPath, type: 'png' })
+  await page.close()
+  written.push(`${pngPath} (${f.size.w * 2}x${f.size.h * 2})`)
+  written.push(htmlPath)
+}
+
+if (!has('only-combined')) {
+  for (const d of built) {
+    await shoot(
+      { title: flag('title') ?? d.panel.heading, kicker, source, caveat, panels: [d], size: singleSize },
+      `${exp.job}-${d.panel.id}`,
+    )
+  }
+}
+if (has('combined') || has('only-combined')) {
+  await shoot({ title, kicker, source, caveat, panels: built, size: combinedSize }, `${exp.job}-poster`)
+}
+
+await browser.close()
+
+console.log(`\n${order.length} models (${order.map((m) => labelLines(m).join(' ')).join(', ')})`)
+console.log(`${nums(rows, 'costUsd').length}/${rows.length} trials priced\n`)
+console.log(written.map((w) => `  ${w}`).join('\n'))
+console.log(`\n${basename(jsonPath)} -> ${outDir}`)

@@ -54,6 +54,6 @@ test('exports the chart as SVG', async ({ page }) => {
 test('dark mode is a selected theme, not an inverted one', async ({ page }) => {
   await page.getByLabel('Dark mode').check()
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
-  // The dark categorical slot 1 is its own step, not the light one.
-  await expect(page.locator('.card svg .mark-rect.role-mark path').first()).toHaveAttribute('fill', '#179fd4')
+  // The dark categorical slot 1 uses Merge Robin, not the light palette step.
+  await expect(page.locator('.card svg .mark-rect.role-mark path').first()).toHaveAttribute('fill', '#96BDCE')
 })

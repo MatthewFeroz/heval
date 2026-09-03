@@ -72,6 +72,7 @@ Set `HEVAL_ENABLE_RUNNER=1` only where real harness execution should be allowed.
 | `bun run lint` | Run ESLint |
 | `bun run test:e2e` | Run desktop and mobile Playwright tests |
 | `bun run report <job-dir>` | Normalize a Harbor job into `results/harbor/` and build its static report |
+| `bun run poster <job.json>` | Export one Merge-branded social PNG per headline graph |
 
 Install Playwright's browser once before running end-to-end tests locally:
 
@@ -171,6 +172,21 @@ rides on color alone, and light/dark palettes validated independently against th
 Charts do not hide the data's problems. A trial the gateway priced at `null`, a stack that ran with
 no prompt caching, fewer than three trials per cell, or a single task all surface as warnings in the
 studio and as a "Limitations" list in the report.
+
+### Exporting social graphs
+
+The poster exporter turns a normalized job into separate square PNGs for completion rate, cost per
+success, and median time. Each image includes its title, sample size, model labels, values, and source
+line, so it can stand on its own outside the report.
+
+```bash
+bun run poster results/harbor/terminal-bench-composio-mirror.json --open-weight
+```
+
+The command writes 2400x2400 PNGs and editable HTML files under
+`results/harbor/posters/<job>/`. Use `--panels completion,cost-per-success` to choose graphs,
+`--models <model-a>,<model-b>` to set the field and color order, or `--combined` to also export a
+three-panel 3200x1800 image. Run `bun run poster --help` for the full option list.
 
 ## Repository Layout
 

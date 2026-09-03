@@ -19,6 +19,7 @@
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { collapseTo, costPerSuccess, mean, median, medianTimePassed, nums, quantile } from '../../src/charts/metrics'
 import { THEMES, type ThemeMode } from '../../src/charts/palette'
 import { buildChart, formatValue, RECIPE_LABEL, type ChartState } from '../../src/charts/recipes'
 import { paramsFromState } from '../../src/charts/url'
@@ -42,24 +43,6 @@ type Section = {
    * that no single-measure aggregation can express.
    */
   derive?: (rows: TrialRow[]) => TrialRow[]
-}
-
-/**
- * One synthetic row per group, carrying a pre-computed statistic in the field
- * the chart will plot. The recipe system aggregates a per-trial field over a
- * dimension, so a derived per-group number reaches a chart only by arriving as
- * a group of one - `mean` of a single value is that value. Everything else on
- * the row is inherited from a real member of the group so the dimension the
- * chart groups by still resolves.
- */
-function collapseTo(rows: TrialRow[], field: 'costUsd' | 'agentSeconds', value: (group: TrialRow[]) => number | null): TrialRow[] {
-  const out: TrialRow[] = []
-  for (const key of [...new Set(rows.map((r) => r.stack))].sort()) {
-    const group = rows.filter((r) => r.stack === key)
-    const v = value(group)
-    if (v !== null) out.push({ ...group[0], [field]: v })
-  }
-  return out
 }
 
 /**
@@ -101,19 +84,14 @@ function sectionsFor(rows: TrialRow[]): Section[] {
       // Four decimals, not the shared two: across a model sweep this spans three
       // orders of magnitude, and `$.2f` prints every sub-cent model as `$0.00`.
       state: { recipe: 'bar', x, color: 'none', measure: 'costUsd', aggregate: 'mean', sort: 'asc', intervals: false, labels: true, title: 'Cost per completed task', format: '$.4f' },
-      derive: (rs) =>
-        collapseTo(rs, 'costUsd', (g) => {
-          const costs = nums(g, 'costUsd')
-          const passes = g.filter((r) => r.passed).length
-          return costs.length && passes ? costs.reduce((a, b) => a + b, 0) / passes : null
-        }),
+      derive: (rs) => collapseTo(rs, 'costUsd', costPerSuccess),
     },
     {
       id: 'median-time-passed',
       heading: 'Median time per completed task',
       lede: 'Median agent-step wall clock over passed trials only. Failures are excluded on purpose: a timed-out run contributes the cap rather than a duration, which would rank a stack faster for giving up sooner.',
       state: { recipe: 'bar', x, color: 'none', measure: 'agentSeconds', aggregate: 'mean', sort: 'asc', intervals: false, labels: true, title: 'Median time per completed task' },
-      derive: (rs) => collapseTo(rs.filter((r) => r.passed), 'agentSeconds', (g) => median(nums(g, 'agentSeconds'))),
+      derive: (rs) => collapseTo(rs, 'agentSeconds', medianTimePassed),
     },
     {
       id: 'agent-time',
@@ -143,27 +121,7 @@ function studioUrl(job: string, state: Partial<ChartState>): string {
   return `/studio?${paramsFromState(state, { job }).toString()}`
 }
 
-const mean = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null)
-const median = (xs: number[]) => {
-  if (!xs.length) return null
-  const s = [...xs].sort((a, b) => a - b), m = Math.floor(s.length / 2)
-  return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2
-}
-/** Linear-interpolated quantile; `p` in 0..1. */
-const quantile = (xs: number[], p: number) => {
-  if (!xs.length) return null
-  const s = [...xs].sort((a, b) => a - b)
-  const i = (s.length - 1) * p, lo = Math.floor(i), hi = Math.ceil(i)
-  return lo === hi ? s[lo] : s[lo] + (s[hi] - s[lo]) * (i - lo)
-}
-/**
- * Currency at the precision the number deserves. The shared `costUsd` format is
- * two decimals, which rounds a $0.028 cost-per-success to $0.03 and collapses
- * the gap between the cheap stacks - exactly the comparison this table exists
- * to make.
- */
 const usd = (n: number) => (n === 0 ? '$0' : n < 0.01 ? `$${n.toFixed(4)}` : n < 1 ? `$${n.toFixed(3)}` : `$${n.toFixed(2)}`)
-const nums = (rows: TrialRow[], key: keyof TrialRow) => rows.map((r) => r[key]).filter((v): v is number => typeof v === 'number')
 const fmtTokens = (n: number | null) => (n === null ? '-' : n >= 1e6 ? `${(n / 1e6).toFixed(2)}M` : n >= 1e3 ? `${(n / 1e3).toFixed(1)}k` : String(n))
 
 /** The same five tiles the studio shows above its chart, computed the same way. */
@@ -397,7 +355,7 @@ async function chartBlock(job: string, rows: TrialRow[], section: Section, n: nu
         <h2>${esc(section.heading)}</h2>
         <p class="lede">${esc(section.lede)}</p>
       </div>
-      <a class="btn" href="${studioUrl(job, section.state)}">Open in studio ${ARROW_ICON}</a>
+      <a class="btn" href="${studioUrl(job, section.state)}">Open in studio</a>
     </div>
     <div class="card">
       <div class="card-head">
@@ -479,7 +437,6 @@ function limitations(exp: JobExport): string[] {
 // Inline SVG for the two icons the page uses (lucide `triangle-alert` and
 // `arrow-up-right`), so the report stays a single self-contained file.
 const WARN_ICON = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>'
-const ARROW_ICON = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg>'
 const MOON_ICON = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>'
 const SUN_ICON = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>'
 const DOWNLOAD_ICON = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>'
@@ -490,21 +447,47 @@ const DOWNLOAD_ICON = '<svg width="11" height="11" viewBox="0 0 24 24" fill="non
  * is always the dark product surface; only the chart canvas flips between the two
  * validated palette surfaces, exactly as the studio does.
  */
-const TOKENS_CSS = readFileSync(new URL('../../src/tokens.css', import.meta.url), 'utf8')
+const TOKENS_CSS = readFileSync(new URL('../../src/tokens.css', import.meta.url), 'utf8').replace(/^@import[^\n]+\n/m, '')
+const REPORT_ASSETS = new URL('assets/', import.meta.url)
+const reportFont = (weight: number, file: string) =>
+  `@font-face{font-family:'FH Oscar Pro';font-weight:${weight};font-style:normal;src:url(data:font/otf;base64,${readFileSync(join(REPORT_ASSETS.pathname, file)).toString('base64')}) format('opentype');}`
+const REPORT_FONTS = `${reportFont(500, 'FHOscarPro-Medium.otf')}\n${reportFont(600, 'FHOscarPro-SemiBold.otf')}`
+const REPORT_BG = `data:image/svg+xml;base64,${readFileSync(join(REPORT_ASSETS.pathname, 'brand-bg.svg')).toString('base64')}`
+const REPORT_LOCKUP = readFileSync(join(REPORT_ASSETS.pathname, 'merge-lockup.svg'), 'utf8')
 
 const REPORT_CSS = `
+  ${REPORT_FONTS}
+  :root {
+    --bg: #2C2A25;
+    --panel: #34322D;
+    --panel-2: #3B3934;
+    --panel-3: #45423C;
+    --line: #5A5751;
+    --line-soft: rgba(245, 242, 238, .08);
+    --line-strong: rgba(245, 242, 238, .22);
+    --muted: #D6CFC7;
+    --faint: #AAA39B;
+    --white: #F5F2EE;
+    --accent: #96BDCE;
+    --accent-ink: #2C2A25;
+    --sans: 'Inter', system-ui, sans-serif;
+    --mono: 'Inter', system-ui, sans-serif;
+  }
   *, *::before, *::after { box-sizing: border-box; }
   html { scroll-behavior: smooth; }
-  body { margin: 0; min-height: 100vh; background: var(--bg); color: var(--white); font: 400 13px/1.55 var(--sans); letter-spacing: .005em; }
+  body { margin: 0; min-height: 100vh; background: var(--bg); color: var(--white); font: 400 13px/1.55 var(--sans); letter-spacing: .005em; position: relative; }
+  body::before { content: ''; position: fixed; inset: 0; z-index: 0; background: url('${REPORT_BG}') center / cover no-repeat; opacity: .2; pointer-events: none; }
+  body > * { position: relative; z-index: 1; }
   a { color: inherit; }
   h1, h2, p { margin: 0; }
-  .eyebrow { color: #7f8582; font: 500 9px var(--mono); letter-spacing: .14em; text-transform: uppercase; display: inline-flex; align-items: center; gap: 6px; }
+  h1, h2 { font-family: 'FH Oscar Pro', var(--sans); font-weight: 500; }
+  .eyebrow { color: var(--muted); font: 500 11px var(--sans); display: inline-flex; align-items: center; gap: 6px; }
   .num { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; }
 
   .btn {
     height: 30px; padding: 0 11px;
     display: inline-flex; align-items: center; gap: 7px;
-    border: 1px solid var(--line); border-radius: 8px;
+    border: 1px solid var(--line); border-radius: 6px;
     background: var(--panel-2); color: #c9ccc9; text-decoration: none;
     font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap;
     transition: border-color .15s, color .15s, background .15s;
@@ -519,13 +502,11 @@ const REPORT_CSS = `
     display: inline-flex; align-items: center; gap: 5px;
     height: 20px; padding: 0 7px;
     border: 1px solid var(--line); border-radius: 5px;
-    color: var(--muted); font: 500 9px var(--mono); letter-spacing: .06em; text-transform: uppercase; white-space: nowrap;
+    color: var(--muted); font: 500 10px var(--sans); white-space: nowrap;
   }
-  .pill i { width: 5px; height: 5px; border-radius: 50%; background: #7a807d; }
-  .pill.pass { color: var(--pass-text); border-color: #2b3a24; background: #131a10; }
-  .pill.pass i { background: var(--pass); }
-  .pill.fail { color: var(--fail-text); border-color: #43302d; background: #1a1312; }
-  .pill.fail i { background: var(--fail); }
+  .pill i { display: none; }
+  .pill.pass { color: var(--white); border-color: var(--line); background: transparent; }
+  .pill.fail { color: var(--muted); border-color: var(--line); background: transparent; }
 
   /* -- topbar -------------------------------------------------------------- */
   .topbar {
@@ -533,16 +514,10 @@ const REPORT_CSS = `
     height: 56px; padding: 0 18px;
     display: flex; align-items: center; gap: 14px;
     border-bottom: 1px solid rgba(255, 255, 255, .06);
-    background: rgba(8, 9, 9, .84); backdrop-filter: blur(18px);
+    background: #2C2A25;
   }
-  .brand { display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 800; letter-spacing: -.03em; text-decoration: none; }
-  .brand-mark {
-    width: 28px; height: 28px; display: grid; place-items: center;
-    border: 1px solid #444746; border-radius: 8px;
-    background: linear-gradient(145deg, #1b1d1c, #0c0d0d); box-shadow: inset 0 1px rgba(255, 255, 255, .06);
-  }
-  .brand-mark span { font: 500 13px var(--mono); transform: skew(-7deg); }
-  .beta-pill { padding: 4px 6px; border: 1px solid #343737; border-radius: 5px; color: #777c7a; font: 500 8px var(--mono); letter-spacing: .08em; }
+  .brand { display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 500; letter-spacing: -.01em; text-decoration: none; }
+  .brand svg { width: auto; height: 21px; display: block; }
   .crumbs { display: flex; align-items: center; gap: 8px; min-width: 0; color: var(--faint); font-size: 12px; }
   .crumbs a { color: var(--muted); text-decoration: none; }
   .crumbs a:hover { color: var(--white); }
@@ -554,7 +529,7 @@ const REPORT_CSS = `
   .canvas-btn {
     position: relative; height: 22px; padding: 0 9px; border-radius: 7px;
     display: inline-flex; align-items: center; gap: 6px;
-    color: var(--muted); font: 500 9.5px var(--mono); letter-spacing: .08em; text-transform: uppercase; cursor: pointer;
+    color: var(--muted); font: 500 10px var(--sans); cursor: pointer;
     transition: color .15s, background .15s;
   }
   .canvas-btn:hover { color: #d4d6d3; }
@@ -588,7 +563,7 @@ const REPORT_CSS = `
   /* -- page ---------------------------------------------------------------- */
   .page { max-width: 1120px; margin: 0 auto; padding: 30px 26px 80px; display: flex; flex-direction: column; gap: 26px; }
   .head { display: flex; flex-direction: column; gap: 6px; }
-  .head h1 { font-size: 28px; font-weight: 800; letter-spacing: -.035em; line-height: 1.05; }
+  .head h1 { font-size: 38px; font-weight: 500; letter-spacing: -.03em; line-height: 1.05; }
   .head .meta { color: var(--muted); font-size: 12.5px; display: flex; flex-wrap: wrap; gap: 6px 10px; }
   .head .meta b { color: #c9ccc9; font-weight: 600; }
   .head .meta i { font-style: normal; color: var(--faint); }
@@ -598,10 +573,10 @@ const REPORT_CSS = `
   .stat {
     min-height: 92px; padding: 13px 14px 12px;
     display: flex; flex-direction: column; justify-content: flex-end; gap: 4px;
-    border: 1px solid var(--line); border-radius: 12px; background: var(--panel);
+    border: 1px solid var(--line-soft); border-radius: 8px; background: var(--panel);
   }
   .stat .stat-head { margin-bottom: auto; display: flex; align-items: center; justify-content: space-between; gap: 8px; color: #777d79; }
-  .stat strong { font: 500 22px var(--mono); letter-spacing: -.02em; color: var(--white); }
+  .stat strong { font: 600 22px var(--sans); font-variant-numeric: tabular-nums; letter-spacing: -.02em; color: var(--white); }
   .stat strong small { font-size: 12px; color: var(--muted); margin-left: 3px; }
   .stat > small { color: var(--faint); font-size: 10.5px; }
   .stat .bar { height: 3px; margin-top: 6px; border-radius: 3px; background: #202221; overflow: hidden; }
@@ -613,7 +588,7 @@ const REPORT_CSS = `
 
   .block { display: flex; flex-direction: column; gap: 10px; }
   .block-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
-  .block-head h2, .section-head h2 { font-size: 16px; font-weight: 700; letter-spacing: -.02em; margin-top: 4px; }
+  .block-head h2, .section-head h2 { font-size: 21px; font-weight: 500; letter-spacing: -.02em; margin-top: 4px; }
   .lede { color: var(--muted); font-size: 12.5px; max-width: 720px; margin-top: 4px; }
 
   .section { display: flex; flex-direction: column; gap: 12px; padding-top: 10px; }
@@ -621,17 +596,13 @@ const REPORT_CSS = `
   .section-head .btn { flex: none; }
 
   /* .card is the chart card, addressed as ".card svg" by the studio suite too. */
-  .card, .panel { border: 1px solid var(--line); border-radius: 14px; background: var(--panel); overflow: hidden; }
+  .card, .panel { border: 1px solid var(--line-soft); border-radius: 8px; background: var(--panel); overflow: hidden; }
   .card-head {
     height: 42px; padding: 0 14px 0 15px;
     display: flex; align-items: center; gap: 12px;
     border-bottom: 1px solid var(--line-soft); color: #a3a8a5; font-size: 11px; font-weight: 700;
   }
-  .card-head .window-dots { display: flex; gap: 6px; }
-  .card-head .window-dots span { width: 8px; height: 8px; border-radius: 50%; background: #343737; }
-  .card-head .window-dots span:first-child { background: #65423e; }
-  .card-head .window-dots span:nth-child(2) { background: #665c35; }
-  .card-head .window-dots span:nth-child(3) { background: #365c46; }
+  .card-head .window-dots { display: none; }
   .card-head .title { display: flex; align-items: center; gap: 8px; min-width: 0; }
   .card-head .title span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .card-head small { color: #555a57; font: 400 9px var(--mono); }
@@ -639,7 +610,7 @@ const REPORT_CSS = `
   .card-body { padding: 0; overflow-x: auto; }
 
   /* The canvas is the only region that changes with the chart theme. */
-  .canvas { position: relative; padding: 22px 24px; overflow-x: auto; background: #101111; }
+  .canvas { position: relative; padding: 22px 24px; overflow-x: auto; background: #2C2A25; }
   .canvas svg { display: block; max-width: 100%; height: auto; }
   .only-light { display: none; }
   html[data-canvas='light'] .only-light { display: block; }
@@ -650,8 +621,8 @@ const REPORT_CSS = `
   .notes { display: flex; flex-direction: column; gap: 6px; }
   .warn {
     display: flex; align-items: flex-start; gap: 10px;
-    padding: 9px 12px; border: 1px solid var(--line); border-left: 2px solid var(--warn);
-    border-radius: 0 10px 10px 0; background: var(--panel); color: #b7bbb9; font-size: 12px; line-height: 1.5;
+    padding: 9px 12px; border: 1px solid var(--line);
+    border-radius: 6px; background: var(--panel); color: var(--muted); font-size: 12px; line-height: 1.5;
   }
   .warn svg { flex: none; margin-top: 2px; color: var(--warn); }
   .limits { margin: 0; padding: 0; list-style: none; }
@@ -671,7 +642,7 @@ const REPORT_CSS = `
 
   table { border-collapse: collapse; width: 100%; font-size: 12.5px; }
   th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line-soft); white-space: nowrap; }
-  th { color: var(--faint); font: 500 9px var(--mono); letter-spacing: .1em; text-transform: uppercase; }
+  th { color: var(--faint); font: 500 10px var(--sans); }
   th.num { text-align: right; }
   tbody tr:last-child td { border-bottom: 0; }
   tbody tr:hover td { background: rgba(255, 255, 255, .015); }
@@ -685,6 +656,11 @@ const REPORT_CSS = `
     .page { padding: 20px 14px 60px; }
     .section-head { flex-direction: column; align-items: flex-start; }
     .crumbs { display: none; }
+    .topbar { height: 52px; padding: 0 14px; gap: 8px; }
+    .brand > span { display: none; }
+    .brand svg { height: 18px; }
+    .canvas-toggle, .topbar .divider, .topbar .btn.primary { display: none; }
+    .topbar .actions { margin-left: auto; }
   }
   @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } * { transition: none !important; } }
 `
@@ -705,7 +681,8 @@ async function render(exp: JobExport): Promise<string> {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#080909">
+<meta name="theme-color" content="#2C2A25">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
 <title>${esc(exp.job)} &middot; Heval report</title>
 <style>
 ${TOKENS_CSS}
@@ -714,7 +691,7 @@ ${REPORT_CSS}
 </head>
 <body>
 <header class="topbar">
-  <a class="brand" href="/"><span class="brand-mark"><span>h</span></span>Heval<span class="beta-pill">REPORT</span></a>
+  <a class="brand" href="/">${REPORT_LOCKUP}<span>Gateway evaluation report</span></a>
   <div class="crumbs"><a href="/#reports">Reports</a><span>/</span><strong>${esc(exp.job)}</strong></div>
   <div class="actions">
     <div class="canvas-toggle" role="radiogroup" aria-label="Chart canvas">
@@ -730,7 +707,7 @@ ${REPORT_CSS}
         <button type="button" data-export="json">Trials JSON<small>Reload into the studio</small></button>
       </div>
     </details>
-    <a class="btn primary" href="${studioUrl(exp.job, jobSections[0].state)}">Open in studio ${ARROW_ICON}</a>
+    <a class="btn primary" href="${studioUrl(exp.job, jobSections[0].state)}">Open in studio</a>
   </div>
 </header>
 
@@ -779,7 +756,7 @@ ${REPORT_CSS}
   </div>
 
   <div class="block" id="table">
-    <div class="block-head"><div><span class="eyebrow">Every trial</span><h2>Table view</h2></div><a class="btn" href="${studioUrl(exp.job, jobSections[0].state)}">Explore in studio ${ARROW_ICON}</a></div>
+    <div class="block-head"><div><span class="eyebrow">Every trial</span><h2>Table view</h2></div><a class="btn" href="${studioUrl(exp.job, jobSections[0].state)}">Explore in studio</a></div>
     <div class="panel"><div class="card-body">${tableView(rows)}</div></div>
   </div>
 
@@ -792,7 +769,7 @@ ${REPORT_CSS}
       <span>Task digests: ${[...new Set(rows.map((r) => `${r.task} ${r.taskChecksum?.slice(0, 12) ?? '?'}`))].map((d) => `<code>${esc(d)}</code>`).join(', ')}.</span>
     </div>
     <div class="row">
-      <span>Charts are Vega-Lite recipes from <code>src/charts/recipes.ts</code>, rendered once per palette surface. Series colors are Merge brand hues snapped to validated steps; the dark set is validated on #3a3833 and shown on #101111 (see <code>src/charts/palette.ts</code>).</span>
+      <span>Charts are Vega-Lite recipes from <code>src/charts/recipes.ts</code>, rendered once per palette surface. The dark report uses Merge Charcoal, Robin, Sage, Lilac and Tan (see <code>src/charts/palette.ts</code>).</span>
     </div>
   </footer>
 </main>
@@ -839,7 +816,7 @@ ${REPORT_CSS}
       // Served through Vite in development, the page also carries an HMR client
       // and a refresh preamble pointing at /@vite/. Those are the host's, not the
       // report's, and they 404 the moment the file leaves this machine.
-      doc.querySelectorAll('script:not([data-heval]), link[rel="stylesheet"]').forEach((e) => e.remove())
+      doc.querySelectorAll('script:not([data-heval])').forEach((e) => e.remove())
       return '<!doctype html>\\n' + doc.outerHTML
     }
 

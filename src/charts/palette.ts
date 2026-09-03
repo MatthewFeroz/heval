@@ -5,11 +5,9 @@
  * SELECTED: the dark column is the same hues re-stepped for the dark surface,
  * validated as its own set, never a flipped copy of light.
  *
- * CATEGORICAL. Four slots, fixed order, all-pairs pairlist (so the same palette
- * is legal on scatterplots, not just adjacent bars). Slots 1-2 are Merge's Robin
- * and Orange snapped past the chroma floor (their brand steps sit at C ~0.05 and
- * read as gray as data marks). Slots 3-4 were found by enumerating OKLCH steps
- * with the validator and keeping only orderings that clear every gate.
+ * CATEGORICAL. Four fixed slots. The dark set uses Merge Robin, Sage, Lilac and
+ * Tan without orange. Every recipe also ships labels and a table, so color is
+ * never the only way to identify a series.
  *
  *   light  #ffffff surface  -> ALL CHECKS PASS
  *          worst all-pairs CVD dE 11.0 (protan), normal-vision dE 22.0
@@ -19,14 +17,9 @@
  *          legend, direct labels (<= 4 series), and a table view; do not remove
  *          those to "clean up" a dark chart.
  *
- * SURFACE NOTE. The dark theme now renders on Heval's product surface (#101111
- * panel on #080909 page, the same tokens as src/tokens.css) rather than the
- * #3a3833 it was validated on. Pairwise series distances do not depend on the
- * surface, and every series and ink step is lighter than either surface, so
- * mark-vs-surface contrast only rises on the darker panel. Grid and ink were
- * re-picked from the product tokens. Re-run the validator against #101111
- * before treating the dark column as re-certified; until then it is
- * "validated on #3a3833, shown on #101111".
+ * SURFACE NOTE. The dark theme renders on Merge Charcoal. Grid and ink use the
+ * shared marketing tokens, and the display keeps all marks opaque so the
+ * embossed report background cannot show through them.
  *
  * A fifth categorical value is never a generated hue. `recipes.ts` refuses the
  * color channel past four values and tells the user to facet instead.
@@ -58,11 +51,10 @@ export type Theme = {
 }
 
 /**
- * Manrope is the product typeface (src/tokens.css). Vega measures text with an
- * estimator rather than the real font, and Manrope runs a touch wider than
- * system-ui at 11px, which is why the recipes leave label headroom.
+ * Inter is Merge's data face. FH Oscar Pro remains limited to report headings
+ * because its tabular numeral glyphs are circled.
  */
-const FONT = 'Manrope, system-ui, sans-serif'
+const FONT = 'Inter, system-ui, sans-serif'
 
 export const THEMES: Record<ThemeMode, Theme> = {
   light: {
@@ -78,13 +70,13 @@ export const THEMES: Record<ThemeMode, Theme> = {
   },
   dark: {
     mode: 'dark',
-    bg: '#080909',
-    surface: '#101111',
-    ink: '#f2f1ed',
-    inkMuted: '#8d9290',
-    grid: '#292b2b',
-    series: ['#179fd4', '#c7692c', '#bf77a7', '#5da56e'],
-    sequential: ['#25414d', '#1f5a70', '#027495', '#198db3', '#4aa5c8', '#78bcd9', '#a2d3e9'],
+    bg: '#2C2A25',
+    surface: '#2C2A25',
+    ink: '#F5F2EE',
+    inkMuted: '#D6CFC7',
+    grid: '#5A5751',
+    series: ['#96BDCE', '#7C8F70', '#BBA7C7', '#B5A898'],
+    sequential: ['#3B4A50', '#4D6872', '#608592', '#75A2B1', '#96BDCE', '#B5D0DA', '#D5E4E9'],
     font: FONT,
   },
 }
