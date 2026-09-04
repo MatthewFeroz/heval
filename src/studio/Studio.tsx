@@ -35,6 +35,7 @@ import {
   Download,
   ExternalLink,
   FileJson,
+  Film,
   Filter,
   FolderOpen,
   Hash,
@@ -47,12 +48,14 @@ import {
   RotateCcw,
   Rows3,
   Ruler,
+  Save,
   SlidersHorizontal,
   Sun,
   Table2,
   X,
 } from 'lucide-react'
 import embed, { type Result as EmbedResult } from 'vega-embed'
+import { MotionPreview } from './MotionPreview'
 import {
   buildChart,
   DEFAULT_STATE,
@@ -77,6 +80,23 @@ import {
   type Measure,
   type TrialRow,
 } from '../charts/trial'
+import { compatibleSources, presentationChart, projectRows } from '../project/accessors'
+import {
+  adaptJobExportV1,
+  makeBundle,
+  newPresentation,
+  newProject,
+  parseBundle,
+  parseEvaluationArtifact,
+  parseProject,
+  sourceFromArtifact,
+  verifyContentHash,
+  type EvaluationArtifact,
+  type HevalProject,
+  type Presentation,
+} from '../project/schema'
+import { CANVAS_IDS, MOTION_CANVASES } from '../charts/motion-options'
+import { MOTION_THEMES, THEME_IDS } from '../charts/motion-themes'
 
 const RESULTS = '/results/harbor'
 const RECIPES: Recipe[] = ['bar', 'scatter', 'strip', 'matrix']
@@ -107,7 +127,8 @@ const HARNESS: Record<string, { name: string; logo: string; color: string }> = {
   'pi-agent': { name: 'Pi Agent', logo: '/harnesses/pi.svg', color: '#c69cff' },
 }
 
-type Tab = 'chart' | 'table' | 'spec' | 'rows'
+type Tab = 'chart' | 'motion' | 'table' | 'spec' | 'rows'
+type StudioMode = 'analysis' | 'presentation'
 
 /** The three dimensions a person actually slices a job by. */
 type FilterKey = 'agent' | 'modelShort' | 'task'
@@ -166,6 +187,7 @@ function tokenSplit(r: TrialRow): { fresh: number; cache: number; out: number; t
 export function Studio() {
   const initial = useMemo(() => readUrl(window.location.search), [])
   const [state, setState] = useState<ChartState>(initial.state)
+  const [mode, setMode] = useState<StudioMode>(() => new URLSearchParams(window.location.search).get('mode') === 'presentation' ? 'presentation' : 'analysis')
   const [filters, setFilters] = useState<Filters>(() => readFilters(window.location.search))
   const [index, setIndex] = useState<JobIndexEntry[]>([])
   const [job, setJob] = useState<string | null>(initial.job)
@@ -178,6 +200,11 @@ export function Studio() {
   const [selected, setSelected] = useState<string | null>(null)
   const [copied, setCopied] = useState<string | null>(null)
   const [runSort, setRunSort] = useState<RunSort>({ key: 'agent', dir: 1 })
+  const [project, setProject] = useState<HevalProject | null>(null)
+  const [artifacts, setArtifacts] = useState<Map<string, EvaluationArtifact>>(() => new Map())
+  const [sourceIds, setSourceIds] = useState<string[]>([])
+  const [activeViewId, setActiveViewId] = useState<string | null>(null)
+  const [activePresentationId, setActivePresentationId] = useState<string | null>(null)
 
   const host = useRef<HTMLDivElement>(null)
   const filePicker = useRef<HTMLInputElement>(null)
@@ -186,6 +213,24 @@ export function Studio() {
   const set = useCallback(<K extends keyof ChartState>(key: K, value: ChartState[K]) => {
     setState((prev) => ({ ...prev, [key]: value }))
   }, [])
+
+  const addArtifact = useCallback(async (artifact: EvaluationArtifact, uri: string, replaceProject = false) => {
+    if (!await verifyContentHash(artifact)) throw new Error(`Content hash mismatch for ${artifact.label}`)
+    const source = await sourceFromArtifact(artifact, uri)
+    setArtifacts((current) => new Map(current).set(artifact.id, artifact))
+    setProject((current) => {
+      if (!current || replaceProject) {
+        const created = newProject(source, artifact)
+        created.analysisViews[0].chart = { ...created.analysisViews[0].chart, ...initial.state }
+        setActiveViewId(created.analysisViews[0].id)
+        return created
+      }
+      const prior = current.sources.find((item) => item.artifactId === artifact.id && item.contentHash === artifact.contentHash)
+      if (prior) return current
+      return { ...current, sources: [...current.sources, source], updatedAt: new Date().toISOString() }
+    })
+    setSourceIds([source.id])
+  }, [initial.state])
 
   // -- data ------------------------------------------------------------------
 
@@ -204,25 +249,67 @@ export function Studio() {
     let live = true
     fetch(`${RESULTS}/${job}.json`)
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`${r.status} ${r.statusText}`))))
-      .then((exp: JobExport) => {
+      .then(async (exp: JobExport) => {
         if (!live) return
+        const uri = `${RESULTS}/${job}.json`
+        const artifact = await adaptJobExportV1(exp, uri)
+        if (!live) return
+        await addArtifact(artifact, uri)
         setData(exp)
         setLoadError(null)
         setSelected(null)
       })
       .catch((e: Error) => live && setLoadError(`Could not load ${job}.json (${e.message}). Run bun run report <job-dir> first, or open an export.`))
     return () => { live = false }
-  }, [job])
+  }, [job, addArtifact])
+
+  const activeView = useMemo(
+    () => project?.analysisViews.find((viewItem) => viewItem.id === activeViewId) ?? project?.analysisViews[0] ?? null,
+    [project, activeViewId],
+  )
+  const activePresentation = useMemo(
+    () => project?.presentations.find((item) => item.id === activePresentationId) ?? project?.presentations[0] ?? null,
+    [project, activePresentationId],
+  )
+  const chartState = mode === 'presentation' && activePresentation
+    ? presentationChart(activeView?.chart, activePresentation.graphOverrides, activePresentation.narrative.title)
+    : state
+
+  const updatePresentation = useCallback((change: (current: Presentation) => Presentation) => {
+    if (!activePresentation) return
+    setProject((current) => current ? {
+      ...current,
+      updatedAt: new Date().toISOString(),
+      presentations: current.presentations.map((item) => item.id === activePresentation.id ? change(item) : item),
+    } : current)
+  }, [activePresentation])
+
+  const setChart = useCallback(<K extends keyof ChartState>(key: K, value: ChartState[K]) => {
+    if (mode === 'analysis') set(key, value)
+    else updatePresentation((current) => ({ ...current, graphOverrides: { ...current.graphOverrides, [key]: value }, updatedAt: new Date().toISOString() }))
+  }, [mode, set, updatePresentation])
+
+  const switchMode = (next: StudioMode) => {
+    if (next === 'presentation' && project && activeView && !activePresentation) {
+      const created = newPresentation(project, { ...activeView, chart: state, sourceIds })
+      setProject({ ...project, analysisViews: project.analysisViews.map((viewItem) => viewItem.id === activeView.id ? { ...viewItem, chart: state, sourceIds, updatedAt: new Date().toISOString() } : viewItem), presentations: [...project.presentations, created], updatedAt: new Date().toISOString() })
+      setActivePresentationId(created.id)
+    }
+    setMode(next)
+    setTab('chart')
+    setOverride(null)
+  }
 
   // -- url + theme -----------------------------------------------------------
 
   useEffect(() => {
     const extra: Record<string, string> = job ? { job } : {}
+    if (mode === 'presentation') extra.mode = mode
     for (const k of FILTER_KEYS) if (filters[k].length) extra[FILTER_PARAM[k]] = filters[k].join(',')
-    const params = paramsFromState(state, extra)
+    const params = paramsFromState(chartState, extra)
     window.history.replaceState(null, '', `${window.location.pathname}?${params.toString()}`)
-    document.documentElement.dataset.theme = state.theme
-  }, [state, job, filters])
+    document.documentElement.dataset.theme = chartState.theme
+  }, [chartState, job, filters, mode])
 
   useEffect(() => {
     if (!copied) return
@@ -239,14 +326,37 @@ export function Studio() {
 
   // -- rows + chart -----------------------------------------------------------
 
-  const allRows = useMemo(() => data?.rows ?? [], [data])
+  const selectedSourceIds = mode === 'presentation' && activeView ? activeView.sourceIds : sourceIds
+  const compatibility = useMemo(() => {
+    if (!project) return { sourceIds: [], incompatible: [] }
+    const y = compatibleSources(project, artifacts, selectedSourceIds, chartState.measure)
+    if (chartState.recipe !== 'scatter') return y
+    const x = compatibleSources(project, artifacts, y.sourceIds, chartState.xMeasure)
+    return { sourceIds: x.sourceIds, incompatible: [...new Set([...y.incompatible, ...x.incompatible])] }
+  }, [project, artifacts, selectedSourceIds, chartState.measure, chartState.xMeasure, chartState.recipe])
+  const allRows = useMemo(() => project ? projectRows(project, artifacts, compatibility.sourceIds) : [], [project, artifacts, compatibility.sourceIds])
   const rows = useMemo(
     () => allRows.filter((r) => FILTER_KEYS.every((k) => !filters[k].length || filters[k].includes(String(r[k])))),
     [allRows, filters],
   )
   const filtering = FILTER_KEYS.some((k) => filters[k].length > 0)
 
-  const chart = useMemo(() => (data && rows.length ? buildChart(rows, state) : null), [data, rows, state])
+  const chart = useMemo(() => {
+    if (!project || !rows.length) return null
+    const output = buildChart(rows, chartState)
+    if (mode === 'presentation' && activePresentation) {
+      output.spec.usermeta = {
+        ...(output.spec.usermeta as Record<string, unknown> | undefined),
+        hevalPresentation: {
+          id: activePresentation.id,
+          revision: activePresentation.revision,
+          snapshotPins: activePresentation.snapshotPins,
+          renderer: activePresentation.renderer,
+        },
+      }
+    }
+    return output
+  }, [project, rows, chartState, mode, activePresentation])
 
   // The generated spec is the source of truth for the Spec tab until the user
   // edits it; after that their text wins so keystrokes are not overwritten.
@@ -278,13 +388,13 @@ export function Studio() {
 
   const exportSvg = async () => {
     if (!view.current) return
-    download(`${job ?? 'chart'}-${state.recipe}.svg`, new Blob([await view.current.toSVG()], { type: 'image/svg+xml' }))
+    download(`${project?.label ?? job ?? 'chart'}-${chartState.recipe}.svg`, new Blob([await view.current.toSVG()], { type: 'image/svg+xml' }))
   }
 
   const exportPng = async () => {
     if (!view.current) return
     const canvas = await view.current.toCanvas(2)
-    canvas.toBlob((blob) => blob && download(`${job ?? 'chart'}-${state.recipe}.png`, blob))
+    canvas.toBlob((blob) => blob && download(`${project?.label ?? job ?? 'chart'}-${chartState.recipe}.png`, blob))
   }
 
   const copy = (what: string, text: string) => {
@@ -292,12 +402,52 @@ export function Studio() {
     setCopied(what)
   }
 
+  const installProject = async (next: HevalProject, embedded: EvaluationArtifact[] = []) => {
+    const loaded = new Map<string, EvaluationArtifact>()
+    for (const artifact of embedded) {
+      if (!await verifyContentHash(artifact)) throw new Error(`Content hash mismatch for ${artifact.label}`)
+      loaded.set(artifact.id, artifact)
+    }
+    for (const source of next.sources) {
+      if (loaded.has(source.artifactId)) continue
+      const response = await fetch(source.uri)
+      if (!response.ok) throw new Error(`Could not load ${source.uri} (${response.status})`)
+      const value = await response.json() as unknown
+      const artifact = (value as { artifactType?: unknown }).artifactType === 'heval-evaluation'
+        ? parseEvaluationArtifact(value)
+        : await adaptJobExportV1(value as JobExport, source.uri)
+      if (artifact.contentHash !== source.contentHash || !await verifyContentHash(artifact)) throw new Error(`Pinned content hash does not match ${source.label}`)
+      loaded.set(artifact.id, artifact)
+    }
+    const firstView = next.analysisViews[0]
+    setProject(next)
+    setArtifacts(loaded)
+    setActiveViewId(firstView?.id ?? null)
+    setActivePresentationId(next.presentations[0]?.id ?? null)
+    setSourceIds(firstView?.sourceIds ?? next.sources.map((source) => source.id))
+    if (firstView) setState(firstView.chart)
+    setJob(null)
+    setData(null)
+    setLoadError(null)
+  }
+
   const openFile = async (file: File) => {
     try {
-      const exp = JSON.parse(await file.text()) as JobExport
-      if (!Array.isArray(exp.rows)) throw new Error('not a Heval job export (no rows array)')
-      setData(exp)
-      setJob(exp.job ?? file.name.replace(/\.json$/, ''))
+      const value = JSON.parse(await file.text()) as unknown
+      const kind = (value as { artifactType?: unknown }).artifactType
+      if (kind === 'heval-bundle') {
+        const bundle = parseBundle(value)
+        if (!await verifyContentHash(bundle)) throw new Error('Bundle content hash does not match its contents')
+        await installProject(bundle.project, bundle.artifacts)
+      } else if (kind === 'heval-project') {
+        await installProject(parseProject(value))
+      } else {
+        const artifact = kind === 'heval-evaluation'
+          ? parseEvaluationArtifact(value)
+          : await adaptJobExportV1(value as JobExport, `./${file.name}`)
+        await addArtifact(artifact, `./${file.name}`)
+        if ('rows' in (value as object)) setData(value as JobExport)
+      }
       setLoadError(null)
       setSelected(null)
     } catch (e) {
@@ -305,10 +455,45 @@ export function Studio() {
     }
   }
 
+  const saveAnalysisView = (asNew: boolean) => {
+    if (!project) return
+    const now = new Date().toISOString()
+    if (!activeView || asNew) {
+      const created = { id: crypto.randomUUID(), label: `Analysis ${project.analysisViews.length + 1}`, sourceIds, chart: state, filters: FILTER_KEYS.filter((key) => filters[key].length).map((key) => ({ field: key, values: filters[key] })), createdAt: now, updatedAt: now }
+      setProject({ ...project, analysisViews: [...project.analysisViews, created], updatedAt: now })
+      setActiveViewId(created.id)
+      return
+    }
+    setProject({ ...project, analysisViews: project.analysisViews.map((item) => item.id === activeView.id ? { ...item, sourceIds, chart: state, filters: FILTER_KEYS.filter((key) => filters[key].length).map((key) => ({ field: key, values: filters[key] })), updatedAt: now } : item), updatedAt: now })
+  }
+
+  const selectView = (id: string) => {
+    const selectedView = project?.analysisViews.find((item) => item.id === id)
+    if (!selectedView) return
+    setActiveViewId(id)
+    setSourceIds(selectedView.sourceIds)
+    setState(selectedView.chart)
+    const next: Filters = { ...NO_FILTERS }
+    for (const filter of selectedView.filters) if (FILTER_KEYS.includes(filter.field as FilterKey)) next[filter.field as FilterKey] = filter.values
+    setFilters(next)
+    setOverride(null)
+  }
+
+  const saveProjectFile = () => {
+    if (!project) return
+    download(`${project.label}.heval-project.json`, new Blob([JSON.stringify(project, null, 2)], { type: 'application/json' }))
+  }
+
+  const saveBundleFile = async () => {
+    if (!project) return
+    const bundle = await makeBundle(project, project.sources.map((source) => artifacts.get(source.artifactId)).filter((artifact): artifact is EvaluationArtifact => !!artifact))
+    download(`${project.label}.heval-bundle.json`, new Blob([JSON.stringify(bundle, null, 2)], { type: 'application/json' }))
+  }
+
   const toggleFilter = (key: FilterKey, value: string) =>
     setFilters((f) => ({ ...f, [key]: f[key].includes(value) ? f[key].filter((v) => v !== value) : [...f[key], value] }))
 
-  const uses = USES[state.recipe]
+  const uses = USES[chartState.recipe]
   const entry = index.find((i) => i.job === job)
   const selectedRow = selected ? allRows.find((r) => r.trial === selected) ?? null : null
 
@@ -317,11 +502,11 @@ export function Studio() {
       <label htmlFor={`f-${key}`}>{label}</label>
       <select
         id={`f-${key}`}
-        value={state[key]}
+        value={chartState[key]}
         onChange={(e) => {
           const value = e.target.value
-          if (key === 'color' || key === 'facet') set(key, value as Dimension | 'none')
-          else set(key, value as Dimension)
+          if (key === 'color' || key === 'facet') setChart(key, value as Dimension | 'none')
+          else setChart(key, value as Dimension)
         }}
       >
         {allowNone && <option value="none">None</option>}
@@ -333,7 +518,7 @@ export function Studio() {
   const measureField = (key: 'measure' | 'xMeasure', label: string) => (
     <div className="field" key={key}>
       <label htmlFor={`f-${key}`}>{label}</label>
-      <select id={`f-${key}`} value={state[key]} onChange={(e) => set(key, e.target.value as Measure)}>
+      <select id={`f-${key}`} value={chartState[key]} onChange={(e) => setChart(key, e.target.value as Measure)}>
         {MEASURES.map((m) => <option key={m} value={m}>{MEASURE_LABEL[m]}</option>)}
       </select>
     </div>
@@ -357,12 +542,12 @@ export function Studio() {
         <a className="brand" href="/" aria-label="Heval home">
           <span className="brand-mark"><span>H</span></span>
           <span className="brand-name">Heval</span>
-          <span className="beta-pill">CHART STUDIO</span>
+          <span className="beta-pill">STUDIO</span>
         </a>
 
         <div className="crumbs">
           <ChevronRight size={14} />
-          <span>jobs</span>
+          <span>{project ? 'project' : 'jobs'}</span>
           <ChevronRight size={14} />
           <div className="job-select">
             <select id="f-job" aria-label="Job export" value={job ?? ''} disabled={!index.length} onChange={(e) => setJob(e.target.value)}>
@@ -383,6 +568,8 @@ export function Studio() {
           <button type="button" className="btn ghost" onClick={() => filePicker.current?.click()}>
             <FolderOpen size={14} /><span className="label-text">Open export</span>
           </button>
+          <button type="button" className="btn" onClick={saveProjectFile} disabled={!project}><Save size={14} />Project</button>
+          <button type="button" className="btn" onClick={() => void saveBundleFile()} disabled={!project}><Download size={14} />Bundle</button>
           <span className="divider" />
           <button type="button" className="btn" onClick={() => void exportSvg()} disabled={!chart}><Download size={14} />SVG</button>
           <button type="button" className="btn" onClick={() => void exportPng()} disabled={!chart}><ImageIcon size={14} />PNG @2x</button>
@@ -392,8 +579,103 @@ export function Studio() {
         </div>
       </header>
 
+      <div className="modebar">
+        <div className="mode-switch" role="tablist" aria-label="Studio mode">
+          <button type="button" role="tab" aria-selected={mode === 'analysis'} onClick={() => switchMode('analysis')}>Analysis</button>
+          <button type="button" role="tab" aria-selected={mode === 'presentation'} onClick={() => switchMode('presentation')}>Presentation</button>
+        </div>
+        <span>{mode === 'analysis' ? 'Compare compatible metrics across sources and save the analysis.' : 'Pin an analysis snapshot, then shape the chart, poster, and motion output.'}</span>
+        {project && <strong>{project.label} · {project.sources.length} {project.sources.length === 1 ? 'source' : 'sources'}</strong>}
+      </div>
+
       <div className="workspace">
         <aside className="side">
+          {mode === 'analysis' && project && (
+            <div className="group project-config">
+              <div className="group-head"><span className="eyebrow"><Layers size={11} />Project</span></div>
+              <div className="field">
+                <label htmlFor="f-project-name">Name</label>
+                <input id="f-project-name" type="text" value={project.label} onChange={(event) => setProject({ ...project, label: event.target.value, updatedAt: new Date().toISOString() })} />
+              </div>
+              <div className="field">
+                <label htmlFor="f-view">Saved view</label>
+                <select id="f-view" value={activeView?.id ?? ''} onChange={(event) => selectView(event.target.value)}>
+                  {project.analysisViews.map((viewItem) => <option key={viewItem.id} value={viewItem.id}>{viewItem.label}</option>)}
+                </select>
+              </div>
+              <div className="source-list" aria-label="Project sources">
+                {project.sources.map((source) => (
+                  <label className="source-check" key={source.id}>
+                    <input type="checkbox" checked={sourceIds.includes(source.id)} onChange={() => setSourceIds((current) => current.includes(source.id) ? current.filter((id) => id !== source.id) : [...current, source.id])} />
+                    <span><strong>{source.label}</strong><small>{artifacts.get(source.artifactId)?.benchmark.label ?? 'Unavailable'} · {artifacts.get(source.artifactId)?.run.status ?? 'missing'} · {source.runId.slice(0, 8)}</small></span>
+                  </label>
+                ))}
+              </div>
+              <div className="row">
+                <button type="button" className="btn sm" onClick={() => saveAnalysisView(false)}><Save size={12} />Save view</button>
+                <button type="button" className="btn sm ghost" onClick={() => saveAnalysisView(true)}>Save as new</button>
+              </div>
+            </div>
+          )}
+
+          {mode === 'presentation' && activePresentation && (
+            <div className="group project-config">
+              <div className="group-head"><span className="eyebrow"><Film size={11} />Presentation</span></div>
+              <div className="field">
+                <label htmlFor="f-presentation-name">Name</label>
+                <input id="f-presentation-name" type="text" value={activePresentation.label} onChange={(event) => updatePresentation((current) => ({ ...current, label: event.target.value, updatedAt: new Date().toISOString() }))} />
+              </div>
+              <div className="field">
+                <label htmlFor="f-presentation-view">Analysis view</label>
+                <select id="f-presentation-view" value={activePresentation.analysisViewId} onChange={(event) => {
+                  const nextView = project?.analysisViews.find((item) => item.id === event.target.value)
+                  if (!nextView || !project) return
+                  const refreshed = newPresentation(project, nextView)
+                  updatePresentation((current) => ({ ...current, analysisViewId: nextView.id, snapshotPins: refreshed.snapshotPins, updatedAt: new Date().toISOString() }))
+                  setActiveViewId(nextView.id)
+                }}>
+                  {project?.analysisViews.map((viewItem) => <option key={viewItem.id} value={viewItem.id}>{viewItem.label}</option>)}
+                </select>
+              </div>
+              <div className="field">
+                <label htmlFor="f-presentation-theme">Theme preset</label>
+                <select id="f-presentation-theme" value={activePresentation.theme} onChange={(event) => {
+                  const theme = event.target.value as typeof activePresentation.theme
+                  updatePresentation((current) => ({ ...current, theme, graphOverrides: { ...current.graphOverrides, theme: theme === 'plain-light' ? 'light' : 'dark' }, motion: { ...current.motion, theme }, updatedAt: new Date().toISOString() }))
+                }}>
+                  {THEME_IDS.map((id) => <option key={id} value={id}>{MOTION_THEMES[id].label}</option>)}
+                </select>
+                <p className="hint">Applies recommended colors. The graph controls below remain editable.</p>
+              </div>
+              <div className="field">
+                <label htmlFor="f-presentation-canvas">Canvas</label>
+                <select id="f-presentation-canvas" value={activePresentation.canvas} onChange={(event) => {
+                  const canvas = event.target.value as typeof activePresentation.canvas
+                  updatePresentation((current) => ({ ...current, canvas, motion: { ...current.motion, canvas }, updatedAt: new Date().toISOString() }))
+                }}>
+                  {CANVAS_IDS.map((id) => <option key={id} value={id}>{MOTION_CANVASES[id].label}</option>)}
+                </select>
+              </div>
+              {(['title', 'kicker', 'cue', 'note', 'source'] as const).map((key) => (
+                <div className="field" key={key}>
+                  <label htmlFor={`f-narrative-${key}`}>{key === 'note' ? 'Footer left' : key === 'source' ? 'Footer right' : key[0].toUpperCase() + key.slice(1)}</label>
+                  <input id={`f-narrative-${key}`} type="text" value={activePresentation.narrative[key]} onChange={(event) => {
+                    const value = event.target.value
+                    updatePresentation((current) => ({ ...current, narrative: { ...current.narrative, [key]: value }, motion: { ...current.motion, [key]: value }, updatedAt: new Date().toISOString() }))
+                  }} />
+                </div>
+              ))}
+              <p className="pin-note"><Hash size={11} />{activePresentation.snapshotPins.length} immutable source {activePresentation.snapshotPins.length === 1 ? 'snapshot' : 'snapshots'} pinned</p>
+              <button type="button" className="btn sm" onClick={() => {
+                if (!project) return
+                const now = new Date().toISOString()
+                const revision: Presentation = { ...activePresentation, id: crypto.randomUUID(), label: `${activePresentation.label.replace(/ · r\d+$/, '')} · r${activePresentation.revision + 1}`, revision: activePresentation.revision + 1, parentPresentationId: activePresentation.id, createdAt: now, updatedAt: now }
+                setProject({ ...project, presentations: [...project.presentations, revision], updatedAt: now })
+                setActivePresentationId(revision.id)
+              }}><Save size={12} />New editorial revision</button>
+            </div>
+          )}
+
           <div className="group">
             <div className="group-head">
               <span className="eyebrow"><SlidersHorizontal size={11} />Form</span>
@@ -402,24 +684,25 @@ export function Studio() {
               <label htmlFor="f-recipe">Recipe</label>
               <select
                 id="f-recipe"
-                value={state.recipe}
+                value={chartState.recipe}
                 onChange={(e) => {
                   // Switching form resets only the fields that form reads, so a
                   // recipe never inherits a nonsensical encoding from the last one.
                   const recipe = e.target.value as Recipe
-                  setState((prev) => ({ ...prev, recipe, ...RECIPE_DEFAULTS[recipe] }))
+                  if (mode === 'analysis') setState((prev) => ({ ...prev, recipe, ...RECIPE_DEFAULTS[recipe] }))
+                  else updatePresentation((current) => ({ ...current, graphOverrides: { ...current.graphOverrides, recipe, ...RECIPE_DEFAULTS[recipe] }, updatedAt: new Date().toISOString() }))
                   setOverride(null)
                 }}
               >
                 {RECIPES.map((r) => <option key={r} value={r}>{RECIPE_LABEL[r]}</option>)}
               </select>
             </div>
-            {uses.has('x') && dimField('x', state.recipe === 'matrix' ? 'Columns' : 'Group by', false)}
+            {uses.has('x') && dimField('x', chartState.recipe === 'matrix' ? 'Columns' : 'Group by', false)}
             {uses.has('row') && dimField('row', 'Rows', false)}
             {uses.has('color') && dimField('color', 'Color', true)}
             {uses.has('facet') && dimField('facet', 'Facet', true)}
             <p className="hint">
-              {state.recipe === 'matrix'
+              {chartState.recipe === 'matrix'
                 ? 'One hue, light to dark: the matrix encodes magnitude, not category.'
                 : 'Color is capped at four series - the palette validates no further. Facet past that.'}
             </p>
@@ -429,12 +712,12 @@ export function Studio() {
             <div className="group-head">
               <span className="eyebrow"><Ruler size={11} />Measure</span>
             </div>
-            {uses.has('measure') && measureField('measure', state.recipe === 'scatter' ? 'Y (quality)' : 'Value')}
+            {uses.has('measure') && measureField('measure', chartState.recipe === 'scatter' ? 'Y (quality)' : 'Value')}
             {uses.has('xMeasure') && measureField('xMeasure', 'X (cost)')}
             {uses.has('aggregate') && (
               <div className="field">
                 <label htmlFor="f-agg">Aggregate</label>
-                <select id="f-agg" value={state.aggregate} onChange={(e) => set('aggregate', e.target.value as Aggregate)}>
+                <select id="f-agg" value={chartState.aggregate} onChange={(e) => setChart('aggregate', e.target.value as Aggregate)}>
                   {AGGREGATES.map((a) => <option key={a} value={a}>{a}</option>)}
                 </select>
               </div>
@@ -442,7 +725,7 @@ export function Studio() {
             {uses.has('sort') && (
               <div className="field">
                 <label htmlFor="f-sort">Sort</label>
-                <select id="f-sort" value={state.sort} onChange={(e) => set('sort', e.target.value as SortOrder)}>
+                <select id="f-sort" value={chartState.sort} onChange={(e) => setChart('sort', e.target.value as SortOrder)}>
                   {SORTS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
                 </select>
               </div>
@@ -456,27 +739,27 @@ export function Studio() {
             <div className="checks">
               {uses.has('labels') && (
                 <label className="check">
-                  <input type="checkbox" checked={state.labels} onChange={(e) => set('labels', e.target.checked)} />
+                  <input type="checkbox" checked={chartState.labels} onChange={(e) => setChart('labels', e.target.checked)} />
                   Value labels
                   <small>direct</small>
                 </label>
               )}
               {uses.has('intervals') && (
                 <label className="check">
-                  <input type="checkbox" checked={state.intervals} onChange={(e) => set('intervals', e.target.checked)} />
+                  <input type="checkbox" checked={chartState.intervals} onChange={(e) => setChart('intervals', e.target.checked)} />
                   95% intervals
                   <small>wilson</small>
                 </label>
               )}
             </div>
-            <div className="field">
+            {mode === 'analysis' && <div className="field">
               <label htmlFor="f-title">Title</label>
               <input id="f-title" type="text" value={state.title} placeholder="optional" onChange={(e) => set('title', e.target.value)} />
-            </div>
-            <div className="field">
+            </div>}
+            {mode === 'analysis' && <div className="field">
               <label htmlFor="f-sub">Subtitle</label>
               <input id="f-sub" type="text" value={state.subtitle} placeholder="optional" onChange={(e) => set('subtitle', e.target.value)} />
-            </div>
+            </div>}
           </div>
 
           <div className="group">
@@ -488,7 +771,7 @@ export function Studio() {
                 ? <>{entry.trials} trials · exported {entry.generatedAt.slice(0, 10)}<br />{entry.agents.join(', ')}</>
                 : 'Drop a <job>.json export anywhere on this page, or open one from the top bar.'}
             </p>
-            {data?.source && <p className="hint"><code>{data.source}</code></p>}
+            {project?.sources.map((source) => <p className="hint" key={source.id}><code>{source.uri}</code></p>)}
             <div className="row">
               {job && index.some((i) => i.job === job) && (
                 <a className="btn sm" href={`${RESULTS}/${job}.html`} target="_blank" rel="noreferrer">
@@ -498,7 +781,11 @@ export function Studio() {
               <button
                 type="button"
                 className="btn sm ghost"
-                onClick={() => { setState({ ...DEFAULT_STATE, theme: state.theme }); setOverride(null); setFilters(NO_FILTERS) }}
+                onClick={() => {
+                  if (mode === 'analysis') setState({ ...DEFAULT_STATE, theme: chartState.theme })
+                  else updatePresentation((current) => ({ ...current, graphOverrides: { theme: current.graphOverrides.theme ?? chartState.theme }, updatedAt: new Date().toISOString() }))
+                  setOverride(null); setFilters(NO_FILTERS)
+                }}
               >
                 <RotateCcw size={12} />Reset
               </button>
@@ -509,22 +796,22 @@ export function Studio() {
         <main className="main">
           <div className="head">
             <div>
-              <span className="eyebrow">Harbor job</span>
-              <h1>{job ?? 'No job loaded'}</h1>
-              {data && (
+              <span className="eyebrow">{mode === 'analysis' ? 'Analysis project' : 'Pinned presentation'}</span>
+              <h1>{project?.label ?? job ?? 'No project loaded'}</h1>
+              {project && (
                 <div className="meta">
                   <span><Rows3 size={12} />{allRows.length} trials{filtering ? ` · ${rows.length} shown` : ''}</span>
-                  <span><Cpu size={12} />{versions || 'versions not recorded'}</span>
-                  {data.jobId && <span><Hash size={12} /><code>{data.jobId.slice(0, 8)}</code></span>}
-                  <span><Clock3 size={12} />exported {data.generatedAt.slice(0, 10)}</span>
+                  <span><Cpu size={12} />{project.sources.length} source{project.sources.length === 1 ? '' : 's'}{versions ? ` · ${versions}` : ''}</span>
+                  <span><Hash size={12} /><code>{project.id.slice(0, 8)}</code></span>
+                  <span><Clock3 size={12} />updated {project.updatedAt.slice(0, 10)}</span>
                 </div>
               )}
             </div>
           </div>
 
-          {data && <StatTiles rows={rows} />}
+          {project && <StatTiles rows={rows} />}
 
-          {data && (
+          {project && mode === 'analysis' && (
             <FilterBar
               rows={allRows}
               filters={filters}
@@ -533,10 +820,11 @@ export function Studio() {
             />
           )}
 
-          {(loadError || chart?.warnings.length || rendered.error || embedError || (data && !rows.length)) ? (
+          {(loadError || compatibility.incompatible.length || chart?.warnings.length || rendered.error || embedError || (project && !rows.length)) ? (
             <div className="notes">
               {loadError && <div className="warn err"><AlertTriangle size={14} /><span>{loadError}</span></div>}
-              {data && !rows.length && <div className="warn"><Filter size={14} /><span>The active filters exclude every trial. Clear one to draw a chart.</span></div>}
+              {project && !rows.length && <div className="warn"><Filter size={14} /><span>No selected source has compatible data for this metric and filter set.</span></div>}
+              {compatibility.incompatible.length > 0 && <div className="warn"><AlertTriangle size={14} /><span>Excluded incompatible sources for {MEASURE_LABEL[chartState.measure]}: {compatibility.incompatible.join(', ')}.</span></div>}
               {chart?.warnings.map((w) => <div className="warn" key={w}><AlertTriangle size={14} /><span>{w}</span></div>)}
               {(rendered.error ?? embedError) && <div className="warn err"><AlertTriangle size={14} /><span>Spec error: {rendered.error ?? embedError}</span></div>}
             </div>
@@ -544,12 +832,15 @@ export function Studio() {
 
           <div className="tabbar">
             <div className="tabs" role="tablist">
-              {([
+              {((mode === 'analysis' ? [
                 ['chart', 'Chart', <BarChart3 size={13} key="i" />, null],
                 ['table', 'Table view', <Table2 size={13} key="i" />, chart ? chart.table.length : null],
                 ['spec', 'Vega-Lite spec', <Braces size={13} key="i" />, null],
-                ['rows', 'Raw trials', <Activity size={13} key="i" />, data ? rows.length : null],
-              ] as [Tab, string, ReactNode, number | null][]).map(([t, label, icon, count]) => (
+                ['rows', 'Raw trials', <Activity size={13} key="i" />, project ? rows.length : null],
+              ] : [
+                ['chart', 'Poster', <ImageIcon size={13} key="i" />, null],
+                ['motion', 'Motion', <Film size={13} key="i" />, null],
+              ]) as [Tab, string, ReactNode, number | null][]).map(([t, label, icon, count]) => (
                 <button key={t} type="button" role="tab" className="tab" aria-selected={tab === t} onClick={() => setTab(t)}>
                   {icon}{label}{count !== null && <small>{count}</small>}
                 </button>
@@ -558,13 +849,13 @@ export function Studio() {
             <span className="spacer" />
             {/* Switches the canvas between the two validated chart surfaces; the
                 chrome around it stays the product's dark. */}
-            <div className="canvas-toggle" role="radiogroup" aria-label="Chart canvas">
+            <div className="canvas-toggle" role="radiogroup" aria-label="Chart canvas" style={{ display: tab === 'motion' ? 'none' : undefined }}>
               <label className="canvas-btn">
-                <input type="radio" name="canvas" className="sr-only" checked={state.theme === 'dark'} onChange={() => set('theme', 'dark')} />
+                <input type="radio" name="canvas" className="sr-only" checked={chartState.theme === 'dark'} onChange={() => setChart('theme', 'dark')} />
                 <Moon size={11} />Dark mode
               </label>
               <label className="canvas-btn">
-                <input type="radio" name="canvas" className="sr-only" checked={state.theme === 'light'} onChange={() => set('theme', 'light')} />
+                <input type="radio" name="canvas" className="sr-only" checked={chartState.theme === 'light'} onChange={() => setChart('theme', 'light')} />
                 <Sun size={11} />Light mode
               </label>
             </div>
@@ -576,15 +867,15 @@ export function Studio() {
             <div className="card-head">
               <div className="window-dots"><span /><span /><span /></div>
               <div className="title">
-                <span>{RECIPE_LABEL[state.recipe]}</span>
-                <small>{state.recipe} · {rows.length} trials · {state.theme === 'dark' ? 'surface #101111' : 'surface #ffffff'}</small>
+                <span>{mode === 'presentation' ? activePresentation?.label ?? 'Presentation poster' : RECIPE_LABEL[chartState.recipe]}</span>
+                <small>{chartState.recipe} · {rows.length} trials · {chartState.theme === 'dark' ? 'surface #2c2a25' : 'surface #ffffff'}</small>
               </div>
               <div className="right">
                 <small>{chart ? `${chart.table.length} plotted groups` : ''}</small>
               </div>
             </div>
-            <div className="canvas" data-canvas={state.theme}>
-              {!data && !loadError ? (
+            <div className={`canvas${mode === 'presentation' ? ' presentation-canvas' : ''}`} data-canvas={chartState.theme} data-format={activePresentation?.canvas}>
+              {!project && !loadError ? (
                 <div className="placeholder"><div><strong>Loading export</strong><p>Reading {job ?? 'the job index'} from {RESULTS}.</p></div></div>
               ) : !chart ? (
                 <div className="placeholder">
@@ -598,6 +889,17 @@ export function Studio() {
             </div>
           </div>
 
+          {tab === 'motion' && <MotionPreview
+            job={job}
+            catalogJob={Boolean(job && index.some((item) => item.job === job))}
+            // The export's own rows, not the filtered view: the composition is
+            // built server-side from the catalog file, so the editor has to
+            // describe that frame rather than this screen's selection.
+            rows={data?.rows ?? []}
+            options={activePresentation?.motion}
+            onOptionsChange={(motion) => updatePresentation((current) => ({ ...current, motion, theme: motion.theme, canvas: motion.canvas, narrative: { title: motion.title, kicker: motion.kicker, cue: motion.cue, note: motion.note, source: motion.source }, updatedAt: new Date().toISOString() }))}
+          />}
+
           {tab === 'table' && chart && (
             <div className="panel">
               <div className="card-head">
@@ -605,13 +907,13 @@ export function Studio() {
               </div>
               <table>
                 <thead>
-                  <tr>{chart.columns.map((c) => <th key={c} className={NUMERIC.has(c) ? 'num' : undefined}>{columnLabel(c, state.measure, state.xMeasure)}</th>)}</tr>
+                  <tr>{chart.columns.map((c) => <th key={c} className={NUMERIC.has(c) ? 'num' : undefined}>{columnLabel(c, chartState.measure, chartState.xMeasure)}</th>)}</tr>
                 </thead>
                 <tbody>
                   {chart.table.map((r, i) => (
                     <tr key={i}>
                       {chart.columns.map((c) => (
-                        <td key={c} className={NUMERIC.has(c) ? 'num' : undefined}>{cellText(r[c], c, state.measure, state.xMeasure)}</td>
+                        <td key={c} className={NUMERIC.has(c) ? 'num' : undefined}>{cellText(r[c], c, chartState.measure, chartState.xMeasure)}</td>
                       ))}
                     </tr>
                   ))}
@@ -639,7 +941,7 @@ export function Studio() {
             </div>
           )}
 
-          {tab === 'rows' && data && (
+          {tab === 'rows' && project && (
             <RunList
               rows={rows}
               sort={runSort}

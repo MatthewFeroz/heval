@@ -75,6 +75,19 @@ export type TrialRow = {
   startedAt: string | null
   /** Harbor exception type when the trial errored, else null. */
   error: string | null
+  /** Project source label. Added by the Studio adapter; absent in JobExport v1. */
+  source?: string
+  /** Immutable run label. Added by the Studio adapter. */
+  run?: string
+  /** Benchmark identity carried by a self-describing evaluation artifact. */
+  benchmark?: string
+  benchmarkVersion?: string
+  dataset?: string
+  datasetVersion?: string
+  /** Deliberately distinct from a run id or benchmark version. */
+  iteration?: string | null
+  /** Artifact-declared fields are projected here under stable `custom:` keys. */
+  [field: string]: string | number | boolean | null | undefined
 }
 
 export type JobExport = {
@@ -106,8 +119,12 @@ export type JobIndex = {
 }
 
 /** Dimensions a chart can group by. */
-export const DIMENSIONS = ['agent', 'model', 'modelShort', 'task', 'stack', 'provider', 'vendor', 'agentVersion'] as const
-export type Dimension = (typeof DIMENSIONS)[number]
+export const DIMENSIONS = [
+  'agent', 'model', 'modelShort', 'task', 'stack', 'provider', 'vendor', 'agentVersion',
+  'source', 'run', 'benchmark', 'benchmarkVersion', 'dataset', 'datasetVersion', 'iteration',
+] as const
+export type CoreDimension = (typeof DIMENSIONS)[number]
+export type Dimension = string
 
 /**
  * Tail-latency threshold, seconds. A trial whose agent step runs longer counts
@@ -130,9 +147,10 @@ export const MEASURES = [
   'outputTokens',
   'totalTokens',
 ] as const
-export type Measure = (typeof MEASURES)[number]
+export type CoreMeasure = (typeof MEASURES)[number]
+export type Measure = string
 
-export const DIMENSION_LABEL: Record<Dimension, string> = {
+export const DIMENSION_LABEL: Record<string, string> = {
   agent: 'Harness',
   model: 'Model',
   modelShort: 'Model (short)',
@@ -141,9 +159,16 @@ export const DIMENSION_LABEL: Record<Dimension, string> = {
   provider: 'Model creator',
   vendor: 'Serving vendor',
   agentVersion: 'Harness version',
+  source: 'Project source',
+  run: 'Run',
+  benchmark: 'Benchmark',
+  benchmarkVersion: 'Benchmark version',
+  dataset: 'Dataset',
+  datasetVersion: 'Dataset version',
+  iteration: 'Iteration',
 }
 
-export const MEASURE_LABEL: Record<Measure, string> = {
+export const MEASURE_LABEL: Record<string, string> = {
   passed: 'Pass rate',
   reward: 'Reward',
   costUsd: 'Cost (USD)',
@@ -158,7 +183,7 @@ export const MEASURE_LABEL: Record<Measure, string> = {
 }
 
 /** Vega-Lite axis format per measure. */
-export const MEASURE_FORMAT: Record<Measure, string> = {
+export const MEASURE_FORMAT: Record<string, string> = {
   passed: '.0%',
   reward: '.0%',
   costUsd: '$.2f',

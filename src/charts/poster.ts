@@ -65,8 +65,22 @@ export type Panel = {
   tick: (v: number) => string
   /** Axis ceiling. `null` lets the data pick it. */
   axisMax: number | null
+  /**
+   * Axis floor. Omitted means a zero baseline, which is the only honest one for
+   * bars and stays the default everywhere. The social composition's editor
+   * exposes it so a truncated axis is a deliberate, visible choice.
+   */
+  axisMin?: number
   /** One line under the heading, for the panels whose definition is not obvious. */
   note?: string
+  /**
+   * Interval between ticks, in the panel's own value units - 0.05 on a rate
+   * axis draws one every 5%. Omitted lets the floor pick a count instead: five
+   * levels against a zero baseline, four against a truncated one, the pair that
+   * lands on round numbers. Only the social composition sets this, because only
+   * its editor exposes the axis as a control.
+   */
+  tickStep?: number
 }
 
 export const PANELS: Record<PanelId, Panel> = {
@@ -185,13 +199,29 @@ export function labelLines(modelShort: string): string[] {
   return [words[0], words.slice(1).join(' ')]
 }
 
+/** Past this a step is drawing hairlines, not an axis. Guards a typed value. */
+const TICK_LIMIT = 40
+
+/**
+ * Tick values from the floor up, one every `step`, stopping at the ceiling.
+ *
+ * A step that does not divide the span leaves the top tick short of the ceiling
+ * rather than inventing a level above it - ticks every 25% under an 80% ceiling
+ * reads 0/25/50/75, which is honest, where a sixth level at 100% would not be.
+ * The epsilon is float defence: 0.8 / 0.05 is 15.999999999999998.
+ */
+function everyStep(min: number, span: number, step: number): number[] {
+  const count = Math.min(TICK_LIMIT, Math.floor(span / step + 1e-9))
+  return Array.from({ length: count + 1 }, (_, index) => min + index * step)
+}
+
 /**
  * Build one panel.
  *
  * `order` fixes which models enter the comparison. Each panel then ranks them
  * by its own metric without changing any values.
  */
-export function buildPanel(rows: TrialRow[], panel: Panel, order: readonly string[]): PanelData {
+export function buildPanel(rows: readonly TrialRow[], panel: Panel, order: readonly string[]): PanelData {
   const scored: { key: string; value: number; n: number }[] = []
   const omitted: string[] = []
   for (const key of order) {
@@ -208,13 +238,23 @@ export function buildPanel(rows: TrialRow[], panel: Panel, order: readonly strin
   scored.sort((a, b) => (panel.better === 'higher' ? b.value - a.value : a.value - b.value))
 
   const max = panel.axisMax ?? niceMax(Math.max(...scored.map((s) => s.value), 0))
+  const min = panel.axisMin ?? 0
+  const span = max - min
   const bars: Bar[] = scored.map((s) => ({
     key: s.key,
     lines: labelLines(s.key),
     value: s.value,
-    frac: max > 0 ? s.value / max : 0,
+    frac: span > 0 ? Math.min(1, Math.max(0, (s.value - min) / span)) : 0,
     n: s.n,
   }))
-  const ticks = [0, 0.25, 0.5, 0.75, 1].map((f) => ({ value: max * f, label: panel.tick(max * f), frac: f }))
+  // Four levels land on round numbers against a truncated floor; the five-level
+  // ladder prints 43.75% against a 0.25 one. An explicit `tickStep` replaces
+  // the ladder with a fixed interval, so a caller that offers the axis as a
+  // control still gets this default when the control is left alone.
+  const levels = min > 0 ? 4 : 5
+  const ladder = Array.from({ length: levels }, (_, index) => index / (levels - 1))
+  const ticks = panel.tickStep && panel.tickStep > 0 && span > 0
+    ? everyStep(min, span, panel.tickStep).map((value) => ({ value, label: panel.tick(value), frac: (value - min) / span }))
+    : ladder.map((f) => ({ value: min + span * f, label: panel.tick(min + span * f), frac: f }))
   return { panel, bars, ticks, omitted }
 }

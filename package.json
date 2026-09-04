@@ -6,21 +6,26 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
-    "build": "tsc -b && vite build",
+    "build": "bun run social:build && tsc -b && vite build",
     "start": "bun run build && bun server/index.ts",
     "serve": "bun server/index.ts",
     "lint": "eslint .",
     "test:e2e": "playwright test",
+    "test:unit": "bun test src/project",
     "preview": "vite preview --host 0.0.0.0",
     "report": "bun harbor/report/build-report.ts",
     "poster": "bun harbor/report/build-poster.ts",
+    "social:build": "bun harbor/social/build-completion.ts",
+    "social:check": "HYPERFRAMES_NO_TELEMETRY=1 hyperframes check results/harbor/social/terminal-bench-composio-mirror --at 0,2.8,5.7,7.9",
     "status": "bash harbor/status.sh"
   },
   "dependencies": {
     "@earendil-works/pi-coding-agent": "0.84.4",
+    "@hyperframes/player": "0.8.27",
     "@vitejs/plugin-react": "latest",
     "@workos-inc/authkit-react": "^0.16.2",
     "@xterm/xterm": "^6.0.0",
+    "gsap": "3.14.2",
     "jose": "^6.2.10",
     "lucide-react": "latest",
     "react": "latest",
@@ -40,6 +45,7 @@
     "eslint-plugin-react-hooks": "latest",
     "eslint-plugin-react-refresh": "latest",
     "globals": "latest",
+    "hyperframes": "0.8.27",
     "typescript": "~5.9.3",
     "typescript-eslint": "latest"
   }

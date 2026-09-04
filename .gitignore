@@ -17,3 +17,18 @@ test-results
 
 # Webfonts the poster exporter inlines into its PNGs, fetched on first run.
 harbor/report/.fontcache/
+
+# HyperFrames verification frames and rendered media are reproducible from the
+# normalized job JSON and composition source. Keep binaries out of Git.
+results/harbor/social/**/snapshots/
+results/harbor/social/**/*.mp4
+results/harbor/social/**/*.mov
+results/harbor/social/**/*.webm
+results/harbor/social/**/*.gif
+
+# The built composition itself. `bun run social:build` regenerates it from the
+# job JSON, it is ~1.5MB apiece, and it inlines ~280KB of base64 FH Oscar Pro -
+# a face licensed to Merge, which must not ship from a public repo. The gsap
+# bundle beside it is copied straight out of node_modules by the same script.
+results/harbor/social/**/index.html
+results/harbor/social/**/assets/

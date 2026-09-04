@@ -112,6 +112,9 @@ Do not expose the runner API directly to the public internet. It is designed for
 
 ## Architecture
 
+New to the codebase? [`docs/how-it-works.md`](docs/how-it-works.md) walks through
+the two pages, the job pipeline, and which controls live in the UI versus the code.
+
 ```text
 React + Vite replay UI
           |
@@ -201,7 +204,7 @@ src/charts/       Chart recipes, palette and URL state - shared by report and st
 src/studio/       The chart studio (configurable graph editor)
 src/              React replay and reporting interface
 tests/            Playwright browser tests
-docs/             Evaluation protocol and architecture notes
+docs/             How it works, evaluation protocol, architecture notes
 ```
 
 Generated builds, local credentials, raw recordings, and Playwright artifacts are intentionally ignored by Git.

@@ -52,8 +52,38 @@ test('exports the chart as SVG', async ({ page }) => {
 })
 
 test('dark mode is a selected theme, not an inverted one', async ({ page }) => {
-  await page.getByLabel('Dark mode').check()
+  // The theme radios are `sr-only`, so the icon inside the pill owns the hit
+  // point and `.check()` cannot reach the input. Click the pill, like a person.
+  await page.locator('.canvas-btn', { hasText: 'Dark mode' }).click()
+  await expect(page.getByLabel('Dark mode')).toBeChecked()
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
   // The dark categorical slot 1 uses Merge Robin, not the light palette step.
   await expect(page.locator('.card svg .mark-rect.role-mark path').first()).toHaveAttribute('fill', '#96BDCE')
+})
+
+test('separates saved analysis from pinned presentation configuration', async ({ page }) => {
+  await expect(page.getByRole('tab', { name: 'Analysis', exact: true })).toHaveAttribute('aria-selected', 'true')
+  await expect(page.getByLabel('Project sources')).toContainText(JOB)
+  await page.getByRole('button', { name: 'Save view' }).click()
+
+  await page.getByRole('tab', { name: 'Presentation', exact: true }).click()
+  await expect(page).toHaveURL(/mode=presentation/)
+  await expect(page.getByRole('tab', { name: 'Poster', exact: true })).toBeVisible()
+  await expect(page.getByText('1 immutable source snapshot pinned')).toBeVisible()
+
+  await page.locator('#f-presentation-theme').selectOption('plain-light')
+  await expect(page.getByLabel('Light mode')).toBeChecked()
+  // A theme applies a recommendation, but the graph setting remains editable.
+  await page.locator('.canvas-btn', { hasText: 'Dark mode' }).click()
+  await expect(page.getByLabel('Dark mode')).toBeChecked()
+})
+
+test('downloads referenced project and self-contained bundle files', async ({ page }) => {
+  const projectDownload = page.waitForEvent('download')
+  await page.getByRole('button', { name: 'Project', exact: true }).click()
+  expect((await projectDownload).suggestedFilename()).toMatch(/\.heval-project\.json$/)
+
+  const bundleDownload = page.waitForEvent('download')
+  await page.getByRole('button', { name: 'Bundle', exact: true }).click()
+  expect((await bundleDownload).suggestedFilename()).toMatch(/\.heval-bundle\.json$/)
 })

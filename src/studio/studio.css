@@ -126,6 +126,15 @@ input::placeholder { color: var(--faint); }
 .topbar .actions { margin-left: auto; display: flex; align-items: center; gap: 6px; }
 .topbar .divider { width: 1px; height: 18px; background: var(--line); margin: 0 6px; }
 
+.modebar {
+  min-height: 42px; padding: 6px 14px 6px 10px; display: flex; align-items: center; gap: 14px;
+  border-bottom: 1px solid var(--line); background: #0d0e0e; color: var(--faint); font-size: 11px;
+}
+.modebar > strong { margin-left: auto; color: var(--muted); font: 500 10px var(--mono); }
+.mode-switch { display: inline-flex; padding: 2px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); }
+.mode-switch button { height: 27px; padding: 0 12px; border: 0; border-radius: 6px; background: transparent; color: var(--faint); font: 600 11px var(--sans); cursor: pointer; }
+.mode-switch button[aria-selected='true'] { background: #252925; color: var(--white); box-shadow: inset 0 0 0 1px #343a34; }
+
 /* -- workspace ------------------------------------------------------------ */
 
 .workspace { flex: 1; display: grid; grid-template-columns: 292px minmax(0, 1fr); }
@@ -145,6 +154,15 @@ input::placeholder { color: var(--faint); }
 .group-head .eyebrow { display: flex; align-items: center; gap: 7px; }
 .group-head .eyebrow svg { color: #55605a; }
 .group-head button { color: var(--faint); }
+
+.source-list { display: flex; flex-direction: column; gap: 6px; }
+.source-check { display: flex; align-items: flex-start; gap: 8px; padding: 7px 8px; border: 1px solid var(--line-soft); border-radius: 8px; cursor: pointer; }
+.source-check:has(input:checked) { border-color: #47533d; background: #11150f; }
+.source-check input { margin-top: 2px; accent-color: var(--accent); }
+.source-check span { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.source-check strong { overflow: hidden; color: var(--muted); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.source-check small { overflow: hidden; color: var(--faint); font: 400 8.5px var(--mono); text-overflow: ellipsis; white-space: nowrap; }
+.pin-note { margin: 2px 0 0; display: flex; align-items: center; gap: 5px; color: var(--faint); font: 400 9px var(--mono); }
 
 .field { display: grid; grid-template-columns: 78px minmax(0, 1fr); align-items: center; gap: 10px; }
 .field > label { color: var(--muted); font-size: 11.5px; font-weight: 600; }
@@ -278,6 +296,91 @@ input::placeholder { color: var(--faint); }
 .canvas .placeholder { min-height: 260px; display: grid; place-items: center; color: var(--faint); text-align: center; }
 .canvas .placeholder p { margin: 6px 0 0; font-size: 12px; max-width: 380px; }
 .canvas .placeholder strong { color: var(--muted); font-size: 13px; }
+.presentation-canvas[data-format='square'] { max-width: 860px; margin-inline: auto; aspect-ratio: 1; display: grid; place-items: center; }
+.presentation-canvas[data-format='portrait'] { max-width: 560px; margin-inline: auto; aspect-ratio: 9 / 16; display: grid; place-items: center; }
+.presentation-canvas[data-format='landscape'] { aspect-ratio: 16 / 9; display: grid; place-items: center; }
+
+/* -- motion export -------------------------------------------------------- */
+
+.motion-panel {
+  border: 1px solid var(--line); border-radius: 14px; background: var(--panel); overflow: hidden;
+}
+.motion-toolbar {
+  min-height: 62px; padding: 10px 12px 10px 15px;
+  display: flex; align-items: center; justify-content: space-between; gap: 14px;
+  border-bottom: 1px solid var(--line-soft);
+}
+.motion-toolbar > div:first-child { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.motion-toolbar strong { color: var(--white); font-size: 13px; }
+.motion-toolbar small { color: var(--faint); font: 400 9px var(--mono); }
+.motion-actions { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.motion-stage {
+  padding: 18px; background: #101111;
+  display: flex; justify-content: center; align-items: flex-start;
+}
+.motion-stage hyperframes-player {
+  display: block;
+  width: min(100%, calc(70vh * var(--motion-w, 1600) / var(--motion-h, 900)));
+  aspect-ratio: var(--motion-w, 1600) / var(--motion-h, 900);
+  height: auto; overflow: hidden;
+  border: 1px solid #2f3231; border-radius: 10px; background: #2c2a25;
+  box-shadow: 0 18px 60px rgba(0, 0, 0, .3);
+}
+.motion-controls {
+  padding: 11px 15px; display: flex; align-items: flex-end; gap: 18px; flex-wrap: wrap;
+  border-bottom: 1px solid var(--line-soft); background: rgba(255, 255, 255, .012);
+}
+.motion-controls .btn { margin-left: auto; }
+.motion-knob { min-width: 168px; display: flex; flex-direction: column; gap: 5px; }
+.motion-knob-label { display: flex; align-items: baseline; gap: 8px; color: var(--muted); font-size: 11.5px; font-weight: 600; }
+.motion-knob-label em { margin-left: auto; color: var(--white); font: 400 11px var(--mono); font-style: normal; font-variant-numeric: tabular-nums; }
+.motion-knob small { color: var(--faint); font-size: 10px; }
+.motion-knob input[type=range] { width: 100%; height: 14px; margin: 0; accent-color: var(--accent); cursor: pointer; }
+.motion-knob-text { flex: 1 1 240px; max-width: 340px; }
+.motion-knob-wide { flex: 1 1 320px; max-width: 520px; }
+.motion-knob-text input[type=text] {
+  width: 100%; height: 26px; padding: 0 8px;
+  border: 1px solid var(--line); border-radius: 7px;
+  background: var(--bg); color: var(--white); font: 400 12px var(--sans);
+}
+.motion-knob-text input[type=text]:focus-visible { outline: none; border-color: var(--accent); }
+.motion-knob-text input[type=text]::placeholder { color: #6d7370; }
+.motion-knob-text select {
+  width: 100%; height: 26px; padding: 0 6px;
+  border: 1px solid var(--line); border-radius: 7px;
+  background: var(--bg); color: var(--white); font: 400 12px var(--sans); cursor: pointer;
+}
+.motion-knob-text select:focus-visible { outline: none; border-color: var(--accent); }
+.motion-knob input[type=range]:disabled { cursor: default; opacity: .5; }
+.motion-knob-check { min-width: 196px; justify-content: flex-end; }
+.motion-knob-check .check { min-height: 26px; }
+.motion-knob-check input:disabled { cursor: default; opacity: .5; }
+.motion-labels { border-bottom: 1px solid var(--line-soft); }
+.motion-labels-head {
+  padding: 9px 15px; display: flex; align-items: center; gap: 8px;
+  color: var(--muted); font-size: 11.5px; font-weight: 600;
+}
+.motion-labels-head svg { color: #55605a; }
+.motion-labels-head small { color: var(--faint); font-size: 10px; font-weight: 400; }
+.motion-labels-head code { color: #c9ccc9; font: 400 10px var(--mono); }
+.motion-labels-head .btn { margin-left: auto; }
+.motion-labels .motion-controls { padding-top: 0; border-bottom: 0; background: none; }
+.motion-labels .motion-knob-label code { color: var(--muted); font: 400 10.5px var(--mono); }
+
+.motion-note {
+  padding: 9px 15px; display: flex; align-items: flex-start; gap: 8px;
+  border-bottom: 1px solid #43402d; background: #14120e; color: #ded0a4; font-size: 11.5px;
+}
+.motion-note svg { flex: none; margin-top: 1px; }
+.motion-error { padding: 9px 13px; border-bottom: 1px solid #43302d; background: #140f0e; color: #e0a49b; font-size: 12px; white-space: pre-wrap; }
+.motion-empty {
+  min-height: 380px; padding: 40px; display: grid; place-items: center; align-content: center; gap: 7px;
+  border: 1px solid var(--line); border-radius: 14px; background: var(--panel); color: var(--faint); text-align: center;
+}
+.motion-empty svg { color: #5e6461; margin-bottom: 4px; }
+.motion-empty strong { color: var(--muted); font-size: 13px; }
+.motion-empty p { margin: 0; max-width: 440px; font-size: 12px; }
+.motion-empty code { color: #c9ccc9; font: 400 11px var(--mono); }
 
 table { border-collapse: collapse; width: 100%; font-size: 12.5px; }
 th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line-soft); white-space: nowrap; }
@@ -392,12 +495,29 @@ td.dim { color: var(--muted); }
 }
 
 @media (max-width: 720px) {
-  .topbar { padding: 0 12px; gap: 10px; }
+  /* The action row is wider than a phone, and the 56px bar cannot wrap without
+     breaking the offsets `.side` and `.drawer` measure from. So the bar itself
+     scrolls sideways: every export stays reachable and the page does not. Left
+     unclipped, the whole document grows to the widest button, which both drags
+     the crumbs over the actions and skews touch hit-testing further down. */
+  .topbar { padding: 0 12px; gap: 10px; overflow-x: auto; scrollbar-width: none; }
+  .topbar::-webkit-scrollbar { display: none; }
+  /* Shrinks to nothing before the buttons give up any width, and clips rather
+     than painting the job select on top of them. */
+  .crumbs { overflow: hidden; }
+  .topbar .actions { flex-shrink: 0; }
   .beta-pill, .brand-name { display: none; }
   .crumbs > svg:first-child { display: none; }
   .head h1 { font-size: 19px; }
   .runs .hide-mobile { display: none; }
   .runs th:first-child, .runs td:first-child { padding-left: 10px; }
+  .modebar { align-items: flex-start; flex-direction: column; gap: 6px; }
+  .modebar > strong { margin-left: 0; }
+  .motion-toolbar { align-items: flex-start; flex-direction: column; }
+  .motion-actions { justify-content: flex-start; }
+  .motion-stage { padding: 8px; }
+  .motion-controls { flex-direction: column; align-items: stretch; gap: 12px; }
+  .motion-controls .btn { margin-left: 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -65,6 +65,17 @@ export type ChartState = {
   format: string
 }
 
+export type ChartField = {
+  key: string
+  label: string
+  kind: 'dimension' | 'metric'
+  unit?: string
+  direction?: 'higher' | 'lower' | 'neutral'
+  defaultAggregate?: Aggregate
+  supportedAggregates?: Aggregate[]
+  format?: string
+}
+
 export const RECIPE_LABEL: Record<Recipe, string> = {
   bar: 'Pass rate / magnitude by group',
   scatter: 'Quality versus cost',
@@ -373,10 +384,13 @@ function tooltipFields(dims: Dimension[], measure: Measure, fmt: (m: Measure) =>
   ]
 }
 
-export function buildChart(rows: TrialRow[], input: Partial<ChartState>): ChartOutput {
+export function buildChart(rows: TrialRow[], input: Partial<ChartState>, fields: ChartField[] = []): ChartOutput {
   const state: ChartState = { ...DEFAULT_STATE, ...input }
   const theme = THEMES[state.theme]
-  const fmt = (m: Measure) => (m === state.measure && state.format ? state.format : MEASURE_FORMAT[m])
+  const definition = (key: string) => fields.find((field) => field.key === key)
+  const fieldLabel = (key: string) => definition(key)?.label ?? DIMENSION_LABEL[key] ?? MEASURE_LABEL[key] ?? key.replace(/^custom:/, '')
+  const defaultFormat = (m: Measure) => definition(m)?.format ?? MEASURE_FORMAT[m] ?? (definition(m)?.unit === 'ratio' ? '.0%' : '~g')
+  const fmt = (m: Measure) => (m === state.measure && state.format ? state.format : defaultFormat(m))
   const warnings: string[] = []
 
   // Color is refused past the palette's validated slot count. A fifth hue is
@@ -386,14 +400,14 @@ export function buildChart(rows: TrialRow[], input: Partial<ChartState>): ChartO
   if (color !== 'none') {
     const n = domainOf(rows, color).length
     if (n > MAX_SERIES) {
-      warnings.push(`${DIMENSION_LABEL[color]} has ${n} values; the palette validates at most ${MAX_SERIES} series. Color was dropped - facet by it instead.`)
+      warnings.push(`${fieldLabel(color)} has ${n} values; the palette validates at most ${MAX_SERIES} series. Color was dropped - facet by it instead.`)
       color = 'none'
     }
   }
 
   const missingNote = (table: AggRow[], m: Measure) => {
     const missing = table.reduce((a, r) => a + r.missing, 0)
-    if (missing) warnings.push(`${missing} trial${missing === 1 ? '' : 's'} excluded from ${label(m)}: the provider exposed no value.`)
+    if (missing) warnings.push(`${missing} trial${missing === 1 ? '' : 's'} excluded from ${fieldLabel(m)}: the provider exposed no value.`)
   }
 
   const title = state.title || undefined
@@ -419,7 +433,7 @@ export function buildChart(rows: TrialRow[], input: Partial<ChartState>): ChartO
       const minN = Math.min(...table.map((r) => r.n))
       if (state.measure === 'passed' && minN < 3) warnings.push(`Only ${minN} trial${minN === 1 ? '' : 's'} in the smallest group; the protocol asks for three attempts per stack before a pass rate is reported.`)
 
-      const isRate = (state.measure === 'passed' || state.measure === 'reward') && state.aggregate !== 'sum'
+      const isRate = (state.measure === 'passed' || state.measure === 'reward' || definition(state.measure)?.unit === 'ratio') && state.aggregate !== 'sum'
       // Headroom above the tallest bar so direct labels never run into the legend.
       const yMax = isRate ? 1.12 : Math.max(...values, 0) * 1.18 || 1
       const yScale = { domain: [0, yMax], nice: false }
@@ -444,7 +458,7 @@ export function buildChart(rows: TrialRow[], input: Partial<ChartState>): ChartO
             y: {
               field: 'value',
               type: 'quantitative',
-              title: `${label(state.measure)}${state.aggregate === 'mean' ? '' : ` (${state.aggregate})`}`,
+              title: `${fieldLabel(state.measure)}${state.aggregate === 'mean' ? '' : ` (${state.aggregate})`}`,
               axis: yAxis,
               scale: yScale,
             },
@@ -475,7 +489,7 @@ export function buildChart(rows: TrialRow[], input: Partial<ChartState>): ChartO
       }
       const inner: Record<string, unknown> = { width: { step }, height: 260, layer: layers }
       spec = state.facet !== 'none'
-        ? { ...titleBlock, data: { values: table }, facet: { column: { field: state.facet, type: 'nominal', title: DIMENSION_LABEL[state.facet] } }, spec: inner, resolve: { scale: { y: 'shared' } } }
+        ? { ...titleBlock, data: { values: table }, facet: { column: { field: state.facet, type: 'nominal', title: fieldLabel(state.facet) } }, spec: inner, resolve: { scale: { y: 'shared' } } }
         : { ...titleBlock, data: { values: table }, ...inner }
       break
     }
@@ -488,12 +502,12 @@ export function buildChart(rows: TrialRow[], input: Partial<ChartState>): ChartO
       missingNote(table, state.xMeasure)
       const series = color !== 'none' ? domainOf(rows, color) : []
       const encodingColor = color !== 'none'
-        ? { color: { field: color, type: 'nominal', scale: { domain: series, range: theme.series.slice(0, series.length) }, legend: { title: DIMENSION_LABEL[color] } } }
+        ? { color: { field: color, type: 'nominal', scale: { domain: series, range: theme.series.slice(0, series.length) }, legend: { title: fieldLabel(color) } } }
         : { color: { value: theme.series[0] } }
-      const isRate = state.measure === 'passed' || state.measure === 'reward'
+      const isRate = state.measure === 'passed' || state.measure === 'reward' || definition(state.measure)?.unit === 'ratio'
       const base = {
-        x: { field: 'xValue', type: 'quantitative', title: `${label(state.xMeasure)} per trial (${state.aggregate})`, axis: { format: fmt(state.xMeasure), tickCount: 6 }, scale: { zero: true, nice: true } },
-        y: { field: 'value', type: 'quantitative', title: label(state.measure), axis: { format: fmt(state.measure), tickCount: 5 }, scale: isRate ? { domain: [0, 1.05] } : { zero: true, nice: true } },
+        x: { field: 'xValue', type: 'quantitative', title: `${fieldLabel(state.xMeasure)} per trial (${state.aggregate})`, axis: { format: fmt(state.xMeasure), tickCount: 6 }, scale: { zero: true, nice: true } },
+        y: { field: 'value', type: 'quantitative', title: fieldLabel(state.measure), axis: { format: fmt(state.measure), tickCount: 5 }, scale: isRate ? { domain: [0, 1.05] } : { zero: true, nice: true } },
       }
       const layers: Record<string, unknown>[] = [
         {
@@ -508,7 +522,7 @@ export function buildChart(rows: TrialRow[], input: Partial<ChartState>): ChartO
             ...base,
             ...encodingColor,
             tooltip: tooltipFields(dims, state.measure, fmt, [
-              { field: 'xValue', title: label(state.xMeasure), format: fmt(state.xMeasure) },
+              { field: 'xValue', title: fieldLabel(state.xMeasure), format: fmt(state.xMeasure) },
               { field: 'frontier', title: 'On frontier' },
             ]),
           },
@@ -532,11 +546,11 @@ export function buildChart(rows: TrialRow[], input: Partial<ChartState>): ChartO
       const series = color !== 'none' ? domainOf(rows, color) : []
       const yDomain = sortedDomain(table, state.x, state.sort)
       const encodingColor = color !== 'none'
-        ? { color: { field: color, type: 'nominal', scale: { domain: series, range: theme.series.slice(0, series.length) }, legend: { title: DIMENSION_LABEL[color] } } }
+        ? { color: { field: color, type: 'nominal', scale: { domain: series, range: theme.series.slice(0, series.length) }, legend: { title: fieldLabel(color) } } }
         : { color: { value: theme.series[0] } }
       const encodingY = { field: state.x, type: 'nominal', sort: yDomain, title: null, axis: { labelLimit: 420 } }
       const encodingYOffset = color !== 'none' ? { yOffset: { field: color, type: 'nominal', sort: series } } : {}
-      const xEnc = { field: state.measure, type: 'quantitative', title: label(state.measure), axis: { format: fmt(state.measure), tickCount: 6 }, scale: { zero: true, nice: true } }
+      const xEnc = { field: state.measure, type: 'quantitative', title: fieldLabel(state.measure), axis: { format: fmt(state.measure), tickCount: 6 }, scale: { zero: true, nice: true } }
       const layers: Record<string, unknown>[] = [
         {
           mark: { type: 'point', opacity: 0.85 },
@@ -550,7 +564,7 @@ export function buildChart(rows: TrialRow[], input: Partial<ChartState>): ChartO
               { field: 'task', title: 'Task' },
               { field: 'agent', title: 'Harness' },
               { field: 'modelShort', title: 'Model' },
-              { field: state.measure, title: label(state.measure), format: fmt(state.measure) },
+              { field: state.measure, title: fieldLabel(state.measure), format: fmt(state.measure) },
               { field: 'passed', title: 'Passed' },
             ],
           },
@@ -572,7 +586,7 @@ export function buildChart(rows: TrialRow[], input: Partial<ChartState>): ChartO
         layer: layers,
       }
       spec = state.facet !== 'none'
-        ? { ...titleBlock, data: { values: rows }, facet: { row: { field: state.facet, type: 'nominal', title: DIMENSION_LABEL[state.facet] } }, spec: inner, resolve: { scale: { x: 'shared' } } }
+        ? { ...titleBlock, data: { values: rows }, facet: { row: { field: state.facet, type: 'nominal', title: fieldLabel(state.facet) } }, spec: inner, resolve: { scale: { x: 'shared' } } }
         : { ...titleBlock, data: { values: rows }, ...inner }
       break
     }
@@ -582,7 +596,7 @@ export function buildChart(rows: TrialRow[], input: Partial<ChartState>): ChartO
       table = aggregate(rows, dims, state.measure, state.aggregate)
       columns = [...dims, 'value', 'n']
       missingNote(table, state.measure)
-      const isRate = state.measure === 'passed' || state.measure === 'reward'
+      const isRate = state.measure === 'passed' || state.measure === 'reward' || definition(state.measure)?.unit === 'ratio'
       const values = table.map((r) => r.value).filter((v): v is number => typeof v === 'number')
       const [lo, hi] = isRate && state.aggregate !== 'sum' ? [0, 1] : [Math.min(0, ...values), Math.max(...values)]
       const mid = (lo + hi) / 2
@@ -614,7 +628,7 @@ export function buildChart(rows: TrialRow[], input: Partial<ChartState>): ChartO
               field: 'value',
               type: 'quantitative',
               scale: { domain: [lo, hi], range: [...theme.sequential] },
-              legend: { title: label(state.measure), format: fmt(state.measure), direction: 'horizontal', gradientLength: 160, gradientThickness: 8 },
+              legend: { title: fieldLabel(state.measure), format: fmt(state.measure), direction: 'horizontal', gradientLength: 160, gradientThickness: 8 },
             },
             tooltip: tooltipFields(dims, state.measure, fmt),
           },
