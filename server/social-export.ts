@@ -1,7 +1,7 @@
 import type { JobExport } from '../src/charts/trial'
 import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { basename, join, resolve } from 'node:path'
+import { basename, join, resolve, sep } from 'node:path'
 import {
   COMPLETION_DEFAULTS,
   COMPLETION_VIDEO,
@@ -27,7 +27,7 @@ export class SocialExportError extends Error {
 }
 
 const root = resolve(import.meta.dirname, '..')
-const hyperframes = join(root, 'node_modules/.bin/hyperframes')
+const hyperframes = join(root, 'node_modules/hyperframes/bin/hyperframes.mjs')
 let rendering = false
 
 function catalogJobs(): Set<string> {
@@ -92,7 +92,7 @@ async function command(argv: string[], cwd: string): Promise<void> {
 async function finalPng(compositionDir: string, scratch: string, finalFrameAt: number): Promise<string> {
   const snapshots = join(scratch, 'snapshots')
   await command([
-    hyperframes,
+    Bun.which('node') || 'node', hyperframes,
     'snapshot',
     compositionDir,
     '--at',
@@ -127,7 +127,7 @@ export async function renderSocialExport(
     if (format === 'mp4') {
       const output = join(scratch, `${stem}.mp4`)
       await command([
-        hyperframes,
+        Bun.which('node') || 'node', hyperframes,
         'render',
         compositionDir,
         '--output',

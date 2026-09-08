@@ -5,6 +5,7 @@ const JOB = 'terminal-bench-glm53-smoke'
 test.beforeEach(async ({ page }) => {
   await page.goto(`/studio?job=${JOB}&recipe=bar&x=agent&color=modelShort&measure=passed`)
   await expect(page.getByRole('heading', { name: JOB })).toBeVisible()
+  await expect(page.locator('.card svg')).toBeVisible()
 })
 
 test('renders the job the URL names and reports its limits', async ({ page }) => {
@@ -240,4 +241,22 @@ test('conflicting artifact identities cannot replace pinned data', async ({ page
   await expect(page.getByText(/already exists with different content/)).toBeVisible()
   await expect(page.getByLabel('Project sources').locator('input')).toHaveCount(1)
   await expect(page.locator('.card svg .mark-rect.role-mark path')).toHaveCount(4)
+})
+
+
+test('waits for a loaded analysis before opening presentation or spec editing', async ({ page }) => {
+  let release!: () => void
+  const held = new Promise<void>((resolve) => { release = resolve })
+  await page.route('**/results/harbor/' + JOB + '.json', async (route) => {
+    const response = await route.fetch()
+    await held
+    await route.fulfill({ response })
+  })
+  await page.goto('/studio?job=' + JOB)
+  await expect(page.getByRole('tab', { name: 'Presentation', exact: true })).toBeDisabled()
+  await expect(page.getByRole('tab', { name: 'Vega-Lite spec', exact: true })).toBeDisabled()
+  release()
+  await expect(page.getByRole('tab', { name: 'Presentation', exact: true })).toBeEnabled()
+  await page.getByRole('tab', { name: 'Presentation', exact: true }).click()
+  await expect(page.locator('#f-narrative-title')).toBeVisible()
 })

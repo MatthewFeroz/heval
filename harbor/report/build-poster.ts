@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url'
 /**
  * Normalized job -> individual poster graphs, sized for a social post.
  *
@@ -60,7 +61,7 @@ const FONT_FACES = [
 ]
 
 const localFont = (name: string, weight: number, file: string) =>
-  `@font-face{font-family:'${name}';font-weight:${weight};font-style:normal;src:url(data:font/otf;base64,${readFileSync(join(ASSETS.pathname, file)).toString('base64')}) format('opentype');}`
+  `@font-face{font-family:'${name}';font-weight:${weight};font-style:normal;src:url(data:font/otf;base64,${readFileSync(join(fileURLToPath(ASSETS), file)).toString('base64')}) format('opentype');}`
 
 const OSCAR_FONTS = [
   localFont('FH Oscar Pro', 500, 'FHOscarPro-Medium.otf'),
@@ -68,7 +69,7 @@ const OSCAR_FONTS = [
 ].join('\n')
 
 async function inlineFonts(): Promise<string> {
-  const cache = join(FONT_CACHE.pathname, 'merge-faces.css')
+  const cache = join(fileURLToPath(FONT_CACHE), 'merge-faces.css')
   if (existsSync(cache)) return `${OSCAR_FONTS}\n${readFileSync(cache, 'utf8')}`
 
   const query = FONT_FACES.map((f) => `family=${f.family.replace(/ /g, '+')}:wght@${f.weights}`).join('&')
@@ -90,7 +91,7 @@ async function inlineFonts(): Promise<string> {
       }),
     )
     const inlined = css.replace(/url\((https:[^)]+\.woff2)\)/g, (_m, u: string) => `url(${data.get(u) ?? u})`)
-    mkdirSync(FONT_CACHE.pathname, { recursive: true })
+    mkdirSync(fileURLToPath(FONT_CACHE), { recursive: true })
     writeFileSync(cache, inlined)
     return `${OSCAR_FONTS}\n${inlined}`
   } catch (e) {
@@ -100,8 +101,8 @@ async function inlineFonts(): Promise<string> {
   }
 }
 
-const BRAND_BG = `data:image/svg+xml;base64,${readFileSync(join(ASSETS.pathname, 'brand-bg.svg')).toString('base64')}`
-const MERGE_LOCKUP = readFileSync(join(ASSETS.pathname, 'merge-lockup.svg'), 'utf8')
+const BRAND_BG = `data:image/svg+xml;base64,${readFileSync(join(fileURLToPath(ASSETS), 'brand-bg.svg')).toString('base64')}`
+const MERGE_LOCKUP = readFileSync(join(fileURLToPath(ASSETS), 'merge-lockup.svg'), 'utf8')
 
 // -- sizes ----------------------------------------------------------------------
 

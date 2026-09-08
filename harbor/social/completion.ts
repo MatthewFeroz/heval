@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url'
 /**
  * Build the standalone HyperFrames composition used by both the Studio player
  * and the file exporter. The data still comes from the same pure poster
@@ -34,7 +35,7 @@ const esc = (value: string) => value
   .replace(/"/g, '&quot;')
 
 const localFont = (name: string, weight: number, file: string) =>
-  `@font-face{font-family:'${name}';font-weight:${weight};font-style:normal;src:url(data:font/otf;base64,${readFileSync(join(REPORT_ASSETS.pathname, file)).toString('base64')}) format('opentype');}`
+  `@font-face{font-family:'${name}';font-weight:${weight};font-style:normal;src:url(data:font/otf;base64,${readFileSync(join(fileURLToPath(REPORT_ASSETS), file)).toString('base64')}) format('opentype');}`
 
 async function inlineFonts(theme: MotionTheme): Promise<string> {
   // FH Oscar Pro is licensed to Merge, so an unbranded theme must not ship it.
@@ -44,7 +45,7 @@ async function inlineFonts(theme: MotionTheme): Promise<string> {
       localFont('FH Oscar Pro', 600, 'FHOscarPro-SemiBold.otf'),
     ].join('\n')
     : ''
-  const cache = join(FONT_CACHE.pathname, 'merge-faces.css')
+  const cache = join(fileURLToPath(FONT_CACHE), 'merge-faces.css')
   if (existsSync(cache)) return `${oscar}\n${readFileSync(cache, 'utf8')}`
 
   try {
@@ -62,7 +63,7 @@ async function inlineFonts(theme: MotionTheme): Promise<string> {
       data.set(url, `data:font/woff2;base64,${bytes.toString('base64')}`)
     }))
     const inlined = css.replace(/url\((https:[^)]+\.woff2)\)/g, (_match, url: string) => `url(${data.get(url) ?? url})`)
-    mkdirSync(FONT_CACHE.pathname, { recursive: true })
+    mkdirSync(fileURLToPath(FONT_CACHE), { recursive: true })
     writeFileSync(cache, inlined)
     return `${oscar}\n${inlined}`
   } catch (error) {
@@ -120,9 +121,9 @@ export async function completionComposition(exp: JobExport, options: CompletionO
   const fonts = await inlineFonts(theme)
   // Both are Merge marks; a theme that does not want them never loads the file.
   const brandBg = theme.pattern > 0
-    ? `data:image/svg+xml;base64,${readFileSync(join(REPORT_ASSETS.pathname, 'brand-bg.svg')).toString('base64')}`
+    ? `data:image/svg+xml;base64,${readFileSync(join(fileURLToPath(REPORT_ASSETS), 'brand-bg.svg')).toString('base64')}`
     : ''
-  const lockup = theme.lockup ? readFileSync(join(REPORT_ASSETS.pathname, 'merge-lockup.svg'), 'utf8') : ''
+  const lockup = theme.lockup ? readFileSync(join(fileURLToPath(REPORT_ASSETS), 'merge-lockup.svg'), 'utf8') : ''
 
   // An override changes a tick's text, never where the scale puts it.
   const ticks = panel.ticks

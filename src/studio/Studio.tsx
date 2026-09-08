@@ -313,6 +313,7 @@ export function Studio() {
   }, [mode, set, updatePresentation])
 
   const switchMode = (next: StudioMode) => {
+    if (next === 'presentation' && (!project || !activeView)) return
     if (next === 'presentation' && project && activeView) {
       const saved = saveDocument(activeView, editor.document)
       const created = activePresentation ?? newPresentation(project, saved)
@@ -621,7 +622,7 @@ export function Studio() {
       <div className="modebar">
         <div className="mode-switch" role="tablist" aria-label="Studio mode">
           <button type="button" role="tab" aria-selected={mode === 'analysis'} onClick={() => switchMode('analysis')}>Analysis</button>
-          <button type="button" role="tab" aria-selected={mode === 'presentation'} onClick={() => switchMode('presentation')}>Presentation</button>
+          <button type="button" role="tab" aria-selected={mode === 'presentation'} disabled={!project || !activeView} onClick={() => switchMode('presentation')}>Presentation</button>
         </div>
         <span>{mode === 'analysis' ? 'Compare compatible metrics across sources and save the analysis.' : 'Pin an analysis snapshot, then shape the chart, poster, and motion output.'}</span>
         {project && <strong>{project.label} · {project.sources.length} {project.sources.length === 1 ? 'source' : 'sources'}</strong>}
@@ -887,7 +888,7 @@ export function Studio() {
                 ['motion', 'Motion', <Film size={13} key="i" />, null],
                 ['spec', 'Vega-Lite spec', <Braces size={13} key="i" />, null],
               ]) as [Tab, string, ReactNode, number | null][]).map(([t, label, icon, count]) => (
-                <button key={t} type="button" role="tab" className="tab" aria-selected={tab === t} onClick={() => setTab(t)}>
+                <button key={t} type="button" role="tab" className="tab" aria-selected={tab === t} disabled={t === 'spec' && !chart && override === null} onClick={() => setTab(t)}>
                   {icon}{label}{count !== null && <small>{count}</small>}
                 </button>
               ))}
