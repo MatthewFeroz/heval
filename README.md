@@ -5,7 +5,7 @@ Heval is a local-first evaluation workbench for comparing coding-agent stacks on
 It captures terminal trajectories, grades the resulting workspace with executable tests, and presents synchronized side-by-side replays for Claude Code, Codex, OpenCode, and Pi.
 
 > [!NOTE]
-> Heval is an early prototype. The landing-page replay and JSON files in [`results/`](results/) are development fixtures. **No real benchmark runs have been published yet.**
+> Heval is an early prototype. The landing page includes development fixtures; [`results/`](results/) also contains exploratory evaluation snapshots. These small comparisons are not a general model leaderboard.
 
 ## Features
 
@@ -245,9 +245,24 @@ A result is intended to be publishable only when it includes immutable task and 
 
 Heval is experimental and its current results should not be treated as a general leaderboard. More tasks, repeated randomized trials, complete hidden graders, and joined provider usage records are required before drawing broad conclusions.
 
-## Social image presets
+## Quick guide: results to social images
 
-Open Studio, switch to Presentation, then select **Social images**. Choose models and a preset, adjust subtitle/direction/source visibility, and export a PNG or an entire thread ZIP. Project and bundle files preserve these settings. Undo/Redo is available for social controls while the tab is open.
+For local publishing, install Chromium once and enable the export API before starting the full app. Node.js must also be installed for PNG rendering.
+
+```powershell
+bunx playwright install chromium
+$env:HEVAL_ENABLE_EXPORTS = "1"
+bun run start
+```
+
+On macOS/Linux, use `HEVAL_ENABLE_EXPORTS=1 bun run start`. Open [Studio](http://localhost:4173/studio). The Vite-only `bun run dev` command supports analysis; image publishing needs the Bun API. Publishing existing results does not require Docker or a model API key.
+
+1. **Open results.** Pick a job or use **Open export** to load a normalized job JSON or saved bundle. Analysis, tables, and raw trials are available immediately; there is no setup wizard.
+2. **Create an image.** Switch to **Presentation**, which opens **Social images**. Choose a question such as "Which model completes the most tasks?" or "What does a successful task cost?" The app selects the metric and layout.
+3. **Choose a style.** Merge Gateway dark is the default. Merge Gateway light and Plain report apply coordinated fonts, colors, and contrast; Merge themes include the Gateway logo.
+4. **Export.** Once the preview says **Layout checked. Ready to export.**, choose **Export image** or **Export thread ZIP**. Each exported page is checked for overlapping labels, clipping, and minimum text size. Long names may be shortened; adjustments are listed in the editor. Unresolved layout problems block export.
+
+**Customize models, text and thread** holds the optional controls. All six models, including Sonnet, are included in the saved Merge comparison. Subtitle and direction labels are off by default; the source is **Merge Evaluations**. Return to **Analysis** to explore the data; the saved presentation stays intact. **Project** saves references and settings; **Bundle** includes the data for sharing. Undo/Redo applies to social controls while the tab remains open.
 
 The default thread contains tasks completed, total task cost, median time per completed task, and paired slow-task/timeout charts. Cost per success and a paginated task-disagreement matrix are optional. Exports use the Merge Gateway logo and the official weekly chart palette. The current format is 1600 x 900, rendered at 2x. Existing completion video exports remain under Motion.
 
@@ -260,7 +275,7 @@ Use `harbor/report/thread-merge.json` as a reusable collection settings example.
 
 Social comparisons require one attempt per model on the same task set and compatible task versions. Unknown prices are N/A; unknown timing cannot be treated as fast. Slow counts include agent timeouts, which are also shown separately. The current comparison is 20 tasks per model; titles derive their count from the input.
 
-Extension points: `src/charts/social-presets.ts` defines metric selection and cohort validation; `src/charts/social-render.ts` implements four reusable SVG layouts; `server/social-posters.ts` embeds fonts and renders the same document for preview and download. Add metrics independently of the HTTP routes and Studio controls, which enumerate the registry.
+Extension points: `src/charts/social-presets.ts` defines metric selection and cohort validation; `src/charts/social-themes.ts` registers complete styles; `src/charts/social-render.ts` implements four reusable SVG layouts; `server/social-posters.ts` embeds fonts and renders the same document for preview and download. Add metrics independently of the HTTP routes and Studio controls, which enumerate the registry.
 
 ## Repeat the same comparison
 
