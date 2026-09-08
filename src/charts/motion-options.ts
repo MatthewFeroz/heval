@@ -104,6 +104,8 @@ export type CompletionOptions = {
    * rule stay. Independent of whatever cue sits above the plot.
    */
   plotRule: boolean
+  /** Show the direction cue, such as "Higher is better", above the plot. */
+  showCue: boolean
   /**
    * A 1px rule across the plot at every axis tick. Off draws the tick labels
    * alone, which is how the published poster reads, so this stays off by
@@ -134,7 +136,8 @@ export const COMPLETION_DEFAULTS: CompletionOptions = {
   valueLabels: {},
   theme: DEFAULT_THEME,
   canvas: DEFAULT_CANVAS,
-  plotRule: true,
+  plotRule: false,
+  showCue: true,
   gridLines: false,
 }
 
@@ -184,9 +187,10 @@ export const OVERRIDE_KEYS = Object.keys(OVERRIDE_MAPS) as OverrideMap[]
 export const BAR_LABEL_PARAM = OVERRIDE_MAPS.barLabels.param
 
 /** On/off knobs. Labels stay about the drawing, never about one chart's copy. */
-export type FlagOption = 'plotRule' | 'gridLines'
+export type FlagOption = 'plotRule' | 'gridLines' | 'showCue'
 
 export const COMPLETION_FLAGS: Record<FlagOption, { label: string; hint: string }> = {
+  showCue: { label: 'Direction label', hint: 'show “Higher is better” above the graph' },
   plotRule: { label: 'Plot rule', hint: '1px line above the plot' },
   gridLines: { label: 'Gridlines', hint: 'a rule across the plot at each tick' },
 }
@@ -310,6 +314,7 @@ export function completionOptions(raw: Record<string, unknown> | null | undefine
     theme: themeId(raw?.theme),
     canvas: canvasId(raw?.canvas),
     plotRule: flag(raw?.plotRule ?? raw?.headingRule, COMPLETION_DEFAULTS.plotRule),
+    showCue: flag(raw?.showCue, COMPLETION_DEFAULTS.showCue),
     gridLines: flag(raw?.gridLines, COMPLETION_DEFAULTS.gridLines),
   }
 }

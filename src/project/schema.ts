@@ -1,3 +1,4 @@
+import { socialSettings, type SocialSettings } from '../charts/social-presets'
 import { DEFAULT_STATE, type ChartState } from '../charts/recipes'
 import { COMPLETION_DEFAULTS, type CanvasId, type CompletionOptions } from '../charts/motion-options'
 import { DEFAULT_THEME, type ThemeId } from '../charts/motion-themes'
@@ -135,6 +136,7 @@ export type Presentation = {
   canvas: CanvasId
   narrative: { title: string; kicker: string; cue: string; note: string; source: string }
   graphOverrides: Partial<ChartState>
+  social?: SocialSettings
   motion: CompletionOptions
   renderer: {
     version: string
@@ -305,6 +307,7 @@ export function parseProject(value: unknown): HevalProject {
   }
   for (const view of value.analysisViews as AnalysisView[]) validateCustomSpec(view.customSpec)
   for (const presentation of value.presentations as Presentation[]) {
+    if (presentation.social !== undefined) socialSettings(presentation.social)
     validateCustomSpec(presentation.customSpec)
     if (presentation.analysisSnapshot) validateCustomSpec(presentation.analysisSnapshot.customSpec)
   }

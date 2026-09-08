@@ -91,7 +91,7 @@ export async function completionComposition(exp: JobExport, options: CompletionO
   const copy = {
     title: options.title || built.title,
     kicker: options.kicker || built.kicker,
-    cue: options.cue || built.cue,
+    cue: options.showCue === false ? '' : options.cue || built.cue,
     note: options.note || built.note,
     source: options.source || built.source,
   }
@@ -100,7 +100,7 @@ export async function completionComposition(exp: JobExport, options: CompletionO
   // branch and forgotten in the other; GSAP warns on a selector that matches
   // nothing, so an omitted element must be omitted from the list too.
   const scaffold = [
-    '.panel-eyebrow',
+    ...(copy.cue ? ['.panel-eyebrow'] : []),
     ...(options.plotRule ? ['.panel-rule'] : []),
     '.ticks',
     ...(options.gridLines ? ['.grid'] : []),
@@ -191,10 +191,10 @@ ${theme.pattern > 0 ? `.composition::before { content: ''; position: absolute; i
 .heading-copy { display: flex; flex-direction: column; gap: ${type(10)}; max-width: 1120px; min-width: 0; }
 .title { font-family: ${theme.display}; font-size: ${type(48)}; font-weight: 500; letter-spacing: -.025em; line-height: 1.12; overflow-wrap: break-word; text-wrap: balance; }
 .kicker { color: ${theme.ink.secondary}; font-size: ${type(18)}; font-weight: 400; line-height: 1.4; overflow-wrap: break-word; }
-.panel { flex: 1; display: flex; flex-direction: column; min-width: 0; min-height: 0; margin-top: ${type(32)}; }
+.panel { flex: 1; display: flex; flex-direction: column; min-width: 0; min-height: 0; margin-top: ${type(26)}; }
 .panel-eyebrow { flex: none; color: ${theme.ink.good}; font-size: ${type(16)}; font-weight: 500; line-height: 1.4; }
 .panel-rule { flex: none; margin-top: ${type(10)}; height: 1px; background: ${theme.ink.line}; }
-.plot { flex: 1; display: flex; gap: 13.5px; margin-top: ${type(20)}; min-height: 0; }
+.plot { flex: 1; display: flex; gap: 13.5px; margin-top: ${type(26)}; min-height: 0; }
 .ticks { position: relative; width: ${type(43.5)}; flex: none; color: ${theme.ink.muted}; font-size: ${type(12.3)}; font-variant-numeric: tabular-nums; }
 .tick { position: absolute; right: 0; transform: translateY(${options.tickOffset}%); white-space: nowrap; }
 .bars { position: relative; flex: 1; display: flex; align-items: flex-end; justify-content: space-between; gap: 16.5px; min-width: 0; border-bottom: 1px solid ${theme.ink.line}; }

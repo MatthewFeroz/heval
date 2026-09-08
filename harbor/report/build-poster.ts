@@ -25,7 +25,7 @@ import { fileURLToPath } from 'node:url'
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { basename, join } from 'node:path'
-import { chromium } from 'playwright'
+import { spawnSync } from 'node:child_process'
 import { nums } from '../../src/charts/metrics'
 import {
   buildPanel,
@@ -34,7 +34,8 @@ import {
   PANELS,
   POSTER_INK,
   POSTER_MAX_SERIES,
-  POSTER_SERIES,
+  POSTER_COMPARISON_SERIES,
+  POSTER_WINNER,
   POSTER_SURFACE,
   type PanelData,
   type PanelId,
@@ -200,6 +201,7 @@ body > * { position: relative; z-index: 1; }
 .panel-eyebrow.higher { color: ${POSTER_INK.good}; }
 .panel-eyebrow.lower { color: ${POSTER_INK.muted}; }
 .panel-note {
+  min-height: 1.3em;
   margin-top: ${u(0.35)};
   font-size: ${u(0.9)};
   font-weight: 600;
@@ -217,7 +219,7 @@ body > * { position: relative; z-index: 1; }
   color: ${POSTER_INK.muted};
   font-variant-numeric: tabular-nums;
 }
-.tick { position: absolute; right: 0; transform: translateY(-50%); white-space: nowrap; }
+.tick { position: absolute; right: 0; transform: translateY(50%); white-space: nowrap; }
 .bars {
   flex: 1;
   display: flex;
@@ -227,8 +229,9 @@ body > * { position: relative; z-index: 1; }
   border-bottom: 1px solid ${POSTER_INK.line};
   min-width: 0;
 }
-.bar-col { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; height: 100%; min-width: 0; }
+.bar-col { flex: 1; position: relative; height: 100%; min-width: 0; }
 .bar-value {
+  position: absolute; width: 100%;
   font-size: ${u(1.25)};
   font-weight: 600;
   letter-spacing: -0.01em;
@@ -237,11 +240,13 @@ body > * { position: relative; z-index: 1; }
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
-.bar-col:not(:first-child) .bar-value { color: ${POSTER_INK.muted}; font-weight: 500; }
+.bar-col:not(.winner) .bar-value { color: ${POSTER_INK.muted}; font-weight: 500; }
 /* 4px rounded data-end at the free end only; the baseline end stays square so
    the bar reads as anchored to zero. */
-.bar { border-radius: ${u(0.3)} ${u(0.3)} 0 0; width: 100%; }
+.bar { position: absolute; bottom: 0; border-radius: ${u(0.3)} ${u(0.3)} 0 0; width: 100%; }
+.axis-labels { display: flex; gap: ${u(1.1)}; margin-left: ${u(3.8)}; min-height: ${u(3.2)}; }
 .bar-labels {
+  flex: 1; min-width: 0;
   padding-top: ${u(0.7)};
   text-align: center;
   font-size: ${u(0.82)};
@@ -271,20 +276,24 @@ function panelHtml(d: PanelData): string {
   const ticks = d.ticks
     .map((t) => `<div class="tick" style="bottom:${(t.frac * 100).toFixed(3)}%">${esc(t.label)}</div>`)
     .join('')
+  const best = d.bars.length
+    ? (d.panel.better === 'higher' ? Math.max : Math.min)(...d.bars.map((b) => b.value))
+    : null
+  let comparisonIndex = 0
   const bars = d.bars
-    .map((b, index) => {
-      const color = POSTER_SERIES[index === 0 ? 0 : 1]
-      return `        <div class="bar-col">
-          <div class="bar-value">${esc(d.panel.format(b.value))}</div>
+    .map((b) => {
+      const winner = b.value === best
+      const color = winner ? POSTER_WINNER : POSTER_COMPARISON_SERIES[comparisonIndex++ % POSTER_COMPARISON_SERIES.length]
+      return `        <div class="bar-col${winner ? ' winner' : ''}">
+          <div class="bar-value" style="bottom:${(b.frac * 100).toFixed(3)}%">${esc(d.panel.format(b.value))}</div>
           <div class="bar" style="height:${(b.frac * 100).toFixed(3)}%;background:${color}"></div>
-          <div class="bar-labels">${b.lines.map((l) => `<span>${esc(l)}</span>`).join('')}</div>
         </div>`
     })
     .join('\n')
   return `    <section class="panel">
       <div class="panel-heading">${esc(d.panel.heading)}</div>
       <div class="panel-eyebrow ${d.panel.better}">${esc(`${d.panel.better[0].toUpperCase()}${d.panel.better.slice(1)} is better`)}</div>
-      ${d.panel.note ? `<div class="panel-note">${esc(d.panel.note)}</div>` : ''}
+      <div class="panel-note">${esc(d.panel.note ?? '')}</div>
       <div class="panel-rule"></div>
       <div class="plot">
         <div class="ticks">${ticks}</div>
@@ -292,6 +301,7 @@ function panelHtml(d: PanelData): string {
 ${bars}
         </div>
       </div>
+      <div class="axis-labels">${d.bars.map((b) => `<div class="bar-labels">${b.lines.map((l) => `<span>${esc(l)}</span>`).join('')}</div>`).join('')}</div>
     </section>`
 }
 
@@ -306,14 +316,14 @@ type Frame = {
 
 async function frameHtml(f: Frame, fonts: string): Promise<string> {
   // Bar labels get tighter as panels multiply; one knob, applied everywhere.
-  const s: Scale = { unit: f.size.h / 1200 * (f.panels.length > 1 ? 15 : 20), panels: f.panels.length }
+  const s: Scale = { unit: f.size.h / 60, panels: f.panels.length }
   return `<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><title>${esc(f.title)}</title>
+<html lang="en"><head><meta charset="utf-8"><title>${esc(f.title || 'Heval model comparison')}</title>
 <style>${css(fonts, f.size, s)}</style></head>
 <body class="${f.panels.length === 1 ? 'single' : 'combined'}">
   <header>
     <div class="brand">${MERGE_LOCKUP}<span class="brand-product">Gateway</span></div>
-    <h1 class="title">${esc(f.title)}</h1>
+    ${f.title ? `<h1 class="title">${esc(f.title)}</h1>` : ''}
     ${f.kicker ? `<div class="kicker">${esc(f.kicker)}</div>` : ''}
   </header>
   <div class="panels">
@@ -366,6 +376,8 @@ if (!input || has('help')) {
   --open-weight      keep only models whose weights are published
   --models <list>    comma-separated modelShort values, in the order to color them
   --exclude <list>   comma-separated modelShort values to drop
+  --no-title        omit the visible frame title
+  --no-kicker       omit the trial-count line
   --title <text>     frame title (default: derived from the selection)
   --kicker <text>    the mono line under the title
   --source <text>    the source stamp, bottom right
@@ -448,8 +460,8 @@ const tasks = new Set(rows.map((r) => r.task)).size
 const harnesses = [...new Set(rows.map((r) => r.agent))]
 const perCell = rows.length / (order.length * tasks)
 
-const title = flag('title') ?? `${order.length} models, compared`
-const kicker = flag('kicker') ?? `${rows.length} trials · ${tasks} tasks · ${harnesses.join(' + ')}`
+const title = has('no-title') ? '' : flag('title') ?? `${order.length} models, compared`
+const kicker = has('no-kicker') ? '' : flag('kicker') ?? `${rows.length} trials · ${tasks} tasks · ${harnesses.join(' + ')}`
 const source = flag('source') ?? `source: heval · ${exp.job}`
 /**
  * The line the numbers cannot carry themselves.
@@ -473,7 +485,7 @@ const singleSize = SIZES[(flag('size') as SizeName) ?? 'square'] ?? SIZES.square
 const combinedSize = SIZES[(flag('size') as SizeName) ?? 'landscape'] ?? SIZES.landscape
 
 const fonts = await inlineFonts()
-const browser = await chromium.launch()
+
 const written: string[] = []
 
 async function shoot(f: Frame, stem: string) {
@@ -481,14 +493,16 @@ async function shoot(f: Frame, stem: string) {
   const htmlPath = join(outDir, `${stem}.html`)
   const pngPath = join(outDir, `${stem}.png`)
   writeFileSync(htmlPath, html)
-  const page = await browser.newPage({ viewport: { width: f.size.w, height: f.size.h }, deviceScaleFactor: 2 })
-  await page.setContent(html, { waitUntil: 'load' })
-  await page.evaluate(() => document.fonts.ready)
-  // deviceScaleFactor 2 renders at 2x and the screenshot comes back at 2x, so
-  // the file is 2400x2400 for a 1200x1200 frame - the retina asset the
-  // platforms downsample from. Scaling down is lossless enough; up is not.
-  await page.screenshot({ path: pngPath, type: 'png' })
-  await page.close()
+  // Run Chromium automation in Node; Bun's Windows pipe transport can stall.
+  const rendered = spawnSync('node', [fileURLToPath(new URL('render-poster.mjs', import.meta.url))], {
+    input: JSON.stringify({ htmlPath, pngPath, width: f.size.w, height: f.size.h }),
+    encoding: 'utf8',
+    timeout: 60_000,
+    windowsHide: true,
+  })
+  if (rendered.error || rendered.status !== 0) {
+    throw new Error(rendered.error?.message ?? rendered.stderr ?? 'Poster rendering failed')
+  }
   written.push(`${pngPath} (${f.size.w * 2}x${f.size.h * 2})`)
   written.push(htmlPath)
 }
@@ -496,16 +510,16 @@ async function shoot(f: Frame, stem: string) {
 if (!has('only-combined')) {
   for (const d of built) {
     await shoot(
-      { title: flag('title') ?? d.panel.heading, kicker, source, caveat, panels: [d], size: singleSize },
+      { title: has('no-title') ? '' : flag('title') ?? d.panel.heading, kicker, source, caveat, panels: [d], size: singleSize },
       `${exp.job}-${d.panel.id}`,
     )
   }
 }
 if (has('combined') || has('only-combined')) {
-  await shoot({ title, kicker, source, caveat, panels: built, size: combinedSize }, `${exp.job}-poster`)
+  await shoot({ title, kicker, source, caveat, panels: built.map((p) => ({ ...p, bars: [...p.bars].sort((a, b) => order.indexOf(a.key) - order.indexOf(b.key)) })), size: combinedSize }, `${exp.job}-poster`)
 }
 
-await browser.close()
+
 
 console.log(`\n${order.length} models (${order.map((m) => labelLines(m).join(' ')).join(', ')})`)
 console.log(`${nums(rows, 'costUsd').length}/${rows.length} trials priced\n`)

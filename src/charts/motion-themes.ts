@@ -1,3 +1,4 @@
+import { POSTER_INK, POSTER_SURFACE, POSTER_WINNER, POSTER_COMPARISON_SERIES } from './poster'
 /**
  * Themes for the social composition.
  *
@@ -60,15 +61,9 @@ export const MOTION_THEMES: Record<ThemeId, MotionTheme> = {
   // static poster stay the same artwork.
   'merge-gateway': {
     label: 'Merge Gateway',
-    surface: '#2C2A25',
-    ink: {
-      primary: '#F5F2EE',
-      secondary: '#F5F2EE',
-      muted: '#D6CFC7',
-      line: '#5A5751',
-      good: '#D6CFC7',
-    },
-    series: ['#96BDCE', '#797771'],
+    surface: POSTER_SURFACE,
+    ink: POSTER_INK,
+    series: [POSTER_WINNER, POSTER_COMPARISON_SERIES[0]],
     display: `'FH Oscar Pro', ${INTER}`,
     body: INTER,
     oscar: true,

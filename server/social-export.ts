@@ -1,3 +1,4 @@
+import { acquireExport } from './export-lock'
 import type { JobExport } from '../src/charts/trial'
 import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -28,7 +29,7 @@ export class SocialExportError extends Error {
 
 const root = resolve(import.meta.dirname, '..')
 const hyperframes = join(root, 'node_modules/hyperframes/bin/hyperframes.mjs')
-let rendering = false
+
 
 function removeScratch(scratch: string) {
   const target = resolve(scratch)
@@ -118,8 +119,9 @@ export async function renderSocialExport(
   options: CompletionOptions = COMPLETION_DEFAULTS,
   input?: JobExport,
 ): Promise<SocialExport> {
-  if (rendering) throw new SocialExportError('Another social export is rendering. Try again in a moment.', 409)
-  rendering = true
+  const release = acquireExport()
+  if (!release) throw new SocialExportError('Another social export is rendering. Try again in a moment.', 409)
+
   let scratch: string | undefined
   try {
     scratch = mkdtempSync(join(tmpdir(), 'heval-social-export-'))
@@ -160,7 +162,7 @@ export async function renderSocialExport(
   } finally {
     try {
       if (scratch) removeScratch(scratch)
-    } finally { rendering = false }
+    } finally { release() }
   }
 }
 

@@ -31,6 +31,21 @@ export const POSTER_SURFACE = '#2C2A25'
  */
 export const POSTER_SERIES = ['#96BDCE', '#797771'] as const
 
+/**
+ * Official weekly benchmark palette. Full opacity; lilac is reserved for the
+ * best result in each metric. Dark canvas/type follow marketing SHARED.md.
+ * Source: https://github.com/merge-api/merge-skills/tree/main/plugin/merge-marketing/skills/weekly-model-benchmark-graphic
+ * Verified against SKILL.md, tokens.css and build.py on 2026-09-08.
+ */
+export const POSTER_WINNER = '#C6ADCA' // lilac-40
+export const POSTER_COMPARISON_SERIES = [
+  '#ABCAD8', // robin-40
+  '#96A58D', // sage-40
+  '#769399', // teal-40
+  '#C3C5B3', // khaki-40
+  '#ABAAA8', // charcoal-30
+] as const
+
 /** Hard cap. A seventh model folds into a second poster, never a generated hue. */
 export const POSTER_MAX_SERIES = 6
 
@@ -189,6 +204,7 @@ export function labelLines(modelShort: string): string[] {
     .replace(/\bv(\d)/gi, 'V$1')
     .replace(/\bk(\d)/gi, 'K$1')
     .replace(/\bflash\b/i, 'Flash')
+    .replace(/\bsonnet\b/i, 'Sonnet')
     .replace(/\bpro\b/i, 'Pro')
     .replace(/\bmini\b/i, 'Mini')
     .replace(/\s+/g, ' ')

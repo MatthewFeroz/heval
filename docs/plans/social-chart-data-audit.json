@@ -1,0 +1,279 @@
+{
+  "source": "results/harbor/terminal-bench-composio-mirror.json",
+  "auditedAt": "2026-09-08",
+  "summary": [
+    {
+      "model": "glm-5.3",
+      "completed": 14,
+      "tasks": 20,
+      "totalCostUsd": 4.431021339999999,
+      "medianPassedSeconds": 170.38049999999998,
+      "slowNonTimeout": 4,
+      "timeouts": 1,
+      "overFiveMinutesIncludingTimeouts": 5,
+      "costSources": [
+        "derived"
+      ],
+      "vendors": [
+        "zai"
+      ],
+      "versions": [
+        "0.152.1"
+      ],
+      "missingChecksum": 0
+    },
+    {
+      "model": "glm-5.3-flash",
+      "completed": 9,
+      "tasks": 20,
+      "totalCostUsd": 0.07868272099999998,
+      "medianPassedSeconds": 111.104,
+      "slowNonTimeout": 4,
+      "timeouts": 2,
+      "overFiveMinutesIncludingTimeouts": 6,
+      "costSources": [
+        "derived"
+      ],
+      "vendors": [
+        "particle"
+      ],
+      "versions": [
+        "0.152.1"
+      ],
+      "missingChecksum": 0
+    },
+    {
+      "model": "kimi-k3",
+      "completed": 10,
+      "tasks": 20,
+      "totalCostUsd": 7.015688300000002,
+      "medianPassedSeconds": 165.2735,
+      "slowNonTimeout": 4,
+      "timeouts": 2,
+      "overFiveMinutesIncludingTimeouts": 6,
+      "costSources": [
+        "derived"
+      ],
+      "vendors": [
+        "moonshot"
+      ],
+      "versions": [
+        "0.152.1"
+      ],
+      "missingChecksum": 0
+    },
+    {
+      "model": "deepseek-v4-flash",
+      "completed": 12,
+      "tasks": 20,
+      "totalCostUsd": 0.3867383240000001,
+      "medianPassedSeconds": 261.109,
+      "slowNonTimeout": 6,
+      "timeouts": 4,
+      "overFiveMinutesIncludingTimeouts": 10,
+      "costSources": [
+        "derived"
+      ],
+      "vendors": [
+        "particle"
+      ],
+      "versions": [
+        "0.152.1"
+      ],
+      "missingChecksum": 0
+    },
+    {
+      "model": "deepseek-v4-pro-0813",
+      "completed": 11,
+      "tasks": 20,
+      "totalCostUsd": 8.465760072,
+      "medianPassedSeconds": 140.751,
+      "slowNonTimeout": 4,
+      "timeouts": 3,
+      "overFiveMinutesIncludingTimeouts": 7,
+      "costSources": [
+        "derived"
+      ],
+      "vendors": [
+        "baseten"
+      ],
+      "versions": [
+        "0.152.1"
+      ],
+      "missingChecksum": 0
+    }
+  ],
+  "disagreement": {
+    "differing": 15,
+    "allPassed": 3,
+    "allFailed": 2,
+    "incomplete": 0,
+    "tasks": [
+      {
+        "task": "break-filter-js-from-html",
+        "complete": true,
+        "scores": [
+          0,
+          0,
+          1,
+          1,
+          0
+        ]
+      },
+      {
+        "task": "cobol-modernization",
+        "complete": true,
+        "scores": [
+          0,
+          0,
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "task": "configure-git-webserver",
+        "complete": true,
+        "scores": [
+          1,
+          0,
+          0,
+          0,
+          1
+        ]
+      },
+      {
+        "task": "count-dataset-tokens",
+        "complete": true,
+        "scores": [
+          1,
+          1,
+          1,
+          1,
+          0
+        ]
+      },
+      {
+        "task": "crack-7z-hash",
+        "complete": true,
+        "scores": [
+          1,
+          0,
+          0,
+          1,
+          1
+        ]
+      },
+      {
+        "task": "custom-memory-heap-crash",
+        "complete": true,
+        "scores": [
+          1,
+          0,
+          0,
+          1,
+          1
+        ]
+      },
+      {
+        "task": "db-wal-recovery",
+        "complete": true,
+        "scores": [
+          1,
+          1,
+          0,
+          1,
+          1
+        ]
+      },
+      {
+        "task": "extract-elf",
+        "complete": true,
+        "scores": [
+          1,
+          1,
+          0,
+          0,
+          1
+        ]
+      },
+      {
+        "task": "kv-store-grpc",
+        "complete": true,
+        "scores": [
+          1,
+          1,
+          1,
+          0,
+          1
+        ]
+      },
+      {
+        "task": "largest-eigenval",
+        "complete": true,
+        "scores": [
+          1,
+          1,
+          0,
+          1,
+          0
+        ]
+      },
+      {
+        "task": "merge-diff-arc-agi-task",
+        "complete": true,
+        "scores": [
+          1,
+          0,
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "task": "mteb-retrieve",
+        "complete": true,
+        "scores": [
+          0,
+          1,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "task": "pytorch-model-cli",
+        "complete": true,
+        "scores": [
+          1,
+          0,
+          1,
+          0,
+          0
+        ]
+      },
+      {
+        "task": "raman-fitting",
+        "complete": true,
+        "scores": [
+          0,
+          0,
+          1,
+          0,
+          0
+        ]
+      },
+      {
+        "task": "tune-mjcf",
+        "complete": true,
+        "scores": [
+          1,
+          0,
+          0,
+          1,
+          0
+        ]
+      }
+    ]
+  }
+}

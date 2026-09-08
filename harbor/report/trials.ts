@@ -59,8 +59,9 @@ export function readTrial(dir: string, catalog?: Catalog | null): TrialRow | nul
   const agentSeconds = seconds(res.agent_execution)
   const error = exc ? (str(exc.exception_type) ?? 'error') : null
   // Harbor raises AgentTimeoutError when the agent step hits the task's cap.
-  // Matched on substring so a renamed or subclassed variant still counts.
-  const timedOut = error !== null && /timeout/i.test(error)
+  // Setup/verifier timeouts are not agent execution timeouts. Unknown phases
+  // remain visible in error so downstream presets can reject ambiguous data.
+  const timedOut = error === 'AgentTimeoutError'
 
   // Prefer the harness's own figure. Fall back to pricing the tokens against
   // the catalog rate for the pinned route, which is the only way Codex trials

@@ -244,3 +244,24 @@ A result is intended to be publishable only when it includes immutable task and 
 ## Status
 
 Heval is experimental and its current results should not be treated as a general leaderboard. More tasks, repeated randomized trials, complete hidden graders, and joined provider usage records are required before drawing broad conclusions.
+
+## Social image presets
+
+Open Studio, switch to Presentation, then select **Social images**. Choose models and a preset, adjust subtitle/direction/source visibility, and export a PNG or an entire thread ZIP. Project and bundle files preserve these settings. Undo/Redo is available for social controls while the tab is open.
+
+The default thread contains tasks completed, total task cost, median time per completed task, and paired slow-task/timeout charts. Cost per success and a paginated task-disagreement matrix are optional. Exports use the Merge Gateway logo and the official weekly chart palette. The current format is 1600 x 900, rendered at 2x. Existing completion video exports remain under Motion.
+
+```sh
+bun run thread:merge
+bun run thread path/to/job.json path/to/settings.json output/directory
+```
+
+Use `harbor/report/thread-merge.json` as a reusable collection settings example. The ZIP contains PNGs, plotted values CSV, and a manifest with input data, hashes, settings, warnings and renderer version. No new evaluation is launched.
+
+Social comparisons require one attempt per model on the same task set and compatible task versions. Unknown prices are N/A; unknown timing cannot be treated as fast. Slow counts include agent timeouts, which are also shown separately. The current comparison is 20 tasks per model; titles derive their count from the input.
+
+Extension points: `src/charts/social-presets.ts` defines metric selection and cohort validation; `src/charts/social-render.ts` implements four reusable SVG layouts; `server/social-posters.ts` embeds fonts and renders the same document for preview and download. Add metrics independently of the HTTP routes and Studio controls, which enumerate the registry.
+
+## Repeat the same comparison
+
+See [Reproducing evaluations](docs/reproducing-evaluations.md) for the saved six-model/20-task profile, baseline replay, fresh-run preparation and compatibility checks. Fresh runs may yield different scores, times and costs; archived results reproduce the same chart values.

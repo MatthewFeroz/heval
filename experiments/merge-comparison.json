@@ -1,0 +1,147 @@
+{
+  "schemaVersion": 1,
+  "id": "merge-comparison",
+  "baseline": {
+    "file": "results/harbor/terminal-bench-composio-mirror.json",
+    "sha256Json": "504e9ecde1c8fad8cf790cd5f82861c5b86a5b5303e9968abc67a32a39d8b854"
+  },
+  "runTemplate": "harbor/jobs/terminal-bench-composio-mirror.yaml",
+  "chartSettings": "harbor/report/thread-merge.json",
+  "allChartSettings": "harbor/report/thread-merge-all.json",
+  "benchmark": {
+    "name": "terminal-bench",
+    "version": "2.0"
+  },
+  "attemptsPerTask": 1,
+  "models": [
+    {
+      "id": "zai/glm-5.3",
+      "short": "glm-5.3",
+      "harness": "codex",
+      "harnessVersion": "0.152.1",
+      "vendor": "zai"
+    },
+    {
+      "id": "zai/glm-5.3-flash",
+      "short": "glm-5.3-flash",
+      "harness": "codex",
+      "harnessVersion": "0.152.1",
+      "vendor": "particle"
+    },
+    {
+      "id": "moonshot/kimi-k3",
+      "short": "kimi-k3",
+      "harness": "codex",
+      "harnessVersion": "0.152.1",
+      "vendor": "moonshot"
+    },
+    {
+      "id": "deepseek/deepseek-v4-flash",
+      "short": "deepseek-v4-flash",
+      "harness": "codex",
+      "harnessVersion": "0.152.1",
+      "vendor": "particle"
+    },
+    {
+      "id": "deepseek/deepseek-v4-pro-0813",
+      "short": "deepseek-v4-pro-0813",
+      "harness": "codex",
+      "harnessVersion": "0.152.1",
+      "vendor": "baseten"
+    },
+    {
+      "id": "anthropic/claude-sonnet-5",
+      "short": "claude-sonnet-5",
+      "harness": "codex",
+      "harnessVersion": "0.152.1",
+      "vendor": "anthropic"
+    }
+  ],
+  "tasks": [
+    {
+      "name": "break-filter-js-from-html",
+      "checksum": "b33421492e86b07de2a01bc2205f7e7d2fdc36446a84787265d99e5e138fdaaa"
+    },
+    {
+      "name": "chess-best-move",
+      "checksum": "a31d482d846322d57f0e3ee3c56d4ff2171fe39908dadd8092d036f17114fbef"
+    },
+    {
+      "name": "cobol-modernization",
+      "checksum": "f8220a33bf193106989df1a28e4806985b12e5f93dcf07efb86acd8dbbc44f6a"
+    },
+    {
+      "name": "configure-git-webserver",
+      "checksum": "3ebefab7ff093813f99af237de90b1ed73363a4eb42ea8a17096939922a16bcf"
+    },
+    {
+      "name": "count-dataset-tokens",
+      "checksum": "1fa5f3961f0ad1c1748ebdaa39f27fd2bfd0f654cb728089365af6162b6d0ec7"
+    },
+    {
+      "name": "crack-7z-hash",
+      "checksum": "6557afcd0ab96deef7a8292019ea507be18f91433df61618b622866a293525a8"
+    },
+    {
+      "name": "custom-memory-heap-crash",
+      "checksum": "fba0e3be977223b1f8c182da8411663258f83b3563dd5dcd12beae87762ccabf"
+    },
+    {
+      "name": "db-wal-recovery",
+      "checksum": "01f470c86f3a1f7ce4d91bdf0aaaa89fa96a4124ac48617990e2735b5291913a"
+    },
+    {
+      "name": "extract-elf",
+      "checksum": "cd3887ff7e15541da700a00b6464b8dc3a54a140b9cddee7cd462ae18f3e8056"
+    },
+    {
+      "name": "fix-git",
+      "checksum": "7fa0a681f751d73f290d862522a82a5e448fa529834987ee1b80e5665c51aa7e"
+    },
+    {
+      "name": "hf-model-inference",
+      "checksum": "b96307ee0e1a454b667fb19da4b08116252525a2897250a9d7f8825fa0b86088"
+    },
+    {
+      "name": "kv-store-grpc",
+      "checksum": "9cadf1bf085c84578136694353c11b9994a645e814307cd5ce1071b800cd6a62"
+    },
+    {
+      "name": "largest-eigenval",
+      "checksum": "7d9e8c734dc7ccaa01db7fe48f36a6a49d6827d6fd47fe043cb5f4fe3b0a3fd0"
+    },
+    {
+      "name": "llm-inference-batching-scheduler",
+      "checksum": "3a08e63e0643ea5914eedeecb08cb93a1f0a10b9dc7d19d1f570004af84531c8"
+    },
+    {
+      "name": "merge-diff-arc-agi-task",
+      "checksum": "1e69376aa87a540b46c4dea3ba4f8507ed18aeeeef6f8786dab68eff71b0b58d"
+    },
+    {
+      "name": "mteb-retrieve",
+      "checksum": "c9b88a67c599defd76f11c87dc596dbfd16e2e3ea1e40d1abec4033db888473f"
+    },
+    {
+      "name": "multi-source-data-merger",
+      "checksum": "0f86ced6d81948760d828ee03060c28c44eb7244e7ef72442c18dc1c71115280"
+    },
+    {
+      "name": "pytorch-model-cli",
+      "checksum": "3dc849266b8ddcd8463440e2bceeb2a603e583042fe5874ee82f6d85230601c7"
+    },
+    {
+      "name": "raman-fitting",
+      "checksum": "732d69b125ace5638478701cfdfa709836b7f9e48b1d24f5ffdbdc19ea538c36"
+    },
+    {
+      "name": "tune-mjcf",
+      "checksum": "0014600ed83c316bbc3b495879f147f234d06578281af02817c9955794d4ebef"
+    }
+  ],
+  "reproducibility": {
+    "freshRun": "Configuration match only; stochastic outcomes, provider revisions, latency and price changes prevent an identical-results guarantee.",
+    "harnessVersion": "Recorded and checked after normalization. The existing run template does not pin installation to the observed version.",
+    "environment": "Task checksums checked; Docker image digests and provider model-weight revisions were not recorded in the baseline."
+  }
+}

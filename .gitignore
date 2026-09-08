@@ -33,3 +33,14 @@ results/harbor/social/**/*.gif
 # bundle beside it is copied straight out of node_modules by the same script.
 results/harbor/social/**/index.html
 results/harbor/social/**/assets/
+
+# Local chart previews and reference downloads; canonical thread ZIPs are tracked.
+/results/reference/
+/results/harbor/posters/merge-gateway-five-models/
+/results/harbor/posters/merge-gateway-five-models-social/
+/results/harbor/threads/*/images/
+/results/harbor/threads/*/*.png
+/results/harbor/threads/*/studio-export.zip
+/results/harbor/threads/*/all-presets.json
+/results/harbor/threads/recreated/
+/.scratch/merge-comparison-run.yaml*

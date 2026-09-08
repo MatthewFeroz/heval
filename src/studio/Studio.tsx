@@ -1,3 +1,5 @@
+import { THREAD_PRESETS } from '../charts/social-presets'
+import { SocialPreview } from './SocialPreview'
 import { NUMERIC, columnLabel, cellText } from './table-values'
 import { StatTiles, FilterBar, RunList, RunDrawer, type RunSort } from './TrialPanels'
 /**
@@ -97,7 +99,7 @@ const RESULTS = '/results/harbor'
  * Harness identity as the landing page draws it (src/data.ts). Unknown
  * harnesses get initials in a neutral tone rather than a made-up brand color.
  */
-type Tab = 'chart' | 'motion' | 'table' | 'spec' | 'rows'
+type Tab = 'social' | 'chart' | 'motion' | 'table' | 'spec' | 'rows'
 type StudioMode = 'analysis' | 'presentation'
 
 /** The three dimensions a person actually slices a job by. */
@@ -236,13 +238,14 @@ export function Studio() {
     : state
 
   const updatePresentation = useCallback((change: (current: Presentation) => Presentation) => {
-    if (!activePresentation) return
-    setProject((current) => current ? {
-      ...current,
-      updatedAt: new Date().toISOString(),
-      presentations: current.presentations.map((item) => item.id === activePresentation.id ? change(item) : item),
-    } : current)
-  }, [activePresentation])
+    setProject(current => {
+      if (!current || !activeView) return current
+      const target = activePresentation ?? newPresentation(current, activeView)
+      return { ...current, updatedAt: new Date().toISOString(), presentations: activePresentation
+        ? current.presentations.map(item => item.id === target.id ? change(item) : item)
+        : [...current.presentations, change(target)] }
+    })
+  }, [activePresentation, activeView])
 
   const setOverride = (spec: string | null) => {
     if (mode === 'presentation') updatePresentation((current) => ({ ...current, customSpec: spec, updatedAt: new Date().toISOString() }))
@@ -317,6 +320,7 @@ export function Studio() {
     () => allRows.filter((r) => Object.entries(visibleFilters).every(([key, values]) => !values.length || values.includes(String(r[key])))),
     [allRows, visibleFilters],
   )
+  const socialRows = useMemo(() => project ? projectRows(project, artifacts, selectedSourceIds).filter(r => Object.entries(visibleFilters).every(([key, values]) => !values.length || values.includes(String(r[key])))) : [], [project, artifacts, selectedSourceIds, visibleFilters])
   const filtering = Object.values(visibleFilters).some((values) => values.length > 0)
 
   const chart = useMemo(() => {
@@ -825,6 +829,7 @@ export function Studio() {
                 ['rows', 'Raw trials', <Activity size={13} key="i" />, project ? rows.length : null],
               ] : [
                 ['chart', 'Poster', <ImageIcon size={13} key="i" />, null],
+                ['social', 'Social images', <ImageIcon size={13} key="i" />, null],
                 ['motion', 'Motion', <Film size={13} key="i" />, null],
                 ['spec', 'Vega-Lite spec', <Braces size={13} key="i" />, null],
               ]) as [Tab, string, ReactNode, number | null][]).map(([t, label, icon, count]) => (
@@ -836,7 +841,7 @@ export function Studio() {
             <span className="spacer" />
             {/* Switches the canvas between the two validated chart surfaces; the
                 chrome around it stays the product's dark. */}
-            <div className="canvas-toggle" role="radiogroup" aria-label="Chart canvas" style={{ display: tab === 'motion' ? 'none' : undefined }}>
+            <div className="canvas-toggle" role="radiogroup" aria-label="Chart canvas" style={{ display: (tab === 'motion' || tab === 'social') ? 'none' : undefined }}>
               <label className="canvas-btn">
                 <input type="radio" name="canvas" className="sr-only" checked={chartState.theme === 'dark'} onChange={() => setChart('theme', 'dark')} />
                 <Moon size={11} />Dark mode
@@ -875,6 +880,26 @@ export function Studio() {
             </div>
           </div>
 
+          {tab === 'social' && <SocialPreview
+            key={activePresentation?.id ?? 'new-social'}
+            rows={socialRows}
+            options={activePresentation?.social}
+            collectionUnavailableReason={project && selectedSourceIds.some(id => {
+              const keys = projectFields(project, artifacts, [id]).map(field => field.key)
+              const presets = activePresentation?.social?.collection ?? THREAD_PRESETS
+              return presets.some(preset => {
+                const required = ['task','modelShort','passed', ...(['total-cost','cost-per-success'].includes(preset)?['costUsd']:[]), ...(['median-time','slow-timeouts'].includes(preset)?['agentSeconds']:[]), ...(preset==='slow-timeouts'?['timedOut']:[])]
+                return required.some(key=>!keys.includes(key))
+              })
+            }) ? 'Some selected thread images require fields absent from this data. Remove those images or select compatible sources.' : undefined}
+            unavailableReason={project && selectedSourceIds.some(id => {
+              const sourceFields = projectFields(project, artifacts, [id])
+              const preset = activePresentation?.social?.preset ?? 'completed'
+              const required = ['task', 'modelShort', 'passed', ...(['total-cost','cost-per-success'].includes(preset) ? ['costUsd'] : []), ...(['median-time','slow-timeouts'].includes(preset) ? ['agentSeconds'] : []), ...(preset === 'slow-timeouts' ? ['timedOut'] : [])]
+              return required.some(key => !sourceFields.some(field => field.key === key))
+            }) ? 'This preset requires fields that are missing from a selected source. Select compatible data or another preset.' : undefined}
+            onChange={social => updatePresentation(current => ({ ...current, social, updatedAt: new Date().toISOString() }))}
+          />}
           {tab === 'motion' && <MotionPreview
             key={activePresentation?.id}
             job={project?.label ?? job}

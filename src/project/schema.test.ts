@@ -1,3 +1,4 @@
+import { SOCIAL_DEFAULTS } from '../charts/social-presets'
 import { describe, expect, test } from 'bun:test'
 import { compatibleSources, projectRows } from './accessors'
 import {
@@ -117,4 +118,18 @@ test('rejects malformed persisted custom specs', async () => {
   const project = newProject(await sourceFromArtifact(artifact, 'source.json'), artifact)
   project.analysisViews[0].customSpec = '['
   expect(() => parseProject(project)).toThrow('valid JSON')
+})
+
+test('social settings survive project bundles without altering legacy motion', async () => {
+  const artifact = await adaptJobExportV1(legacy)
+  const project = newProject(await sourceFromArtifact(artifact, 'source.json'), artifact)
+  const presentation = newPresentation(project, project.analysisViews[0])
+  presentation.social = { ...SOCIAL_DEFAULTS, preset: 'slow-timeouts', source: 'Merge Evaluations', showSubtitle: false }
+  project.presentations.push(presentation)
+  const restored = parseBundle(JSON.parse(JSON.stringify(await makeBundle(project, [artifact]))))
+  expect(restored.project.presentations[0].social).toEqual(presentation.social)
+  expect(restored.project.presentations[0].motion).toEqual(presentation.motion)
+  expect(await verifyContentHash(restored)).toBe(true)
+  const bad = JSON.parse(JSON.stringify(project)); bad.presentations[0].social.preset = 'invalid'
+  expect(() => parseProject(bad)).toThrow('Unknown social preset')
 })

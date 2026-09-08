@@ -523,3 +523,5 @@ td.dim { color: var(--muted); }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }
+
+.social-preset-editor{padding:24px}.social-preset-controls{display:flex;flex-wrap:wrap;gap:20px;align-items:end}.social-preset-controls>label{display:grid;gap:8px}.social-preset-controls fieldset{border:1px solid #565551;padding:12px;display:flex;gap:12px;flex-wrap:wrap;width:100%}.social-preset-controls label{font-size:13px}.social-preset-controls select,.social-preset-controls input[type=text],.social-preset-controls input:not([type]){background:#2C2A25;color:#F5F2EE;padding:9px;border:1px solid #87857F}.social-visibility{display:flex;gap:16px}.social-preset-editor p{margin-top:12px;font-size:13px}.social-preset-controls input[type=checkbox]{margin-right:6px}
