@@ -1,3 +1,4 @@
+import { SOCIAL_THEMES } from '../src/charts/social-themes'
 import { readFileSync, writeFileSync, mkdtempSync, rmSync } from 'node:fs'
 import { join, resolve, sep, basename } from 'node:path'
 import { tmpdir } from 'node:os'
@@ -8,6 +9,7 @@ import { resolveSocial, type SocialSettings, type SocialChart } from '../src/cha
 import type { JobExport } from '../src/charts/trial'
 import { acquireExport } from './export-lock'
 const root = resolve(import.meta.dirname, '..')
+const layoutScript = readFileSync(join(root, 'harbor/report/layout-check.js'), 'utf8')
 const assets = join(root, 'harbor/report/assets')
 const logo = readFileSync(join(assets, 'merge-lockup.svg'), 'utf8')
 const fonts =
@@ -17,9 +19,9 @@ const fonts =
         '@font-face{font-family:"FH Oscar Pro";font-weight:' +
         weight +
         ';src:url(data:font/otf;base64,' +
-        readFileSync(join(assets, ['FHOscarPro-Medium.otf', 'FHOscarPro-SemiBold.otf'][i])).toString(
-          'base64',
-        ) +
+        readFileSync(
+          join(assets, ['FHOscarPro-Medium.otf', 'FHOscarPro-SemiBold.otf'][i]),
+        ).toString('base64') +
         ')}',
     )
     .join('') + readFileSync(join(assets, 'inter.css'), 'utf8')
@@ -28,22 +30,33 @@ export function posterDocuments(input: JobExport, settings: SocialSettings) {
   return {
     chart,
     pages: Array.from(
-      { length: chart.preset === 'disagreement' ? Math.max(1, Math.ceil(chart.matrix.length / 12)) : 1 },
+      {
+        length:
+          chart.preset === 'disagreement' ? Math.max(1, Math.ceil(chart.matrix.length / 12)) : 1,
+      },
       (_, page) =>
         '<!doctype html><html lang="en"><meta charset="utf-8"><style>' +
         fonts +
-        'html,body{margin:0;background:#2C2A25}svg{font-feature-settings:"liga" 0,"calt" 0;display:block;width:100%;height:auto}</style>' +
+        'html,body{margin:0;background:' +
+        SOCIAL_THEMES[settings.theme ?? 'merge-dark'].surface +
+        '}svg{font-feature-settings:"liga" 0,"calt" 0;display:block;width:100%;height:auto}</style>' +
         socialSvg(chart, settings, logo, page) +
-        '</html>',
+        '<script>' +
+        layoutScript +
+        '</script></html>',
     ),
   }
 }
 async function screenshot(htmlPath: string, pngPath: string) {
   await new Promise<void>((done, fail) => {
-    const child = spawn(Bun.which('node') || 'node', [join(root, 'harbor/report/render-poster.mjs')], {
-      windowsHide: true,
-      stdio: ['pipe', 'ignore', 'pipe'],
-    })
+    const child = spawn(
+      Bun.which('node') || 'node',
+      [join(root, 'harbor/report/render-poster.mjs')],
+      {
+        windowsHide: true,
+        stdio: ['pipe', 'ignore', 'pipe'],
+      },
+    )
     let error = ''
     child.stderr.on('data', (chunk) => {
       error = (error + chunk).slice(-4000)
@@ -110,10 +123,16 @@ export function zipFiles(files: { name: string; bytes: Uint8Array }[]): Uint8Arr
   end.writeUInt32LE(offset, 16)
   return Buffer.concat([...chunks, central, end])
 }
-export async function renderPosters(input: JobExport, settings: SocialSettings, collection: boolean) {
+export async function renderPosters(
+  input: JobExport,
+  settings: SocialSettings,
+  collection: boolean,
+) {
   const release = acquireExport()
   if (!release)
-    throw Object.assign(new Error('Another export is rendering. Try again shortly.'), { status: 409 })
+    throw Object.assign(new Error('Another export is rendering. Try again shortly.'), {
+      status: 409,
+    })
   let scratch: string | undefined
   try {
     const presets = collection ? settings.collection : [settings.preset]
@@ -137,7 +156,7 @@ export async function renderPosters(input: JobExport, settings: SocialSettings, 
       return { bytes: files[0].bytes, type: 'image/png', filename: files[0].name }
     const manifest = {
       renderer: SOCIAL_RENDERER_VERSION,
-      theme: 'merge-weekly-dark/1',
+      theme: settings.theme ?? 'merge-dark',
       generatedAt: new Date().toISOString(),
       inputHash: createHash('sha256').update(JSON.stringify(input)).digest('hex'),
       settings,
@@ -156,7 +175,11 @@ export async function renderPosters(input: JobExport, settings: SocialSettings, 
       ),
     ].join('\n')
     files.push({ name: 'values.csv', bytes: Buffer.from(csv) })
-    return { bytes: zipFiles(files), type: 'application/zip', filename: 'merge-evaluations-thread.zip' }
+    return {
+      bytes: zipFiles(files),
+      type: 'application/zip',
+      filename: 'merge-evaluations-thread.zip',
+    }
   } finally {
     try {
       if (scratch) removeScratch(scratch)
@@ -168,7 +191,10 @@ export async function renderPosters(input: JobExport, settings: SocialSettings, 
 
 function removeScratch(scratch: string) {
   const target = resolve(scratch)
-  if (!target.startsWith(resolve(tmpdir()) + sep) || !basename(target).startsWith('heval-poster-export-'))
+  if (
+    !target.startsWith(resolve(tmpdir()) + sep) ||
+    !basename(target).startsWith('heval-poster-export-')
+  )
     throw new Error('Invalid scratch path')
   rmSync(target, { recursive: true, force: true })
 }

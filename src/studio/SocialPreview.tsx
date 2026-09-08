@@ -1,7 +1,9 @@
-import { useEffect, useState } from 'react'
+import { SOCIAL_THEMES, type SocialTheme } from '../charts/social-themes'
+import { useEffect, useState, useRef } from 'react'
 import {
   SOCIAL_DEFAULTS,
   SOCIAL_PRESETS,
+  SOCIAL_QUESTIONS,
   socialSettings,
   type SocialSettings,
   type SocialPreset,
@@ -22,6 +24,25 @@ export function SocialPreview({
   unavailableReason?: string
   collectionUnavailableReason?: string
 }) {
+  const frames = useRef<(HTMLIFrameElement | null)[]>([])
+  const [checks, setChecks] = useState<Record<number, { errors: string[]; adjustments: string[] }>>(
+    {},
+  )
+  useEffect(() => {
+    const receive = (event: MessageEvent) => {
+      const index = frames.current.findIndex((frame) => frame?.contentWindow === event.source)
+      if (
+        index < 0 ||
+        event.data?.type !== 'heval-layout' ||
+        !Array.isArray(event.data.errors) ||
+        !Array.isArray(event.data.adjustments)
+      )
+        return
+      setChecks((current) => ({ ...current, [index]: event.data }))
+    }
+    window.addEventListener('message', receive)
+    return () => window.removeEventListener('message', receive)
+  }, [])
   const settings = options ?? SOCIAL_DEFAULTS
   const [received, setPreview] = useState<{
     signature: string
@@ -42,6 +63,7 @@ export function SocialPreview({
     if (unavailableReason || !rows.length) return
     const timer = setTimeout(() => {
       setPreview(null)
+      setChecks({})
       setError('')
       setLoading(true)
       fetch('/api/posters/preview', {
@@ -113,93 +135,41 @@ export function SocialPreview({
       setBusy(false)
     }
   }
+  const layoutReady =
+    !!preview && preview.pages.every((_, i) => checks[i] && !checks[i].errors.length)
   const models = [...new Set(rows.map((r) => r.modelShort))].sort()
   const selected = settings.models.length ? settings.models : models
   return (
     <section className="social-preset-editor">
       <div className="social-preset-controls">
         <label>
-          Chart preset
+          Question
           <select
+            aria-label="Question"
             value={settings.preset}
             onChange={(e) => change({ preset: e.target.value as SocialPreset })}
           >
-            {Object.entries(SOCIAL_PRESETS).map(([id, p]) => (
+            {Object.entries(SOCIAL_PRESETS).map(([id]) => (
               <option key={id} value={id}>
-                {p.label}
+                {SOCIAL_QUESTIONS[id as SocialPreset]}
               </option>
             ))}
           </select>
         </label>
         <label>
-          Source
-          <input
-            value={settings.source}
-            maxLength={150}
-            onChange={(e) => change({ source: e.target.value })}
-          />
-        </label>
-        <div className="social-visibility">
-          {(
-            [
-              ['showSubtitle', 'Task-count subtitle'],
-              ['showDirection', 'Direction label'],
-              ['showSource', 'Source footer'],
-            ] as const
-          ).map(([key, label]) => (
-            <label key={key}>
-              <input
-                type="checkbox"
-                checked={settings[key]}
-                onChange={(e) => change({ [key]: e.target.checked })}
-              />
-              {label}
-            </label>
-          ))}
-        </div>
-        <fieldset>
-          <legend>Models</legend>
-          {models.map((m) => (
-            <label key={m}>
-              <input
-                type="checkbox"
-                checked={selected.includes(m)}
-                disabled={
-                  (selected.includes(m) && selected.length === 1) ||
-                  (!selected.includes(m) && selected.length >= 6)
-                }
-                onChange={(e) =>
-                  change({ models: e.target.checked ? [...selected, m] : selected.filter((x) => x !== m) })
-                }
-              />
-              {m}
-            </label>
-          ))}
-        </fieldset>
-        <fieldset>
-          <legend>Images in thread</legend>
-          {Object.entries(SOCIAL_PRESETS)
-            .filter(([id]) => id !== 'completion')
-            .map(([id, p]) => (
-              <label key={id}>
-                <input
-                  type="checkbox"
-                  checked={settings.collection.includes(id as SocialPreset)}
-                  disabled={
-                    settings.collection.length === 1 && settings.collection.includes(id as SocialPreset)
-                  }
-                  onChange={(e) =>
-                    change({
-                      collection: e.target.checked
-                        ? [...settings.collection, id as SocialPreset]
-                        : settings.collection.filter((x) => x !== id),
-                    })
-                  }
-                />
-                {p.label}
-              </label>
+          Style
+          <select
+            aria-label="Style"
+            value={settings.theme ?? 'merge-dark'}
+            onChange={(e) => change({ theme: e.target.value as SocialTheme })}
+          >
+            {Object.entries(SOCIAL_THEMES).map(([id, t]) => (
+              <option key={id} value={id}>
+                {t.label}
+              </option>
             ))}
-        </fieldset>
+          </select>
+        </label>
         <div>
           <button className="btn" disabled={!history.past.length} onClick={undo}>
             Undo
@@ -209,14 +179,20 @@ export function SocialPreview({
           </button>{' '}
           <button
             className="btn"
-            disabled={busy || loading || !preview || !!unavailableReason}
+            disabled={busy || loading || !layoutReady || !!unavailableReason}
             onClick={() => void download(false)}
           >
             Export image{settings.preset === 'disagreement' ? '(s)' : ''}
           </button>{' '}
           <button
             className="btn primary"
-            disabled={busy || loading || !preview || !!unavailableReason || !!collectionUnavailableReason}
+            disabled={
+              busy ||
+              loading ||
+              !layoutReady ||
+              !!unavailableReason ||
+              !!collectionUnavailableReason
+            }
             title={collectionUnavailableReason}
             onClick={() => void download(true)}
           >
@@ -224,6 +200,84 @@ export function SocialPreview({
           </button>
         </div>
       </div>
+      <details className="social-customize">
+        <summary>Customize models, text and thread</summary>
+        <div className="social-preset-controls">
+          {' '}
+          <label>
+            Source
+            <input
+              value={settings.source}
+              maxLength={150}
+              onChange={(e) => change({ source: e.target.value })}
+            />
+          </label>
+          <div className="social-visibility">
+            {(
+              [
+                ['showSubtitle', 'Task-count subtitle'],
+                ['showDirection', 'Direction label'],
+                ['showSource', 'Source footer'],
+              ] as const
+            ).map(([key, label]) => (
+              <label key={key}>
+                <input
+                  type="checkbox"
+                  checked={settings[key]}
+                  onChange={(e) => change({ [key]: e.target.checked })}
+                />
+                {label}
+              </label>
+            ))}
+          </div>
+          <fieldset>
+            <legend>Models</legend>
+            {models.map((m) => (
+              <label key={m}>
+                <input
+                  type="checkbox"
+                  checked={selected.includes(m)}
+                  disabled={
+                    (selected.includes(m) && selected.length === 1) ||
+                    (!selected.includes(m) && selected.length >= 6)
+                  }
+                  onChange={(e) =>
+                    change({
+                      models: e.target.checked ? [...selected, m] : selected.filter((x) => x !== m),
+                    })
+                  }
+                />
+                {m}
+              </label>
+            ))}
+          </fieldset>
+          <fieldset>
+            <legend>Images in thread</legend>
+            {Object.entries(SOCIAL_PRESETS)
+              .filter(([id]) => id !== 'completion')
+              .map(([id, p]) => (
+                <label key={id}>
+                  <input
+                    type="checkbox"
+                    checked={settings.collection.includes(id as SocialPreset)}
+                    disabled={
+                      settings.collection.length === 1 &&
+                      settings.collection.includes(id as SocialPreset)
+                    }
+                    onChange={(e) =>
+                      change({
+                        collection: e.target.checked
+                          ? [...settings.collection, id as SocialPreset]
+                          : settings.collection.filter((x) => x !== id),
+                      })
+                    }
+                  />
+                  {p.label}
+                </label>
+              ))}
+          </fieldset>
+        </div>
+      </details>
       {(error || unavailableReason) && <p role="alert">{unavailableReason || error}</p>}
       {collectionUnavailableReason && <p>{collectionUnavailableReason}</p>}
       {!rows.length && <p>Select evaluation data to generate images.</p>}
@@ -231,13 +285,48 @@ export function SocialPreview({
       {preview?.chart.warnings.map((w) => (
         <p key={w}>{w}</p>
       ))}
+      {preview && (
+        <p role="status">
+          {layoutReady
+            ? 'Layout checked. Ready to export.'
+            : Object.values(checks).some((c) => c.errors.length)
+              ? 'Layout needs adjustment before export.'
+              : 'Checking label fit...'}
+        </p>
+      )}
+      {Object.values(checks)
+        .flatMap((c) => c.errors)
+        .map((message, i) => (
+          <p role="alert" key={i}>
+            {message}. Try fewer models or shorter labels.
+          </p>
+        ))}
+      {Object.values(checks).some((c) => c.adjustments.length > 0) && (
+        <details>
+          <summary>Automatic label adjustments</summary>
+          {Object.values(checks)
+            .flatMap((c) => c.adjustments)
+            .map((message, i) => (
+              <p key={i}>{message}</p>
+            ))}
+        </details>
+      )}
       {preview?.pages.map((html, i) => (
         <iframe
+          ref={(frame) => {
+            frames.current[i] = frame
+          }}
           key={i}
           title={'Social chart preview ' + (i + 1)}
-          sandbox=""
+          sandbox="allow-scripts"
           srcDoc={html}
-          style={{ width: '100%', aspectRatio: '16 / 9', border: 0, display: 'block', marginTop: 20 }}
+          style={{
+            width: '100%',
+            aspectRatio: '16 / 9',
+            border: 0,
+            display: 'block',
+            marginTop: 20,
+          }}
         />
       ))}
     </section>

@@ -70,6 +70,7 @@ test('separates saved analysis from pinned presentation configuration', async ({
   await page.getByRole('button', { name: 'Save view' }).click()
 
   await page.getByRole('tab', { name: 'Presentation', exact: true }).click()
+  await page.getByRole('tab', { name: 'Poster', exact: true }).click()
   await expect(page).toHaveURL(/mode=presentation/)
   await expect(page.getByRole('tab', { name: 'Poster', exact: true })).toBeVisible()
   await expect(page.getByText('1 immutable source snapshot pinned')).toBeVisible()
@@ -135,11 +136,13 @@ test('presentation retains its saved filters when analysis filters change', asyn
   await page.getByRole('menuitemcheckbox').first().click()
   await page.getByRole('heading', { name: JOB }).click()
   await page.getByRole('tab', { name: 'Presentation', exact: true }).click()
+  await page.getByRole('tab', { name: 'Poster', exact: true }).click()
   await expect(page.locator('.card svg .mark-rect.role-mark path')).toHaveCount(2)
   await page.getByRole('tab', { name: 'Analysis', exact: true }).click()
   await page.getByRole('button', { name: 'Clear', exact: true }).click()
   await expect(page.locator('.card svg .mark-rect.role-mark path')).toHaveCount(4)
   await page.getByRole('tab', { name: 'Presentation', exact: true }).click()
+  await page.getByRole('tab', { name: 'Poster', exact: true }).click()
   await expect(page.locator('.card svg .mark-rect.role-mark path')).toHaveCount(2)
 })
 
@@ -175,6 +178,7 @@ test('custom specs reopen from bundles and stay attached to their saved view', a
 
 test('saving analysis does not change a presentation and revisions remain selectable', async ({ page }) => {
   await page.getByRole('tab', { name: 'Presentation', exact: true }).click()
+  await page.getByRole('tab', { name: 'Poster', exact: true }).click()
   await page.locator('#f-narrative-title').fill('First revision')
   await page.getByRole('button', { name: 'New editorial revision' }).click()
   await page.locator('#f-narrative-title').fill('Second revision')
@@ -184,6 +188,7 @@ test('saving analysis does not change a presentation and revisions remain select
   await page.locator('#f-measure').selectOption('costUsd')
   await page.getByRole('button', { name: 'Save view', exact: true }).click()
   await page.getByRole('tab', { name: 'Presentation', exact: true }).click()
+  await page.getByRole('tab', { name: 'Poster', exact: true }).click()
   await expect(page.locator('#f-measure')).toHaveValue('passed')
   await expect(page.locator('.card svg')).toContainText('First revision')
 })
@@ -195,6 +200,7 @@ test('motion preview receives the filtered presentation data', async ({ page }) 
   await page.getByRole('menuitemcheckbox').first().click()
   await page.getByRole('heading', { name: JOB }).click()
   await page.getByRole('tab', { name: 'Presentation', exact: true }).click()
+  await page.getByRole('tab', { name: 'Poster', exact: true }).click()
   const request = page.waitForRequest('**/api/social/preview')
   await page.getByRole('tab', { name: 'Motion', exact: true }).click()
   const input = (await request).postDataJSON().input
@@ -259,6 +265,7 @@ test('waits for a loaded analysis before opening presentation or spec editing', 
   release()
   await expect(page.getByRole('tab', { name: 'Presentation', exact: true })).toBeEnabled()
   await page.getByRole('tab', { name: 'Presentation', exact: true }).click()
+  await page.getByRole('tab', { name: 'Poster', exact: true }).click()
   await expect(page.locator('#f-narrative-title')).toBeVisible()
 })
 
@@ -268,6 +275,7 @@ test('presentation links require a bundle and interval controls follow the measu
   await page.locator('#f-measure').selectOption('costUsd')
   await expect(page.getByLabel('95% intervals')).toHaveCount(0)
   await page.getByRole('tab', { name: 'Presentation', exact: true }).click()
+  await page.getByRole('tab', { name: 'Poster', exact: true }).click()
   await expect(page.getByRole('button', { name: 'Copy link', exact: true })).toBeDisabled()
   await expect(page.getByRole('button', { name: 'Bundle', exact: true })).toBeEnabled()
 })

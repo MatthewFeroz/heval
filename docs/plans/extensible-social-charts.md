@@ -135,3 +135,11 @@ The six examples need four layout families, not six independent renderers. Prese
 Implemented landscape SVG/PNG layouts, a shared metric resolver, task-cohort validation, pinned presentation settings, tab-local undo/redo, a shared export-capacity lock, a portable thread CLI, and ZIP manifests carrying the exact selected input. Missing/repeated task observations are rejected for the single-attempt presets. The matrix paginates at 12 rows. Existing completion motion rendering remains available and now shares the official Merge color constants.
 
 Optional later work: square/portrait layouts for these new presets, combined contact sheets, animated variants beyond completion, arbitrary field-defined custom metrics, and named repeated-attempt aggregation policies. These are not needed for the six supplied landscape reference layouts.
+
+### Publishing without a setup wizard
+
+Open results to see the analysis immediately. Presentation opens Social images with a ready-made question and the Merge Gateway dark theme. Choose a different question or style, then export an image or the default four-image thread. Models, source text, optional captions, and thread contents live under **Customize models, text and thread**. Poster and Motion remain available for advanced editing. Returning to Analysis preserves the saved comparison.
+
+Publishing themes are registered in `src/charts/social-themes.ts`; questions and metric definitions are in `src/charts/social-presets.ts`. Saved social settings include the theme; older settings default to Merge dark. The light and dark Merge themes share the weekly benchmark palette, Oscar/Inter fonts, and Gateway lockup. Plain report omits the logo.
+
+Preview and PNG export run the same font-aware SVG layout checks in `harbor/report/layout-check.js`. Labels shrink only to a defined minimum; long names can be abbreviated, with adjustments shown in the editor and complete names retained in the data. Numeric values are never truncated. Unresolved overlap or clipping blocks export. Every page of a thread is checked during rendering. These checks cover the fixed 1600x900 layouts with up to six models; they do not guarantee legibility at every social platform's thumbnail size.

@@ -1,15 +1,26 @@
+import { labelLines, niceMax } from './poster'
+import { SOCIAL_THEMES } from './social-themes'
+const POSTER_INK = {
+  primary: 'var(--primary)',
+  secondary: 'var(--primary)',
+  muted: 'var(--muted)',
+  line: 'var(--line)',
+}
+const POSTER_SURFACE = 'var(--surface)'
+const POSTER_WINNER = 'var(--winner)'
+const POSTER_COMPARISON_SERIES = Array.from({ length: 5 }, (_, i) => 'var(--series-' + i + ')')
 import {
-  labelLines,
-  niceMax,
-  POSTER_COMPARISON_SERIES,
-  POSTER_WINNER,
-  POSTER_INK,
-  POSTER_SURFACE,
-} from './poster'
-import { SOCIAL_PRESETS, type SocialChart, type SocialSettings, type SocialBar } from './social-presets'
-export const SOCIAL_RENDERER_VERSION = 'social-presets/1'
+  SOCIAL_PRESETS,
+  type SocialChart,
+  type SocialSettings,
+  type SocialBar,
+} from './social-presets'
+export const SOCIAL_RENDERER_VERSION = 'social-presets/2'
 const esc = (s: string) =>
-  s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!)
+  s.replace(
+    /[&<>"']/g,
+    (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!,
+  )
 const text = (
   x: number,
   y: number,
@@ -74,7 +85,13 @@ function ticks(max: number, unit: string): number[] {
   if (unit === 'count') {
     const power = 10 ** Math.floor(Math.log10(Math.max(1, max / 4)))
     const step = Math.max(1, ([1, 2, 5, 10].find((v) => v * power >= max / 4) ?? 10) * power)
-    return [...new Set([0, ...Array.from({ length: Math.floor(max / step) }, (_, i) => (i + 1) * step), max])]
+    return [
+      ...new Set([
+        0,
+        ...Array.from({ length: Math.floor(max / step) }, (_, i) => (i + 1) * step),
+        max,
+      ]),
+    ]
   }
   return [0, 0.25, 0.5, 0.75, 1].map((f) => f * max)
 }
@@ -107,7 +124,14 @@ function vertical(
     .map(
       (v) =>
         line(x + gutter, y + h - (v / max) * h, x + w, y + h - (v / max) * h) +
-        text(x + gutter - 12, y + h - (v / max) * h + 6, format(v, unit), 18, 'end', POSTER_INK.muted),
+        text(
+          x + gutter - 12,
+          y + h - (v / max) * h + 6,
+          format(v, unit),
+          18,
+          'end',
+          POSTER_INK.muted,
+        ),
     )
     .join('')
   bars.forEach((b, i) => {
@@ -116,9 +140,25 @@ function vertical(
       bw = Math.min(80, slot * 0.43)
     svg +=
       rect(cx - bw / 2, y + h - bh, bw, bh, palette[i]) +
-      text(cx, y + h - bh - 15, format(b.value, unit), 26, 'middle')
+      text(
+        cx,
+        y + h - bh - 15,
+        format(b.value, unit),
+        26,
+        'middle',
+        POSTER_INK.primary,
+        'data-max-width="' + (slot - 12) + '"',
+      )
     labelLines(b.key).forEach((l, j) => {
-      svg += text(cx, y + h + 36 + j * 25, l, 20, 'middle', POSTER_INK.secondary)
+      svg += text(
+        cx,
+        y + h + 36 + j * 25,
+        l,
+        20,
+        'middle',
+        POSTER_INK.secondary,
+        'data-label="true" data-max-width="' + (slot - 12) + '"',
+      )
     })
   })
   return svg
@@ -143,25 +183,63 @@ function horizontal(chart: SocialChart) {
     const cy = y + slot * (i + 0.5),
       bw = ((b.value ?? 0) / max) * w
     svg +=
-      text(65, cy + 9, name(b.key), 25) +
+      text(
+        65,
+        cy + 9,
+        name(b.key),
+        25,
+        'start',
+        POSTER_INK.primary,
+        'data-label="true" data-max-width="300"',
+      ) +
       rect(x, cy - 25, bw, 50, palette[i]) +
-      text(x + bw + 16, cy + 9, format(b.value, unit), 27)
+      text(
+        x + bw + 16,
+        cy + 9,
+        format(b.value, unit),
+        27,
+        'start',
+        POSTER_INK.primary,
+        'data-max-width="' + (1535 - x - bw - 16) + '"',
+      )
   })
   return svg
 }
 /** SVG geometry is shared by browser preview and Chromium PNG export. */
-export function socialSvg(chart: SocialChart, settings: SocialSettings, logo: string, page = 0): string {
+export function socialSvg(
+  chart: SocialChart,
+  settings: SocialSettings,
+  logo: string,
+  page = 0,
+): string {
+  const theme = SOCIAL_THEMES[settings.theme ?? 'merge-dark']
+  const variables = Object.entries({
+    surface: theme.surface,
+    primary: theme.primary,
+    muted: theme.muted,
+    line: theme.line,
+    winner: theme.winner,
+    pass: theme.pass,
+    fail: theme.fail,
+    cell: theme.cell,
+    ...Object.fromEntries(theme.series.map((c, i) => ['series-' + i, c])),
+  })
+    .map(([k, v]) => '--' + k + ':' + v)
+    .join(';')
   const matrixPages = Math.max(1, Math.ceil(chart.matrix.length / 12))
   let svg =
     '<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-label="' +
     esc(chart.title) +
-    '" style="font-family:Inter,system-ui,sans-serif;font-variant-numeric:tabular-nums">' +
+    '" style="' +
+    variables +
+    ';font-family:Inter,system-ui,sans-serif;font-variant-numeric:tabular-nums">' +
     rect(0, 0, 1600, 900, POSTER_SURFACE)
-  svg +=
-    '<svg x="65" y="48" width="160" height="34" fill="#F5F2EE" viewBox="0 0 1800 371.7">' +
-    logo.replace(/^[\s\S]*?<svg[^>]*>/, '').replace(/<\/svg>\s*$/, '') +
-    '</svg>' +
-    text(241, 75, 'Gateway', 26)
+  if (theme.brand)
+    svg +=
+      '<svg x="65" y="48" width="160" height="34" fill="var(--primary)" viewBox="0 0 1800 371.7">' +
+      logo.replace(/^[\s\S]*?<svg[^>]*>/, '').replace(/<\/svg>\s*$/, '') +
+      '</svg>' +
+      text(241, 75, 'Gateway', 26)
   svg += text(
     65,
     155,
@@ -169,7 +247,9 @@ export function socialSvg(chart: SocialChart, settings: SocialSettings, logo: st
     43,
     'start',
     POSTER_INK.primary,
-    'font-family="FH Oscar Pro,Inter,sans-serif" font-weight="500" style="font-variant-numeric:normal;font-feature-settings: &quot;liga&quot; 0, &quot;calt&quot; 0"',
+    'data-max-width="1470" data-min-size="32" font-family="' +
+      theme.display +
+      '" font-weight="500" style="font-variant-numeric:normal;font-feature-settings: &quot;liga&quot; 0, &quot;calt&quot; 0"',
   )
   if (settings.showSubtitle)
     svg += text(
@@ -236,19 +316,49 @@ export function socialSvg(chart: SocialChart, settings: SocialSettings, logo: st
       rowH = 39
     chart.bars.forEach((b, i) =>
       labelLines(b.key).forEach((l, j) => {
-        svg += text(x + w * (i + 0.5), 222 + j * 24, l, 20, 'middle')
+        svg += text(
+          x + w * (i + 0.5),
+          222 + j * 24,
+          l,
+          20,
+          'middle',
+          POSTER_INK.primary,
+          'data-label="true" data-max-width="' + (w - 12) + '"',
+        )
       }),
     )
     slice.forEach((r, i) => {
-      const label = r.task.length > 37 ? r.task.slice(0, 34) + '...' : r.task
-      svg += text(x - 20, top + i * rowH + 25, label, 20, 'end', POSTER_INK.muted)
+      const label = r.task
+      svg += text(
+        x - 20,
+        top + i * rowH + 25,
+        label,
+        20,
+        'end',
+        POSTER_INK.muted,
+        'data-label="true" data-max-width="385"',
+      )
       r.values.forEach((v, j) => {
         svg +=
-          rect(x + j * w + 3, top + i * rowH, w - 6, rowH - 5, v === 1 ? '#63725A' : '#565551') +
-          text(x + w * (j + 0.5), top + i * rowH + 25, v === 1 ? 'Pass' : 'Fail', 20, 'middle')
+          rect(
+            x + j * w + 3,
+            top + i * rowH,
+            w - 6,
+            rowH - 5,
+            v === 1 ? 'var(--pass)' : 'var(--fail)',
+          ) +
+          text(
+            x + w * (j + 0.5),
+            top + i * rowH + 25,
+            v === 1 ? 'Pass' : 'Fail',
+            20,
+            'middle',
+            'var(--cell)',
+          )
       })
     })
-    if (!slice.length) svg += text(800, 480, 'All selected models have identical outcomes', 28, 'middle')
+    if (!slice.length)
+      svg += text(800, 480, 'All selected models have identical outcomes', 28, 'middle')
     svg += text(
       65,
       785,
@@ -263,6 +373,7 @@ export function socialSvg(chart: SocialChart, settings: SocialSettings, logo: st
     )
   }
   svg += '<path d="M 65 820 H 1535" stroke="' + POSTER_INK.line + '"/>'
-  if (settings.showSource) svg += text(1535, 863, 'Source: ' + settings.source, 21, 'end', POSTER_INK.muted)
+  if (settings.showSource)
+    svg += text(1535, 863, 'Source: ' + settings.source, 21, 'end', POSTER_INK.muted)
   return svg + '</svg>'
 }

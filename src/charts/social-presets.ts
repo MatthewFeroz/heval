@@ -1,3 +1,4 @@
+import { SOCIAL_THEMES, type SocialTheme } from './social-themes'
 import type { TrialRow } from './trial'
 import { costPerSuccess, medianTimePassed, completionRate } from './metrics'
 
@@ -30,11 +31,26 @@ export const SOCIAL_PRESETS = {
   },
   completion: { label: 'Completion rate', layout: 'vertical', direction: 'higher', unit: 'ratio' },
 } as const
+export const SOCIAL_QUESTIONS = {
+  completed: 'Which model completes the most tasks?',
+  'cost-per-success': 'What does a successful task cost?',
+  'total-cost': 'How much did the evaluation cost?',
+  'median-time': 'Which model finishes successful tasks fastest?',
+  'slow-timeouts': 'Which models run slowly or time out?',
+  disagreement: 'Where do the models disagree?',
+  completion: 'What share of tasks does each model complete?',
+} as const
 export type SocialPreset = keyof typeof SOCIAL_PRESETS
-export const THREAD_PRESETS: SocialPreset[] = ['completed', 'total-cost', 'median-time', 'slow-timeouts']
+export const THREAD_PRESETS: SocialPreset[] = [
+  'completed',
+  'total-cost',
+  'median-time',
+  'slow-timeouts',
+]
 export type SocialSettings = {
   version: 1
   preset: SocialPreset
+  theme?: SocialTheme
   models: string[]
   collection: SocialPreset[]
   showSubtitle: boolean
@@ -45,6 +61,7 @@ export type SocialSettings = {
 export const SOCIAL_DEFAULTS: SocialSettings = {
   version: 1,
   preset: 'completed',
+  theme: 'merge-dark',
   models: [],
   collection: THREAD_PRESETS,
   showSubtitle: false,
@@ -53,9 +70,13 @@ export const SOCIAL_DEFAULTS: SocialSettings = {
   source: 'Merge Evaluations',
 }
 export function socialSettings(value: unknown): SocialSettings {
-  if (value === undefined) return { ...SOCIAL_DEFAULTS, models: [], collection: [...THREAD_PRESETS] }
-  if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('Invalid social settings')
+  if (value === undefined)
+    return { ...SOCIAL_DEFAULTS, models: [], collection: [...THREAD_PRESETS] }
+  if (!value || typeof value !== 'object' || Array.isArray(value))
+    throw new Error('Invalid social settings')
   const v = { ...SOCIAL_DEFAULTS, ...value } as SocialSettings
+  if (!Object.hasOwn(SOCIAL_THEMES, v.theme ?? 'merge-dark'))
+    throw new Error('Unknown publishing theme')
   if (v.version !== 1 || !Object.hasOwn(SOCIAL_PRESETS, v.preset))
     throw new Error('Unknown social preset or settings version')
   for (const key of ['showSubtitle', 'showDirection', 'showSource'] as const)
@@ -94,7 +115,9 @@ const finite = (v: unknown): v is number => typeof v === 'number' && Number.isFi
 
 /** Single-attempt comparable cohort. Unknowns never become free, fast, or failed. */
 export function resolveSocial(rows: readonly TrialRow[], settings: SocialSettings): SocialChart {
-  const models = settings.models.length ? settings.models : [...new Set(rows.map((r) => r.modelShort))].sort()
+  const models = settings.models.length
+    ? settings.models
+    : [...new Set(rows.map((r) => r.modelShort))].sort()
   if (!models.length || models.length > 6) throw new Error('Select one to six models')
   if (rows.length > 3000) throw new Error('Select at most 3000 trials for social export')
   const selected = rows.filter((r) => models.includes(r.modelShort))
@@ -111,7 +134,11 @@ export function resolveSocial(rows: readonly TrialRow[], settings: SocialSetting
   for (const field of cohortFields)
     if (new Set(selected.map((r) => r[field] ?? '')).size > 1)
       throw new Error('Select one compatible cohort: mixed ' + field)
-  if (selected.some((r) => !r.task || r.task === 'unknown' || !r.modelShort || r.modelShort === 'unknown'))
+  if (
+    selected.some(
+      (r) => !r.task || r.task === 'unknown' || !r.modelShort || r.modelShort === 'unknown',
+    )
+  )
     throw new Error('Task and model identities are required')
   const tasks = [...new Set(selected.map((r) => r.task))].sort()
   const warnings: string[] = []
@@ -122,17 +149,23 @@ export function resolveSocial(rows: readonly TrialRow[], settings: SocialSetting
     for (const m of models)
       if (rs.filter((r) => r.modelShort === m).length !== 1)
         throw new Error(
-          'Each model must have one attempt on each selected task. Missing or repeated task: ' + task,
+          'Each model must have one attempt on each selected task. Missing or repeated task: ' +
+            task,
         )
   }
   if (selected.some((r) => !r.taskChecksum))
     warnings.push('Task checksums unavailable for some trials; verify dataset identity.')
-  if (new Set(selected.map((r) => r.vendor)).size > 1) warnings.push('Serving vendors differ across models.')
+  if (new Set(selected.map((r) => r.vendor)).size > 1)
+    warnings.push('Serving vendors differ across models.')
   if (selected.some((r) => r.costSource === 'derived'))
     warnings.push('Costs include token-derived estimates.')
-  const needsPass = ['completed', 'completion', 'cost-per-success', 'median-time', 'disagreement'].includes(
-    settings.preset,
-  )
+  const needsPass = [
+    'completed',
+    'completion',
+    'cost-per-success',
+    'median-time',
+    'disagreement',
+  ].includes(settings.preset)
   if (needsPass && selected.some((r) => r.passed !== 0 && r.passed !== 1))
     throw new Error('Pass outcomes are required')
   const bars = models.map((key) => {
@@ -142,14 +175,20 @@ export function resolveSocial(rows: readonly TrialRow[], settings: SocialSetting
     let timeout = 0
     if (settings.preset === 'completed') value = rs.filter((r) => r.passed === 1).length
     if (settings.preset === 'completion') value = completionRate(rs)
-    if (settings.preset === 'total-cost' && costsComplete) value = rs.reduce((n, r) => n + r.costUsd!, 0)
+    if (settings.preset === 'total-cost' && costsComplete)
+      value = rs.reduce((n, r) => n + r.costUsd!, 0)
     if (settings.preset === 'cost-per-success' && costsComplete) value = costPerSuccess(rs)
-    if (settings.preset === 'median-time' && rs.filter((r) => r.passed).every((r) => finite(r.agentSeconds)))
+    if (
+      settings.preset === 'median-time' &&
+      rs.filter((r) => r.passed).every((r) => finite(r.agentSeconds))
+    )
       value = medianTimePassed(rs)
     if (settings.preset === 'slow-timeouts') {
       if (rs.some((r) => r.timedOut !== 0 && r.timedOut !== 1))
         throw new Error('Agent timeout status is required')
-      if (rs.some((r) => r.error && /timeout/i.test(r.error) && !/^AgentTimeoutError$/.test(r.error)))
+      if (
+        rs.some((r) => r.error && /timeout/i.test(r.error) && !/^AgentTimeoutError$/.test(r.error))
+      )
         throw new Error('Unclassified timeout phase; normalize agent timeouts before charting')
       if (rs.some((r) => !r.timedOut && !finite(r.agentSeconds)))
         throw new Error('Agent duration is missing; unknown timing cannot be counted as fast')
@@ -168,7 +207,9 @@ export function resolveSocial(rows: readonly TrialRow[], settings: SocialSetting
   let allPassed = 0,
     allFailed = 0
   const matrix = tasks.flatMap((task) => {
-    const values = models.map((m) => selected.find((r) => r.task === task && r.modelShort === m)!.passed)
+    const values = models.map(
+      (m) => selected.find((r) => r.task === task && r.modelShort === m)!.passed,
+    )
     if (values.every((v) => v === 1)) {
       allPassed++
       return []
@@ -182,7 +223,8 @@ export function resolveSocial(rows: readonly TrialRow[], settings: SocialSetting
   if (settings.preset !== 'disagreement')
     bars.sort(
       (a, b) =>
-        (b.value ?? -Infinity) - (a.value ?? -Infinity) || models.indexOf(a.key) - models.indexOf(b.key),
+        (b.value ?? -Infinity) - (a.value ?? -Infinity) ||
+        models.indexOf(a.key) - models.indexOf(b.key),
     )
   const title =
     settings.preset === 'total-cost'
@@ -190,5 +232,14 @@ export function resolveSocial(rows: readonly TrialRow[], settings: SocialSetting
       : settings.preset === 'disagreement'
         ? matrix.length + ' tasks where models differed'
         : SOCIAL_PRESETS[settings.preset].label
-  return { preset: settings.preset, title, tasks: tasks.length, bars, warnings, matrix, allPassed, allFailed }
+  return {
+    preset: settings.preset,
+    title,
+    tasks: tasks.length,
+    bars,
+    warnings,
+    matrix,
+    allPassed,
+    allFailed,
+  }
 }

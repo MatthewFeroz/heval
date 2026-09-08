@@ -153,7 +153,7 @@ export function Studio() {
   const [job, setJob] = useState<string | null>(initial.job)
   const [data, setData] = useState<JobExport | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
-  const [tab, setTab] = useState<Tab>('chart')
+  const [tab, setTab] = useState<Tab>(mode === 'presentation' ? 'social' : 'chart')
   const [specDraft, setSpecDraft] = useState<string | null>(null)
   const [dragging, setDragging] = useState(false)
   const [selected, setSelected] = useState<string | null>(null)
@@ -266,7 +266,7 @@ export function Studio() {
       setActivePresentationId(created.id)
     }
     setMode(next)
-    setTab('chart')
+    setTab(next === 'presentation' ? 'social' : 'chart')
     setSpecDraft(null)
   }
 
@@ -560,8 +560,8 @@ export function Studio() {
           <button type="button" className="btn" onClick={saveProjectFile} disabled={!project}><Save size={14} />Project</button>
           <button type="button" className="btn" onClick={() => void saveBundleFile()} disabled={!project}><Download size={14} />Bundle</button>
           <span className="divider" />
-          <button type="button" className="btn" onClick={() => void exportSvg()} disabled={!chart}><Download size={14} />SVG</button>
-          <button type="button" className="btn" onClick={() => void exportPng()} disabled={!chart}><ImageIcon size={14} />PNG @2x</button>
+          <button type="button" className="btn" style={{ display: tab === 'social' ? 'none' : undefined }} onClick={() => void exportSvg()} disabled={!chart}><Download size={14} />SVG</button>
+          <button type="button" className="btn" style={{ display: tab === 'social' ? 'none' : undefined }} onClick={() => void exportPng()} disabled={!chart}><ImageIcon size={14} />PNG @2x</button>
           <button type="button" className="btn primary" onClick={() => copy('link', window.location.href)} disabled={!chart || !canShareLink} title={canShareLink ? undefined : "Download a bundle to share this project and its data"}>
             {copied === 'link' ? <Check size={14} /> : <Link2 size={14} />}{copied === 'link' ? 'Copied' : 'Copy link'}
           </button>
@@ -573,12 +573,12 @@ export function Studio() {
           <button type="button" role="tab" aria-selected={mode === 'analysis'} onClick={() => switchMode('analysis')}>Analysis</button>
           <button type="button" role="tab" aria-selected={mode === 'presentation'} disabled={!project || !activeView} onClick={() => switchMode('presentation')}>Presentation</button>
         </div>
-        <span>{mode === 'analysis' ? 'Compare compatible metrics across sources and save the analysis.' : 'Pin an analysis snapshot, then shape the chart, poster, and motion output.'}</span>
+        <span>{mode === 'analysis' ? 'Compare compatible metrics across sources and save the analysis.' : 'Choose a question and export. Your saved analysis stays intact.'}</span>
         {project && <strong>{project.label} · {project.sources.length} {project.sources.length === 1 ? 'source' : 'sources'}</strong>}
       </div>
 
-      <div className="workspace">
-        <aside className="side">
+      <div className={`workspace${tab === 'social' ? ' publishing-simple' : ''}`}>
+        <aside className="side" style={{ display: tab === 'social' ? 'none' : undefined }}>
           {mode === 'analysis' && project && (
             <div className="group project-config">
               <div className="group-head"><span className="eyebrow"><Layers size={11} />Project</span></div>
@@ -796,7 +796,7 @@ export function Studio() {
             </div>
           </div>
 
-          {project && <StatTiles rows={rows} />}
+          {project && tab !== 'social' && <StatTiles rows={rows} />}
 
           {project && mode === 'analysis' && (
             <FilterBar
@@ -808,12 +808,12 @@ export function Studio() {
             />
           )}
 
-          {(loadError || compatibility.incompatible.length || chart?.warnings.length || rendered.error || embedError || (project && !rows.length)) ? (
+          {(loadError || (tab !== 'social' && compatibility.incompatible.length) || (tab !== 'social' && chart?.warnings.length) || rendered.error || embedError || (project && !rows.length)) ? (
             <div className="notes">
               {loadError && <div className="warn err"><AlertTriangle size={14} /><span>{loadError}</span></div>}
               {project && !rows.length && <div className="warn"><Filter size={14} /><span>No selected source has compatible data for this metric and filter set.</span></div>}
               {compatibility.incompatible.length > 0 && <div className="warn"><AlertTriangle size={14} /><span>Excluded incompatible sources for {MEASURE_LABEL[chartState.measure]}: {compatibility.incompatible.join(', ')}.</span></div>}
-              {chart?.warnings.map((w) => <div className="warn" key={w}><AlertTriangle size={14} /><span>{w}</span></div>)}
+              {tab !== 'social' && chart?.warnings.map((w) => <div className="warn" key={w}><AlertTriangle size={14} /><span>{w}</span></div>)}
               {(rendered.error ?? embedError) && <div className="warn err"><AlertTriangle size={14} /><span>Spec error: {rendered.error ?? embedError}</span></div>}
             </div>
           ) : null}

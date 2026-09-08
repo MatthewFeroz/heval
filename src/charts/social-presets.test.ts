@@ -70,3 +70,9 @@ test('settings reject unknown presets and preserve deliberately hidden text', ()
   expect(svg).toContain('Source: Merge Evaluations')
   expect(svg).toContain('#C6ADCA')
 })
+
+test('publishing themes round trip and reject unregistered themes', () => {
+  expect(socialSettings({...options,theme:'merge-light'}).theme).toBe('merge-light')
+  expect(socialSettings({...options,theme:undefined}).theme ?? 'merge-dark').toBe('merge-dark')
+  expect(()=>socialSettings({...options,theme:'unknown'})).toThrow('theme')
+})
