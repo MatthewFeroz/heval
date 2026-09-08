@@ -1,0 +1,8 @@
+**
+!server/
+!server/types.ts
+!server/worker/
+!server/worker/**
+!fixtures/
+!fixtures/concurrent-cache/
+!fixtures/concurrent-cache/**

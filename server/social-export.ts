@@ -30,6 +30,12 @@ const root = resolve(import.meta.dirname, '..')
 const hyperframes = join(root, 'node_modules/hyperframes/bin/hyperframes.mjs')
 let rendering = false
 
+function removeScratch(scratch: string) {
+  const target = resolve(scratch)
+  if (!target.startsWith(resolve(tmpdir()) + sep) || !basename(target).startsWith('heval-social-export-')) throw new Error('Invalid render cleanup path')
+  rmSync(target, { recursive: true, force: true })
+}
+
 function catalogJobs(): Set<string> {
   const index = JSON.parse(readFileSync(join(root, 'results/harbor/index.json'), 'utf8')) as { jobs?: { job?: string }[] }
   return new Set((index.jobs ?? []).map((entry) => entry.job).filter((job): job is string => typeof job === 'string'))
@@ -114,8 +120,9 @@ export async function renderSocialExport(
 ): Promise<SocialExport> {
   if (rendering) throw new SocialExportError('Another social export is rendering. Try again in a moment.', 409)
   rendering = true
-  const scratch = mkdtempSync(join(tmpdir(), 'heval-social-export-'))
+  let scratch: string | undefined
   try {
+    scratch = mkdtempSync(join(tmpdir(), 'heval-social-export-'))
     // Render from a private copy so the exported file matches the options this
     // request asked for, whatever else is being previewed.
     const compositionDir = join(scratch, 'composition')
@@ -151,8 +158,9 @@ export async function renderSocialExport(
     await command(['ffmpeg', '-y', '-i', png, '-q:v', '2', jpeg], root)
     return { bytes: readFileSync(jpeg), filename: basename(jpeg), type: 'image/jpeg' }
   } finally {
-    rmSync(scratch, { recursive: true, force: true })
-    rendering = false
+    try {
+      if (scratch) removeScratch(scratch)
+    } finally { rendering = false }
   }
 }
 

@@ -8,6 +8,7 @@ test-results
 .env
 .env.*
 !.env.example
+!.env.docker-test
 
 # Raw Harbor job output at the repo root: per-trial agent sessions and logs,
 # often large. Anchored so it does not also swallow harbor/jobs/, which holds

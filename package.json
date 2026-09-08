@@ -11,13 +11,16 @@
     "serve": "bun server/index.ts",
     "lint": "eslint .",
     "test:e2e": "playwright test",
-    "test:unit": "bun test src/project",
+    "test:unit": "bun test src/project src/charts",
     "preview": "vite preview --host 0.0.0.0",
     "report": "bun harbor/report/build-report.ts",
     "poster": "bun harbor/report/build-poster.ts",
     "social:build": "bun harbor/social/build-completion.ts",
     "social:check": "HYPERFRAMES_NO_TELEMETRY=1 hyperframes check results/harbor/social/terminal-bench-composio-mirror --at 0,2.8,5.7,7.9",
-    "status": "bash harbor/status.sh"
+    "status": "bash harbor/status.sh",
+    "test:server": "bun test server",
+    "test:docker": "bun run worker:build && bun test --env-file=.env.docker-test server/docker.integration.test.ts",
+    "worker:build": "docker build -f server/worker/Dockerfile -t heval-worker:local ."
   },
   "dependencies": {
     "@earendil-works/pi-coding-agent": "0.84.4",

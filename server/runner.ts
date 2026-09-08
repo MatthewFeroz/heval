@@ -1,233 +1,166 @@
-import { cpSync, existsSync, mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { dockerBackend, type WorkerBackend, type WorkerProcess } from './docker'
+import { Recording } from './recording'
+import { RunnerError, type HarnessId, type Run } from './types'
+export { isHarness } from './types'
+export type { HarnessId, Run, Chunk, Grade } from './types'
 
-export type HarnessId = 'claude-code' | 'codex' | 'opencode' | 'pi-agent'
-export type Chunk = { at: number; data: string }
-export type Grade = { passed: boolean; exitCode: number; output: string }
-export type Run = {
-  id: string
-  harness: HarnessId
-  model: string
-  gateway: 'merge-gateway'
-  status: 'running' | 'complete' | 'failed' | 'cancelled'
-  startedAt: string
-  exitCode?: number
-  chunks: Chunk[]
-  grade?: Grade
-  terminal?: Bun.Terminal
-  cancel?: () => void
+type Socket = { send(data: string): unknown }
+type Options = {
+  backend: WorkerBackend; directory: string; maxConcurrent: number; maxPerUser: number
+  timeoutMs: number; gradeTimeoutMs: number; maxOutputBytes: number; model: string; secret?: string
 }
 
-const prompt = 'Fix the race condition in the async cache and make the full test suite pass. Preserve the public API.'
-const gatewayModel = process.env.HEVAL_GATEWAY_MODEL || 'anthropic/claude-sonnet-4-5-20250929'
-const gatewayKeyEnv = 'HEVAL_GATEWAY_API_KEY'
-const mergeOpenAIBaseUrl = 'https://api-gateway.merge.dev/v1/openai'
-const mergeAnthropicBaseUrl = 'https://api-gateway.merge.dev/v1/anthropic'
-
-type Launch = { command: string[]; env: Record<string, string | undefined> }
-
-export function prepareLaunch(harness: HarnessId, workspace: string): Launch {
-  if (!process.env[gatewayKeyEnv]) throw new Error(`${gatewayKeyEnv} is not configured`)
-  const configRoot = join(workspace, '.heval')
-  mkdirSync(configRoot, { recursive: true })
-  const env: Record<string, string | undefined> = {
-    ...process.env,
-    TERM: 'xterm-256color',
-    COLORTERM: 'truecolor',
-    MERGE_GATEWAY_API_KEY: process.env[gatewayKeyEnv],
-  }
-
-  if (harness === 'codex') {
-    const codexHome = join(configRoot, 'codex')
-    mkdirSync(codexHome, { recursive: true })
-    writeFileSync(join(codexHome, 'config.toml'), [
-      `model = ${JSON.stringify(gatewayModel)}`,
-      'model_provider = "merge-gateway"',
-      '',
-      '[model_providers.merge-gateway]',
-      'name = "Merge Gateway"',
-      `base_url = ${JSON.stringify(mergeOpenAIBaseUrl)}`,
-      'env_key = "MERGE_GATEWAY_API_KEY"',
-      'wire_api = "responses"',
-      '',
-      `[projects.${JSON.stringify(workspace)}]`,
-      'trust_level = "trusted"',
-      '',
-    ].join('\n'))
-    env.CODEX_HOME = codexHome
-    return {
-      command: [
-        'codex',
-        '--dangerously-bypass-approvals-and-sandbox',
-        '--dangerously-bypass-hook-trust',
-        '--model',
-        gatewayModel,
-        prompt,
-      ],
-      env,
+export function createRunner(options: Options) {
+  const runs = new Map<string, Run>()
+  const subscribers = new Map<string, Set<Socket>>()
+  const active = new Map<string, { ownerId: string; stop: () => Promise<void>; done: Promise<void> }>()
+  let cleanupFailed = false
+  let shuttingDown = false
+  function emit(run: Run, event: object) {
+    for (const socket of subscribers.get(run.id) ?? []) {
+      try { socket.send(JSON.stringify(event)) } catch { subscribers.get(run.id)?.delete(socket) }
     }
   }
-
-  if (harness === 'claude-code') {
-    const claudeHome = join(configRoot, 'claude-home')
-    const claudeConfig = join(claudeHome, '.claude')
-    mkdirSync(claudeConfig, { recursive: true })
-    writeFileSync(join(claudeConfig, 'settings.json'), JSON.stringify({
-      theme: 'dark',
-      skipDangerousModePermissionPrompt: true,
-    }))
-    writeFileSync(join(claudeConfig, '.claude.json'), JSON.stringify({
-      hasCompletedOnboarding: true,
-      lastOnboardingVersion: '2.0.64',
-      lastReleaseNotesSeen: '2.1.251',
-      installMethod: 'global',
-      numStartups: 1,
-      projects: {
-        [workspace]: {
-          allowedTools: [],
-          mcpContextUris: [],
-          mcpServers: {},
-          enabledMcpjsonServers: [],
-          disabledMcpjsonServers: [],
-          hasTrustDialogAccepted: true,
-          hasClaudeMdExternalIncludesApproved: false,
-          hasClaudeMdExternalIncludesWarningShown: false,
-        },
-      },
-    }))
-    env.HOME = claudeHome
-    env.CLAUDE_CONFIG_DIR = claudeConfig
-    env.ANTHROPIC_BASE_URL = mergeAnthropicBaseUrl
-    env.ANTHROPIC_AUTH_TOKEN = process.env[gatewayKeyEnv]
-    env.ANTHROPIC_API_KEY = ''
-    env.ANTHROPIC_DEFAULT_OPUS_MODEL = gatewayModel
-    env.ANTHROPIC_DEFAULT_SONNET_MODEL = gatewayModel
-    env.ANTHROPIC_DEFAULT_HAIKU_MODEL = gatewayModel
-    return { command: ['claude', '--dangerously-skip-permissions', '--model', gatewayModel, prompt], env }
-  }
-
-  if (harness === 'opencode') {
-    const opencodeRoot = join(configRoot, 'opencode')
-    mkdirSync(opencodeRoot, { recursive: true })
-    env.XDG_CONFIG_HOME = join(opencodeRoot, 'config')
-    env.XDG_DATA_HOME = join(opencodeRoot, 'data')
-    env.XDG_CACHE_HOME = join(opencodeRoot, 'cache')
-    env.OPENCODE_CONFIG_DIR = join(opencodeRoot, 'agent')
-    env.OPENCODE_CONFIG_CONTENT = JSON.stringify({
-      $schema: 'https://opencode.ai/config.json',
-      provider: {
-        'merge-gateway': {
-          models: { [gatewayModel]: { name: gatewayModel } },
-        },
-      },
+  function startRun(harness: HarnessId, ownerId: string): Run {
+    if (!ownerId) throw new RunnerError('A run owner is required', 401)
+    if (shuttingDown) throw new RunnerError('Runner is shutting down')
+    if (cleanupFailed) throw new RunnerError('Worker cleanup failed; check Docker resources and restart')
+    if (active.size >= options.maxConcurrent || [...active.values()].filter((r) => r.ownerId === ownerId).length >= options.maxPerUser) {
+      throw new RunnerError('Evaluation capacity reached; retry after an active run finishes', 429)
+    }
+    for (const [id] of runs) {
+      if (runs.size < 100) break
+      if (!active.has(id)) { runs.delete(id); subscribers.delete(id) }
+    }
+    const run: Run = { id: crypto.randomUUID(), ownerId, harness, model: options.model,
+      gateway: 'merge-gateway', status: 'running', startedAt: new Date().toISOString(), chunks: [] }
+    runs.set(run.id, run)
+    let worker: WorkerProcess | undefined
+    let stopping: Promise<void> | undefined
+    let bytes = 0
+    let rawBytes = 0
+    const started = performance.now()
+    const stop = () => {
+      if (!worker) return Promise.resolve()
+      return stopping ??= worker.stop().catch(() => {})
+    }
+    const recording = new Recording(options.directory, run.id, () => ({ ...run, chunks: undefined, outputBytes: bytes }), () => {
+      run.error = 'Recording write failed'; run.status = 'failed'; void stop()
     })
-    return { command: ['opencode', '--auto', '--model', `merge-gateway/${gatewayModel}`, '--prompt', prompt], env }
+    function record(data: string) {
+      if (!data) return
+      const size = Buffer.byteLength(data)
+      if (bytes + size > options.maxOutputBytes) {
+        run.error = 'Output limit exceeded'; run.status = 'failed'; void stop(); return
+      }
+      bytes += size
+      const chunk = { at: Math.round(performance.now() - started), data }
+      run.chunks.push(chunk)
+      recording.append({ type: 'data', ...chunk })
+      emit(run, { type: 'data', ...chunk })
+    }
+    // Retain a short tail to redact credentials split across transport chunks.
+    let tail = ''
+    function output(data: string, final = false) {
+      rawBytes += Buffer.byteLength(data)
+      if (rawBytes > options.maxOutputBytes) {
+        run.error = 'Output limit exceeded'; run.status = 'failed'; void stop(); return
+      }
+      const text = tail + data
+      const secret = options.secret
+      if (!secret) { tail = ''; record(text); return }
+      let end = final ? text.length : Math.max(0, text.length - secret.length + 1)
+      const crossing = text.lastIndexOf(secret, end - 1)
+      if (crossing >= 0 && crossing < end && crossing + secret.length > end) end = crossing
+      record(text.slice(0, end).split(secret).join('[REDACTED]'))
+      tail = text.slice(end)
+    }
+    async function execute() {
+      let timer: ReturnType<typeof setTimeout> | undefined
+      const timeout = (ms: number) => {
+        clearTimeout(timer)
+        timer = setTimeout(() => { run.status = 'timed-out'; run.error = 'Worker time limit exceeded'; void stop() }, ms)
+      }
+      try {
+        if (run.status !== 'running') return
+        worker = options.backend.start(run.id, harness, output)
+        timeout(options.timeoutMs)
+        run.exitCode = await worker.exited
+        output('', true)
+        if (run.status !== 'running') return
+        if (run.exitCode !== 0) { run.status = 'failed'; return }
+        run.status = 'grading'
+        emit(run, { type: 'status', status: run.status })
+        let gradeOutput = ''
+        stopping = undefined
+        worker = options.backend.grade(run.id, (data) => {
+          gradeOutput = (gradeOutput + data).slice(-16_000)
+          output(data)
+        })
+        timeout(options.gradeTimeoutMs)
+        const exitCode = await worker.exited
+        output('', true)
+        if (run.status !== 'grading') return
+        run.grade = { passed: exitCode === 0, exitCode,
+          output: options.secret ? gradeOutput.split(options.secret).join('[REDACTED]') : gradeOutput }
+        run.status = run.grade.passed ? 'complete' : 'failed'
+        emit(run, { type: 'grade', grade: run.grade, status: run.status })
+      } catch {
+        run.status = 'failed'
+        run.error = 'Worker unavailable or failed. Check Docker and the configured worker image.'
+      } finally {
+        clearTimeout(timer)
+        if (stopping) await stopping
+        try { await options.backend.cleanup(run.id) } catch {
+          cleanupFailed = true
+          run.status = 'failed'; run.error = 'Worker cleanup failed; check Docker before restarting'
+        }
+        recording.append({ type: 'exit', status: run.status, exitCode: run.exitCode, grade: run.grade, error: run.error })
+        try { await recording.close() } catch { run.status = 'failed'; run.error = 'Recording write failed' }
+        emit(run, { type: 'exit', status: run.status, exitCode: run.exitCode })
+        active.delete(run.id)
+      }
+    }
+    // Reserve capacity before Docker or filesystem work can yield.
+    const slot = { ownerId, stop, done: Promise.resolve() }
+    active.set(run.id, slot)
+    slot.done = Promise.resolve().then(execute)
+    return run
   }
-
-  const piRoot = join(configRoot, 'pi')
-  mkdirSync(piRoot, { recursive: true })
-  writeFileSync(join(piRoot, 'models.json'), JSON.stringify({
-    providers: {
-      'merge-gateway': {
-        name: 'Merge Gateway',
-        baseUrl: mergeOpenAIBaseUrl,
-        api: 'openai-completions',
-        apiKey: '$MERGE_GATEWAY_API_KEY',
-        compat: { supportsReasoningEffort: false },
-        models: [{
-          id: gatewayModel,
-          name: gatewayModel,
-          reasoning: true,
-          input: ['text', 'image'],
-          contextWindow: 200000,
-          maxTokens: 64000,
-        }],
-      },
-    },
-  }, null, 2))
-  env.PI_CODING_AGENT_DIR = piRoot
   return {
-    command: [join(process.cwd(), 'node_modules', '.bin', 'pi'), '--model', `merge-gateway/${gatewayModel}`, prompt],
-    env,
+    runs, subscribers, startRun,
+    cancelRun(run: Run) {
+      const slot = active.get(run.id)
+      if (!slot || !['running', 'grading'].includes(run.status)) return false
+      run.status = 'cancelled'; void slot.stop(); return true
+    },
+    async gradeRun(run: Run) {
+      if (run.grade) return run.grade
+      throw new RunnerError('Grading runs automatically after the agent succeeds; no grade is available yet', 409)
+    },
+    async wait(id: string) { await active.get(id)?.done },
+    async shutdown() {
+      shuttingDown = true
+      for (const [id] of active) this.cancelRun(runs.get(id)!)
+      await Promise.all([...active.values()].map((slot) => slot.done))
+    },
   }
 }
 
-export const runs = new Map<string, Run>()
-export const subscribers = new Map<string, Set<{ send(data: string): unknown }>>()
-const runWorkspaces = new Map<string, string>()
-
-function emit(run: Run, message: object) {
-  const payload = JSON.stringify(message)
-  subscribers.get(run.id)?.forEach((socket) => socket.send(payload))
+function limit(name: string, fallback: number, max: number) {
+  const value = Number(process.env[name] ?? fallback)
+  if (!Number.isSafeInteger(value) || value < 1 || value > max) throw new Error(`Invalid ${name}`)
+  return value
 }
-
-export function startRun(harness: HarnessId) {
-  const fixture = join(import.meta.dir, '..', 'fixtures', 'concurrent-cache')
-  if (!existsSync(fixture)) throw new Error('Pinned fixture is missing')
-  const workspace = mkdtempSync(join(tmpdir(), `heval-${harness}-`))
-  cpSync(fixture, workspace, { recursive: true })
-  const id = crypto.randomUUID()
-  const started = performance.now()
-  const launch = prepareLaunch(harness, workspace)
-  const run: Run = { id, harness, model: gatewayModel, gateway: 'merge-gateway', status: 'running', startedAt: new Date().toISOString(), chunks: [] }
-  runs.set(id, run)
-  runWorkspaces.set(id, workspace)
-  mkdirSync(join(import.meta.dir, '..', 'recordings'), { recursive: true })
-
-  const proc = Bun.spawn(launch.command, {
-    cwd: workspace,
-    env: launch.env,
-    terminal: {
-      cols: 96,
-      rows: 24,
-      data(_terminal, bytes) {
-        const chunk = { at: Math.round(performance.now() - started), data: new TextDecoder().decode(bytes) }
-        run.chunks.push(chunk)
-        writeFileSync(join(import.meta.dir, '..', 'recordings', `${id}.json`), JSON.stringify({ ...run, terminal: undefined, cancel: undefined }))
-        emit(run, { type: 'data', ...chunk })
-      },
-    },
-  })
-  run.terminal = proc.terminal
-  run.cancel = () => proc.kill()
-  void proc.exited.then((exitCode) => {
-    run.exitCode = exitCode
-    if (run.status === 'running') run.status = exitCode === 0 ? 'complete' : 'failed'
-    run.terminal?.close()
-    run.terminal = undefined
-    run.cancel = undefined
-    void Bun.write(join(import.meta.dir, '..', 'recordings', `${id}.json`), JSON.stringify(run))
-    emit(run, { type: 'exit', exitCode, status: run.status })
-  })
-  return run
-}
-
-export function cancelRun(run: Run) {
-  if (run.status !== 'running') return false
-  run.status = 'cancelled'
-  run.cancel?.()
-  return true
-}
-
-export async function gradeRun(run: Run) {
-  if (run.grade) return run.grade
-  const workspace = runWorkspaces.get(run.id)
-  if (!workspace) throw new Error('Run workspace is unavailable')
-  const proc = Bun.spawn(['bun', 'test'], { cwd: workspace, stdout: 'pipe', stderr: 'pipe' })
-  const [stdout, stderr, exitCode] = await Promise.all([
-    new Response(proc.stdout).text(),
-    new Response(proc.stderr).text(),
-    proc.exited,
-  ])
-  const grade = { passed: exitCode === 0, exitCode, output: `${stdout}${stderr}`.slice(-16_000) }
-  run.grade = grade
-  run.status = grade.passed ? 'complete' : 'failed'
-  run.cancel?.()
-  emit(run, { type: 'grade', grade, status: run.status })
-  return grade
-}
-
-export function isHarness(value: unknown): value is HarnessId {
-  return value === 'claude-code' || value === 'codex' || value === 'opencode' || value === 'pi-agent'
-}
+export const runner = createRunner({
+  backend: dockerBackend(process.env.HEVAL_WORKER_IMAGE || 'heval-worker:local'),
+  directory: join(import.meta.dir, '..', 'recordings'),
+  maxConcurrent: limit('HEVAL_MAX_CONCURRENT_RUNS', 2, 32),
+  maxPerUser: limit('HEVAL_MAX_RUNS_PER_USER', 1, 32),
+  timeoutMs: limit('HEVAL_RUN_TIMEOUT_MS', 300_000, 3_600_000),
+  gradeTimeoutMs: limit('HEVAL_GRADE_TIMEOUT_MS', 30_000, 300_000),
+  maxOutputBytes: limit('HEVAL_MAX_OUTPUT_BYTES', 8 * 1024 * 1024, 64 * 1024 * 1024),
+  model: process.env.HEVAL_GATEWAY_MODEL || 'anthropic/claude-sonnet-4-5-20250929',
+  secret: process.env.HEVAL_GATEWAY_API_KEY,
+})

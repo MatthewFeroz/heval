@@ -29,7 +29,8 @@ test('a control change re-renders the chart and travels in the URL', async ({ pa
 
 test('collapses color when it would just repeat the grouping', async ({ page }) => {
   // Coloring by the same field the bars are already grouped by encodes nothing.
-  await page.locator('#f-color').selectOption('agent')
+  await expect(page.locator('#f-color option[value=agent]')).toBeDisabled()
+  await page.locator('#f-color').selectOption('none')
   await expect(page.locator('.card svg')).toBeVisible()
   await expect(page.locator('.card svg .mark-rect.role-mark path')).toHaveCount(2)
   await expect(page.locator('.card svg')).not.toContainText('Model (short)')
@@ -259,4 +260,14 @@ test('waits for a loaded analysis before opening presentation or spec editing', 
   await expect(page.getByRole('tab', { name: 'Presentation', exact: true })).toBeEnabled()
   await page.getByRole('tab', { name: 'Presentation', exact: true }).click()
   await expect(page.locator('#f-narrative-title')).toBeVisible()
+})
+
+
+test('presentation links require a bundle and interval controls follow the measure', async ({ page }) => {
+  await expect(page.getByRole('button', { name: 'Copy link', exact: true })).toBeEnabled()
+  await page.locator('#f-measure').selectOption('costUsd')
+  await expect(page.getByLabel('95% intervals')).toHaveCount(0)
+  await page.getByRole('tab', { name: 'Presentation', exact: true }).click()
+  await expect(page.getByRole('button', { name: 'Copy link', exact: true })).toBeDisabled()
+  await expect(page.getByRole('button', { name: 'Bundle', exact: true })).toBeEnabled()
 })

@@ -18,6 +18,12 @@ jobs:
         run: bun run lint
       - name: Build
         run: bun run build
+      - name: Server regression tests
+        run: bun run test:server
+      - name: Project and chart regression tests
+        run: bun run test:unit
+      - name: Docker isolation smoke test (no model calls)
+        run: bun run test:docker
       - name: Install Chromium
         run: bunx playwright install --with-deps chromium
       - name: Test

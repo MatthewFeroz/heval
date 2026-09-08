@@ -110,6 +110,27 @@ export const RECIPE_DEFAULTS: Record<Recipe, Partial<ChartState>> = {
   matrix: { x: 'stack', row: 'task', measure: 'passed', aggregate: 'mean', labels: true },
 }
 
+export const RECIPES: Recipe[] = ['bar', 'scatter', 'strip', 'matrix']
+export const AGGREGATES: Aggregate[] = ['mean', 'median', 'sum', 'min', 'max']
+export const SORT_OPTIONS: { value: SortOrder; label: string }[] = [
+  { value: 'alpha', label: 'Alphabetical' },
+  { value: 'desc', label: 'Highest first' },
+  { value: 'asc', label: 'Lowest first' },
+]
+
+/** Which controls a recipe actually reads. Hiding the rest keeps the panel honest. */
+const RECIPE_CONTROLS: Record<Recipe, Set<keyof ChartState>> = {
+  bar: new Set(['x', 'color', 'facet', 'measure', 'aggregate', 'sort', 'labels', 'intervals']),
+  scatter: new Set(['x', 'color', 'measure', 'xMeasure', 'aggregate', 'labels']),
+  strip: new Set(['x', 'color', 'facet', 'measure', 'aggregate', 'sort']),
+  matrix: new Set(['x', 'row', 'measure', 'aggregate', 'sort', 'labels']),
+}
+
+export function controlsFor(state: ChartState) {
+  return new Set([...RECIPE_CONTROLS[state.recipe]].filter((key) => key !== 'intervals' ||
+    (state.measure === 'passed' && state.aggregate === 'mean')))
+}
+
 export type AggRow = {
   /** Values of the grouping dimensions, keyed by dimension name. */
   [dim: string]: string | number | boolean | null | undefined
@@ -576,7 +597,7 @@ export function buildChart(rows: TrialRow[], input: Partial<ChartState>, fields:
         {
           // Group aggregate as a tick in ink - identity comes from the row, not the color.
           mark: { type: 'tick', color: theme.ink, thickness: 2, size: 18 },
-          encoding: { y: encodingY, ...encodingYOffset, x: { ...xEnc, aggregate: state.aggregate === 'sum' ? 'mean' : state.aggregate } },
+          encoding: { y: encodingY, ...encodingYOffset, x: { ...xEnc, aggregate: state.aggregate } },
         },
       ]
       // With a yOffset, `step` sizes the sub-band (one row per series), not the

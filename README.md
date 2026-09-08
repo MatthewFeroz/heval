@@ -106,7 +106,30 @@ set +a
 bun run start
 ```
 
-The runner creates a fresh temporary workspace for every attempt, writes isolated harness configuration, records PTY output under `recordings/`, and grades the modified fixture with `bun test`. Credentials are passed through the process environment and are not written to recordings.
+Before enabling execution, install Docker Desktop (Linux containers) or Docker Engine and build the worker image:
+
+```bash
+bun run worker:build
+```
+
+The runner launches each attempt as a non-root Docker worker with a read-only root filesystem, dropped capabilities, no host bind mounts, and CPU, memory, process and wall-clock limits. Each worker receives a separate Docker volume and only the model credential it needs. Agent execution still has outbound network access. Host processes never execute the agent or its changed code.
+
+After an agent exits successfully, a fresh networkless container grades the candidate using the pinned fixture tests. For this task, only `src/cache.ts` is copied into the grader. The agent cannot replace the grader's test file. Grading is automatic; the grade endpoint returns the completed result or HTTP 409 while unavailable.
+
+All run endpoints, including listing and WebSocket upgrades, require a verified WorkOS token with a user subject. Runs belong to that user; requests for another user's run return 404. Lists omit transcripts; owners can retrieve them from the individual run endpoint.
+
+Defaults allow two active evaluations globally, one per user, five minutes per agent, 30 seconds per grader, and 8 MiB of output. Capacity includes grading and cleanup. See `.env.example` for overrides. Cancellation and timeout remove the worker container; completion removes both containers and the workspace volume. A cleanup failure blocks new runs until the operator checks Docker resources and restarts the server. Container-side maximum timeouts also stop execution if the server crashes; abandoned volumes may still need operator cleanup.
+
+Recordings use ordered `<run-id>.jsonl` events plus an atomically replaced `<run-id>.json` summary every second and on completion. Summaries omit terminal chunks. Writes are asynchronous and append only new events. A crash may lose the last unflushed second of output. The configured gateway key is redacted from streamed and recorded output, including when split between chunks. Encoded or transformed secrets are not covered by that redaction.
+
+Run metadata is in memory and is not restored after a restart; at most 100 runs are retained in memory. Disk recordings remain until you remove them. This is a single-process local runner, not a distributed scheduler.
+
+```bash
+bun run test:server
+bun run test:docker
+```
+
+The Docker smoke test uses no model credits and checks isolation and immutable grading. It requires a running Linux Docker engine. On Windows, finish any requested WSL restart before running it. The HTTP server binds to `127.0.0.1` by default; `HOST` can override it.
 
 Do not expose the runner API directly to the public internet. It is designed for trusted local use while the sandboxed worker architecture is developed.
 

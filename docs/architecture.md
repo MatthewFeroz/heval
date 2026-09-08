@@ -28,6 +28,10 @@ Postgres metadata + object storage artifacts
 
 The sandbox provider must remain replaceable. Local Docker is the development backend; Daytona is the preferred first hosted backend because Harbor already supports it. Vercel Sandbox can be added behind the same provider interface.
 
+The legacy interactive `concurrent-cache-v1` runner now uses the `WorkerBackend` interface in `server/docker.ts` for both agent execution and a fresh networkless grader. It no longer executes candidate code on the host. The single-process control plane enforces user ownership, capacity, timeouts and append-only recordings. This is a local compatibility path; Harbor still owns portable benchmark jobs. Do not introduce a second hosted scheduler around this compatibility adapter.
+
+Docker policy uses a non-root user, read-only root filesystem, dropped capabilities, process/CPU/memory limits, and named workspace volumes without host bind mounts. See the [Docker run reference](https://docs.docker.com/reference/cli/docker/container/run/) for the underlying flags. Agent egress is still permitted, so this is not an internet-facing multi-tenant security boundary.
+
 ## Visualization pipeline
 
 Normalized run metrics are stored as rows and exported as JSON/Parquet. Vega-Lite specifications define reproducible charts. The product should expose safe controls for fields, marks, colors, labels, sorting, and themes while retaining the underlying Vega-Lite JSON. SVG is the canonical export; PNG and social cards are rendered from it.

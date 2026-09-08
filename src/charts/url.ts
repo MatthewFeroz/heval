@@ -8,13 +8,11 @@
  * hand-edited URL should degrade to a working chart, not a blank page.
  */
 
-import { DEFAULT_STATE, type Aggregate, type ChartState, type Recipe, type SortOrder } from './recipes'
+import { RECIPES, AGGREGATES, SORT_OPTIONS, DEFAULT_STATE, type ChartState } from './recipes'
 import type { ThemeMode } from './palette'
 import { DIMENSIONS, MEASURES, type Dimension, type Measure } from './trial'
 
-const RECIPES: Recipe[] = ['bar', 'scatter', 'strip', 'matrix']
-const AGGREGATES: Aggregate[] = ['mean', 'median', 'sum', 'min', 'max']
-const SORTS: SortOrder[] = ['alpha', 'desc', 'asc']
+const SORTS = SORT_OPTIONS.map((option) => option.value)
 const MODES: ThemeMode[] = ['light', 'dark']
 
 const pick = <T extends string>(allowed: readonly T[], v: string | null): T | undefined =>

@@ -1,3 +1,4 @@
+import { HARNESS } from './harnesses'
 export type RunEvent = {
   at: number
   kind: 'system' | 'inspect' | 'edit' | 'test' | 'think' | 'finish'
@@ -49,14 +50,12 @@ export const featuredExperiment: Experiment = {
   runners: [
     {
       id: 'claude-code',
-      name: 'Claude Code',
+      ...HARNESS['claude-code'],
       shortName: 'CC',
-      logo: '/harnesses/claude.svg',
       command: 'claude --model anthropic/claude-sonnet-4-5-20250929',
       version: 'v2.1.251',
       model: 'Claude Sonnet 4.5',
       provider: 'Merge Gateway',
-      color: '#e99572',
       outcome: 'passed',
       score: 100,
       cost: null,
@@ -79,14 +78,12 @@ export const featuredExperiment: Experiment = {
     },
     {
       id: 'codex',
-      name: 'Codex CLI',
+      ...HARNESS['codex'],
       shortName: 'CX',
-      logo: '/harnesses/codex.svg',
       command: 'codex --model anthropic/claude-sonnet-4-5-20250929',
       version: 'v0.151.0',
       model: 'Claude Sonnet 4.5',
       provider: 'Merge Gateway',
-      color: '#79b8ff',
       outcome: 'passed',
       score: 100,
       cost: null,
@@ -108,14 +105,12 @@ export const featuredExperiment: Experiment = {
     },
     {
       id: 'opencode',
-      name: 'OpenCode',
+      ...HARNESS['opencode'],
       shortName: 'OC',
-      logo: '/harnesses/opencode.svg',
       command: 'opencode --model merge-gateway/anthropic/claude-sonnet-4-5-20250929',
       version: 'v1.18.25',
       model: 'Claude Sonnet 4.5',
       provider: 'Merge Gateway',
-      color: '#b9e769',
       outcome: 'passed',
       score: 100,
       cost: null,
@@ -138,14 +133,12 @@ export const featuredExperiment: Experiment = {
     },
     {
       id: 'pi-agent',
-      name: 'Pi Agent',
+      ...HARNESS['pi-agent'],
       shortName: 'PI',
-      logo: '/harnesses/pi.svg',
       command: 'pi --model merge-gateway/anthropic/claude-sonnet-4-5-20250929',
       version: 'v0.84.4',
       model: 'Claude Sonnet 4.5',
       provider: 'Merge Gateway',
-      color: '#c69cff',
       outcome: 'passed',
       score: 100,
       cost: null,

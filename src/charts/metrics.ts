@@ -73,7 +73,9 @@ export const completionRate = (group: TrialRow[]): number | null =>
 export const costPerSuccess = (group: TrialRow[]): number | null => {
   const costs = nums(group, 'costUsd')
   const passes = group.filter((r) => r.passed).length
-  return costs.length && passes ? costs.reduce((a, b) => a + b, 0) / passes : null
+  // Missing prices are unknown spend, not free trials. A partial numerator
+  // divided by all successes would systematically understate this metric.
+  return costs.length === group.length && passes ? costs.reduce((a, b) => a + b, 0) / passes : null
 }
 
 /**
