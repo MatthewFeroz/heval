@@ -1,3 +1,4 @@
+import type { JobExport } from '../src/charts/trial'
 import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { basename, join, resolve } from 'node:path'
@@ -5,6 +6,7 @@ import {
   COMPLETION_DEFAULTS,
   COMPLETION_VIDEO,
   completionCompositionFor,
+  completionComposition,
   completionTiming,
   type CompletionOptions,
 } from '../harbor/social/completion'
@@ -108,6 +110,7 @@ export async function renderSocialExport(
   job: string,
   format: SocialFormat,
   options: CompletionOptions = COMPLETION_DEFAULTS,
+  input?: JobExport,
 ): Promise<SocialExport> {
   if (rendering) throw new SocialExportError('Another social export is rendering. Try again in a moment.', 409)
   rendering = true
@@ -118,8 +121,8 @@ export async function renderSocialExport(
     const compositionDir = join(scratch, 'composition')
     mkdirSync(compositionDir, { recursive: true })
     ensureCompositionAssets(compositionDir)
-    writeFileSync(join(compositionDir, 'index.html'), await completionCompositionFor(inputFor(job), options))
-    const stem = `${job}-completion-${options.canvas}`
+    writeFileSync(join(compositionDir, 'index.html'), input ? await completionComposition(input, options) : await completionCompositionFor(inputFor(job), options))
+    const stem = `${job.replace(/[^a-zA-Z0-9-]/g, '-').slice(0, 100) || 'presentation'}-completion-${options.canvas}`
 
     if (format === 'mp4') {
       const output = join(scratch, `${stem}.mp4`)
@@ -151,4 +154,10 @@ export async function renderSocialExport(
     rmSync(scratch, { recursive: true, force: true })
     rendering = false
   }
+}
+
+export async function presentationCompositionHtml(input: JobExport, options: CompletionOptions): Promise<string> {
+  const html = await completionComposition(input, options)
+  // Inline the local runtime so blob previews have no relative asset dependency.
+  return html.replace('<script src="./assets/gsap.min.js"></script>', () => `<script>${readFileSync(gsapSource, 'utf8')}</script>`)
 }

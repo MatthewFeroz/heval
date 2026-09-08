@@ -1,6 +1,7 @@
+import { parseMotionInput } from '../src/project/motion-input'
 import { cancelRun, gradeRun, isHarness, runs, startRun, subscribers } from './runner'
 import { createRemoteJWKSet, jwtVerify } from 'jose'
-import { compositionHtml, renderSocialExport, socialCompositionAsset, SOCIAL_FORMATS, SocialExportError, type SocialFormat } from './social-export'
+import { presentationCompositionHtml, compositionHtml, renderSocialExport, socialCompositionAsset, SOCIAL_FORMATS, SocialExportError, type SocialFormat } from './social-export'
 import { completionOptions } from '../harbor/social/completion'
 
 type SocketData = { runId: string }
@@ -61,15 +62,28 @@ const server = Bun.serve<SocketData>({
         return new Response((error as Error).message, { status: error instanceof SocialExportError ? error.status : 500 })
       }
     }
+    if (url.pathname === '/api/social/preview' && req.method === 'POST') {
+      if (!exportsEnabled) return Response.json({ error: 'Social exports are disabled on this server' }, { status: 403 })
+      try {
+        const body = await req.json() as { input?: unknown; options?: Record<string, unknown> }
+        const input = parseMotionInput(body.input)
+        const html = await presentationCompositionHtml(input, completionOptions(body.options))
+        return new Response(html, { headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' } })
+      } catch (error) {
+        return Response.json({ error: (error as Error).message }, { status: 400 })
+      }
+    }
     if (url.pathname === '/api/social/export' && req.method === 'POST') {
       if (!exportsEnabled) return Response.json({ error: 'Social exports are disabled on this server' }, { status: 403 })
-      const body = await req.json().catch(() => ({})) as { job?: unknown; format?: unknown; options?: Record<string, unknown> }
-      if (typeof body.job !== 'string' || !SOCIAL_FORMATS.includes(body.format as SocialFormat)) {
-        return Response.json({ error: 'Expected a catalog job and format mp4, png, or jpeg' }, { status: 400 })
+      const body = await req.json().catch(() => ({})) as { input?: unknown; job?: unknown; format?: unknown; options?: Record<string, unknown> }
+      if ((typeof body.job !== 'string' && !body.input) || !SOCIAL_FORMATS.includes(body.format as SocialFormat)) {
+        return Response.json({ error: 'Expected presentation data or a catalog job and format mp4, png, or jpeg' }, { status: 400 })
       }
       try {
-        const output = await renderSocialExport(body.job, body.format as SocialFormat, completionOptions(body.options))
-        return new Response(output.bytes, {
+        let input
+        try { input = body.input === undefined ? undefined : parseMotionInput(body.input) } catch (error) { return Response.json({ error: (error as Error).message }, { status: 400 }) }
+        const output = await renderSocialExport(input?.job ?? body.job as string, body.format as SocialFormat, completionOptions(body.options), input)
+        return new Response(new Uint8Array(output.bytes), {
           headers: {
             'Content-Type': output.type,
             'Content-Disposition': `attachment; filename="${output.filename}"`,

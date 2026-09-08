@@ -93,3 +93,28 @@ describe('project and bundle files', () => {
     expect(() => parseBundle({ artifactType: 'heval-bundle', schemaVersion: 2 })).toThrow('Expected a .heval-bundle.json')
   })
 })
+
+test('presentation snapshots and custom specs survive bundle round trips', async () => {
+  const artifact = await adaptJobExportV1(legacy)
+  const source = await sourceFromArtifact(artifact, 'source.json')
+  const project = newProject(source, artifact)
+  project.analysisViews[0].customSpec = '{"mark":"point","data":{"values":[]}}'
+  project.analysisViews[0].filters = [{ field: 'agent', values: ['codex'] }]
+  const presentation = newPresentation(project, project.analysisViews[0])
+  project.presentations.push(presentation)
+  project.analysisViews[0].chart.measure = 'costUsd'
+  project.analysisViews[0].filters[0].values.push('pi')
+  project.analysisViews[0].customSpec = null
+  const restored = parseBundle(JSON.parse(JSON.stringify(await makeBundle(project, [artifact]))))
+  expect(restored.project.presentations[0].analysisSnapshot?.chart.measure).toBe('passed')
+  expect(restored.project.presentations[0].analysisSnapshot?.filters[0].values).toEqual(['codex'])
+  expect(restored.project.presentations[0].customSpec).toContain('point')
+  expect(await verifyContentHash(restored)).toBe(true)
+})
+
+test('rejects malformed persisted custom specs', async () => {
+  const artifact = await adaptJobExportV1(legacy)
+  const project = newProject(await sourceFromArtifact(artifact, 'source.json'), artifact)
+  project.analysisViews[0].customSpec = '['
+  expect(() => parseProject(project)).toThrow('valid JSON')
+})

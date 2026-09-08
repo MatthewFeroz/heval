@@ -57,7 +57,8 @@ async function inlineFonts(theme: MotionTheme): Promise<string> {
     const urls = [...new Set([...css.matchAll(/url\((https:[^)]+\.woff2)\)/g)].map((match) => match[1]))]
     const data = new Map<string, string>()
     await Promise.all(urls.map(async (url) => {
-      const bytes = Buffer.from(await fetch(url).then((response) => response.arrayBuffer()))
+      const response = await fetch(url)
+      const bytes = Buffer.from(new Uint8Array(await response.arrayBuffer()))
       data.set(url, `data:font/woff2;base64,${bytes.toString('base64')}`)
     }))
     const inlined = css.replace(/url\((https:[^)]+\.woff2)\)/g, (_match, url: string) => `url(${data.get(url) ?? url})`)

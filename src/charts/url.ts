@@ -20,10 +20,10 @@ const MODES: ThemeMode[] = ['light', 'dark']
 const pick = <T extends string>(allowed: readonly T[], v: string | null): T | undefined =>
   v !== null && (allowed as readonly string[]).includes(v) ? (v as T) : undefined
 
-const dim = (v: string | null): Dimension | undefined => pick(DIMENSIONS, v)
+const dim = (v: string | null): Dimension | undefined => v?.startsWith('custom:') ? v : pick(DIMENSIONS, v)
 const dimOrNone = (v: string | null): Dimension | 'none' | undefined =>
   v === 'none' ? 'none' : dim(v)
-const measure = (v: string | null): Measure | undefined => pick(MEASURES, v)
+const measure = (v: string | null): Measure | undefined => v?.startsWith('custom:') ? v : pick(MEASURES, v)
 const bool = (v: string | null): boolean | undefined =>
   v === null ? undefined : v === '1' || v === 'true'
 

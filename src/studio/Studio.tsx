@@ -10,7 +10,7 @@
  * expose choices the recipes can honor (and the recipes refuse a fifth
  * categorical color rather than inventing a hue). The Spec tab is the escape
  * hatch - edit the compiled JSON directly and it renders, but that edit does not
- * round-trip back into the controls, so it is for probing, not for authoring.
+ * round-trip back into the controls, and is stored with the analysis or presentation in project files.
  *
  * Around the chart the page is a trace viewer for the job: stat tiles over the
  * loaded trials, filter chips that narrow every view at once, and a trial list
@@ -18,7 +18,7 @@
  * that produced it without leaving the page.
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type SetStateAction } from 'react'
 import {
   Activity,
   AlertTriangle,
@@ -54,7 +54,9 @@ import {
   Table2,
   X,
 } from 'lucide-react'
-import embed, { type Result as EmbedResult } from 'vega-embed'
+import { useChartPreview } from './useChartPreview'
+import { useChartDocument } from './useChartDocument'
+import { saveDocument, viewDocument } from '../project/editor'
 import { MotionPreview } from './MotionPreview'
 import {
   buildChart,
@@ -69,9 +71,7 @@ import {
 } from '../charts/recipes'
 import { paramsFromState, readUrl } from '../charts/url'
 import {
-  DIMENSIONS,
   DIMENSION_LABEL,
-  MEASURES,
   MEASURE_LABEL,
   type Dimension,
   type JobExport,
@@ -80,7 +80,7 @@ import {
   type Measure,
   type TrialRow,
 } from '../charts/trial'
-import { compatibleSources, presentationChart, projectRows } from '../project/accessors'
+import { compatibleSources, presentationChart, projectRows, projectFields, presentationAnalysis, snapshotPresentations } from '../project/accessors'
 import {
   adaptJobExportV1,
   makeBundle,
@@ -131,7 +131,7 @@ type Tab = 'chart' | 'motion' | 'table' | 'spec' | 'rows'
 type StudioMode = 'analysis' | 'presentation'
 
 /** The three dimensions a person actually slices a job by. */
-type FilterKey = 'agent' | 'modelShort' | 'task'
+type FilterKey = string
 type Filters = Record<FilterKey, string[]>
 const FILTER_KEYS: FilterKey[] = ['agent', 'modelShort', 'task']
 const FILTER_PARAM: Record<FilterKey, string> = { agent: 'agent', modelShort: 'model', task: 'task' }
@@ -155,6 +155,12 @@ function readFilters(search: string): Filters {
     const v = params.get(FILTER_PARAM[k])
     out[k] = v ? v.split(',').filter(Boolean) : []
   }
+  try {
+    const custom: unknown = JSON.parse(params.get('filters') ?? '{}')
+    if (custom && typeof custom === 'object' && !Array.isArray(custom)) {
+      for (const [key, values] of Object.entries(custom)) if (Array.isArray(values) && values.every((value) => typeof value === 'string')) out[key] = values
+    }
+  } catch { /* Ignore malformed optional URL filters. */ }
   return out
 }
 
@@ -186,36 +192,46 @@ function tokenSplit(r: TrialRow): { fresh: number; cache: number; out: number; t
 
 export function Studio() {
   const initial = useMemo(() => readUrl(window.location.search), [])
-  const [state, setState] = useState<ChartState>(initial.state)
+  const editor = useChartDocument({ chart: initial.state, filters: Object.entries(readFilters(window.location.search)).filter(([, values]) => values.length).map(([field, values]) => ({ field, values })), sourceIds: [], customSpec: null })
+  const { setState, setSourceIds, setOverride: setAnalysisOverride, setDocumentFilters } = editor
+  const { chart: state, sourceIds, customSpec: analysisOverride } = editor.document
+  const filters = useMemo(() => {
+    const result: Filters = { ...NO_FILTERS }
+    for (const filter of editor.document.filters) result[filter.field] = filter.values
+    return result
+  }, [editor.document.filters])
+  const setFilters = (action: SetStateAction<Filters>) => {
+    const next = typeof action === 'function' ? action(filters) : action
+    setDocumentFilters(Object.entries(next).filter(([, values]) => values.length).map(([field, values]) => ({ field, values })))
+  }
   const [mode, setMode] = useState<StudioMode>(() => new URLSearchParams(window.location.search).get('mode') === 'presentation' ? 'presentation' : 'analysis')
-  const [filters, setFilters] = useState<Filters>(() => readFilters(window.location.search))
   const [index, setIndex] = useState<JobIndexEntry[]>([])
   const [job, setJob] = useState<string | null>(initial.job)
   const [data, setData] = useState<JobExport | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [tab, setTab] = useState<Tab>('chart')
-  const [override, setOverride] = useState<string | null>(null)
-  const [embedError, setEmbedError] = useState<string | null>(null)
+  const [specDraft, setSpecDraft] = useState<string | null>(null)
   const [dragging, setDragging] = useState(false)
   const [selected, setSelected] = useState<string | null>(null)
   const [copied, setCopied] = useState<string | null>(null)
   const [runSort, setRunSort] = useState<RunSort>({ key: 'agent', dir: 1 })
   const [project, setProject] = useState<HevalProject | null>(null)
   const [artifacts, setArtifacts] = useState<Map<string, EvaluationArtifact>>(() => new Map())
-  const [sourceIds, setSourceIds] = useState<string[]>([])
   const [activeViewId, setActiveViewId] = useState<string | null>(null)
   const [activePresentationId, setActivePresentationId] = useState<string | null>(null)
 
-  const host = useRef<HTMLDivElement>(null)
   const filePicker = useRef<HTMLInputElement>(null)
-  const view = useRef<EmbedResult['view'] | null>(null)
+  const importedHashes = useRef(new Map<string, string>())
 
   const set = useCallback(<K extends keyof ChartState>(key: K, value: ChartState[K]) => {
     setState((prev) => ({ ...prev, [key]: value }))
-  }, [])
+  }, [setState])
 
   const addArtifact = useCallback(async (artifact: EvaluationArtifact, uri: string, replaceProject = false) => {
     if (!await verifyContentHash(artifact)) throw new Error(`Content hash mismatch for ${artifact.label}`)
+    const priorHash = importedHashes.current.get(artifact.id)
+    if (priorHash && priorHash !== artifact.contentHash) throw new Error(`Artifact ${artifact.id} already exists with different content. Give the new snapshot a distinct artifact id.`)
+    importedHashes.current.set(artifact.id, artifact.contentHash)
     const source = await sourceFromArtifact(artifact, uri)
     setArtifacts((current) => new Map(current).set(artifact.id, artifact))
     setProject((current) => {
@@ -230,7 +246,7 @@ export function Studio() {
       return { ...current, sources: [...current.sources, source], updatedAt: new Date().toISOString() }
     })
     setSourceIds([source.id])
-  }, [initial.state])
+  }, [initial.state, setSourceIds])
 
   // -- data ------------------------------------------------------------------
 
@@ -271,8 +287,10 @@ export function Studio() {
     () => project?.presentations.find((item) => item.id === activePresentationId) ?? project?.presentations[0] ?? null,
     [project, activePresentationId],
   )
+  const presentationView = project && activePresentation ? presentationAnalysis(project, activePresentation) : null
+  const override = mode === 'presentation' && activePresentation ? activePresentation.customSpec ?? null : analysisOverride
   const chartState = mode === 'presentation' && activePresentation
-    ? presentationChart(activeView?.chart, activePresentation.graphOverrides, activePresentation.narrative.title)
+    ? presentationChart(presentationView?.chart, activePresentation.graphOverrides, activePresentation.narrative.title)
     : state
 
   const updatePresentation = useCallback((change: (current: Presentation) => Presentation) => {
@@ -284,20 +302,26 @@ export function Studio() {
     } : current)
   }, [activePresentation])
 
+  const setOverride = (spec: string | null) => {
+    if (mode === 'presentation') updatePresentation((current) => ({ ...current, customSpec: spec, updatedAt: new Date().toISOString() }))
+    else setAnalysisOverride(spec)
+  }
+
   const setChart = useCallback(<K extends keyof ChartState>(key: K, value: ChartState[K]) => {
     if (mode === 'analysis') set(key, value)
     else updatePresentation((current) => ({ ...current, graphOverrides: { ...current.graphOverrides, [key]: value }, updatedAt: new Date().toISOString() }))
   }, [mode, set, updatePresentation])
 
   const switchMode = (next: StudioMode) => {
-    if (next === 'presentation' && project && activeView && !activePresentation) {
-      const created = newPresentation(project, { ...activeView, chart: state, sourceIds })
-      setProject({ ...project, analysisViews: project.analysisViews.map((viewItem) => viewItem.id === activeView.id ? { ...viewItem, chart: state, sourceIds, updatedAt: new Date().toISOString() } : viewItem), presentations: [...project.presentations, created], updatedAt: new Date().toISOString() })
+    if (next === 'presentation' && project && activeView) {
+      const saved = saveDocument(activeView, editor.document)
+      const created = activePresentation ?? newPresentation(project, saved)
+      setProject({ ...project, analysisViews: project.analysisViews.map((item) => item.id === activeView.id ? saved : item), presentations: activePresentation ? project.presentations : [...project.presentations, created], updatedAt: new Date().toISOString() })
       setActivePresentationId(created.id)
     }
     setMode(next)
     setTab('chart')
-    setOverride(null)
+    setSpecDraft(null)
   }
 
   // -- url + theme -----------------------------------------------------------
@@ -306,6 +330,8 @@ export function Studio() {
     const extra: Record<string, string> = job ? { job } : {}
     if (mode === 'presentation') extra.mode = mode
     for (const k of FILTER_KEYS) if (filters[k].length) extra[FILTER_PARAM[k]] = filters[k].join(',')
+    const extraFilters = Object.fromEntries(Object.entries(filters).filter(([key, values]) => !FILTER_KEYS.includes(key) && values.length))
+    if (Object.keys(extraFilters).length) extra.filters = JSON.stringify(extraFilters)
     const params = paramsFromState(chartState, extra)
     window.history.replaceState(null, '', `${window.location.pathname}?${params.toString()}`)
     document.documentElement.dataset.theme = chartState.theme
@@ -326,7 +352,8 @@ export function Studio() {
 
   // -- rows + chart -----------------------------------------------------------
 
-  const selectedSourceIds = mode === 'presentation' && activeView ? activeView.sourceIds : sourceIds
+  const selectedSourceIds = mode === 'presentation' && presentationView ? presentationView.sourceIds : sourceIds
+  const fields = useMemo(() => project ? projectFields(project, artifacts, selectedSourceIds) : [], [project, artifacts, selectedSourceIds])
   const compatibility = useMemo(() => {
     if (!project) return { sourceIds: [], incompatible: [] }
     const y = compatibleSources(project, artifacts, selectedSourceIds, chartState.measure)
@@ -335,15 +362,23 @@ export function Studio() {
     return { sourceIds: x.sourceIds, incompatible: [...new Set([...y.incompatible, ...x.incompatible])] }
   }, [project, artifacts, selectedSourceIds, chartState.measure, chartState.xMeasure, chartState.recipe])
   const allRows = useMemo(() => project ? projectRows(project, artifacts, compatibility.sourceIds) : [], [project, artifacts, compatibility.sourceIds])
+  const visibleFilters = useMemo(() => {
+    if (mode === 'analysis') return filters
+    const saved: Filters = { ...NO_FILTERS }
+    for (const filter of presentationView?.filters ?? []) {
+      saved[filter.field] = filter.values
+    }
+    return saved
+  }, [mode, filters, presentationView])
   const rows = useMemo(
-    () => allRows.filter((r) => FILTER_KEYS.every((k) => !filters[k].length || filters[k].includes(String(r[k])))),
-    [allRows, filters],
+    () => allRows.filter((r) => Object.entries(visibleFilters).every(([key, values]) => !values.length || values.includes(String(r[key])))),
+    [allRows, visibleFilters],
   )
-  const filtering = FILTER_KEYS.some((k) => filters[k].length > 0)
+  const filtering = Object.values(visibleFilters).some((values) => values.length > 0)
 
   const chart = useMemo(() => {
     if (!project || !rows.length) return null
-    const output = buildChart(rows, chartState)
+    const output = buildChart(rows, chartState, fields)
     if (mode === 'presentation' && activePresentation) {
       output.spec.usermeta = {
         ...(output.spec.usermeta as Record<string, unknown> | undefined),
@@ -356,11 +391,11 @@ export function Studio() {
       }
     }
     return output
-  }, [project, rows, chartState, mode, activePresentation])
+  }, [project, rows, chartState, mode, activePresentation, fields])
 
   // The generated spec is the source of truth for the Spec tab until the user
   // edits it; after that their text wins so keystrokes are not overwritten.
-  const specText = override ?? (chart ? JSON.stringify(chart.spec, null, 2) : '')
+  const specText = specDraft ?? override ?? (chart ? JSON.stringify(chart.spec, null, 2) : '')
 
   // Parsing the override is a derivation, not a side effect - doing it in an
   // effect would mean a render pass just to report a syntax error.
@@ -373,18 +408,7 @@ export function Studio() {
     }
   }, [override, chart])
 
-  useEffect(() => {
-    if (!rendered.spec || !host.current) return
-    let disposed = false
-    embed(host.current, rendered.spec as never, { actions: false, renderer: 'svg' })
-      .then((result) => {
-        if (disposed) return result.finalize()
-        view.current = result.view
-        setEmbedError(null)
-      })
-      .catch((e: Error) => setEmbedError(e.message))
-    return () => { disposed = true }
-  }, [rendered])
+  const { host, view, error: embedError, setError: setEmbedError } = useChartPreview(rendered.spec)
 
   const exportSvg = async () => {
     if (!view.current) return
@@ -406,10 +430,14 @@ export function Studio() {
     const loaded = new Map<string, EvaluationArtifact>()
     for (const artifact of embedded) {
       if (!await verifyContentHash(artifact)) throw new Error(`Content hash mismatch for ${artifact.label}`)
+      if (loaded.has(artifact.id) && loaded.get(artifact.id)!.contentHash !== artifact.contentHash) throw new Error(`Conflicting snapshots for ${artifact.id}`)
       loaded.set(artifact.id, artifact)
     }
     for (const source of next.sources) {
-      if (loaded.has(source.artifactId)) continue
+      if (loaded.has(source.artifactId)) {
+        if (loaded.get(source.artifactId)!.contentHash !== source.contentHash) throw new Error(`Pinned content hash does not match ${source.label}`)
+        continue
+      }
       const response = await fetch(source.uri)
       if (!response.ok) throw new Error(`Could not load ${source.uri} (${response.status})`)
       const value = await response.json() as unknown
@@ -419,13 +447,19 @@ export function Studio() {
       if (artifact.contentHash !== source.contentHash || !await verifyContentHash(artifact)) throw new Error(`Pinned content hash does not match ${source.label}`)
       loaded.set(artifact.id, artifact)
     }
+    for (const presentation of next.presentations) for (const pin of presentation.snapshotPins) {
+      const source = next.sources.find((item) => item.id === pin.sourceId)
+      if (!source || source.artifactId !== pin.artifactId || source.runId !== pin.runId || source.contentHash !== pin.contentHash) throw new Error(`Presentation snapshot does not match source ${pin.sourceId}`)
+    }
     const firstView = next.analysisViews[0]
-    setProject(next)
+    setProject(snapshotPresentations(next))
     setArtifacts(loaded)
+    importedHashes.current = new Map([...loaded].map(([id, artifact]) => [id, artifact.contentHash]))
     setActiveViewId(firstView?.id ?? null)
     setActivePresentationId(next.presentations[0]?.id ?? null)
-    setSourceIds(firstView?.sourceIds ?? next.sources.map((source) => source.id))
-    if (firstView) setState(firstView.chart)
+    if (firstView) editor.load(viewDocument(firstView))
+    setSpecDraft(null)
+    setMode('analysis')
     setJob(null)
     setData(null)
     setLoadError(null)
@@ -459,39 +493,42 @@ export function Studio() {
     if (!project) return
     const now = new Date().toISOString()
     if (!activeView || asNew) {
-      const created = { id: crypto.randomUUID(), label: `Analysis ${project.analysisViews.length + 1}`, sourceIds, chart: state, filters: FILTER_KEYS.filter((key) => filters[key].length).map((key) => ({ field: key, values: filters[key] })), createdAt: now, updatedAt: now }
+      const created = { id: crypto.randomUUID(), label: `Analysis ${project.analysisViews.length + 1}`, ...editor.document, createdAt: now, updatedAt: now }
       setProject({ ...project, analysisViews: [...project.analysisViews, created], updatedAt: now })
       setActiveViewId(created.id)
       return
     }
-    setProject({ ...project, analysisViews: project.analysisViews.map((item) => item.id === activeView.id ? { ...item, sourceIds, chart: state, filters: FILTER_KEYS.filter((key) => filters[key].length).map((key) => ({ field: key, values: filters[key] })), updatedAt: now } : item), updatedAt: now })
+    setProject({ ...project, analysisViews: project.analysisViews.map((item) => item.id === activeView.id ? saveDocument(item, editor.document) : item), updatedAt: now })
   }
 
   const selectView = (id: string) => {
     const selectedView = project?.analysisViews.find((item) => item.id === id)
     if (!selectedView) return
+    if (project && activeView) setProject({ ...project, analysisViews: project.analysisViews.map((item) => item.id === activeView.id ? saveDocument(item, editor.document) : item) })
     setActiveViewId(id)
-    setSourceIds(selectedView.sourceIds)
-    setState(selectedView.chart)
-    const next: Filters = { ...NO_FILTERS }
-    for (const filter of selectedView.filters) if (FILTER_KEYS.includes(filter.field as FilterKey)) next[filter.field as FilterKey] = filter.values
-    setFilters(next)
-    setOverride(null)
+    editor.load(viewDocument(selectedView))
+    setSpecDraft(null)
   }
+
+  const projectWithDraft = () => project && mode === 'analysis' && activeView ? {
+    ...project,
+    updatedAt: new Date().toISOString(),
+    analysisViews: project.analysisViews.map((item) => item.id === activeView.id ? saveDocument(item, editor.document) : item),
+  } : project
 
   const saveProjectFile = () => {
     if (!project) return
-    download(`${project.label}.heval-project.json`, new Blob([JSON.stringify(project, null, 2)], { type: 'application/json' }))
+    download(`${project.label}.heval-project.json`, new Blob([JSON.stringify(projectWithDraft(), null, 2)], { type: 'application/json' }))
   }
 
   const saveBundleFile = async () => {
     if (!project) return
-    const bundle = await makeBundle(project, project.sources.map((source) => artifacts.get(source.artifactId)).filter((artifact): artifact is EvaluationArtifact => !!artifact))
+    const bundle = await makeBundle(projectWithDraft()!, project.sources.map((source) => artifacts.get(source.artifactId)).filter((artifact): artifact is EvaluationArtifact => !!artifact))
     download(`${project.label}.heval-bundle.json`, new Blob([JSON.stringify(bundle, null, 2)], { type: 'application/json' }))
   }
 
   const toggleFilter = (key: FilterKey, value: string) =>
-    setFilters((f) => ({ ...f, [key]: f[key].includes(value) ? f[key].filter((v) => v !== value) : [...f[key], value] }))
+    setFilters((f) => ({ ...f, [key]: (f[key] ?? []).includes(value) ? f[key].filter((v) => v !== value) : [...(f[key] ?? []), value] }))
 
   const uses = USES[chartState.recipe]
   const entry = index.find((i) => i.job === job)
@@ -510,7 +547,8 @@ export function Studio() {
         }}
       >
         {allowNone && <option value="none">None</option>}
-        {DIMENSIONS.map((d) => <option key={d} value={d}>{DIMENSION_LABEL[d]}</option>)}
+        {!fields.some((field) => field.key === chartState[key]) && chartState[key] !== 'none' && <option value={chartState[key]}>{chartState[key]} (unavailable)</option>}
+        {fields.filter((field) => field.kind === 'dimension').map((field) => <option key={field.key} value={field.key}>{field.label}</option>)}
       </select>
     </div>
   )
@@ -519,7 +557,8 @@ export function Studio() {
     <div className="field" key={key}>
       <label htmlFor={`f-${key}`}>{label}</label>
       <select id={`f-${key}`} value={chartState[key]} onChange={(e) => setChart(key, e.target.value as Measure)}>
-        {MEASURES.map((m) => <option key={m} value={m}>{MEASURE_LABEL[m]}</option>)}
+        {!fields.some((field) => field.key === chartState[key]) && <option value={chartState[key]}>{chartState[key]} (unavailable)</option>}
+        {fields.filter((field) => field.kind === 'metric').map((field) => <option key={field.key} value={field.key}>{field.label}</option>)}
       </select>
     </div>
   )
@@ -573,7 +612,7 @@ export function Studio() {
           <span className="divider" />
           <button type="button" className="btn" onClick={() => void exportSvg()} disabled={!chart}><Download size={14} />SVG</button>
           <button type="button" className="btn" onClick={() => void exportPng()} disabled={!chart}><ImageIcon size={14} />PNG @2x</button>
-          <button type="button" className="btn primary" onClick={() => copy('link', window.location.href)} disabled={!chart}>
+          <button type="button" className="btn primary" onClick={() => copy('link', window.location.href)} disabled={!chart || override !== null}>
             {copied === 'link' ? <Check size={14} /> : <Link2 size={14} />}{copied === 'link' ? 'Copied' : 'Copy link'}
           </button>
         </div>
@@ -611,6 +650,7 @@ export function Studio() {
                   </label>
                 ))}
               </div>
+              <div className="row"><button type="button" className="btn sm" disabled={!editor.canUndo} onClick={editor.undo}>Undo</button><button type="button" className="btn sm" disabled={!editor.canRedo} onClick={editor.redo}>Redo</button><small>{activeView && JSON.stringify(viewDocument(activeView)) !== JSON.stringify(editor.document) ? 'Unsaved changes' : 'Saved'}</small></div>
               <div className="row">
                 <button type="button" className="btn sm" onClick={() => saveAnalysisView(false)}><Save size={12} />Save view</button>
                 <button type="button" className="btn sm ghost" onClick={() => saveAnalysisView(true)}>Save as new</button>
@@ -621,6 +661,7 @@ export function Studio() {
           {mode === 'presentation' && activePresentation && (
             <div className="group project-config">
               <div className="group-head"><span className="eyebrow"><Film size={11} />Presentation</span></div>
+              <div className="field"><label htmlFor="f-revision">Revision</label><select id="f-revision" value={activePresentation.id} onChange={(event) => { setActivePresentationId(event.target.value); setSpecDraft(null) }}>{project?.presentations.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select></div>
               <div className="field">
                 <label htmlFor="f-presentation-name">Name</label>
                 <input id="f-presentation-name" type="text" value={activePresentation.label} onChange={(event) => updatePresentation((current) => ({ ...current, label: event.target.value, updatedAt: new Date().toISOString() }))} />
@@ -631,8 +672,7 @@ export function Studio() {
                   const nextView = project?.analysisViews.find((item) => item.id === event.target.value)
                   if (!nextView || !project) return
                   const refreshed = newPresentation(project, nextView)
-                  updatePresentation((current) => ({ ...current, analysisViewId: nextView.id, snapshotPins: refreshed.snapshotPins, updatedAt: new Date().toISOString() }))
-                  setActiveViewId(nextView.id)
+                  updatePresentation((current) => ({ ...current, analysisViewId: nextView.id, snapshotPins: refreshed.snapshotPins, analysisSnapshot: refreshed.analysisSnapshot, customSpec: refreshed.customSpec, updatedAt: new Date().toISOString() }))
                 }}>
                   {project?.analysisViews.map((viewItem) => <option key={viewItem.id} value={viewItem.id}>{viewItem.label}</option>)}
                 </select>
@@ -676,6 +716,7 @@ export function Studio() {
             </div>
           )}
 
+          <fieldset disabled={override !== null} style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>
           <div className="group">
             <div className="group-head">
               <span className="eyebrow"><SlidersHorizontal size={11} />Form</span>
@@ -686,17 +727,17 @@ export function Studio() {
                 id="f-recipe"
                 value={chartState.recipe}
                 onChange={(e) => {
-                  // Switching form resets only the fields that form reads, so a
-                  // recipe never inherits a nonsensical encoding from the last one.
-                  const recipe = e.target.value as Recipe
-                  if (mode === 'analysis') setState((prev) => ({ ...prev, recipe, ...RECIPE_DEFAULTS[recipe] }))
-                  else updatePresentation((current) => ({ ...current, graphOverrides: { ...current.graphOverrides, recipe, ...RECIPE_DEFAULTS[recipe] }, updatedAt: new Date().toISOString() }))
-                  setOverride(null)
+                  setChart('recipe', e.target.value as Recipe)
                 }}
               >
                 {RECIPES.map((r) => <option key={r} value={r}>{RECIPE_LABEL[r]}</option>)}
               </select>
             </div>
+            <button type="button" className="btn sm ghost" onClick={() => {
+              const defaults = RECIPE_DEFAULTS[chartState.recipe]
+              if (mode === 'analysis') setState((current) => ({ ...current, ...defaults }))
+              else updatePresentation((current) => ({ ...current, graphOverrides: { ...current.graphOverrides, ...defaults } }))
+            }}>Use recipe defaults</button>
             {uses.has('x') && dimField('x', chartState.recipe === 'matrix' ? 'Columns' : 'Group by', false)}
             {uses.has('row') && dimField('row', 'Rows', false)}
             {uses.has('color') && dimField('color', 'Color', true)}
@@ -791,6 +832,7 @@ export function Studio() {
               </button>
             </div>
           </div>
+          </fieldset>
         </aside>
 
         <main className="main">
@@ -814,6 +856,7 @@ export function Studio() {
           {project && mode === 'analysis' && (
             <FilterBar
               rows={allRows}
+              dimensions={fields.filter((field) => field.kind === 'dimension')}
               filters={filters}
               onToggle={toggleFilter}
               onClear={() => setFilters(NO_FILTERS)}
@@ -830,6 +873,8 @@ export function Studio() {
             </div>
           ) : null}
 
+          {override !== null && <div className="notes"><div className="warn"><Braces size={14} /><span>Preview uses a custom spec. Return to controls to edit the recipe. The table describes the recipe. Custom specs are saved in project and bundle files.</span><button type="button" className="btn sm" onClick={() => { setOverride(null); setSpecDraft(null) }}>Return to controls</button></div></div>}
+
           <div className="tabbar">
             <div className="tabs" role="tablist">
               {((mode === 'analysis' ? [
@@ -840,6 +885,7 @@ export function Studio() {
               ] : [
                 ['chart', 'Poster', <ImageIcon size={13} key="i" />, null],
                 ['motion', 'Motion', <Film size={13} key="i" />, null],
+                ['spec', 'Vega-Lite spec', <Braces size={13} key="i" />, null],
               ]) as [Tab, string, ReactNode, number | null][]).map(([t, label, icon, count]) => (
                 <button key={t} type="button" role="tab" className="tab" aria-selected={tab === t} onClick={() => setTab(t)}>
                   {icon}{label}{count !== null && <small>{count}</small>}
@@ -890,12 +936,13 @@ export function Studio() {
           </div>
 
           {tab === 'motion' && <MotionPreview
-            job={job}
-            catalogJob={Boolean(job && index.some((item) => item.job === job))}
-            // The export's own rows, not the filtered view: the composition is
-            // built server-side from the catalog file, so the editor has to
-            // describe that frame rather than this screen's selection.
-            rows={data?.rows ?? []}
+            key={activePresentation?.id}
+            job={project?.label ?? job}
+            rows={rows}
+            unavailableReason={project && compatibility.sourceIds.some((id) => {
+              const sourceFields = projectFields(project, artifacts, [id])
+              return !sourceFields.some((field) => field.key === 'passed') || !sourceFields.some((field) => field.key === 'modelShort')
+            }) ? 'The completion animation requires pass results and model names in every selected source.' : undefined}
             options={activePresentation?.motion}
             onOptionsChange={(motion) => updatePresentation((current) => ({ ...current, motion, theme: motion.theme, canvas: motion.canvas, narrative: { title: motion.title, kicker: motion.kicker, cue: motion.cue, note: motion.note, source: motion.source }, updatedAt: new Date().toISOString() }))}
           />}
@@ -907,7 +954,7 @@ export function Studio() {
               </div>
               <table>
                 <thead>
-                  <tr>{chart.columns.map((c) => <th key={c} className={NUMERIC.has(c) ? 'num' : undefined}>{columnLabel(c, chartState.measure, chartState.xMeasure)}</th>)}</tr>
+                  <tr>{chart.columns.map((c) => <th key={c} className={NUMERIC.has(c) ? 'num' : undefined}>{fields.find((field) => field.key === (c === 'value' ? chartState.measure : c === 'xValue' ? chartState.xMeasure : c))?.label ?? columnLabel(c, chartState.measure, chartState.xMeasure)}</th>)}</tr>
                 </thead>
                 <tbody>
                   {chart.table.map((r, i) => (
@@ -929,15 +976,22 @@ export function Studio() {
                   <small>{override === null ? 'generated from the controls' : 'edited - the controls no longer drive this chart'}</small>
                 </div>
                 <div className="right">
-                  <button type="button" className="btn sm" onClick={() => setOverride(null)} disabled={override === null}>
+                  <button type="button" className="btn sm" onClick={() => { setOverride(null); setSpecDraft(null) }} disabled={override === null && specDraft === null}>
                     <RotateCcw size={12} />Revert to controls
                   </button>
+                  <button type="button" className="btn sm" disabled={specDraft === null} onClick={() => {
+                    try {
+                      const parsed: unknown = JSON.parse(specText)
+                      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('The spec must be a JSON object.')
+                      setOverride(specText); setSpecDraft(null); setEmbedError(null)
+                    } catch (error) { setEmbedError((error as Error).message) }
+                  }}>Apply spec</button>
                   <button type="button" className="btn sm" onClick={() => copy('spec', specText)}>
                     {copied === 'spec' ? <Check size={12} /> : <Copy size={12} />}{copied === 'spec' ? 'Copied' : 'Copy spec'}
                   </button>
                 </div>
               </div>
-              <textarea className="spec" spellCheck={false} value={specText} onChange={(e) => setOverride(e.target.value)} />
+              <textarea className="spec" spellCheck={false} value={specText} aria-label="Vega-Lite JSON" onChange={(e) => setSpecDraft(e.target.value)} />
             </div>
           )}
 
@@ -1030,13 +1084,16 @@ function StatTiles({ rows }: { rows: TrialRow[] }) {
 
 const FILTER_LABEL: Record<FilterKey, string> = { agent: 'Harness', modelShort: 'Model', task: 'Task' }
 
-function FilterBar({ rows, filters, onToggle, onClear }: {
+function FilterBar({ rows, dimensions, filters, onToggle, onClear }: {
   rows: TrialRow[]
+  dimensions: { key: string; label: string }[]
   filters: Filters
   onToggle: (key: FilterKey, value: string) => void
   onClear: () => void
 }) {
   const [open, setOpen] = useState<FilterKey | null>(null)
+  const [added, setAdded] = useState<string[]>([])
+  const keys = [...new Set([...FILTER_KEYS, ...added, ...Object.keys(filters).filter((key) => filters[key].length)])]
   const wrap = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -1053,13 +1110,14 @@ function FilterBar({ rows, filters, onToggle, onClear }: {
     for (const r of rows) m.set(String(r[key]), (m.get(String(r[key])) ?? 0) + 1)
     return [...m.entries()].sort((a, b) => a[0].localeCompare(b[0]))
   }
-  const active = FILTER_KEYS.some((k) => filters[k].length > 0)
+  const active = Object.values(filters).some((values) => values.length > 0)
 
   return (
     <div className="filters" ref={wrap}>
       <span className="eyebrow label"><ListFilter size={11} />Filter</span>
-      {FILTER_KEYS.map((key) => {
-        const on = filters[key].length > 0
+      {keys.map((key) => {
+        const values = filters[key] ?? []
+        const on = values.length > 0
         return (
           <div className="filter-menu" key={key}>
             <button
@@ -1069,8 +1127,8 @@ function FilterBar({ rows, filters, onToggle, onClear }: {
               aria-haspopup="menu"
               onClick={() => setOpen((o) => (o === key ? null : key))}
             >
-              {FILTER_LABEL[key]}
-              {on ? <small>{filters[key].length === 1 ? filters[key][0] : `${filters[key].length} selected`}</small> : <small>all</small>}
+              {FILTER_LABEL[key] ?? dimensions.find((field) => field.key === key)?.label ?? key}
+              {on ? <small>{values.length === 1 ? values[0] : `${values.length} selected`}</small> : <small>all</small>}
               <ChevronDown size={12} />
             </button>
             {open === key && (
@@ -1080,7 +1138,7 @@ function FilterBar({ rows, filters, onToggle, onClear }: {
                     key={value}
                     type="button"
                     role="menuitemcheckbox"
-                    aria-checked={filters[key].includes(value)}
+                    aria-checked={values.includes(value)}
                     onClick={() => onToggle(key, value)}
                   >
                     <span>{value}</span>
@@ -1092,6 +1150,10 @@ function FilterBar({ rows, filters, onToggle, onClear }: {
           </div>
         )
       })}
+      <select aria-label="Add filter" value="" onChange={(event) => { setAdded((current) => [...current, event.target.value]); setOpen(event.target.value) }}>
+        <option value="">Add filter…</option>
+        {dimensions.filter((field) => !keys.includes(field.key)).map((field) => <option key={field.key} value={field.key}>{field.label}</option>)}
+      </select>
       {active && (
         <button type="button" className="btn ghost sm" onClick={onClear}><X size={12} />Clear</button>
       )}

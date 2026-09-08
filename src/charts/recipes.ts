@@ -207,14 +207,17 @@ export function aggregate(
 }
 
 /** Points no other point beats on both axes (lower x, higher y). */
-function markFrontier(points: AggRow[]): void {
+function markFrontier(points: AggRow[], xDirection: 'higher' | 'lower', yDirection: 'higher' | 'lower'): void {
+  const xSign = xDirection === 'lower' ? 1 : -1
+  const ySign = yDirection === 'higher' ? 1 : -1
   const usable = points.filter((p) => typeof p.xValue === 'number' && typeof p.value === 'number')
-  usable.sort((a, b) => (a.xValue as number) - (b.xValue as number) || (b.value as number) - (a.value as number))
+  usable.sort((a, b) => xSign * ((a.xValue as number) - (b.xValue as number)) || ySign * ((b.value as number) - (a.value as number)))
   let best = -Infinity
+  let bestX: number | undefined
   for (const p of usable) {
-    const v = p.value as number
-    p.frontier = v > best
-    if (v > best) best = v
+    const v = (p.value as number) * ySign
+    p.frontier = v > best || (v === best && p.xValue === bestX)
+    if (v > best) { best = v; bestX = p.xValue as number }
   }
 }
 
@@ -373,17 +376,6 @@ function xAxisFit(domain: readonly string[], barStep: number): { step: number; l
 
 // -- spec builders ----------------------------------------------------------------
 
-const label = (m: Measure) => MEASURE_LABEL[m]
-
-function tooltipFields(dims: Dimension[], measure: Measure, fmt: (m: Measure) => string, extra: { field: string; title: string; format?: string }[] = []) {
-  return [
-    ...dims.map((d) => ({ field: d, type: 'nominal', title: DIMENSION_LABEL[d] })),
-    { field: 'value', type: 'quantitative', title: label(measure), format: fmt(measure) },
-    ...extra,
-    { field: 'n', type: 'quantitative', title: 'Trials' },
-  ]
-}
-
 export function buildChart(rows: TrialRow[], input: Partial<ChartState>, fields: ChartField[] = []): ChartOutput {
   const state: ChartState = { ...DEFAULT_STATE, ...input }
   const theme = THEMES[state.theme]
@@ -391,6 +383,15 @@ export function buildChart(rows: TrialRow[], input: Partial<ChartState>, fields:
   const fieldLabel = (key: string) => definition(key)?.label ?? DIMENSION_LABEL[key] ?? MEASURE_LABEL[key] ?? key.replace(/^custom:/, '')
   const defaultFormat = (m: Measure) => definition(m)?.format ?? MEASURE_FORMAT[m] ?? (definition(m)?.unit === 'ratio' ? '.0%' : '~g')
   const fmt = (m: Measure) => (m === state.measure && state.format ? state.format : defaultFormat(m))
+  function tooltipFields(dims: Dimension[], measure: Measure, fmt: (m: Measure) => string, extra: { field: string; title: string; format?: string }[] = []) {
+    return [
+      ...dims.map((d) => ({ field: d, type: 'nominal', title: fieldLabel(d) })),
+      { field: 'value', type: 'quantitative', title: fieldLabel(measure), format: fmt(measure) },
+      ...extra,
+      { field: 'n', type: 'quantitative', title: 'Trials' },
+    ]
+  }
+
   const warnings: string[] = []
 
   // Color is refused past the palette's validated slot count. A fifth hue is
@@ -445,7 +446,7 @@ export function buildChart(rows: TrialRow[], input: Partial<ChartState>, fields:
       const encodingX = { field: state.x, type: 'nominal', sort: xDomain, title: null, axis: { labelAngle, labelLimit: 420 } }
       const encodingXOffset = color !== 'none' ? { xOffset: { field: color, type: 'nominal', sort: series } } : {}
       const encodingColor = color !== 'none'
-        ? { color: { field: color, type: 'nominal', scale: { domain: series, range: theme.series.slice(0, series.length) }, legend: { title: DIMENSION_LABEL[color] } } }
+        ? { color: { field: color, type: 'nominal', scale: { domain: series, range: theme.series.slice(0, series.length) }, legend: { title: fieldLabel(color) } } }
         : { color: { value: theme.series[0] } }
 
       const layers: Record<string, unknown>[] = [
@@ -497,14 +498,17 @@ export function buildChart(rows: TrialRow[], input: Partial<ChartState>, fields:
     case 'scatter': {
       const dims: Dimension[] = [state.x, ...(color !== 'none' ? [color] : [])]
       table = aggregate(rows, dims, state.measure, state.aggregate, state.xMeasure)
-      markFrontier(table)
+      const xDirection = definition(state.xMeasure)?.direction ?? (state.xMeasure.startsWith('custom:') ? 'neutral' : 'lower')
+      const yDirection = definition(state.measure)?.direction ?? (state.measure.startsWith('custom:') ? 'neutral' : 'higher')
+      if (xDirection !== 'neutral' && yDirection !== 'neutral') markFrontier(table, xDirection, yDirection)
+      else warnings.push('Pareto frontier omitted because a metric has no preferred direction.')
       columns = [...dims, 'xValue', 'value', 'n', 'frontier']
       missingNote(table, state.xMeasure)
       const series = color !== 'none' ? domainOf(rows, color) : []
       const encodingColor = color !== 'none'
         ? { color: { field: color, type: 'nominal', scale: { domain: series, range: theme.series.slice(0, series.length) }, legend: { title: fieldLabel(color) } } }
         : { color: { value: theme.series[0] } }
-      const isRate = state.measure === 'passed' || state.measure === 'reward' || definition(state.measure)?.unit === 'ratio'
+      const isRate = (state.measure === 'passed' || state.measure === 'reward' || definition(state.measure)?.unit === 'ratio') && state.aggregate !== 'sum'
       const base = {
         x: { field: 'xValue', type: 'quantitative', title: `${fieldLabel(state.xMeasure)} per trial (${state.aggregate})`, axis: { format: fmt(state.xMeasure), tickCount: 6 }, scale: { zero: true, nice: true } },
         y: { field: 'value', type: 'quantitative', title: fieldLabel(state.measure), axis: { format: fmt(state.measure), tickCount: 5 }, scale: isRate ? { domain: [0, 1.05] } : { zero: true, nice: true } },
@@ -596,7 +600,7 @@ export function buildChart(rows: TrialRow[], input: Partial<ChartState>, fields:
       table = aggregate(rows, dims, state.measure, state.aggregate)
       columns = [...dims, 'value', 'n']
       missingNote(table, state.measure)
-      const isRate = state.measure === 'passed' || state.measure === 'reward' || definition(state.measure)?.unit === 'ratio'
+      const isRate = (state.measure === 'passed' || state.measure === 'reward' || definition(state.measure)?.unit === 'ratio') && state.aggregate !== 'sum'
       const values = table.map((r) => r.value).filter((v): v is number => typeof v === 'number')
       const [lo, hi] = isRate && state.aggregate !== 'sum' ? [0, 1] : [Math.min(0, ...values), Math.max(...values)]
       const mid = (lo + hi) / 2
@@ -697,6 +701,7 @@ export function buildChart(rows: TrialRow[], input: Partial<ChartState>, fields:
 
 export function formatValue(v: number | null | undefined, measure: Measure): string {
   if (v === null || v === undefined || Number.isNaN(v)) return '-'
+  if (measure.startsWith('custom:')) return Number(v.toPrecision(6)).toString()
   switch (measure) {
     case 'passed':
     case 'reward':

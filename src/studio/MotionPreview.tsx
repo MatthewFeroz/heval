@@ -1,3 +1,4 @@
+import { motionInput } from '../project/motion-input'
 import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react'
 import { AlertTriangle, Download, Film, Image as ImageIcon, RefreshCw, RotateCcw, Tags } from 'lucide-react'
 import '@hyperframes/player'
@@ -12,7 +13,6 @@ import {
   MOTION_CANVASES,
   OVERRIDE_MAPS,
   TEXT_OPTIONS,
-  completionQuery,
   motionCanvas,
   sameCompletionOptions,
   tickStepRate,
@@ -47,22 +47,22 @@ const pct = (v: number) => `${Math.round(v * 100)}%`
 
 export function MotionPreview({
   job,
-  catalogJob,
   rows,
+  unavailableReason,
   options,
   onOptionsChange,
 }: {
   job: string | null
-  catalogJob: boolean
   /**
-   * The rows of the exported job, unfiltered. The composition is built from the
-   * catalog file rather than the Studio's filtered view, so the editor has to
-   * read the same set or its placeholders would quote a different frame.
+   * The same resolved and filtered rows used by the presentation chart.
    */
   rows: readonly TrialRow[]
+  unavailableReason?: string
   options?: CompletionOptions
   onOptionsChange?: (options: CompletionOptions) => void
 }) {
+  const [preview, setPreview] = useState<{ url: string; input: ReturnType<typeof motionInput>; options: CompletionOptions; signature: string } | null>(null)
+  const input = useMemo(() => motionInput(job ?? 'Presentation', rows), [job, rows])
   const [exportsEnabled, setExportsEnabled] = useState<boolean | null>(null)
   const [rendering, setRendering] = useState<Format | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -70,8 +70,11 @@ export function MotionPreview({
   // `draft` tracks the control under the cursor; `applied` is what the player and
   // the exporters use. Every keystroke of a drag would otherwise rebuild a
   // composition with megabytes of inlined fonts.
-  const [draft, setDraft] = useState<CompletionOptions>(() => options ?? COMPLETION_DEFAULTS)
+  const [localDraft, setDraft] = useState<CompletionOptions>(() => options ?? COMPLETION_DEFAULTS)
+  const draft = options ?? localDraft
   const [applied, setApplied] = useState<CompletionOptions>(() => options ?? COMPLETION_DEFAULTS)
+
+  const signature = JSON.stringify({ input, options: applied })
 
   const change = (next: CompletionOptions) => {
     setDraft(next)
@@ -117,14 +120,14 @@ export function MotionPreview({
   const built = useMemo(() => builtInCopy(rows, job ?? '', order.length, PANELS.completion.better), [rows, job, order])
 
   const exportFile = async (format: Format) => {
-    if (!job) return
+    if (!preview || preview.signature !== signature) return
     setRendering(format)
     setError(null)
     try {
       const response = await fetch('/api/social/export', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ job, format, options: applied }),
+        body: JSON.stringify({ input: preview.input, format, options: preview.options }),
       })
       if (!response.ok) {
         const payload = await response.json().catch(() => ({ error: response.statusText })) as { error?: string }
@@ -139,17 +142,37 @@ export function MotionPreview({
     }
   }
 
-  if (!job || !catalogJob) {
-    return <div className="motion-empty"><Film size={22} /><strong>Motion preview needs a catalog job</strong><p>Choose an exported job from the picker. Browser-dropped JSON is not rendered in this prototype.</p></div>
+  useEffect(() => {
+    if (exportsEnabled !== true || !rows.length || unavailableReason) return
+    const controller = new AbortController()
+    let objectUrl: string | null = null
+    fetch('/api/social/preview', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: signature, signal: controller.signal })
+      .then(async (response) => {
+        if (!response.ok) throw new Error((await response.json() as { error: string }).error)
+        const html = await response.text()
+        if (controller.signal.aborted) return
+        objectUrl = URL.createObjectURL(new Blob([html], { type: 'text/html' }))
+        const request = JSON.parse(signature) as { input: ReturnType<typeof motionInput>; options: CompletionOptions }
+        setPreview({ url: objectUrl, ...request, signature })
+        setError(null)
+      })
+      .catch((error: Error) => { if (!controller.signal.aborted) setError(error.message) })
+    return () => { controller.abort(); if (objectUrl) URL.revokeObjectURL(objectUrl) }
+  }, [signature, exportsEnabled, rows.length, unavailableReason])
+
+  if (unavailableReason) return <div className="motion-empty"><Film size={22} /><strong>Completion data unavailable</strong><p>{unavailableReason}</p></div>
+
+  if (!rows.length) {
+    return <div className="motion-empty"><Film size={22} /><strong>No presentation rows</strong><p>Select compatible sources and save the analysis to create a presentation.</p></div>
   }
 
   if (exportsEnabled === false) {
     return <div className="motion-empty"><Film size={22} /><strong>Local exports are disabled</strong><p>Start Heval with <code>HEVAL_ENABLE_EXPORTS=1 bun run start</code> to load the player and export media.</p></div>
   }
 
-  const query = completionQuery(applied)
   const frame = motionCanvas(applied.canvas)
   const busy = rendering !== null
+  const ready = preview?.signature === signature
   const modified = !sameCompletionOptions(draft, COMPLETION_DEFAULTS)
   const overrideCount = (map: OverrideMap) => Object.values(draft[map] ?? {}).filter(Boolean).length
 
@@ -293,13 +316,13 @@ export function MotionPreview({
           <button type="button" className="btn" onClick={() => setPlayerKey((key) => key + 1)} disabled={busy}>
             <RefreshCw size={13} />Replay
           </button>
-          <button type="button" className="btn" onClick={() => void exportFile('png')} disabled={busy || exportsEnabled !== true}>
+          <button type="button" className="btn" onClick={() => void exportFile('png')} disabled={busy || exportsEnabled !== true || !ready}>
             <ImageIcon size={13} />{rendering === 'png' ? 'Rendering…' : 'PNG'}
           </button>
-          <button type="button" className="btn" onClick={() => void exportFile('jpeg')} disabled={busy || exportsEnabled !== true}>
+          <button type="button" className="btn" onClick={() => void exportFile('jpeg')} disabled={busy || exportsEnabled !== true || !ready}>
             <ImageIcon size={13} />{rendering === 'jpeg' ? 'Rendering…' : 'JPEG'}
           </button>
-          <button type="button" className="btn primary" onClick={() => void exportFile('mp4')} disabled={busy || exportsEnabled !== true}>
+          <button type="button" className="btn primary" onClick={() => void exportFile('mp4')} disabled={busy || exportsEnabled !== true || !ready}>
             <Download size={13} />{rendering === 'mp4' ? 'Rendering MP4…' : 'MP4'}
           </button>
         </div>
@@ -406,16 +429,16 @@ export function MotionPreview({
         className="motion-stage"
         style={{ '--motion-w': frame.width, '--motion-h': frame.height } as CSSProperties}
       >
-        <hyperframes-player
-          key={`${job}-${query}-${playerKey}`}
-          src={`/results/harbor/social/${job}/index.html${query ? `?${query}` : ''}`}
+        {ready && preview ? <hyperframes-player
+          key={`${preview.url}-${playerKey}`}
+          src={preview.url}
           width={String(frame.width)}
           height={String(frame.height)}
           controls=""
           muted=""
           audio-locked=""
           autoplay=""
-        />
+        /> : <p role="status">{error ? 'Preview unavailable' : 'Preparing preview…'}</p>}
       </div>
     </div>
   )

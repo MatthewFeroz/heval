@@ -116,6 +116,7 @@ export type AnalysisView = {
   label: string
   sourceIds: string[]
   chart: ChartState
+  customSpec?: string | null
   filters: AnalysisFilter[]
   createdAt: string
   updatedAt: string
@@ -127,6 +128,8 @@ export type Presentation = {
   revision: number
   parentPresentationId?: string
   analysisViewId: string
+  analysisSnapshot?: AnalysisView
+  customSpec?: string | null
   snapshotPins: { sourceId: string; artifactId: string; runId: string; contentHash: string }[]
   theme: ThemeId
   canvas: CanvasId
@@ -300,6 +303,11 @@ export function parseProject(value: unknown): HevalProject {
     string(source.contentHash, `project.sources[${index}].contentHash`)
     string(source.uri, `project.sources[${index}].uri`)
   }
+  for (const view of value.analysisViews as AnalysisView[]) validateCustomSpec(view.customSpec)
+  for (const presentation of value.presentations as Presentation[]) {
+    validateCustomSpec(presentation.customSpec)
+    if (presentation.analysisSnapshot) validateCustomSpec(presentation.analysisSnapshot.customSpec)
+  }
   return value as HevalProject
 }
 
@@ -338,6 +346,8 @@ export function newPresentation(project: HevalProject, view: AnalysisView): Pres
     label: `${view.label} presentation`,
     revision: 1,
     analysisViewId: view.id,
+    analysisSnapshot: structuredClone(view),
+    customSpec: view.customSpec ?? null,
     snapshotPins: view.sourceIds.map((id) => sourceById.get(id)).filter((source): source is ProjectSource => !!source).map((source) => ({ sourceId: source.id, artifactId: source.artifactId, runId: source.runId, contentHash: source.contentHash })),
     theme: DEFAULT_THEME,
     canvas: COMPLETION_DEFAULTS.canvas,
@@ -358,4 +368,13 @@ export async function makeBundle(project: HevalProject, artifacts: EvaluationArt
 
 export function metricSemantic(measure: Measure): CommonMetricSemantic {
   return METRIC_FIELDS.find((field) => field.id === measure)?.semantic as CommonMetricSemantic
+}
+
+/** Validate persisted JSON without requiring a browser or mutating the document. */
+export function validateCustomSpec(spec: unknown): void {
+  if (spec === undefined || spec === null) return
+  if (typeof spec !== 'string') throw new HevalSchemaError('Custom spec must be JSON text')
+  let parsed: unknown
+  try { parsed = JSON.parse(spec) } catch { throw new HevalSchemaError('Custom spec must contain valid JSON') }
+  if (!isObject(parsed)) throw new HevalSchemaError('Custom spec must be a JSON object')
 }

@@ -1,3 +1,4 @@
+import { adaptJobExportV1, contentHash } from '../src/project/schema'
 import { expect, test } from '@playwright/test'
 
 const JOB = 'terminal-bench-glm53-smoke'
@@ -86,4 +87,157 @@ test('downloads referenced project and self-contained bundle files', async ({ pa
   const bundleDownload = page.waitForEvent('download')
   await page.getByRole('button', { name: 'Bundle', exact: true }).click()
   expect((await bundleDownload).suggestedFilename()).toMatch(/\.heval-bundle\.json$/)
+})
+
+test('changing recipes preserves chosen fields', async ({ page }) => {
+  await page.locator('#f-measure').selectOption('agentSeconds')
+  await page.locator('#f-x').selectOption('modelShort')
+  await page.locator('#f-recipe').selectOption('strip')
+  await expect(page.locator('#f-measure')).toHaveValue('agentSeconds')
+  await expect(page.locator('#f-x')).toHaveValue('modelShort')
+  await page.locator('#f-recipe').selectOption('bar')
+  await expect(page.locator('#f-measure')).toHaveValue('agentSeconds')
+})
+
+test('project downloads include the current chart draft', async ({ page }) => {
+  await page.locator('#f-measure').selectOption('agentSeconds')
+  const pending = page.waitForEvent('download')
+  await page.getByRole('button', { name: 'Project', exact: true }).click()
+  const download = await pending
+  const stream = await download.createReadStream()
+  const chunks = []
+  for await (const chunk of stream!) chunks.push(chunk)
+  const project = JSON.parse(Buffer.concat(chunks).toString())
+  expect(project.analysisViews[0].chart.measure).toBe('agentSeconds')
+})
+
+test('spec drafts do not replace the preview until applied', async ({ page }) => {
+  await page.getByRole('tab', { name: 'Vega-Lite spec' }).click()
+  const original = await page.locator('textarea.spec').inputValue()
+  await page.locator('textarea.spec').fill('{')
+  await page.getByRole('tab', { name: 'Chart', exact: true }).click()
+  await expect(page.locator('.card svg')).toBeVisible()
+  await page.getByRole('tab', { name: 'Vega-Lite spec' }).click()
+  const spec = JSON.parse(original)
+  spec.title = 'Custom preview'
+  await page.locator('textarea.spec').fill(JSON.stringify(spec))
+  await page.getByRole('button', { name: 'Apply spec', exact: true }).click()
+  await page.getByRole('tab', { name: 'Chart', exact: true }).click()
+  await expect(page.locator('.card svg')).toContainText('Custom preview')
+  await page.getByRole('button', { name: 'Return to controls' }).click()
+  await expect(page.locator('.card svg')).not.toContainText('Custom preview')
+})
+
+test('presentation retains its saved filters when analysis filters change', async ({ page }) => {
+  await page.getByRole('button', { name: 'Harness all' }).click()
+  await page.getByRole('menuitemcheckbox').first().click()
+  await page.getByRole('heading', { name: JOB }).click()
+  await page.getByRole('tab', { name: 'Presentation', exact: true }).click()
+  await expect(page.locator('.card svg .mark-rect.role-mark path')).toHaveCount(2)
+  await page.getByRole('tab', { name: 'Analysis', exact: true }).click()
+  await page.getByRole('button', { name: 'Clear', exact: true }).click()
+  await expect(page.locator('.card svg .mark-rect.role-mark path')).toHaveCount(4)
+  await page.getByRole('tab', { name: 'Presentation', exact: true }).click()
+  await expect(page.locator('.card svg .mark-rect.role-mark path')).toHaveCount(2)
+})
+
+test('analysis edits support undo and redo', async ({ page }) => {
+  await page.locator('#f-measure').selectOption('costUsd')
+  await page.getByRole('button', { name: 'Undo', exact: true }).click()
+  await expect(page.locator('#f-measure')).toHaveValue('passed')
+  await page.getByRole('button', { name: 'Redo', exact: true }).click()
+  await expect(page.locator('#f-measure')).toHaveValue('costUsd')
+})
+
+test('custom specs reopen from bundles and stay attached to their saved view', async ({ page }) => {
+  await page.getByRole('tab', { name: 'Vega-Lite spec' }).click()
+  const spec = JSON.parse(await page.locator('textarea.spec').inputValue())
+  spec.title = 'Saved custom chart'
+  await page.locator('textarea.spec').fill(JSON.stringify(spec))
+  await page.getByRole('button', { name: 'Apply spec', exact: true }).click()
+  await expect(page.locator('#f-recipe')).toBeDisabled()
+  const pending = page.waitForEvent('download')
+  await page.getByRole('button', { name: 'Bundle', exact: true }).click()
+  const download = await pending
+  const stream = await download.createReadStream()
+  const chunks = []
+  for await (const chunk of stream!) chunks.push(chunk)
+  const buffer = Buffer.concat(chunks)
+  expect(JSON.parse(buffer.toString()).project.analysisViews[0].customSpec).toContain('Saved custom chart')
+  await page.locator('input[type=file]').setInputFiles({ name: 'saved.heval-bundle.json', mimeType: 'application/json', buffer })
+  await page.getByRole('tab', { name: 'Chart', exact: true }).click()
+  await expect(page.locator('.card svg')).toContainText('Saved custom chart')
+  await page.getByRole('button', { name: 'Return to controls' }).click()
+  await expect(page.locator('#f-recipe')).toBeEnabled()
+})
+
+test('saving analysis does not change a presentation and revisions remain selectable', async ({ page }) => {
+  await page.getByRole('tab', { name: 'Presentation', exact: true }).click()
+  await page.locator('#f-narrative-title').fill('First revision')
+  await page.getByRole('button', { name: 'New editorial revision' }).click()
+  await page.locator('#f-narrative-title').fill('Second revision')
+  await page.locator('#f-revision').selectOption({ index: 0 })
+  await expect(page.locator('#f-narrative-title')).toHaveValue('First revision')
+  await page.getByRole('tab', { name: 'Analysis', exact: true }).click()
+  await page.locator('#f-measure').selectOption('costUsd')
+  await page.getByRole('button', { name: 'Save view', exact: true }).click()
+  await page.getByRole('tab', { name: 'Presentation', exact: true }).click()
+  await expect(page.locator('#f-measure')).toHaveValue('passed')
+  await expect(page.locator('.card svg')).toContainText('First revision')
+})
+
+test('motion preview receives the filtered presentation data', async ({ page }) => {
+  await page.route('**/api/health', (route) => route.fulfill({ json: { exportsEnabled: true } }))
+  await page.route('**/api/social/preview', (route) => route.fulfill({ contentType: 'text/html', body: '<html><body>Preview</body></html>' }))
+  await page.getByRole('button', { name: 'Harness all' }).click()
+  await page.getByRole('menuitemcheckbox').first().click()
+  await page.getByRole('heading', { name: JOB }).click()
+  await page.getByRole('tab', { name: 'Presentation', exact: true }).click()
+  const request = page.waitForRequest('**/api/social/preview')
+  await page.getByRole('tab', { name: 'Motion', exact: true }).click()
+  const input = (await request).postDataJSON().input
+  expect(input.rows).toHaveLength(2)
+  expect(new Set(input.rows.map((row: { agent: string }) => row.agent)).size).toBe(1)
+  await expect(page.locator('hyperframes-player')).toHaveAttribute('src', /^blob:/)
+  await page.route('**/api/social/export', async (route) => {
+    expect(route.request().postDataJSON().input).toEqual(input)
+    await route.fulfill({ contentType: 'image/png', body: 'test-image' })
+  })
+  const exported = page.waitForRequest('**/api/social/export')
+  await page.getByRole('button', { name: 'PNG', exact: true }).click()
+  await exported
+})
+
+
+test('imported custom fields can be charted and filtered', async ({ page }) => {
+  const legacy = await (await page.request.get(`/results/harbor/${JOB}.json`)).json()
+  const artifact = await adaptJobExportV1(legacy)
+  artifact.id = 'custom-fields'
+  artifact.fields.push(
+    { id: 'quality.score', label: 'Quality score', kind: 'metric', valueType: 'number', unit: 'ratio', direction: 'higher' },
+    { id: 'region', label: 'Region', kind: 'dimension', valueType: 'string' },
+  )
+  artifact.records.forEach((record, index) => { record.values['quality.score'] = index < 2 ? 0.5 : 0.9; record.values.region = index < 2 ? 'West' : 'East' })
+  artifact.contentHash = await contentHash(artifact)
+  await page.locator('input[type=file]').setInputFiles({ name: 'custom.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(artifact)) })
+  await page.locator('#f-measure').selectOption('custom:quality%2Escore')
+  await page.locator('#f-x').selectOption('custom:region')
+  await page.locator('#f-color').selectOption('none')
+  await expect(page.locator('.card svg')).toContainText('Quality score')
+  await page.getByLabel('Add filter').selectOption('custom:region')
+  await page.getByRole('menuitemcheckbox', { name: 'West' }).click()
+  await expect(page.locator('.card svg .mark-rect.role-mark path')).toHaveCount(1)
+  await page.getByRole('tab', { name: 'Table view' }).click()
+  await expect(page.getByRole('cell', { name: '0.5', exact: true })).toBeVisible()
+})
+
+test('conflicting artifact identities cannot replace pinned data', async ({ page }) => {
+  const legacy = await (await page.request.get(`/results/harbor/${JOB}.json`)).json()
+  const artifact = await adaptJobExportV1(legacy, `/results/harbor/${JOB}.json`)
+  artifact.records[0].values.passed = 0
+  artifact.contentHash = await contentHash(artifact)
+  await page.locator('input[type=file]').setInputFiles({ name: 'conflicting.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(artifact)) })
+  await expect(page.getByText(/already exists with different content/)).toBeVisible()
+  await expect(page.getByLabel('Project sources').locator('input')).toHaveCount(1)
+  await expect(page.locator('.card svg .mark-rect.role-mark path')).toHaveCount(4)
 })

@@ -1,7 +1,6 @@
-import { DEFAULT_STATE, type ChartState } from '../charts/recipes'
-import type { Dimension, Measure, TrialRow } from '../charts/trial'
-import type { CommonDimensionSemantic, CommonMetricSemantic, EvaluationArtifact, FieldMappings, HevalProject, ProjectSource } from './schema'
-import { metricSemantic } from './schema'
+import { DEFAULT_STATE, type ChartState, type ChartField } from '../charts/recipes'
+import { DIMENSIONS, DIMENSION_LABEL, MEASURE_LABEL, type Dimension, type Measure, type TrialRow } from '../charts/trial'
+import type { CommonDimensionSemantic, CommonMetricSemantic, EvaluationArtifact, FieldMappings, HevalProject, ProjectSource, FieldDefinition, Presentation, AnalysisView } from './schema'
 
 const DIMENSION_KEY: Record<CommonDimensionSemantic, keyof TrialRow> = {
   'heval.trial': 'trial',
@@ -43,7 +42,6 @@ const text = (value: unknown, fallback: string) => typeof value === 'string' && 
 const number = (value: unknown, fallback: number | null = null) => typeof value === 'number' && Number.isFinite(value) ? value : fallback
 
 export function artifactRows(artifact: EvaluationArtifact, source: ProjectSource): TrialRow[] {
-  const map = semantics(artifact, source.mappings)
   return artifact.records.map((record): TrialRow => {
     const row: TrialRow = {
       trial: record.id,
@@ -62,10 +60,12 @@ export function artifactRows(artifact: EvaluationArtifact, source: ProjectSource
       datasetVersion: artifact.dataset.version,
       iteration: artifact.run.iteration === undefined ? null : String(artifact.run.iteration),
     }
+    for (const definition of artifact.fields) {
+      const value = record.values[definition.id]
+      const key = fieldKey(definition, source.mappings)
+      row[key] = definition.kind === 'metric' ? (typeof value === 'boolean' ? Number(value) : number(value)) : value
+    }
     for (const [field, value] of Object.entries(record.values)) {
-      const semantic = map.get(field)
-      if (semantic && semantic in DIMENSION_KEY) (row as Record<string, unknown>)[DIMENSION_KEY[semantic as CommonDimensionSemantic]] = value
-      if (semantic && semantic in METRIC_KEY) (row as Record<string, unknown>)[METRIC_KEY[semantic as CommonMetricSemantic]] = value
       if (field === 'costSource' && (value === 'reported' || value === 'derived')) row.costSource = value
       if (field === 'error') row.error = typeof value === 'string' ? value : null
     }
@@ -96,7 +96,6 @@ export function projectRows(project: HevalProject, artifacts: Map<string, Evalua
 }
 
 export function compatibleSources(project: HevalProject, artifacts: Map<string, EvaluationArtifact>, sourceIds: string[], measure: Measure): { sourceIds: string[]; incompatible: string[] } {
-  const semantic = metricSemantic(measure)
   const wanted = new Set(sourceIds)
   const sourceIdsOut: string[] = []
   const incompatible: string[] = []
@@ -104,9 +103,8 @@ export function compatibleSources(project: HevalProject, artifacts: Map<string, 
   for (const source of project.sources.filter((item) => wanted.has(item.id))) {
     const artifact = artifacts.get(source.artifactId)
     const map = artifact ? semantics(artifact, source.mappings) : new Map<string, string>()
-    const fieldId = [...map.entries()].find(([, mapped]) => mapped === semantic)?.[0]
-    const field = artifact?.fields.find((candidate) => candidate.id === fieldId)
-    const currentSignature = field ? `${semantic}|${field.valueType}|${field.unit ?? ''}` : null
+    const field = artifact?.fields.find((candidate) => candidate.kind === 'metric' && fieldKey(candidate, source.mappings) === measure)
+    const currentSignature = field ? `${map.get(field.id) ?? measure}|${field.valueType}|${field.unit ?? ''}` : null
     if (!artifact || !currentSignature || (signature !== null && currentSignature !== signature)) incompatible.push(source.label)
     else {
       signature ??= currentSignature
@@ -122,4 +120,39 @@ export function presentationChart(viewChart: ChartState | undefined, overrides: 
 
 export function dimensionsInRows(rows: TrialRow[], dimensions: readonly Dimension[]): Dimension[] {
   return dimensions.filter((dimension) => rows.some((row) => row[dimension] !== null && row[dimension] !== undefined && String(row[dimension]) !== 'unknown'))
+}
+
+/** Unknown semantics stay distinct from canonical Heval fields. */
+export function fieldKey(field: FieldDefinition, mappings?: FieldMappings): string {
+  const semantic = mappings?.dimensions?.[field.id] ?? mappings?.metrics?.[field.id] ?? field.semantic
+  const known = field.kind === 'dimension' ? DIMENSION_KEY : METRIC_KEY
+  return semantic && Object.hasOwn(known, semantic)
+    ? String(known[semantic as keyof typeof known])
+    : `custom:${encodeURIComponent(semantic ?? field.id).replaceAll('.', '%2E')}`
+}
+
+export function projectFields(project: HevalProject, artifacts: Map<string, EvaluationArtifact>, sourceIds: string[]): ChartField[] {
+  const fields = new Map<string, ChartField>()
+  for (const source of project.sources.filter((item) => sourceIds.includes(item.id))) {
+    for (const field of artifacts.get(source.artifactId)?.fields ?? []) {
+      const key = fieldKey(field, source.mappings)
+      if (!fields.has(key)) fields.set(key, { key, label: MEASURE_LABEL[key] ?? DIMENSION_LABEL[key] ?? field.label, kind: field.kind, unit: field.unit, direction: field.direction })
+    }
+  }
+  for (const key of DIMENSIONS.filter((key) => ['source', 'run', 'benchmark', 'benchmarkVersion', 'dataset', 'datasetVersion', 'iteration'].includes(key))) {
+    fields.set(key, { key, label: DIMENSION_LABEL[key], kind: 'dimension' })
+  }
+  return [...fields.values()]
+}
+
+export function presentationAnalysis(project: HevalProject, presentation: Presentation): AnalysisView | null {
+  return presentation.analysisSnapshot ?? project.analysisViews.find((item) => item.id === presentation.analysisViewId) ?? null
+}
+
+/** Pin legacy presentations on import, after checking the original bundle hash. */
+export function snapshotPresentations(project: HevalProject): HevalProject {
+  return { ...project, presentations: project.presentations.map((presentation) => {
+    const view = presentationAnalysis(project, presentation)
+    return { ...presentation, analysisSnapshot: view ? structuredClone(view) : undefined }
+  }) }
 }
