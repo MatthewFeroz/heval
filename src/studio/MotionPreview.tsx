@@ -352,7 +352,8 @@ export function MotionPreview({
           <small>frame size · plot fills what remains</small>
         </label>
         {TEXT_OPTIONS.map((key) => textControl(key))}
-        {slider('typeScale', 'Text size', pct(draft.typeScale), 'scales every label · padding stays fixed')}
+        {slider('typeScale', 'Text size', pct(draft.typeScale), 'scales labels and header spacing · outer padding stays fixed')}
+        {slider('topPad', 'Top margin', `${draft.topPad}px`, 'space above the lockup · lower it to lift the header and grow the plot')}
         {slider('duration', 'Length', `${draft.duration}s`, 'the whole timeline stretches to fit')}
         {slider('axisMax', 'Axis ceiling', pct(draft.axisMax), 'top of the scale · lower it to cut empty sky')}
         {slider('axisMin', 'Axis floor', pct(draft.axisMin), 'bottom of the scale · 0% keeps bars proportional')}

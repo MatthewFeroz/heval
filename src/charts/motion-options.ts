@@ -50,11 +50,17 @@ export type CompletionOptions = {
   /** Tick-label nudge, percent of the label's own height. 0 sits on the gridline. */
   tickOffset: number
   /**
-   * Multiplier on every type size. The composition's literals are a 0.75
-   * reduction of the drawn design, so 1.33 restores the authored size. Padding
-   * does not scale, so the plot loses height as type grows.
+   * Multiplier on type and header spacing. Outer canvas padding stays fixed;
+   * the plot fills the space left by the text.
    */
   typeScale: number
+  /**
+   * Padding above the lockup, in px. The side and bottom padding are fixed, so
+   * this is the one frame edge that moves: lower it to lift the whole header
+   * and hand the extra height to the plot. Unlike the header's internal gaps
+   * this does not scale with `typeScale` - it is a frame margin, not type.
+   */
+  topPad: number
   /** Runtime in seconds. The whole timeline stretches to fit it. */
   duration: number
   /** Empty keeps the composition's built-in title. */
@@ -107,7 +113,7 @@ export type CompletionOptions = {
 }
 
 /** The options a range input can drive. `title` is text and handled apart. */
-export type NumericOption = 'axisMax' | 'axisMin' | 'tickOffset' | 'typeScale' | 'duration'
+export type NumericOption = 'axisMax' | 'axisMin' | 'tickOffset' | 'typeScale' | 'topPad' | 'duration'
 
 export const COMPLETION_DEFAULTS: CompletionOptions = {
   axisMax: 0.8,
@@ -115,6 +121,7 @@ export const COMPLETION_DEFAULTS: CompletionOptions = {
   tickStep: 0,
   tickOffset: -28,
   typeScale: 1,
+  topPad: 67.5,
   duration: 8,
   title: '',
   kicker: '',
@@ -212,6 +219,9 @@ export const COMPLETION_CONTROLS: Record<NumericOption, { min: number; max: numb
   // 1.35 renders clean even with a full-length two-line title; the cap is here
   // because padding does not scale, so the plot keeps shrinking past it.
   typeScale: { min: 0.85, max: 1.35, step: 0.05 },
+  // Steps of 1.5 keep the 0.75 reduction the rest of the composition is drawn
+  // at, so the default lands on the grid rather than between two stops.
+  topPad: { min: 22.5, max: 90, step: 1.5 },
   duration: { min: 4, max: 12, step: 0.5 },
 }
 
@@ -266,7 +276,10 @@ function flag(value: unknown, fallback: boolean): boolean {
 export function completionOptions(raw: Record<string, unknown> | null | undefined): CompletionOptions {
   const bound = (key: NumericOption) => {
     const value = raw?.[key]
-    const n = typeof value === 'number' ? value : typeof value === 'string' ? Number(value) : NaN
+    // A blank param is an absent one, not a zero: `?topPad=` should fall back
+    // to the default rather than clamp to the bottom of the range.
+    const text = typeof value === 'string' ? value.trim() : ''
+    const n = typeof value === 'number' ? value : text ? Number(text) : NaN
     const { min, max } = COMPLETION_CONTROLS[key]
     return Math.min(max, Math.max(min, Number.isFinite(n) ? n : COMPLETION_DEFAULTS[key]))
   }
@@ -283,6 +296,7 @@ export function completionOptions(raw: Record<string, unknown> | null | undefine
     tickStep: tickStepRate(raw?.tickStep),
     tickOffset: bound('tickOffset'),
     typeScale: bound('typeScale'),
+    topPad: bound('topPad'),
     duration: bound('duration'),
     title: line('title'),
     kicker: line('kicker'),
