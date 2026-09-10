@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs'
 import { posterDocuments } from '../server/social-posters'
 import { SOCIAL_DEFAULTS, SOCIAL_PRESETS, type SocialPreset } from '../src/charts/social-presets'
 import { SOCIAL_THEMES, type SocialTheme } from '../src/charts/social-themes'
+type LayoutWindow = Window & { __hevalLayoutReady: Promise<{ errors: string[]; adjustments: string[] }> }
 const input = JSON.parse(readFileSync('results/harbor/terminal-bench-composio-mirror.json', 'utf8'))
 for (const theme of Object.keys(SOCIAL_THEMES) as SocialTheme[]) {
   test('all social layouts fit with six models: ' + theme, async ({ page }) => {
@@ -15,7 +16,7 @@ for (const theme of Object.keys(SOCIAL_THEMES) as SocialTheme[]) {
         showDirection: true,
       }).pages) {
         await page.setContent(html)
-        const result = await page.evaluate(() => (window as any).__hevalLayoutReady)
+        const result = await page.evaluate(() => (window as LayoutWindow).__hevalLayoutReady)
         expect(result.errors, preset).toEqual([])
         expect(
           await page
@@ -29,14 +30,14 @@ for (const theme of Object.keys(SOCIAL_THEMES) as SocialTheme[]) {
 }
 test('long model names fit and impossible numeric labels block export', async ({ page }) => {
   const copy = structuredClone(input)
-  copy.rows = copy.rows.map((r: any) => ({
+  copy.rows = copy.rows.map((r: { modelShort: string }) => ({
     ...r,
     modelShort: r.modelShort + '-a-very-long-model-release-name',
   }))
   await page.setContent(
     posterDocuments(copy, { ...SOCIAL_DEFAULTS, preset: 'slow-timeouts' }).pages[0],
   )
-  const result = await page.evaluate(() => (window as any).__hevalLayoutReady)
+  const result = await page.evaluate(() => (window as LayoutWindow).__hevalLayoutReady)
   expect(result.errors).toEqual([])
   expect(result.adjustments.length).toBeGreaterThan(0)
   const html = posterDocuments(input, SOCIAL_DEFAULTS).pages[0].replace(
@@ -45,7 +46,7 @@ test('long model names fit and impossible numeric labels block export', async ({
   )
   await page.setContent(html)
   expect(
-    (await page.evaluate(() => (window as any).__hevalLayoutReady)).errors.length,
+    (await page.evaluate(() => (window as LayoutWindow).__hevalLayoutReady)).errors.length,
   ).toBeGreaterThan(0)
 })
 

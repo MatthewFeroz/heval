@@ -1,3 +1,4 @@
+import { useAppAuth, authorizedFetch } from '../auth'
 import { THREAD_PRESETS } from '../charts/social-presets'
 import { SocialPreview } from './SocialPreview'
 import { NUMERIC, columnLabel, cellText } from './table-values'
@@ -135,6 +136,8 @@ function readFilters(search: string): Filters {
 }
 
 export function Studio() {
+  const auth = useAppAuth()
+  const [runIds, setRunIds] = useState(() => new URLSearchParams(window.location.search).get('runs'))
   const initial = useMemo(() => readUrl(window.location.search), [])
   const editor = useChartDocument({ chart: initial.state, filters: Object.entries(readFilters(window.location.search)).filter(([, values]) => values.length).map(([field, values]) => ({ field, values })), sourceIds: [], customSpec: null })
   const { setState, setSourceIds, setOverride: setAnalysisOverride, setDocumentFilters } = editor
@@ -199,10 +202,10 @@ export function Studio() {
       .then((r) => (r.ok ? r.json() : { jobs: [] }))
       .then((catalog: JobIndex) => {
         setIndex(catalog.jobs ?? [])
-        setJob((current) => current ?? catalog.jobs?.[0]?.job ?? null)
+        if (!runIds) setJob((current) => current ?? catalog.jobs?.[0]?.job ?? null)
       })
       .catch(() => setIndex([]))
-  }, [])
+  }, [runIds])
 
   useEffect(() => {
     if (!job) return
@@ -222,6 +225,25 @@ export function Studio() {
       .catch((e: Error) => live && setLoadError(`Could not load ${job}.json (${e.message}). Run bun run report <job-dir> first, or open an export.`))
     return () => { live = false }
   }, [job, addArtifact])
+
+  useEffect(() => {
+    if (!runIds || !auth.user) return
+    let live = true
+    const uri = `/api/runs/export?ids=${encodeURIComponent(runIds)}`
+    authorizedFetch(auth, uri)
+      .then(async response => {
+        if (!response.ok) throw new Error((await response.json().catch(() => null))?.error || 'Could not open saved attempts.')
+        return response.json() as Promise<JobExport>
+      })
+      .then(async exp => {
+        const artifact = await adaptJobExportV1(exp, uri)
+        if (!live) return
+        await addArtifact(artifact, uri, true)
+        setData(exp); setLoadError(null); setSelected(null)
+      })
+      .catch((error: Error) => { if (live) setLoadError(error.message) })
+    return () => { live = false }
+  }, [runIds, auth, addArtifact])
 
   const activeView = useMemo(
     () => project?.analysisViews.find((viewItem) => viewItem.id === activeViewId) ?? project?.analysisViews[0] ?? null,
@@ -273,7 +295,7 @@ export function Studio() {
   // -- url + theme -----------------------------------------------------------
 
   useEffect(() => {
-    const extra: Record<string, string> = job ? { job } : {}
+    const extra: Record<string, string> = runIds ? { runs: runIds } : job ? { job } : {}
     if (mode === 'presentation') extra.mode = mode
     for (const k of FILTER_KEYS) if (filters[k].length) extra[FILTER_PARAM[k]] = filters[k].join(',')
     const extraFilters = Object.fromEntries(Object.entries(filters).filter(([key, values]) => !FILTER_KEYS.includes(key) && values.length))
@@ -281,7 +303,7 @@ export function Studio() {
     const params = paramsFromState(chartState, extra)
     window.history.replaceState(null, '', `${window.location.pathname}?${params.toString()}`)
     document.documentElement.dataset.theme = chartState.theme
-  }, [chartState, job, filters, mode])
+  }, [chartState, job, filters, mode, runIds])
 
   useEffect(() => {
     if (!copied) return
@@ -385,7 +407,7 @@ export function Studio() {
         if (loaded.get(source.artifactId)!.contentHash !== source.contentHash) throw new Error(`Pinned content hash does not match ${source.label}`)
         continue
       }
-      const response = await fetch(source.uri)
+      const response = await authorizedFetch(auth, source.uri)
       if (!response.ok) throw new Error(`Could not load ${source.uri} (${response.status})`)
       const value = await response.json() as unknown
       const artifact = (value as { artifactType?: unknown }).artifactType === 'heval-evaluation'
@@ -539,10 +561,13 @@ export function Studio() {
           <span>{project ? 'project' : 'jobs'}</span>
           <ChevronRight size={14} />
           <div className="job-select">
-            <select id="f-job" aria-label="Job export" value={job ?? ''} disabled={!index.length} onChange={(e) => setJob(e.target.value)}>
+            <select id="f-job" aria-label="Job export" value={job ?? ''} disabled={!index.length} onChange={(e) => { setRunIds(null); setJob(e.target.value) }}>
               {!index.length && <option value="">{job ?? 'No exports found'}</option>}
               {index.map((i) => <option key={i.job} value={i.job}>{i.job}</option>)}
             </select>
+            {runIds && !auth.user && <span role="status">{auth.configured ? <button className="btn" onClick={auth.signIn}>Sign in to open your saved attempts</button> : 'Configure evaluation sign-in to open private results. You can also import an exported JSON file.'}</span>}
+            {auth.configured && !auth.user && !runIds && <button className="btn" onClick={auth.signIn}>Sign in for exports</button>}
+
           </div>
         </div>
 

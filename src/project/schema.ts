@@ -1,6 +1,7 @@
 import { socialSettings, type SocialSettings } from '../charts/social-presets'
 import { DEFAULT_STATE, type ChartState } from '../charts/recipes'
 import { COMPLETION_DEFAULTS, type CanvasId, type CompletionOptions } from '../charts/motion-options'
+import { SOCIAL_DEFAULTS } from '../charts/social-presets'
 import { DEFAULT_THEME, type ThemeId } from '../charts/motion-themes'
 import type { JobExport, Measure, TrialRow } from '../charts/trial'
 
@@ -343,6 +344,7 @@ export function newProject(source: ProjectSource, artifact: EvaluationArtifact):
 
 export function newPresentation(project: HevalProject, view: AnalysisView): Presentation {
   const now = new Date().toISOString()
+  const personal = import.meta.env?.VITE_HEVAL_PUBLIC_DEMO === '1' || project.sources.some(source => source.uri.startsWith('/api/runs/'))
   const sourceById = new Map(project.sources.map((source) => [source.id, source]))
   return {
     id: crypto.randomUUID(),
@@ -352,11 +354,12 @@ export function newPresentation(project: HevalProject, view: AnalysisView): Pres
     analysisSnapshot: structuredClone(view),
     customSpec: view.customSpec ?? null,
     snapshotPins: view.sourceIds.map((id) => sourceById.get(id)).filter((source): source is ProjectSource => !!source).map((source) => ({ sourceId: source.id, artifactId: source.artifactId, runId: source.runId, contentHash: source.contentHash })),
-    theme: DEFAULT_THEME,
+    theme: personal ? 'plain-light' : DEFAULT_THEME,
+    ...(personal ? { social: { ...SOCIAL_DEFAULTS, theme: 'plain-light' as const, source: 'Heval independent evaluations' } } : {}),
     canvas: COMPLETION_DEFAULTS.canvas,
     narrative: { title: '', kicker: '', cue: '', note: '', source: '' },
     graphOverrides: {},
-    motion: { ...COMPLETION_DEFAULTS },
+    motion: { ...COMPLETION_DEFAULTS, ...(personal ? { theme: 'plain-light' as const, source: 'Heval independent evaluations' } : {}) },
     renderer: { version: RENDERER_VERSION, evaluationSchemaVersion: EVALUATION_SCHEMA_VERSION, projectSchemaVersion: PROJECT_SCHEMA_VERSION },
     createdAt: now,
     updatedAt: now,

@@ -24,9 +24,11 @@ async function setup(overrides: Partial<Parameters<typeof createRunner>[0]> = {}
   let output!: (data: string) => void
   let stops = 0
   let cleaned = 0
+  let onStarted!: () => void
+  const started = new Promise<void>(resolve => { onStarted = resolve })
   const backend: WorkerBackend = {
     start(_id, _harness, callback) {
-      output = callback
+      output = callback; onStarted()
       return { exited: new Promise<number>((resolve) => { finish = resolve }), stop: async () => { stops++; finish(137) } }
     },
     grade(_id, callback) { callback('pinned tests passed'); return { exited: Promise.resolve(0), stop: async () => {} } },
@@ -34,7 +36,8 @@ async function setup(overrides: Partial<Parameters<typeof createRunner>[0]> = {}
   }
   const runner = createRunner({ backend, directory, maxConcurrent: 2, maxPerUser: 1,
     timeoutMs: 500, gradeTimeoutMs: 100, maxOutputBytes: 8192, model: 'test', ...overrides })
-  return { runner, directory, finish: (code: number) => finish(code), output: (data: string) => output(data),
+  await runner.ready
+  return { runner, directory, started, finish: (code: number) => finish(code), output: (data: string) => output(data),
     stops: () => stops, cleaned: () => cleaned }
 }
 
@@ -64,11 +67,11 @@ test('all run routes require authentication and enforce ownership before upgradi
 })
 
 test('capacity is reserved synchronously per owner and globally, then released after cleanup', async () => {
-  const { runner, finish, cleaned } = await setup({ maxConcurrent: 1 })
+  const { runner, finish, cleaned, started } = await setup({ maxConcurrent: 1 })
   const run = runner.startRun('codex', 'alice')
   expect(() => runner.startRun('codex', 'alice')).toThrow('capacity')
   expect(() => runner.startRun('codex', 'bob')).toThrow('capacity')
-  await Bun.sleep(0); finish(0); await runner.wait(run.id)
+  await started; finish(0); await runner.wait(run.id)
   expect(run.grade?.passed).toBe(true)
   expect(cleaned()).toBe(1)
   const next = runner.startRun('codex', 'bob')
@@ -84,25 +87,25 @@ test('timeouts stop the worker and clean up resources', async () => {
 })
 
 test('cancellation does not turn into success when the process exits', async () => {
-  const { runner, stops } = await setup()
+  const { runner, stops, started } = await setup()
   const run = runner.startRun('codex', 'alice')
-  await Bun.sleep(0)
+  await started
   expect(runner.cancelRun(run)).toBe(true)
   await runner.wait(run.id)
   expect(run.status).toBe('cancelled'); expect(stops()).toBe(1); expect(run.grade).toBeUndefined()
 })
 
 test('output limit stops noisy workers', async () => {
-  const { runner, output } = await setup({ maxOutputBytes: 32 })
+  const { runner, output, started } = await setup({ maxOutputBytes: 32 })
   const run = runner.startRun('codex', 'alice')
-  await Bun.sleep(0); output('x'.repeat(100)); await runner.wait(run.id)
+  await started; output('x'.repeat(100)); await runner.wait(run.id)
   expect(run.error).toBe('Output limit exceeded'); expect(run.chunks).toHaveLength(0)
 })
 
 test('recordings preserve ordered events, redact split credentials, and keep summaries small', async () => {
-  const { runner, output, finish, directory } = await setup({ secret: 'secret-key' })
+  const { runner, output, finish, directory, started } = await setup({ secret: 'secret-key' })
   const run = runner.startRun('codex', 'alice')
-  await Bun.sleep(0); output('before secr'); output('et-key after'); finish(0)
+  await started; output('before secr'); output('et-key after'); finish(0)
   await runner.wait(run.id)
   const events = await readFile(join(directory, `${run.id}.jsonl`), 'utf8')
   const data = events.trim().split('\n').map((line) => JSON.parse(line))

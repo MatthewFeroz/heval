@@ -1,3 +1,4 @@
+if (process.env.HEVAL_PUBLIC_BUILD === '1') process.exit(0)
 import { existsSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { writeCompletionComposition } from './completion'

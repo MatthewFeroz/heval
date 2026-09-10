@@ -26,7 +26,10 @@
     "thread": "bun harbor/report/build-thread.ts",
     "thread:merge": "bun run thread results/harbor/terminal-bench-composio-mirror.json harbor/report/thread-merge.json results/harbor/threads/merge-evaluations",
     "experiment": "bun harbor/experiment.ts",
-    "thread:merge:all": "bun run thread results/harbor/terminal-bench-composio-mirror.json harbor/report/thread-merge-all.json results/harbor/threads/merge-evaluations-all"
+    "thread:merge:all": "bun run thread results/harbor/terminal-bench-composio-mirror.json harbor/report/thread-merge-all.json results/harbor/threads/merge-evaluations-all",
+    "build:public": "HEVAL_PUBLIC_BUILD=1 VITE_HEVAL_PUBLIC_DEMO=1 bun run build",
+    "demo:nvidia": "bun scripts/nvidia-demo.ts",
+    "publish:result": "bun scripts/publish-result.ts"
   },
   "dependencies": {
     "@earendil-works/pi-coding-agent": "0.84.4",

@@ -1,0 +1,43 @@
+services:
+  web:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+      args:
+        VITE_WORKOS_CLIENT_ID: ${WORKOS_CLIENT_ID:?Set WORKOS_CLIENT_ID}
+        VITE_WORKOS_API_HOSTNAME: ${WORKOS_API_HOSTNAME:-api.workos.com}
+    env_file: ${HEVAL_ENV_FILE:-production.env}
+    environment:
+      HOST: 0.0.0.0
+      HEVAL_HOSTED: '1'
+      HEVAL_DATA_DIR: /data
+    volumes:
+      - app_data:/data
+      - ./ssh:/home/node/.ssh:ro
+    restart: unless-stopped
+    init: true
+    stop_grace_period: 90s
+    mem_limit: 4g
+    cpus: 2
+    healthcheck:
+      test: ['CMD', 'bun', '-e', "const r = await fetch('http://127.0.0.1:4173/api/health'); process.exit(r.ok ? 0 : 1)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+  caddy:
+    image: caddy:2.10-alpine
+    environment:
+      HEVAL_DOMAIN: ${HEVAL_DOMAIN:?Set HEVAL_DOMAIN}
+    ports: ['80:80', '443:443', '443:443/udp']
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    restart: unless-stopped
+    depends_on:
+      web:
+        condition: service_healthy
+volumes:
+  app_data:
+  caddy_data:
+  caddy_config:
