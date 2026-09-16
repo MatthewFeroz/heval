@@ -1,4 +1,6 @@
+import { useAppAuth, authorizedFetch } from '../auth'
 import { THREAD_PRESETS } from '../charts/social-presets'
+import { STATIC_SITE } from '../deployment'
 import { SocialPreview } from './SocialPreview'
 import { NUMERIC, columnLabel, cellText } from './table-values'
 import { StatTiles, FilterBar, RunList, RunDrawer, type RunSort } from './TrialPanels'
@@ -134,7 +136,10 @@ function readFilters(search: string): Filters {
   return out
 }
 
-export function Studio() {
+export function Studio({ localViewer = false }: { localViewer?: boolean }) {
+  const serverExports = !localViewer && !STATIC_SITE
+  const auth = useAppAuth()
+  const [runIds, setRunIds] = useState(() => new URLSearchParams(window.location.search).get('runs'))
   const initial = useMemo(() => readUrl(window.location.search), [])
   const editor = useChartDocument({ chart: initial.state, filters: Object.entries(readFilters(window.location.search)).filter(([, values]) => values.length).map(([field, values]) => ({ field, values })), sourceIds: [], customSpec: null })
   const { setState, setSourceIds, setOverride: setAnalysisOverride, setDocumentFilters } = editor
@@ -150,10 +155,11 @@ export function Studio() {
   }
   const [mode, setMode] = useState<StudioMode>(() => new URLSearchParams(window.location.search).get('mode') === 'presentation' ? 'presentation' : 'analysis')
   const [index, setIndex] = useState<JobIndexEntry[]>([])
+  const [catalogLoaded, setCatalogLoaded] = useState(false)
   const [job, setJob] = useState<string | null>(initial.job)
   const [data, setData] = useState<JobExport | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
-  const [tab, setTab] = useState<Tab>(mode === 'presentation' ? 'social' : 'chart')
+  const [tab, setTab] = useState<Tab>(mode === 'presentation' && serverExports ? 'social' : 'chart')
   const [specDraft, setSpecDraft] = useState<string | null>(null)
   const [dragging, setDragging] = useState(false)
   const [selected, setSelected] = useState<string | null>(null)
@@ -199,10 +205,11 @@ export function Studio() {
       .then((r) => (r.ok ? r.json() : { jobs: [] }))
       .then((catalog: JobIndex) => {
         setIndex(catalog.jobs ?? [])
-        setJob((current) => current ?? catalog.jobs?.[0]?.job ?? null)
+        if (!runIds) setJob((current) => current ?? catalog.jobs?.[0]?.job ?? null)
       })
       .catch(() => setIndex([]))
-  }, [])
+      .finally(() => setCatalogLoaded(true))
+  }, [runIds])
 
   useEffect(() => {
     if (!job) return
@@ -222,6 +229,25 @@ export function Studio() {
       .catch((e: Error) => live && setLoadError(`Could not load ${job}.json (${e.message}). Run bun run report <job-dir> first, or open an export.`))
     return () => { live = false }
   }, [job, addArtifact])
+
+  useEffect(() => {
+    if (!runIds || !auth.user) return
+    let live = true
+    const uri = `/api/runs/export?ids=${encodeURIComponent(runIds)}`
+    authorizedFetch(auth, uri)
+      .then(async response => {
+        if (!response.ok) throw new Error((await response.json().catch(() => null))?.error || 'Could not open saved attempts.')
+        return response.json() as Promise<JobExport>
+      })
+      .then(async exp => {
+        const artifact = await adaptJobExportV1(exp, uri)
+        if (!live) return
+        await addArtifact(artifact, uri, true)
+        setData(exp); setLoadError(null); setSelected(null)
+      })
+      .catch((error: Error) => { if (live) setLoadError(error.message) })
+    return () => { live = false }
+  }, [runIds, auth, addArtifact])
 
   const activeView = useMemo(
     () => project?.analysisViews.find((viewItem) => viewItem.id === activeViewId) ?? project?.analysisViews[0] ?? null,
@@ -266,14 +292,14 @@ export function Studio() {
       setActivePresentationId(created.id)
     }
     setMode(next)
-    setTab(next === 'presentation' ? 'social' : 'chart')
+    setTab(next === 'presentation' && serverExports ? 'social' : 'chart')
     setSpecDraft(null)
   }
 
   // -- url + theme -----------------------------------------------------------
 
   useEffect(() => {
-    const extra: Record<string, string> = job ? { job } : {}
+    const extra: Record<string, string> = runIds ? { runs: runIds } : job ? { job } : {}
     if (mode === 'presentation') extra.mode = mode
     for (const k of FILTER_KEYS) if (filters[k].length) extra[FILTER_PARAM[k]] = filters[k].join(',')
     const extraFilters = Object.fromEntries(Object.entries(filters).filter(([key, values]) => !FILTER_KEYS.includes(key) && values.length))
@@ -281,7 +307,7 @@ export function Studio() {
     const params = paramsFromState(chartState, extra)
     window.history.replaceState(null, '', `${window.location.pathname}?${params.toString()}`)
     document.documentElement.dataset.theme = chartState.theme
-  }, [chartState, job, filters, mode])
+  }, [chartState, job, filters, mode, runIds])
 
   useEffect(() => {
     if (!copied) return
@@ -385,7 +411,7 @@ export function Studio() {
         if (loaded.get(source.artifactId)!.contentHash !== source.contentHash) throw new Error(`Pinned content hash does not match ${source.label}`)
         continue
       }
-      const response = await fetch(source.uri)
+      const response = await authorizedFetch(auth, source.uri)
       if (!response.ok) throw new Error(`Could not load ${source.uri} (${response.status})`)
       const value = await response.json() as unknown
       const artifact = (value as { artifactType?: unknown }).artifactType === 'heval-evaluation'
@@ -531,7 +557,7 @@ export function Studio() {
         <a className="brand" href="/" aria-label="Heval home">
           <span className="brand-mark"><span>H</span></span>
           <span className="brand-name">Heval</span>
-          <span className="beta-pill">STUDIO</span>
+          <span className="beta-pill">{localViewer ? 'LOCAL RESULTS' : 'STUDIO'}</span>
         </a>
 
         <div className="crumbs">
@@ -539,10 +565,13 @@ export function Studio() {
           <span>{project ? 'project' : 'jobs'}</span>
           <ChevronRight size={14} />
           <div className="job-select">
-            <select id="f-job" aria-label="Job export" value={job ?? ''} disabled={!index.length} onChange={(e) => setJob(e.target.value)}>
+            <select id="f-job" aria-label="Job export" value={job ?? ''} disabled={!index.length} onChange={(e) => { setRunIds(null); setJob(e.target.value) }}>
               {!index.length && <option value="">{job ?? 'No exports found'}</option>}
               {index.map((i) => <option key={i.job} value={i.job}>{i.job}</option>)}
             </select>
+            {runIds && !auth.user && <span role="status">{auth.configured ? <button className="btn" onClick={auth.signIn}>Sign in to open your saved attempts</button> : 'Configure evaluation sign-in to open private results. You can also import an exported JSON file.'}</span>}
+            {serverExports && auth.configured && !auth.user && !runIds && <button className="btn" onClick={auth.signIn}>Sign in for exports</button>}
+
           </div>
         </div>
 
@@ -554,7 +583,7 @@ export function Studio() {
             style={{ display: 'none' }}
             onChange={(e) => { const f = e.target.files?.[0]; if (f) void openFile(f) }}
           />
-          <button type="button" className="btn ghost" onClick={() => filePicker.current?.click()}>
+          <button type="button" className="btn ghost" aria-label="Open export" onClick={() => filePicker.current?.click()}>
             <FolderOpen size={14} /><span className="label-text">Open export</span>
           </button>
           <button type="button" className="btn" onClick={saveProjectFile} disabled={!project}><Save size={14} />Project</button>
@@ -563,17 +592,23 @@ export function Studio() {
           <button type="button" className="btn" style={{ display: tab === 'social' ? 'none' : undefined }} onClick={() => void exportSvg()} disabled={!chart}><Download size={14} />SVG</button>
           <button type="button" className="btn" style={{ display: tab === 'social' ? 'none' : undefined }} onClick={() => void exportPng()} disabled={!chart}><ImageIcon size={14} />PNG @2x</button>
           <button type="button" className="btn primary" onClick={() => copy('link', window.location.href)} disabled={!chart || !canShareLink} title={canShareLink ? undefined : "Download a bundle to share this project and its data"}>
-            {copied === 'link' ? <Check size={14} /> : <Link2 size={14} />}{copied === 'link' ? 'Copied' : 'Copy link'}
+            {copied === 'link' ? <Check size={14} /> : <Link2 size={14} />}{copied === 'link' ? 'Copied' : localViewer ? 'Copy local link' : 'Copy link'}
           </button>
         </div>
       </header>
+
+      {localViewer && <div className="local-viewer-note" role="note">
+        <strong>Local results viewer</strong>
+        <span>Explore trials and download SVG, PNG, or a bundle. Links work while this viewer is running; use a bundle to share results.</span>
+        <span>To open another Harbor job: <code>heval open ./jobs/my-job</code>. This release does not launch evaluations or render social images and videos.</span>
+      </div>}
 
       <div className="modebar">
         <div className="mode-switch" role="tablist" aria-label="Studio mode">
           <button type="button" role="tab" aria-selected={mode === 'analysis'} onClick={() => switchMode('analysis')}>Analysis</button>
           <button type="button" role="tab" aria-selected={mode === 'presentation'} disabled={!project || !activeView} onClick={() => switchMode('presentation')}>Presentation</button>
         </div>
-        <span>{mode === 'analysis' ? 'Compare compatible metrics across sources and save the analysis.' : 'Choose a question and export. Your saved analysis stays intact.'}</span>
+        <span>{mode === 'analysis' ? 'Compare compatible metrics across sources and save the analysis.' : !serverExports ? 'Export this saved view as SVG or PNG. Your analysis stays intact.' : 'Choose a question and export. Your saved analysis stays intact.'}</span>
         {project && <strong>{project.label} · {project.sources.length} {project.sources.length === 1 ? 'source' : 'sources'}</strong>}
       </div>
 
@@ -759,7 +794,7 @@ export function Studio() {
             </div>
             {project?.sources.map((source) => <p className="hint" key={source.id}><code>{source.uri}</code></p>)}
             <div className="row">
-              {job && index.some((i) => i.job === job) && (
+              {!localViewer && job && index.some((i) => i.job === job) && (
                 <a className="btn sm" href={`${RESULTS}/${job}.html`} target="_blank" rel="noreferrer">
                   <ExternalLink size={12} />Static report
                 </a>
@@ -832,7 +867,7 @@ export function Studio() {
                 ['social', 'Social images', <ImageIcon size={13} key="i" />, null],
                 ['motion', 'Motion', <Film size={13} key="i" />, null],
                 ['spec', 'Vega-Lite spec', <Braces size={13} key="i" />, null],
-              ]) as [Tab, string, ReactNode, number | null][]).map(([t, label, icon, count]) => (
+              ]) as [Tab, string, ReactNode, number | null][]).filter(([t]) => serverExports || (t !== 'social' && t !== 'motion')).map(([t, label, icon, count]) => (
                 <button key={t} type="button" role="tab" className="tab" aria-selected={tab === t} disabled={t === 'spec' && !chart && override === null} onClick={() => setTab(t)}>
                   {icon}{label}{count !== null && <small>{count}</small>}
                 </button>
@@ -866,7 +901,9 @@ export function Studio() {
               </div>
             </div>
             <div className={`canvas${mode === 'presentation' ? ' presentation-canvas' : ''}`} data-canvas={chartState.theme} data-format={activePresentation?.canvas}>
-              {!project && !loadError ? (
+              {!project && !job && !runIds && catalogLoaded && !loadError ? (
+                <div className="placeholder"><div><strong>No published results yet</strong><p>Use Open export to explore a Harbor result or a saved workspace with data.</p></div></div>
+              ) : !project && !loadError ? (
                 <div className="placeholder"><div><strong>Loading export</strong><p>Reading {job ?? 'the job index'} from {RESULTS}.</p></div></div>
               ) : !chart ? (
                 <div className="placeholder">

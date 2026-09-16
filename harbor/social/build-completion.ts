@@ -1,8 +1,9 @@
+if (process.env.HEVAL_PUBLIC_BUILD === '1') process.exit(0)
 import { existsSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { writeCompletionComposition } from './completion'
 
-const input = process.argv[2] ?? 'results/harbor/terminal-bench-composio-mirror.json'
+const input = process.argv[2] ?? 'results/harbor/terminal-bench-comparison.json'
 if (!existsSync(input)) {
   console.error(`No such Heval job export: ${input}`)
   process.exit(2)

@@ -12,7 +12,7 @@
 set -uo pipefail
 cd "$(dirname "$0")/.."
 
-JOB="jobs/terminal-bench-composio-mirror"
+JOB="jobs/terminal-bench-comparison"
 TASKS=0; HTML=0; WATCH=0; INTERVAL=60; NOTIFY=0
 while [ $# -gt 0 ]; do
   case "$1" in

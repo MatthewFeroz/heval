@@ -1,0 +1,22 @@
+{
+  "name": "@mattferoz/heval",
+  "version": "0.1.0",
+  "description": "Check Harbor evaluation setup and explore coding-agent results locally",
+  "type": "module",
+  "bin": { "heval": "dist/cli.js" },
+  "files": ["dist", "scripts/check-package.mjs"],
+  "engines": { "node": ">=22" },
+  "license": "UNLICENSED",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MatthewFeroz/heval.git",
+    "directory": "packages/cli"
+  },
+  "homepage": "https://github.com/MatthewFeroz/heval#readme",
+  "bugs": { "url": "https://github.com/MatthewFeroz/heval/issues" },
+  "keywords": ["harbor", "evals", "coding-agents", "benchmark", "cli"],
+  "publishConfig": { "access": "public", "registry": "https://registry.npmjs.org/" },
+  "scripts": {
+    "prepack": "node scripts/check-package.mjs"
+  }
+}

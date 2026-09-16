@@ -1,8 +1,9 @@
-import type { HarnessId } from './types'
+import type { HarnessId, RunConfig } from './types'
 
+export type RunAccess = { apiKey: string; baseUrl: string; release: () => void }
 export type WorkerProcess = { exited: Promise<number>; stop: () => Promise<void> }
 export interface WorkerBackend {
-  start(id: string, harness: HarnessId, output: (data: string) => void): WorkerProcess
+  start(id: string, harness: HarnessId, output: (data: string) => void, config?: RunConfig, access?: RunAccess): WorkerProcess
   grade(id: string, output: (data: string) => void): WorkerProcess
   cleanup(id: string): Promise<void>
 }
@@ -15,7 +16,7 @@ export function containerArgs(id: string, image: string, grading: boolean): stri
     '--tmpfs', '/tmp:rw,nosuid,nodev,size=536870912,mode=1777',
     '--mount', `type=volume,source=heval-${id},target=${grading ? '/candidate,readonly' : '/workspace'}`,
     '--entrypoint=timeout',
-    ...(grading ? ['--network=none'] : ['--env', 'HEVAL_GATEWAY_API_KEY', '--env', 'HEVAL_GATEWAY_MODEL']),
+    ...(grading ? ['--network=none'] : ['--env', 'HEVAL_GATEWAY_API_KEY', '--env', 'HEVAL_GATEWAY_MODEL', '--env', 'HEVAL_PROVIDER', '--env', 'HEVAL_VENDOR_PINS_JSON', '--env', 'HEVAL_INFERENCE_BASE_URL']),
     // Container-side ceiling also bounds execution if the control plane crashes.
     image, '--signal=KILL', grading ? '310s' : '3610s', 'bun',
     grading ? '/opt/heval/worker/grade.ts' : '/opt/heval/worker/main.ts']
@@ -31,10 +32,10 @@ async function control(args: string[], allowMissing = false) {
 }
 
 export function dockerBackend(image: string): WorkerBackend {
-  function launch(id: string, grading: boolean, output: (data: string) => void, harness?: HarnessId): WorkerProcess {
+  function launch(id: string, grading: boolean, output: (data: string) => void, harness?: HarnessId, config?: RunConfig, access?: RunAccess): WorkerProcess {
     const args = containerArgs(id, image, grading)
     if (harness) args.push(harness)
-    const proc = Bun.spawn(['docker', ...args], { stdout: 'pipe', stderr: 'pipe' })
+    const proc = Bun.spawn(['docker', ...args], { stdout: 'pipe', stderr: 'pipe', env: { ...process.env, HEVAL_GATEWAY_API_KEY: process.env.HEVAL_PROVIDER === 'nvidia' ? process.env.HEVAL_NVIDIA_API_KEY : process.env.HEVAL_GATEWAY_API_KEY, ...(config ? { HEVAL_GATEWAY_MODEL: config.model } : {}), HEVAL_INFERENCE_BASE_URL: access?.baseUrl, ...(access ? { HEVAL_GATEWAY_API_KEY: access.apiKey, HEVAL_PROVIDER: 'merge-gateway', HEVAL_VENDOR_PINS_JSON: '{}' } : {}) } })
     async function drain(stream: ReadableStream<Uint8Array>) {
       const decoder = new TextDecoder()
       const reader = stream.getReader()
@@ -57,7 +58,7 @@ export function dockerBackend(image: string): WorkerBackend {
     }
   }
   return {
-    start: (id, harness, output) => launch(id, false, output, harness),
+    start: (id, harness, output, config, access) => launch(id, false, output, harness, config, access),
     grade: (id, output) => launch(id, true, output),
     async cleanup(id) {
       await control(['rm', '-f', `heval-${id}`], true)

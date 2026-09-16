@@ -16,6 +16,11 @@ test-results
 # results/harbor/ are what gets published.
 /jobs/
 
+# Installable CLI output and local package artifacts.
+/packages/cli/dist/
+*.tgz
+/.scratch/heval-cli.png
+
 # Webfonts the poster exporter inlines into its PNGs, fetched on first run.
 harbor/report/.fontcache/
 
@@ -44,3 +49,9 @@ results/harbor/social/**/assets/
 /results/harbor/threads/*/all-presets.json
 /results/harbor/threads/recreated/
 /.scratch/merge-comparison-run.yaml*
+.vercel
+
+# Persistent application state and private deployment configuration.
+/data/
+/deploy/ssh/
+/deploy/*.env

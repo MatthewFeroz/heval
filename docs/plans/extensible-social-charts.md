@@ -18,7 +18,7 @@ The first collection contains four images: Tasks completed; Total task cost; Med
 
 ## What the local data actually supports
 
-The normalized export results/harbor/terminal-bench-composio-mirror.json has 120 trials across six models, all Codex 0.152.1. The five models used for the existing social image have 100 trials: one attempt on each of the same 20 task IDs per model. All rows have recorded durations, task checksums and costs. Costs are token-derived, not provider invoice totals. Serving vendors differ across models and must travel in provenance.
+The normalized export results/harbor/terminal-bench-comparison.json has 120 trials across six models, all Codex 0.152.1. The five models used for the existing social image have 100 trials: one attempt on each of the same 20 task IDs per model. All rows have recorded durations, task checksums and costs. Costs are token-derived, not provider invoice totals. Serving vendors differ across models and must travel in provenance.
 
 The file terminal-bench-glm53-flash-30.json has four trials across two tasks and two harnesses. Its filename is not evidence of 30 completed task attempts. No raw jobs are present locally in jobs/; the normalized export points to the original Mac workspace. There is no complete five-model, 30-task dataset in the local catalog.
 

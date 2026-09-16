@@ -1,27 +1,15 @@
-import { StrictMode, useEffect } from 'react'
+import { StrictMode, lazy, Suspense } from 'react'
 import { createRoot } from 'react-dom/client'
-import { AuthKitProvider, useAuth } from '@workos-inc/authkit-react'
-import App, { type AppAuth } from './App'
+import { AuthBoundary } from './AuthBoundary'
 import './styles.css'
+import './workbench.css'
 
-const clientId = import.meta.env.VITE_WORKOS_CLIENT_ID
-const apiHostname = import.meta.env.VITE_WORKOS_API_HOSTNAME || undefined
-
-// This is the application entry point, not a reusable Fast Refresh module.
+// The app entry point does not export components.
 // eslint-disable-next-line react-refresh/only-export-components
-function AuthenticatedApp() {
-  const { isLoading, user, signIn, signOut, getAccessToken } = useAuth()
-  useEffect(() => {
-    if (location.pathname === '/login') signIn()
-  }, [signIn])
-  const auth: AppAuth = { configured: true, isLoading, user, signIn, signOut, getAccessToken }
-  return <App auth={auth} />
-}
+const App = import.meta.env.VITE_HEVAL_PUBLIC_DEMO === '1'
+  ? lazy(() => import('./PublicApp'))
+  : lazy(() => import('./App'))
 
 createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    {clientId
-      ? <AuthKitProvider clientId={clientId} apiHostname={apiHostname}><AuthenticatedApp /></AuthKitProvider>
-      : <App />}
-  </StrictMode>,
+  <StrictMode><AuthBoundary>{auth => <Suspense fallback={<p>Loading Heval…</p>}><App auth={auth} /></Suspense>}</AuthBoundary></StrictMode>,
 )

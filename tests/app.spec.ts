@@ -6,8 +6,8 @@ test.beforeEach(async ({ page }) => {
   await page.reload()
 })
 
-test('replays a benchmark and reveals its verdict', async ({ page }) => {
-  await expect(page.getByRole('heading', { name: 'Heval.' })).toBeVisible()
+test('replays the example and reveals its verdict', async ({ page }) => {
+  await expect(page.getByRole('heading', { name: 'The open-source harness evaluation platform', exact: true })).toBeVisible()
   const timeline = page.getByLabel('Replay timeline')
 
   await page.getByRole('button', { name: 'Play replay' }).click()
@@ -15,22 +15,27 @@ test('replays a benchmark and reveals its verdict', async ({ page }) => {
 
   await timeline.fill(await timeline.getAttribute('max') || '0')
 
-  await expect(page.getByText('All four harnesses passed.')).toBeVisible()
+  await expect(page.getByText('Example replay complete.')).toBeVisible()
 })
 
-test('focuses a runner and stores an early-access signup', async ({ page }) => {
+test('focuses a runner and submits an early-access signup', async ({ page }) => {
   const lane = page.locator('.runner-lane').filter({ hasText: 'OpenCode' })
   await lane.click()
   await expect(lane).toHaveClass(/focused/)
 
+  await page.route('**/api/signups', async route => {
+    expect(route.request().postDataJSON()).toEqual({ email: 'dev@example.com', consent: true })
+    await route.fulfill({ status: 201, json: { ok: true } })
+  })
+  await page.getByLabel('I agree to receive Heval project updates by email.').check()
   await page.getByPlaceholder('you@company.com').fill('dev@example.com')
   await page.getByRole('button', { name: /get early access/i }).last().click()
   await expect(page.getByText('You’re on the list.')).toBeVisible()
-  await expect.poll(async () => page.evaluate(() => localStorage.getItem('heval:preferences'))).toContain('dev@example.com')
+  expect(await page.evaluate(() => localStorage.getItem('heval:preferences'))).toBeNull()
 })
 
 test('keeps the showcase public while real runs require authentication', async ({ page }) => {
-  await expect(page.getByRole('heading', { name: 'Heval.' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'The open-source harness evaluation platform', exact: true })).toBeVisible()
   page.once('dialog', async (dialog) => {
     expect(dialog.message()).toContain('WorkOS AuthKit')
     await dialog.dismiss()
@@ -42,4 +47,41 @@ test('opens the responsive navigation', async ({ page }, testInfo) => {
   test.skip(!testInfo.project.name.includes('mobile'), 'Mobile-only behavior')
   await page.getByRole('button', { name: 'Toggle navigation' }).click()
   await expect(page.getByRole('link', { name: 'Reports', exact: true })).toBeVisible()
+})
+
+test('shows the product entry point and measured evaluation preview', async ({ page }) => {
+  await expect(page.locator('.nav .brand')).toHaveText('heval')
+  await expect(page.locator('.hero-harness')).toHaveCount(4)
+  await expect(page.locator('.hero-copy')).toContainText('Compare Claude Code, Codex, OpenCode, and Pi.')
+  await expect(page.locator('.hero-copy')).toContainText('Run evaluations locally with Harbor')
+  for (const label of await page.locator('.hero-harness span').all()) {
+    await expect(label).toBeVisible()
+    await expect(label).toHaveCSS('opacity', '1')
+  }
+  await expect(page.locator('main > section').nth(1)).toHaveAttribute('id', 'compare')
+  await expect(page.locator('main > section').nth(2)).toHaveClass(/studio-showcase/)
+  const start = page.getByRole('link', { name: 'Get started', exact: true })
+  await expect(start).toHaveAttribute('href', /\/studio\?job=terminal-bench-comparison/)
+  const github = page.getByRole('link', { name: 'Explore the code on GitHub' })
+  await expect(github).toHaveAttribute('href', 'https://github.com/MatthewFeroz/heval')
+  const startBox = await start.boundingBox()
+  const githubBox = await github.boundingBox()
+  expect(githubBox!.y).toBeGreaterThan(startBox!.y + startBox!.height)
+  await expect(page.locator('.completion-row')).toHaveCount(6)
+  await expect(page.locator('.evaluation-stats')).toContainText('Trials120')
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  expect(await page.locator('.hero-harness').first().evaluate((el) => parseFloat(getComputedStyle(el).animationDuration))).toBeLessThan(.001)
+  await start.click()
+  await expect(page).toHaveURL(/\/studio\?job=terminal-bench-comparison/)
+  await expect(page.locator('.card svg').first()).toBeVisible()
+})
+
+test('signup failure does not claim the email was saved', async ({ page }) => {
+  await page.route('**/api/signups', route => route.fulfill({ status: 503, json: { error: 'Could not save your signup. Please retry.' } }))
+  await page.getByPlaceholder('you@company.com').fill('dev@example.com')
+  await page.getByLabel('I agree to receive Heval project updates by email.').check()
+  await page.getByRole('button', { name: /get early access/i }).last().click()
+  await expect(page.getByRole('alert')).toContainText('Could not save')
+  await expect(page.getByText('You’re on the list.')).toHaveCount(0)
 })

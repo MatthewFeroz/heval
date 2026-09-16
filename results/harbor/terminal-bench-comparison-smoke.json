@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "job": "terminal-bench-comparison-smoke",
+  "jobId": "08a8485c-ceef-4be9-9648-ce5ea81e0176",
+  "generatedAt": "2026-09-02T16:29:40.075Z",
+  "source": "/Users/mattferoz/heval/jobs/terminal-bench-comparison-smoke",
+  "agentVersions": {
+    "codex": [
+      "0.152.1"
+    ]
+  },
+  "rows": [
+    {
+      "trial": "fix-git__waX9TDy",
+      "task": "fix-git",
+      "taskFull": "fix-git",
+      "taskChecksum": "7fa0a681f751d73f290d862522a82a5e448fa529834987ee1b80e5665c51aa7e",
+      "agent": "codex",
+      "agentVersion": "0.152.1",
+      "model": "zai/glm-5.3-flash",
+      "modelShort": "glm-5.3-flash",
+      "provider": "zai",
+      "vendor": null,
+      "stack": "codex / glm-5.3-flash",
+      "reward": 1,
+      "passed": 1,
+      "agentSeconds": 32.649,
+      "totalSeconds": 149.706,
+      "overSlow": 0,
+      "timedOut": 0,
+      "inputTokens": 121657,
+      "cacheTokens": 108672,
+      "outputTokens": 2875,
+      "totalTokens": 124532,
+      "costUsd": null,
+      "costSource": null,
+      "startedAt": "2026-09-02T16:11:30.032382Z",
+      "error": null
+    }
+  ]
+}

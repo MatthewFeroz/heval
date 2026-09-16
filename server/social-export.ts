@@ -28,6 +28,7 @@ export class SocialExportError extends Error {
 }
 
 const root = resolve(import.meta.dirname, '..')
+const resultsRoot = process.env.HEVAL_HOSTED === '1' ? join(root, 'dist/results/harbor') : join(root, 'results/harbor')
 const hyperframes = join(root, 'node_modules/hyperframes/bin/hyperframes.mjs')
 
 
@@ -38,13 +39,13 @@ function removeScratch(scratch: string) {
 }
 
 function catalogJobs(): Set<string> {
-  const index = JSON.parse(readFileSync(join(root, 'results/harbor/index.json'), 'utf8')) as { jobs?: { job?: string }[] }
+  const index = JSON.parse(readFileSync(join(resultsRoot, 'index.json'), 'utf8')) as { jobs?: { job?: string }[] }
   return new Set((index.jobs ?? []).map((entry) => entry.job).filter((job): job is string => typeof job === 'string'))
 }
 
 function inputFor(job: string): string {
   if (!/^[a-z0-9][a-z0-9-]*$/.test(job) || !catalogJobs().has(job)) throw new SocialExportError('Unknown Heval job', 404)
-  const input = join(root, 'results/harbor', `${job}.json`)
+  const input = join(resultsRoot, `${job}.json`)
   if (!existsSync(input)) throw new SocialExportError('The normalized job export is missing', 404)
   return input
 }

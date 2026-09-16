@@ -1,3 +1,4 @@
+import { useAppAuth, authorizedFetch } from '../auth'
 import { SOCIAL_THEMES, type SocialTheme } from '../charts/social-themes'
 import { useEffect, useState, useRef } from 'react'
 import {
@@ -24,6 +25,7 @@ export function SocialPreview({
   unavailableReason?: string
   collectionUnavailableReason?: string
 }) {
+  const auth = useAppAuth()
   const frames = useRef<(HTMLIFrameElement | null)[]>([])
   const [checks, setChecks] = useState<Record<number, { errors: string[]; adjustments: string[] }>>(
     {},
@@ -56,7 +58,7 @@ export function SocialPreview({
   const [error, setError] = useState(''),
     [busy, setBusy] = useState(false),
     [loading, setLoading] = useState(false)
-  const payload = JSON.stringify({ input: motionInput('Merge Evaluations', rows), settings })
+  const payload = JSON.stringify({ input: motionInput(settings.source || 'Heval evaluations', rows), settings })
   const preview = received?.signature === payload && !unavailableReason ? received : null
   useEffect(() => {
     const controller = new AbortController()
@@ -66,7 +68,7 @@ export function SocialPreview({
       setChecks({})
       setError('')
       setLoading(true)
-      fetch('/api/posters/preview', {
+      authorizedFetch(auth, '/api/posters/preview', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: payload,
@@ -92,7 +94,7 @@ export function SocialPreview({
       clearTimeout(timer)
       controller.abort()
     }
-  }, [payload, unavailableReason, rows.length])
+  }, [payload, unavailableReason, rows.length, auth])
   const change = (patch: Partial<SocialSettings>) => {
     setHistory((h) => ({ past: [...h.past, settings].slice(-100), future: [] }))
     onChange(socialSettings({ ...settings, ...patch }))
@@ -115,7 +117,7 @@ export function SocialPreview({
     setBusy(true)
     setError('')
     try {
-      const response = await fetch('/api/posters/export', {
+      const response = await authorizedFetch(auth, '/api/posters/export', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...JSON.parse(payload), collection }),

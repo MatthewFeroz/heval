@@ -34,6 +34,25 @@ See [`results/concurrent-cache-v1-current.json`](results/concurrent-cache-v1-cur
 
 ## Quick Start
 
+### Installable local results viewer
+
+The CLI is available on npm as [`@mattferoz/heval`](https://www.npmjs.com/package/@mattferoz/heval).
+It provides `heval doctor` and `heval open` for example results, normalized JSON,
+or raw Harbor job directories. The installed viewer requires Node.js 22+, with
+no Bun, Docker, or account needed to explore existing data.
+
+Open the bundled example:
+
+```sh
+npx @mattferoz/heval@latest open
+```
+
+Or install it with `npm install -g @mattferoz/heval`, then use `heval open`.
+See the [CLI guide](packages/cli/README.md) for local builds and
+[Publishing the CLI](docs/publishing-cli.md) for the release procedure.
+This release does not launch evaluations; execute a Harbor job, then open its
+results with `heval open ./jobs/your-job`.
+
 ### Requirements
 
 - [Bun](https://bun.sh/) 1.4 or newer
@@ -49,6 +68,25 @@ bun run dev
 
 Open `http://localhost:5173`.
 
+For the full development app, also run `bun run serve` after an initial
+`bun run build`. Vite forwards `/api` requests to the Bun server on port 4173.
+Alternatively, `bun run start` builds and serves the complete app on port 4173.
+
+### Deployment targets
+
+The consolidated repository supports three entry points:
+
+| Target | Build | Capabilities |
+| --- | --- | --- |
+| Vercel showcase | `bun run build:showcase` (configured in `vercel.json`) | Published results, Studio, browser SVG/PNG and bundle exports; no runner or signup API |
+| Bun application | `bun run build`, then `bun run serve` | Workbench, authenticated run history, provider connections and optional server exports |
+| Invited hosted Bun deployment | `bun run build:public` | Uses only the explicitly published catalog; requires persistent storage and the configuration in [deployment.md](docs/deployment.md) |
+
+The npm CLI remains a separate Node-only results viewer. Convex dependencies
+are installed as preparation; no Convex backend or hosted import/share service
+is connected yet. See [the stable baseline](docs/stable-baseline.md) before
+continuing that work.
+
 ## Authentication
 
 The public showcase works without configuration. WorkOS AuthKit sign-in gates real evaluation controls and the Bun server verifies every runner access token against WorkOS's JWKS.
@@ -59,7 +97,7 @@ The public showcase works without configuration. WorkOS AuthKit sign-in gates re
 4. For the hosted app, add its exact HTTPS origin and root callback in the same places, plus `<origin>/login` as its Sign-in URL.
 5. If using a custom Authentication API domain, set `VITE_WORKOS_API_HOSTNAME` and `WORKOS_API_HOSTNAME` to the hostname only (for example, `auth.example.com`). Otherwise leave the browser value empty and keep the server value at `api.workos.com`.
 
-Set `HEVAL_ENABLE_RUNNER=1` only where real harness execution should be allowed. `HEVAL_GATEWAY_API_KEY` remains server-side and must never use a `VITE_` prefix.
+Set `HEVAL_ENABLE_RUNNER=1` only where real harness execution should be allowed. Browser evaluators connect their own key in **Provider settings**. Saved keys are encrypted server-side; workers receive temporary proxy tokens. Never use a `VITE_` prefix for secrets. See [provider connections](docs/provider-connections.md).
 
 ## Commands
 
@@ -71,6 +109,7 @@ Set `HEVAL_ENABLE_RUNNER=1` only where real harness execution should be allowed.
 | `bun run start` | Build, then start the Bun server |
 | `bun run lint` | Run ESLint |
 | `bun run test:e2e` | Run desktop and mobile Playwright tests |
+| `bun run test:deployments` | Build and browser-test the Vercel showcase and public Bun app (leaves `dist` as the public build) |
 | `bun run report <job-dir>` | Normalize a Harbor job into `results/harbor/` and build its static report |
 | `bun run poster <job.json>` | Export one Merge-branded social PNG per headline graph |
 
@@ -82,7 +121,9 @@ bunx playwright install chromium
 
 ## Running Real Evaluations
 
-Real harness execution is disabled by default because agents run with broad permissions inside disposable fixture workspaces. Copy the example configuration and provide the WorkOS client ID plus a Merge Gateway API key:
+To run evaluations on a separate Linux PC while keeping the app on your Mac, follow the [Linux worker setup](docs/linux-worker.md). It includes Ubuntu, Docker, private networking and SSH commands.
+
+Real harness execution is disabled by default because agents run with broad permissions inside disposable fixture workspaces. For a new checkout, copy the example configuration and provide the WorkOS client ID. Preserve an existing `.env.local`:
 
 ```bash
 cp .env.example .env.local
@@ -92,17 +133,14 @@ cp .env.example .env.local
 VITE_WORKOS_CLIENT_ID=client_replace_me
 WORKOS_CLIENT_ID=client_replace_me
 HEVAL_ENABLE_RUNNER=1
-HEVAL_GATEWAY_API_KEY=your-key
+HOST=0.0.0.0
 HEVAL_GATEWAY_MODEL=anthropic/claude-sonnet-4-5-20250929
 PORT=4173
 ```
 
-Load the variables and start the full application:
+Start the full application. Bun loads `.env.local` automatically:
 
 ```bash
-set -a
-source .env.local
-set +a
 bun run start
 ```
 
@@ -112,7 +150,7 @@ Before enabling execution, install Docker Desktop (Linux containers) or Docker E
 bun run worker:build
 ```
 
-The runner launches each attempt as a non-root Docker worker with a read-only root filesystem, dropped capabilities, no host bind mounts, and CPU, memory, process and wall-clock limits. Each worker receives a separate Docker volume and only the model credential it needs. Agent execution still has outbound network access. Host processes never execute the agent or its changed code.
+The runner launches each attempt as a non-root Docker worker with a read-only root filesystem, dropped capabilities, no host bind mounts, and CPU, memory, process and wall-clock limits. Each browser evaluation receives a separate Docker volume and a temporary inference token restricted to its chosen model. After signing in, open **Provider settings**, choose Merge Gateway, and **Validate and connect** your key before launching. Agent execution still has outbound network access. Host processes never execute the agent or its changed code.
 
 After an agent exits successfully, a fresh networkless container grades the candidate using the pinned fixture tests. For this task, only `src/cache.ts` is copied into the grader. The agent cannot replace the grader's test file. Grading is automatic; the grade endpoint returns the completed result or HTTP 409 while unavailable.
 
@@ -122,7 +160,7 @@ Defaults allow two active evaluations globally, one per user, five minutes per a
 
 Recordings use ordered `<run-id>.jsonl` events plus an atomically replaced `<run-id>.json` summary every second and on completion. Summaries omit terminal chunks. Writes are asynchronous and append only new events. A crash may lose the last unflushed second of output. The configured gateway key is redacted from streamed and recorded output, including when split between chunks. Encoded or transformed secrets are not covered by that redaction.
 
-Run metadata is in memory and is not restored after a restart; at most 100 runs are retained in memory. Disk recordings remain until you remove them. This is a single-process local runner, not a distributed scheduler.
+Run summaries and owner identities are restored from disk on startup. Interrupted workers are cleaned up and their runs are marked failed with a restart reason. Completed transcripts are loaded from disk on demand. Daily per-user attempt limits survive restarts. Set `HEVAL_DATA_DIR` to persistent storage for hosted use. This remains a single-process scheduler.
 
 ```bash
 bun run test:server
@@ -131,7 +169,7 @@ bun run test:docker
 
 The Docker smoke test uses no model credits and checks isolation and immutable grading. It requires a running Linux Docker engine. On Windows, finish any requested WSL restart before running it. The HTTP server binds to `127.0.0.1` by default; `HOST` can override it.
 
-Do not expose the runner API directly to the public internet. It is designed for trusted local use while the sandboxed worker architecture is developed.
+For public hosting with invited evaluators, use the separate web/worker deployment in [docs/deployment.md](docs/deployment.md). Keep the Bun port behind its HTTPS proxy. Do not expose the default local runner directly.
 
 ## Architecture
 
@@ -206,7 +244,7 @@ success, and median time. Each image includes its title, sample size, model labe
 line, so it can stand on its own outside the report.
 
 ```bash
-bun run poster results/harbor/terminal-bench-composio-mirror.json --open-weight
+bun run poster results/harbor/terminal-bench-comparison.json --open-weight
 ```
 
 The command writes 2400x2400 PNGs and editable HTML files under
@@ -280,3 +318,16 @@ Extension points: `src/charts/social-presets.ts` defines metric selection and co
 ## Repeat the same comparison
 
 See [Reproducing evaluations](docs/reproducing-evaluations.md) for the saved six-model/20-task profile, baseline replay, fresh-run preparation and compatibility checks. Fresh runs may yield different scores, times and costs; archived results reproduce the same chart values.
+
+## Saved evaluation workflow and public demo
+
+The evaluation workbench lets signed-in users choose an approved model, harness, pinned task and time limit; launch and cancel attempts; reopen saved transcripts; and select graded attempts for Studio. Live values use the actual run rather than replay fixtures. Cost and token counts remain unavailable when the provider has not supplied measured values.
+
+The early-access form now saves consented signups to server-side SQLite. It reports success only after storage succeeds, with deduplication and daily submission limits. It does not send email.
+
+`bun run build:public` builds the independent project page with only the explicitly selected files in `results/public/`. The default catalog is empty. Existing company comparisons remain in the repository's internal workflow and are not copied into this public build. Hosted mode requires the public build.
+
+- [DigitalOcean deployment and persistent storage](docs/deployment.md)
+- [Fresh NVIDIA model comparison and GTC recording guide](docs/nvidia-gtc-demo.md)
+
+For API calls during development, run `bun run serve` in one terminal and `bun run dev` in another. Vite now proxies `/api` to the Bun server on port 4173.

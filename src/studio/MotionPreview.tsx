@@ -1,3 +1,4 @@
+import { useAppAuth, authorizedFetch } from '../auth'
 import { motionInput } from '../project/motion-input'
 import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react'
 import { AlertTriangle, Download, Film, Image as ImageIcon, RefreshCw, RotateCcw, Tags } from 'lucide-react'
@@ -61,6 +62,7 @@ export function MotionPreview({
   options?: CompletionOptions
   onOptionsChange?: (options: CompletionOptions) => void
 }) {
+  const auth = useAppAuth()
   const [preview, setPreview] = useState<{ url: string; input: ReturnType<typeof motionInput>; options: CompletionOptions; signature: string } | null>(null)
   const input = useMemo(() => motionInput(job ?? 'Presentation', rows), [job, rows])
   const [exportsEnabled, setExportsEnabled] = useState<boolean | null>(null)
@@ -82,11 +84,11 @@ export function MotionPreview({
   }
 
   useEffect(() => {
-    fetch('/api/health')
+    authorizedFetch(auth, '/api/health')
       .then((response) => response.json())
       .then((health: { exportsEnabled?: boolean }) => setExportsEnabled(Boolean(health.exportsEnabled)))
       .catch(() => setExportsEnabled(false))
-  }, [])
+  }, [auth])
 
   useEffect(() => {
     const timer = setTimeout(() => setApplied(draft), 350)
@@ -124,7 +126,7 @@ export function MotionPreview({
     setRendering(format)
     setError(null)
     try {
-      const response = await fetch('/api/social/export', {
+      const response = await authorizedFetch(auth, '/api/social/export', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ input: preview.input, format, options: preview.options }),
@@ -146,7 +148,7 @@ export function MotionPreview({
     if (exportsEnabled !== true || !rows.length || unavailableReason) return
     const controller = new AbortController()
     let objectUrl: string | null = null
-    fetch('/api/social/preview', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: signature, signal: controller.signal })
+    authorizedFetch(auth, '/api/social/preview', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: signature, signal: controller.signal })
       .then(async (response) => {
         if (!response.ok) throw new Error((await response.json() as { error: string }).error)
         const html = await response.text()
@@ -158,7 +160,7 @@ export function MotionPreview({
       })
       .catch((error: Error) => { if (!controller.signal.aborted) setError(error.message) })
     return () => { controller.abort(); if (objectUrl) URL.revokeObjectURL(objectUrl) }
-  }, [signature, exportsEnabled, rows.length, unavailableReason])
+  }, [signature, exportsEnabled, rows.length, unavailableReason, auth])
 
   if (unavailableReason) return <div className="motion-empty"><Film size={22} /><strong>Completion data unavailable</strong><p>{unavailableReason}</p></div>
 

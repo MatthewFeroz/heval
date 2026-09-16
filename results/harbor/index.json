@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "jobs": [
     {
-      "job": "terminal-bench-composio-mirror",
-      "file": "terminal-bench-composio-mirror.json",
+      "job": "terminal-bench-comparison",
+      "file": "terminal-bench-comparison.json",
       "generatedAt": "2026-09-02T21:17:43.943Z",
       "trials": 120,
       "agents": [
@@ -41,8 +41,8 @@
       ]
     },
     {
-      "job": "composio-mirror-smoke",
-      "file": "composio-mirror-smoke.json",
+      "job": "terminal-bench-comparison-smoke",
+      "file": "terminal-bench-comparison-smoke.json",
       "generatedAt": "2026-09-02T16:29:40.075Z",
       "trials": 1,
       "agents": [

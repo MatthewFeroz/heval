@@ -1,56 +1,50 @@
-import { FormEvent, useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Terminal } from '@xterm/xterm'
 import '@xterm/xterm/css/xterm.css'
 import {
-  Activity,
   ArrowRight,
   BarChart3,
-  Check,
   ChevronDown,
   Clock3,
-  Code2,
   Coins,
   ExternalLink,
-  Gauge,
-  GitFork,
-  Layers3,
-  Mail,
   LogIn,
   LogOut,
   Pause,
   Play,
   RotateCcw,
-  TerminalSquare,
-  TimerReset,
   Trophy,
   X,
   Zap,
 } from 'lucide-react'
-import { featuredExperiment, reports, type RunEvent, type Runner } from './data'
-import { localStorageAdapter } from './storage'
+import { featuredExperiment, type RunEvent, type Runner } from './data'
+import resultCatalog from '../results/harbor/index.json'
+import featuredResults from '../results/harbor/terminal-bench-comparison.json'
+import { publicAuth, type AppAuth } from './auth'
+import { Signup } from './Signup'
+import { RunWorkbench } from './RunWorkbench'
+import { STATIC_SITE } from './deployment'
 
 const runnerEnd = (runner: Runner) => Math.max(...runner.events.map((event) => event.at))
 const maxTime = Math.max(...featuredExperiment.runners.map(runnerEnd))
+const featuredJob = {
+  job: featuredResults.job,
+  models: [...new Set(featuredResults.rows.map((row) => row.model))],
+  tasks: [...new Set(featuredResults.rows.map((row) => row.task))],
+  trials: featuredResults.rows.length,
+}
+const completionResults = featuredJob.models.map((model) => {
+  const rows = featuredResults.rows.filter((row) => row.model === model)
+  return { model: rows[0].modelShort, passed: rows.filter((row) => row.passed === 1).length, total: rows.length }
+}).sort((a, b) => b.passed / b.total - a.passed / a.total)
+const studioUrl = `/studio?job=${featuredJob.job}&recipe=bar&x=modelShort&color=none&measure=passed`
 
 const formatTokens = (tokens: number | null) => tokens === null ? 'pending' : `${(tokens / 1000).toFixed(1)}k`
-
-export type AppAuth = {
-  configured: boolean
-  isLoading: boolean
-  user: { email: string; firstName?: string | null } | null
-  signIn: () => void
-  signOut: () => void
-  getAccessToken: () => Promise<string | undefined>
-}
-
-const publicAuth: AppAuth = { configured: false, isLoading: false, user: null, signIn() {}, signOut() {}, async getAccessToken() { return undefined } }
 
 function Brand() {
   return (
     <a className="brand" href="#top" aria-label="Heval home">
-      <span className="brand-mark"><span>H</span></span>
-      <span className="brand-name">Heval</span>
-      <span className="beta-pill">HARNESS EVALS</span>
+      <span className="brand-name">heval</span>
     </a>
   )
 }
@@ -63,16 +57,15 @@ function Nav({ auth }: { auth: AppAuth }) {
       <nav className="nav shell">
         <Brand />
         <div className={`nav-links ${open ? 'open' : ''}`}>
-          <a href="#compare">Compare</a>
+          <a href="#compare">Replay</a>
           <a href="#reports">Reports</a>
           <a href="#methodology">Methodology</a>
           <a href="/studio">Studio</a>
-          <a className="github-link" href="https://github.com" target="_blank" rel="noreferrer"><GitFork size={16} /> GitHub</a>
         </div>
         {auth.configured && (auth.user
           ? <button className="nav-cta auth-button" onClick={auth.signOut} title={`Sign out ${auth.user.email}`}>{auth.user.firstName || auth.user.email} <LogOut size={15} /></button>
           : <button className="nav-cta auth-button" onClick={auth.signIn} disabled={auth.isLoading}>Sign in <LogIn size={15} /></button>)}
-        {!auth.configured && <a className="nav-cta" href="#early-access">Get early access <ArrowRight size={15} /></a>}
+        {!auth.configured && <a className="nav-cta" href={studioUrl}>Open Studio <ArrowRight size={15} /></a>}
         <button className="menu-button" onClick={() => setOpen((value) => !value)} aria-label="Toggle navigation">
           {open ? <X size={19} /> : <span className="menu-lines" />}
         </button>
@@ -237,7 +230,7 @@ function RunnerLane({ runner, time, focused, onFocus, rawData, liveStatus, onLiv
         <div className={`lane-state ${isDone ? runner.outcome : 'running'}`}>
           <span />{liveStatus || (isDone ? runner.outcome : 'running')}
         </div>
-        <button className="live-run-button" onClick={(event) => { event.stopPropagation(); onLiveRun() }}>{liveStatus === 'running' ? 'LIVE' : 'RUN REAL'}</button>
+        {!STATIC_SITE && <button className="live-run-button" onClick={(event) => { event.stopPropagation(); onLiveRun() }}>{liveStatus === 'running' ? 'LIVE' : 'RUN REAL'}</button>}
       </div>
       <div className="model-row">
         <span>{runner.model}</span>
@@ -261,8 +254,6 @@ function RaceStage({ auth }: { auth: AppAuth }) {
   const [time, setTime] = useState(0)
   const [playing, setPlaying] = useState(false)
   const [focused, setFocused] = useState<string | null>(null)
-  const [liveData, setLiveData] = useState<Record<string, string>>({})
-  const [liveStatus, setLiveStatus] = useState<Record<string, string>>({})
   const finished = time >= maxTime
 
   async function startLiveRun(harness: string) {
@@ -271,21 +262,8 @@ function RaceStage({ auth }: { auth: AppAuth }) {
       else window.alert('Real runs require WorkOS AuthKit to be configured.')
       return
     }
-    if (!window.confirm('This launches the real harness and may consume model credits. Continue?')) return
-    const token = await auth.getAccessToken()
-    if (!token) return
-    const response = await fetch('/api/runs', { method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` }, body: JSON.stringify({ harness }) })
-    if (!response.ok) { window.alert((await response.json()).error || 'Could not start runner'); return }
-    const run = await response.json() as { id: string }
-    setLiveData((current) => ({ ...current, [harness]: '' }))
-    setLiveStatus((current) => ({ ...current, [harness]: 'running' }))
-    const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:'
-    const socket = new WebSocket(`${protocol}//${location.host}/api/runs/${run.id}/stream`, ['heval', `heval-auth.${token}`])
-    socket.onmessage = (message) => {
-      const event = JSON.parse(message.data) as { type: string; data?: string; status?: string }
-      if (event.type === 'data') setLiveData((current) => ({ ...current, [harness]: (current[harness] || '') + (event.data || '') }))
-      if (event.type === 'exit') setLiveStatus((current) => ({ ...current, [harness]: event.status || 'complete' }))
-    }
+    window.dispatchEvent(new CustomEvent('heval-configure', { detail: harness }))
+    document.getElementById('evaluations')?.scrollIntoView({ behavior: 'smooth' })
   }
 
   useEffect(() => {
@@ -308,13 +286,12 @@ function RaceStage({ auth }: { auth: AppAuth }) {
   }
 
   return (
-    <div className="race-shell" id="compare">
+    <div className="race-shell">
       <div className="race-toolbar">
         <div className="window-dots"><span /><span /><span /></div>
         <div className="race-meta">
-          <span className="live-chip"><i /> SEEDED UI REPLAY</span>
-          <span>RUN #HI-0042</span>
-          <span>{featuredExperiment.completedAt}</span>
+          <span className="example-chip">INTERACTIVE EXAMPLE</span>
+          <span>SAMPLE DATA</span>
         </div>
         <a className="manifest-button" href="#methodology">View demo protocol <ExternalLink size={13} /></a>
       </div>
@@ -334,8 +311,6 @@ function RaceStage({ auth }: { auth: AppAuth }) {
             time={time}
             focused={focused === runner.id}
             onFocus={() => setFocused((value) => value === runner.id ? null : runner.id)}
-            rawData={liveData[runner.id]}
-            liveStatus={liveStatus[runner.id]}
             onLiveRun={() => startLiveRun(runner.id)}
           />
         ))}
@@ -352,7 +327,7 @@ function RaceStage({ auth }: { auth: AppAuth }) {
       {finished && (
         <div className="race-verdict">
           <Trophy size={18} />
-          <span><strong>All four harnesses passed.</strong> Codex had the fastest observed trajectory, but one attempt is not a ranking.</span>
+          <span><strong>Example replay complete.</strong> These scripted events illustrate the replay controls. Explore published evaluations in Studio for measured results.</span>
           <button onClick={() => { setTime(0); setPlaying(true) }}>Replay <RotateCcw size={13} /></button>
         </div>
       )}
@@ -360,38 +335,39 @@ function RaceStage({ auth }: { auth: AppAuth }) {
   )
 }
 
-function Stat({ icon, value, label }: { icon: React.ReactNode; value: string; label: string }) {
-  return <div className="stat"><span className="stat-icon">{icon}</span><strong>{value}</strong><small>{label}</small></div>
-}
-
-function Scoreboard() {
-  const sorted = useMemo(() => [...featuredExperiment.runners].sort((a, b) => a.duration - b.duration), [])
-
+function StudioShowcase() {
   return (
-    <section className="score-section shell section-pad">
-      <div className="section-heading split-heading">
-        <div><span className="kicker">ILLUSTRATIVE RESULT</span><h2>One task. Four very<br />different paths.</h2></div>
-        <p>This synthetic example shows how a completed comparison will read. It demonstrates the product, not measured harness performance.</p>
+    <section className="studio-showcase shell" aria-labelledby="studio-heading">
+      <div className="studio-intro">
+        <span className="kicker">THE WORKSPACE</span>
+        <h2 id="studio-heading">Turn evaluation results<br />into a clear comparison.</h2>
+        <p>Open a published evaluation or bring your own export. Compare success rates, cost, and time; filter down to a task; then inspect the trials behind each chart.</p>
+        <a className="text-button" href={studioUrl}>Explore this evaluation <ArrowRight size={16} /></a>
       </div>
-      <div className="score-layout">
-        <div className="leaderboard-card">
-          <div className="card-head"><span>Demo result</span><small>Illustrative data · not a benchmark</small></div>
-          {sorted.map((runner, index) => (
-            <div className="score-row" key={runner.id}>
-              <span className="rank">0{index + 1}</span>
-              <span className="score-avatar" style={{ '--runner-color': runner.color } as React.CSSProperties}><img src={runner.logo} alt="" /></span>
-              <span className="score-name"><strong>{runner.name}</strong><small>{runner.model}</small></span>
-              <span className="score-bar"><i style={{ width: `${runner.score}%`, background: runner.color }} /></span>
-              <strong className="score-value">PASS</strong>
+      <div className="evaluation-card">
+        <div className="evaluation-header"><span>FEATURED EVALUATION</span><span className="dataset-badge">Published data</span></div>
+        <h3>Six models. The same task set.</h3>
+        <p>Terminal Bench Comparison · Codex harness</p>
+        <dl className="evaluation-stats">
+          <div><dt>Models</dt><dd>{featuredJob.models.length}</dd></div>
+          <div><dt>Tasks</dt><dd>{featuredJob.tasks.length}</dd></div>
+          <div><dt>Trials</dt><dd>{featuredJob.trials}</dd></div>
+        </dl>
+        <div className="completion-chart" role="figure" aria-label="Completed tasks by model, measured evaluation results">
+          <div className="completion-heading"><strong>Tasks completed</strong><span>Passed / attempted</span></div>
+          {completionResults.map((result) => (
+            <div className="completion-row" key={result.model}>
+              <span>{result.model}</span>
+              <div className="completion-track" aria-hidden="true"><i style={{ width: `${result.passed / result.total * 100}%` }} /></div>
+              <strong>{result.passed}<span> / {result.total}</span></strong>
             </div>
           ))}
         </div>
-        <div className="metrics-grid">
-          <Stat icon={<Trophy size={18} />} value="1/1" label="Tests passed" />
-          <Stat icon={<Gauge size={18} />} value="32s" label="Example fastest" />
-          <Stat icon={<Coins size={18} />} value="Pending" label="Cost integration" />
-          <Stat icon={<TimerReset size={18} />} value="4/4" label="Demo outcomes" />
+        <div className="evaluation-actions">
+          <a href={studioUrl}><BarChart3 size={17} /><span><strong>Compare completion rates</strong><small>Open the interactive chart in Studio</small></span><ArrowRight size={16} /></a>
+          <a href={`/results/harbor/${featuredJob.job}.html`}><ExternalLink size={17} /><span><strong>Read the full report</strong><small>Results, individual trials, and limitations</small></span><ArrowRight size={16} /></a>
         </div>
+        <p className="evaluation-note">One attempt per model per task. Results describe this task set; small differences may not generalize.</p>
       </div>
     </section>
   )
@@ -402,21 +378,20 @@ function ReportSection() {
     <section className="reports-section section-pad" id="reports">
       <div className="shell">
         <div className="section-heading reports-heading">
-          <div><span className="kicker">UPCOMING FIELD NOTES</span><h2>Read the signal,<br />not the launch post.</h2></div>
-          <a href="#early-access">Get the first report <ArrowRight size={15} /></a>
+          <div><span className="kicker">PUBLISHED EVALUATIONS</span><h2>Start with the evidence.</h2></div>
+          <a href="/studio">Open all results in Studio <ArrowRight size={15} /></a>
         </div>
         <div className="report-grid">
-          {reports.map((report, index) => (
-            <article className={`report-card report-${index + 1}`} key={report.title}>
-              <div className="report-top"><span>{report.tag}</span><small>{report.date}</small></div>
-              <div className="report-visual" aria-hidden="true">
-                {index === 0 && <><div className="mini-bars"><i /><i /><i /><i /><i /><i /></div><span className="delta">+31%</span></>}
-                {index === 1 && <><div className="version-a">.120</div><ArrowRight /><div className="version-b">.121</div></>}
-                {index === 2 && <><Activity /><div className="retry-lines"><i /><i /><i /></div></>}
+          {resultCatalog.jobs.map((job) => (
+            <article className="report-card" key={job.job}>
+              <div className="report-top"><span>{job.trials > 4 ? 'Model comparison' : 'Smoke test'}</span><small>{job.generatedAt.slice(0, 10)}</small></div>
+              <div className="report-count"><strong>{job.trials}</strong><span>recorded {job.trials === 1 ? 'trial' : 'trials'}</span></div>
+              <h3>{job.job.split('-').join(' ')}</h3>
+              <p>{job.models.length} {job.models.length === 1 ? 'model' : 'models'} · {job.tasks.length} {job.tasks.length === 1 ? 'task' : 'tasks'} · {job.agents.length} {job.agents.length === 1 ? 'harness' : 'harnesses'}. Read the outcomes and limitations, or explore the underlying data.</p>
+              <div className="report-foot">
+                <a href={`/results/harbor/${job.job}.html`}>Read report <ArrowRight size={14} /></a>
+                <a href={`/studio?job=${job.job}`}>Open in Studio</a>
               </div>
-              <h3>{report.title}</h3>
-              <p>{report.summary}</p>
-              <div className="report-foot"><span>{report.readTime}</span><span>Planned</span></div>
             </article>
           ))}
         </div>
@@ -443,45 +418,12 @@ function Methodology() {
   )
 }
 
-function Signup() {
-  const initial = localStorageAdapter.read()
-  const [email, setEmail] = useState(initial.email ?? '')
-  const [joined, setJoined] = useState(initial.hasJoined ?? false)
-
-  const submit = (event: FormEvent) => {
-    event.preventDefault()
-    if (!email.trim()) return
-    localStorageAdapter.write({ email, hasJoined: true })
-    setJoined(true)
-  }
-
-  return (
-    <section className="signup-section shell" id="early-access">
-      <div className="signup-grid" />
-      <div className="signup-copy">
-        <span className="kicker">RELEASE INTELLIGENCE</span>
-        <h2>Know what to run<br />before you switch.</h2>
-        <p>Get the next model × harness comparison when it drops. No daily digest. No recycled AI news.</p>
-        {joined ? (
-          <div className="joined-state"><Check size={18} /><span><strong>You’re on the list.</strong><small>The next benchmark report will land here.</small></span></div>
-        ) : (
-          <form onSubmit={submit}>
-            <label><Mail size={17} /><input type="email" required placeholder="you@company.com" value={email} onChange={(event) => setEmail(event.target.value)} /></label>
-            <button>Get early access <ArrowRight size={15} /></button>
-          </form>
-        )}
-        <small>Be among the first to see a real harness comparison.</small>
-      </div>
-    </section>
-  )
-}
-
 function Footer() {
   return (
     <footer className="footer shell">
       <Brand />
-      <p>An independent performance index for coding-agent stacks.</p>
-      <div><a href="#methodology">Methodology</a><a href="#reports">Reports</a><a href="/studio">Studio</a><a href="https://github.com" target="_blank" rel="noreferrer">GitHub</a></div>
+      <p>A workbench for understanding coding-agent evaluations.</p>
+      <div><a href="#methodology">Methodology</a><a href="#reports">Reports</a><a href="/studio">Studio</a><a href="https://github.com/MatthewFeroz/heval" target="_blank" rel="noreferrer">GitHub</a></div>
       <small>© 2026 Heval</small>
     </footer>
   )
@@ -493,18 +435,36 @@ export default function App({ auth = publicAuth }: { auth?: AppAuth }) {
       <Nav auth={auth} />
       <main id="top">
         <section className="hero shell">
-          <div className="hero-badge"><Layers3 size={14} /> Harness evals for coding agents</div>
-          <h1>Heval.</h1>
-          <p className="hero-copy">See how coding-agent stacks will be compared side by side—with pinned versions, replayable trajectories, cost, speed, and outcomes.</p>
-          <div className="hero-actions"><a className="primary-button" href="#compare"><Play size={15} fill="currentColor" /> Watch the product demo</a><a className="text-button" href="#methodology">See the methodology <ArrowRight size={15} /></a></div>
-          <div className="hero-proof"><span>Pinned versions</span><span>Reproducible tasks</span><span>Full trajectories</span></div>
+          <div className="hero-harnesses" aria-label="Explore Claude Code, Codex, OpenCode, and Pi">
+            {featuredExperiment.runners.map((runner, index) => (
+              <a className="hero-harness" href="#compare" key={runner.id} aria-label={`See ${runner.name} in the example replay`} style={{ animationDelay: `${index * -1.3}s` }}>
+                <img src={runner.logo} alt="" />
+                <span>{runner.name}</span>
+              </a>
+            ))}
+          </div>
+          <h1>The <span className="keep-together">open-source</span> harness evaluation platform</h1>
+          <p className="hero-copy">Compare Claude Code, Codex, OpenCode, and Pi.<br />Run evaluations locally with Harbor, inspect every trial, and share the results.</p>
+          <div className="hero-actions">
+            <a className="primary-button" href={studioUrl}>Get started <ArrowRight size={21} /></a>
+            <a className="hero-github" href="https://github.com/MatthewFeroz/heval" target="_blank" rel="noreferrer" aria-label="Explore the code on GitHub">
+              <svg width="21" height="21" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.37.5 0 5.87 0 12.5c0 5.3 3.44 9.8 8.21 11.39.6.11.82-.26.82-.58v-2.23c-3.34.73-4.04-1.42-4.04-1.42-.55-1.39-1.33-1.76-1.33-1.76-1.09-.75.08-.73.08-.73 1.2.08 1.84 1.23 1.84 1.23 1.07 1.83 2.81 1.3 3.49.99.11-.78.42-1.3.76-1.6-2.67-.3-5.47-1.34-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.12-.3-.54-1.52.12-3.17 0 0 1.01-.32 3.3 1.23a11.5 11.5 0 0 1 6 0c2.29-1.55 3.3-1.23 3.3-1.23.66 1.65.24 2.87.12 3.17.77.84 1.24 1.91 1.24 3.22 0 4.6-2.8 5.63-5.48 5.93.43.37.81 1.1.81 2.22v3.3c0 .32.22.69.83.58A12 12 0 0 0 24 12.5c0-6.63-5.37-12-12-12Z" /></svg>
+              Explore the code <ExternalLink size={15} />
+            </a>
+          </div>
         </section>
-        <section className="race-area shell"><RaceStage auth={auth} /></section>
-        <div className="index-strip"><div className="shell"><span><Code2 size={14} /> 4 harnesses modeled</span><span><BarChart3 size={14} /> Interactive replay</span><span><TerminalSquare size={14} /> 1 demo task</span><span><Activity size={14} /> Real runs coming soon</span></div></div>
-        <Scoreboard />
+        <section className="race-area shell" id="compare" aria-labelledby="replay-heading">
+          <div className="section-heading split-heading replay-heading">
+            <div><span className="kicker">INSIDE AN AGENT RUN</span><h2 id="replay-heading">See how a replay works.</h2></div>
+            <p>Play or scrub through four sample agent timelines. Select a lane to focus on its actions. This is a scripted illustration; measured evaluations are available in Studio.</p>
+          </div>
+          <RaceStage auth={auth} />
+        </section>
+        <StudioShowcase />
+        {!STATIC_SITE && <RunWorkbench key={auth.user?.email || 'public'} auth={auth} />}
         <ReportSection />
         <Methodology />
-        <Signup />
+        {!STATIC_SITE && <Signup />}
       </main>
       <Footer />
     </>

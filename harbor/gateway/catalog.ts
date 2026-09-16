@@ -85,8 +85,8 @@ export async function fetchCatalog(apiKey: string, base = DEFAULT_BASE): Promise
     const url = new URL(`${base}/v1/models`)
     url.searchParams.set('limit', '200')
     if (cursor) url.searchParams.set('cursor', cursor)
-    const res = await fetch(url, { headers: { Authorization: `Bearer ${apiKey}` } })
-    if (!res.ok) throw new Error(`catalog fetch failed: ${res.status} ${await res.text()}`)
+    const res = await fetch(url, { headers: { Authorization: `Bearer ${apiKey}` }, signal: AbortSignal.timeout(15000), redirect: 'error' })
+    if (!res.ok) throw new Error(`catalog fetch failed: ${res.status}`)
     const body = (await res.json()) as { data?: Json[]; next_cursor?: string | null }
     for (const row of body.data ?? []) models.push(normalize(row))
     cursor = body.next_cursor ?? null

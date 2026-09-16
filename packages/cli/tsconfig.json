@@ -1,0 +1,7 @@
+{
+  "extends": "../../tsconfig.app.json",
+  "compilerOptions": {
+    "tsBuildInfoFile": "../../node_modules/.tmp/tsconfig.cli.tsbuildinfo"
+  },
+  "include": ["src", "scripts", "web", "../../src/hyperframes.d.ts"]
+}
