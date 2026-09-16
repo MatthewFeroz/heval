@@ -43,6 +43,11 @@ code { overflow-wrap: anywhere; }
 .report-stats div { display: grid; gap: 8px; background: #f6f8f2; border-radius: 8px; padding: 18px; }
 .report-stats strong { font-size: 28px; }.report-stats span,.report-muted { font-size: 13px; color: #6d7a69; }
 .report-chart, .report-table { overflow-x: auto; width: 100%; }
+.report-chart[data-theme=dark] { background: #0c0c0b; border-radius: 8px; }
+.report-button { display: inline-block; padding: 11px 17px; border-radius: 8px; background: #245a3c; color: white; font-weight: 600; text-decoration: none; }
+.report-invite { margin-top: 22px; border-top: 1px solid #dbe2d8; }
+.report-members { list-style: none; padding: 0; }
+.report-members li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; border-top: 1px solid #dbe2d8; padding: 16px 0; overflow-wrap: anywhere; }
 table { width: 100%; border-collapse: collapse; font-size: 13px; } th,td { text-align: left; padding: 12px 10px; border-bottom: 1px solid #e1e6df; }
 [role=alert] { color: #a13326; padding: 12px; background: #fff0eb; border-radius: 8px; }
 [role=status] { color: #34632d; }.report-notice { font-size: 13px; }
