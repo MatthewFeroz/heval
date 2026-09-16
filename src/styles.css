@@ -21,10 +21,11 @@ button { color: inherit; }
 
 .hero { padding: 94px 24px 72px; text-align: center; position: relative; isolation: isolate; }
 .hero::before { content: ''; position: absolute; inset: 0; z-index: -1; background-image: linear-gradient(#ffffff07 1px, transparent 1px), linear-gradient(90deg, #ffffff07 1px, transparent 1px); background-size: 80px 80px; background-position: center; mask-image: radial-gradient(ellipse at 50% 40%, #000 15%, transparent 72%); pointer-events: none; }
-.hero-harnesses { display: flex; justify-content: center; gap: 28px; margin-bottom: 44px; }
+.hero-harnesses { display: grid; grid-template-columns: repeat(10, 62px); justify-content: center; column-gap: 24px; row-gap: 38px; margin-bottom: 52px; }
 .hero-harness { position: relative; display: grid; place-items: center; width: 62px; height: 62px; border: 1px solid #ffffff12; border-radius: 17px; background: linear-gradient(145deg, #222323, #111212); box-shadow: 0 8px 25px #0005, inset 0 1px #ffffff09; animation: breathe 5.2s ease-in-out infinite; }
 .hero-harness img { width: 30px; height: 30px; object-fit: contain; }
-.hero-harness img[src*="codex"] { filter: invert(1); }
+.hero-harness img[src*="codex"], .hero-harness img[src*="hermes"] { filter: invert(1); }
+.hero-harness img[src*="deepagents"] { object-fit: cover; object-position: left; }
 .hero-harness span { position: absolute; top: calc(100% + 10px); white-space: nowrap; font-size: 10px; color: #b9babb; }
 .hero h1 { max-width: 930px; margin: 0 auto; font-size: clamp(48px, 6.1vw, 80px); line-height: 1.08; letter-spacing: -.055em; font-weight: 700; text-wrap: balance; }
 .keep-together { white-space: nowrap; }
@@ -269,6 +270,7 @@ a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outlin
 
 @media (max-width: 960px) {
   .nav-links { gap: 18px; margin-right: 18px; }
+  .hero-harnesses { grid-template-columns: repeat(5, 62px); }
   .runner-grid { grid-template-columns: 1fr 1fr; }
   .split-heading { grid-template-columns: 1fr; gap: 25px; }
   .score-layout { grid-template-columns: 1fr; }
@@ -293,7 +295,7 @@ a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outlin
   .nav-links { display: none; position: absolute; top: 62px; left: 0; right: 0; margin: 0; padding: 22px 20px; flex-direction: column; align-items: flex-start; background: #0c0d0d; border-bottom: 1px solid var(--line); }
   .nav-links.open { display: flex; }
   .hero { padding: 70px 8px 56px; }
-  .hero-harnesses { gap: 20px; margin-bottom: 36px; }
+  .hero-harnesses { grid-template-columns: repeat(5, 51px); column-gap: 18px; row-gap: 36px; margin-bottom: 46px; }
   .hero-harness { width: 51px; height: 51px; border-radius: 14px; }
   .hero-harness img { width: 26px; height: 26px; }
   .hero h1 { font-size: clamp(37px, 9.8vw, 62px); line-height: 1.13; }
@@ -331,6 +333,10 @@ a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outlin
   .signup-copy form button { height: 42px; justify-content: center; }
   .footer { padding: 32px 0; grid-template-columns: 1fr auto; gap: 16px; }
   .footer p { grid-column: 1 / -1; order: 3; }.footer > div { display: none; }
+}
+
+@media (max-width: 380px) {
+  .hero-harnesses { grid-template-columns: repeat(4, 51px); column-gap: 20px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

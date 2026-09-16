@@ -4,6 +4,8 @@ Heval is a local-first evaluation workbench for comparing coding-agent stacks on
 
 It captures terminal trajectories, grades the resulting workspace with executable tests, and presents synchronized side-by-side replays for Claude Code, Codex, OpenCode, and Pi.
 
+![Heval home screen](docs/images/home.png)
+
 > [!NOTE]
 > Heval is an early prototype. The landing page includes development fixtures; [`results/`](results/) also contains exploratory evaluation snapshots. These small comparisons are not a general model leaderboard.
 
@@ -91,8 +93,7 @@ The consolidated repository supports three entry points:
 
 The npm CLI remains a separate Node-only results viewer. The hosted report
 workspace uses Convex and the existing WorkOS sign-in. See [hosted reports](docs/hosted-reports.md)
-for its storage, access rules, and deployment instructions. The [stable baseline](docs/stable-baseline.md)
-records the earlier branch consolidation.
+for its storage, access rules, and deployment instructions.
 
 ## Authentication
 

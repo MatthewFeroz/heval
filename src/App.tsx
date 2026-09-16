@@ -38,6 +38,21 @@ const completionResults = featuredJob.models.map((model) => {
   return { model: rows[0].modelShort, passed: rows.filter((row) => row.passed === 1).length, total: rows.length }
 }).sort((a, b) => b.passed / b.total - a.passed / a.total)
 const studioUrl = `/studio?job=${featuredJob.job}&recipe=bar&x=modelShort&color=none&measure=passed`
+const harnessEcosystem = [
+  ...featuredExperiment.runners.map((runner) => ({
+    id: runner.id,
+    name: runner.name,
+    logo: runner.logo,
+    href: '#compare',
+    external: false,
+  })),
+  { id: 'deep-agents', name: 'Deep Agents', logo: '/harnesses/deepagents.svg', href: 'https://github.com/langchain-ai/deepagents', external: true },
+  { id: 'antigravity', name: 'Antigravity', logo: '/harnesses/antigravity.png', href: 'https://antigravity.google/', external: true },
+  { id: 'hermes', name: 'Hermes', logo: '/harnesses/hermes.svg', href: 'https://github.com/NousResearch/hermes-agent', external: true },
+  { id: 'gemini-cli', name: 'Gemini CLI', logo: '/harnesses/gemini-cli.png', href: 'https://github.com/google-gemini/gemini-cli', external: true },
+  { id: 'goose', name: 'Goose', logo: '/harnesses/goose.svg', href: 'https://github.com/block/goose', external: true },
+  { id: 'openhands', name: 'OpenHands', logo: '/harnesses/openhands.svg', href: 'https://github.com/All-Hands-AI/OpenHands', external: true },
+]
 
 const formatTokens = (tokens: number | null) => tokens === null ? 'pending' : `${(tokens / 1000).toFixed(1)}k`
 
@@ -436,16 +451,24 @@ export default function App({ auth = publicAuth }: { auth?: AppAuth }) {
       <Nav auth={auth} />
       <main id="top">
         <section className="hero shell">
-          <div className="hero-harnesses" aria-label="Explore Claude Code, Codex, OpenCode, and Pi">
-            {featuredExperiment.runners.map((runner, index) => (
-              <a className="hero-harness" href="#compare" key={runner.id} aria-label={`See ${runner.name} in the example replay`} style={{ animationDelay: `${index * -1.3}s` }}>
-                <img src={runner.logo} alt="" />
-                <span>{runner.name}</span>
+          <div className="hero-harnesses" aria-label="Coding agent harness ecosystem">
+            {harnessEcosystem.map((harness, index) => (
+              <a
+                className="hero-harness"
+                href={harness.href}
+                key={harness.id}
+                target={harness.external ? '_blank' : undefined}
+                rel={harness.external ? 'noreferrer' : undefined}
+                aria-label={harness.external ? `Visit ${harness.name}` : `See ${harness.name} in the example replay`}
+                style={{ animationDelay: `${index * -.52}s` }}
+              >
+                <img src={harness.logo} alt="" />
+                <span>{harness.name}</span>
               </a>
             ))}
           </div>
           <h1>The <span className="keep-together">open-source</span> harness evaluation platform</h1>
-          <p className="hero-copy">Compare Claude Code, Codex, OpenCode, and Pi.<br />Run evaluations locally with Harbor, inspect every trial, and share the results.</p>
+          <p className="hero-copy">Compare leading coding-agent harnesses—from Claude Code and Codex to Deep Agents, Antigravity, Hermes, and more.<br />Run evaluations locally with Harbor, inspect every trial, and share the results.</p>
           <div className="hero-actions">
             <a className="primary-button" href="/reports">Import your results <ArrowRight size={21} /></a>
             <a className="hero-github" href="https://github.com/MatthewFeroz/heval" target="_blank" rel="noreferrer" aria-label="Explore the code on GitHub">
