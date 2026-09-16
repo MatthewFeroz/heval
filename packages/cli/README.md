@@ -12,7 +12,7 @@ dependencies or install scripts.
 After the first npm release is published:
 
 ```sh
-npx heval@latest open
+npx @mattferoz/heval@latest open
 ```
 
 This opens an archived example: six models evaluated on 20 tasks. It does not
@@ -22,7 +22,7 @@ not a general model leaderboard.
 For a permanent installation:
 
 ```sh
-npm install -g heval
+npm install -g @mattferoz/heval
 heval open
 ```
 
@@ -106,7 +106,7 @@ From the repository root:
 ```sh
 bun install --frozen-lockfile
 bun run cli:pack
-npm install -g ./.scratch/heval-0.1.0.tgz
+npm install -g ./.scratch/mattferoz-heval-0.1.0.tgz
 heval open
 ```
 

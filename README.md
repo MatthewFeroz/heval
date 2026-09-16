@@ -46,11 +46,11 @@ Before npm publication, build and install the package locally:
 ```sh
 bun install --frozen-lockfile
 bun run cli:pack
-npm install -g ./.scratch/heval-0.1.0.tgz
+npm install -g ./.scratch/mattferoz-heval-0.1.0.tgz
 heval open
 ```
 
-After publication, users can use `npx heval@latest open`. See
+After publication, users can use `npx @mattferoz/heval@latest open`. See
 [Publishing the CLI](docs/publishing-cli.md) for the release procedure.
 This release does not launch evaluations; execute a Harbor job, then open its
 results with `heval open ./jobs/your-job`.

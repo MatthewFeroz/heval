@@ -7,8 +7,8 @@ import { fileURLToPath } from 'node:url'
 import { chromium } from '@playwright/test'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../../..')
-const { version } = JSON.parse(readFileSync(join(root, 'packages/cli/package.json'), 'utf8')) as { version: string }
-const tarball = join(root, '.scratch', `heval-${version}.tgz`)
+const { name, version } = JSON.parse(readFileSync(join(root, 'packages/cli/package.json'), 'utf8')) as { name: string; version: string }
+const tarball = join(root, '.scratch', `${name.replace(/^@/, '').replace('/', '-')}-${version}.tgz`)
 const temporary = mkdtempSync(join(tmpdir(), 'heval-package-smoke-'))
 const node = realpathSync(Bun.which('node')!)
 const npm = realpathSync(Bun.which('npm')!)
@@ -18,7 +18,7 @@ let browser: Awaited<ReturnType<typeof chromium.launch>> | undefined
 try {
   writeFileSync(join(temporary, 'package.json'), JSON.stringify({ private: true }))
   execFileSync(npm, ['install', '--offline', '--ignore-scripts', '--no-audit', '--no-fund', '--package-lock=false', tarball], { cwd: temporary, stdio: 'pipe' })
-  const installed = join(temporary, 'node_modules/heval')
+  const installed = join(temporary, 'node_modules', name)
   const manifest = JSON.parse(readFileSync(join(installed, 'package.json'), 'utf8'))
   assert.equal(manifest.bin.heval, 'dist/cli.js')
   assert.equal(manifest.dependencies, undefined)
@@ -30,6 +30,7 @@ try {
   assert.equal(execFileSync(node, [cli, '--version'], { cwd: temporary, encoding: 'utf8' }).trim(), version)
   // npm exec is the implementation behind npx; offline ensures no registry fallback.
   assert.equal(execFileSync(npm, ['exec', '--offline', '--no', '--', 'heval', '--version'], { cwd: temporary, encoding: 'utf8' }).trim(), version)
+  assert.equal(execFileSync(npm, ['exec', '--offline', '--no', '--', name, '--version'], { cwd: temporary, encoding: 'utf8' }).trim(), version)
   assert.match(execFileSync(node, [cli], { cwd: temporary, encoding: 'utf8' }), /Start with: heval open/)
   assert.throws(() => execFileSync(node, [cli, 'run'], { cwd: temporary, stdio: 'pipe' }), /Command failed/)
 
@@ -84,7 +85,7 @@ try {
   assert.equal(await page.getByRole('tab', { name: 'Motion', exact: true }).count(), 0)
   assert.equal(await page.getByRole('link', { name: 'Static report' }).count(), 0)
   assert.deepEqual(errors, [])
-  console.log(`Packed heval@${version}: installed outside repo, npm exec, Node-only doctor/viewer, six-model chart, SVG/PNG/bundle downloads, and presentation passed.`)
+  console.log(`Packed ${name}@${version}: installed outside repo, npm exec, Node-only doctor/viewer, six-model chart, SVG/PNG/bundle downloads, and presentation passed.`)
 } finally {
   await browser?.close()
   if (child && child.exitCode === null) {

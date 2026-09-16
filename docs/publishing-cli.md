@@ -1,7 +1,10 @@
 # Publishing the Heval CLI
 
-The npm package lives in `packages/cli`. Keep the repository root private.
+The npm package `@mattferoz/heval` lives in `packages/cli`. Keep the repository root private.
 The executable and UI are built ahead of publication; users only need Node.js.
+
+npm rejected the unscoped name `heval` as too similar to `level`. The package
+uses the maintainer's scope; its executable is still named `heval`.
 
 ## Prepare a release
 
@@ -29,27 +32,26 @@ credits. Install Playwright Chromium for this development check if necessary:
 
 ## First publication and ownership
 
-Log in to the npm account that should own `heval`, with two-factor authentication
+Log in to the `mattferoz` npm account, with two-factor authentication
 enabled. Run this in your own terminal; do not put account tokens in this repo.
 
 ```sh
 npm login
 npm whoami
-npm view heval name version
+npm view @mattferoz/heval name version
 ```
 
 A registry 404 means no public package was found, not a guaranteed reservation.
-The first successful publication establishes package ownership. If the name is
-unavailable, select a scoped package name and update the release documentation.
+The first successful publication establishes package ownership.
 Nothing in `cli:build`, `cli:pack`, or `cli:smoke` publishes or reserves a name.
 
 Once the reviewed tarball is ready, publish that exact artifact (adjust version):
 
 ```sh
-npm publish ./.scratch/heval-0.1.0.tgz --access public
-npm view heval version bin
-npx heval@latest --version
-npx heval@latest open
+npm publish ./.scratch/mattferoz-heval-0.1.0.tgz --access public
+npm view @mattferoz/heval version bin
+npx @mattferoz/heval@latest --version
+npx @mattferoz/heval@latest open
 ```
 
 Publishing the tested tarball avoids rebuilding between validation and upload.

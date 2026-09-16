@@ -27,7 +27,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: heval-cli-node-${{ matrix.node }}
-          path: .scratch/heval-*.tgz
+          path: .scratch/mattferoz-heval-*.tgz
 
   verify:
     runs-on: ubuntu-latest
