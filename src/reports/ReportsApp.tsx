@@ -1,5 +1,6 @@
 import { useMemo, useState, useSyncExternalStore } from 'react'
 import { useConvexAuth, useMutation, useQuery, useConvexConnectionState } from 'convex/react'
+import { ConvexError } from 'convex/values'
 import { api } from '../../convex/_generated/api'
 import type { Id } from '../../convex/_generated/dataModel'
 import { useAppAuth } from '../auth'
@@ -7,7 +8,10 @@ import { buildChart, DEFAULT_STATE } from '../charts/recipes'
 import { useChartPreview } from '../studio/useChartPreview'
 import { MAX_IMPORT_BYTES, parseReport, type ReportData } from './format'
 
-function message(error: unknown) { return error instanceof Error ? error.message.replace(/^.*Uncaught ConvexError: /s, '').split('\n')[0] : 'Something went wrong. Please retry.' }
+function message(error: unknown) {
+  if (error instanceof ConvexError && typeof error.data === 'string') return error.data
+  return error instanceof Error ? error.message.replace(/^.*Uncaught ConvexError: /s, '').split('\n')[0] : 'Something went wrong. Please retry.'
+}
 function token() { return Array.from(crypto.getRandomValues(new Uint8Array(32)), n => n.toString(16).padStart(2, '0')).join('') }
 function subscribeHashChange(listener: () => void) { window.addEventListener('hashchange', listener); return () => window.removeEventListener('hashchange', listener) }
 
