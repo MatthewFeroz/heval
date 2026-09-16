@@ -1,0 +1,50 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
+:root { font-family: 'DM Sans', sans-serif; color: #202a25; background: #f5f6f2; font-synthesis: none; }
+* { box-sizing: border-box; }
+body { margin: 0; }
+a { color: #216641; text-underline-offset: 4px; }
+button, input, select { font: inherit; }
+button { background: #245a3c; color: white; border: 1px solid #245a3c; border-radius: 8px; padding: 11px 17px; cursor: pointer; font-weight: 600; }
+button:disabled { opacity: .55; cursor: wait; }
+button.secondary { background: transparent; color: #355442; border-color: #c9d4c8; }
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid #b18428; outline-offset: 3px; }
+input:not([type=file]), select { border: 1px solid #bac9bd; border-radius: 7px; padding: 10px; background: white; color: #202a25; max-width: 100%; }
+label { display: grid; gap: 8px; font-weight: 600; margin: 18px 0; }
+p { line-height: 1.65; color: #53645a; }
+h1,h2,h3 { font-family: 'Space Grotesk', sans-serif; letter-spacing: -.035em; }
+h1 { font-size: clamp(30px,4vw,46px); line-height: 1.12; margin: 15px 0; }
+h2 { font-size: 25px; }
+.report-shell { max-width: 1080px; padding: 0 28px; margin: auto; }
+.report-header { display: flex; justify-content: space-between; align-items: center; gap: 20px; min-height: 100px; margin-bottom: 32px; border-bottom: 1px solid #dbe2d8; }
+.report-header nav { display: flex; align-items: center; gap: 22px; }
+.report-logo { font: 700 27px 'Space Grotesk',sans-serif; text-decoration: none; color: #223c2b; }
+.report-logo span { color: #7a877d; font-size: 18px; font-weight: 400; }
+.report-intro { max-width: 740px; margin: 42px 0; }
+.report-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: .14em; color: #61775b; }
+.report-steps { display: flex; list-style-position: inside; padding: 0; gap: 22px; font-size: 13px; color: #56704d; flex-wrap: wrap; }
+.report-card { padding: 30px; margin: 24px 0; background: #fff; border: 1px solid #dbe2d8; border-radius: 14px; box-shadow: 0 4px 20px #19382504; }
+.report-card h2:first-child { margin-top: 0; }
+.report-file { padding: 24px; border: 1px dashed #a2b59d; border-radius: 10px; background: #f6f9f3; }
+.report-file input { max-width: 100%; padding-top: 6px; }
+.report-import-preview { border-top: 1px solid #dbe2d8; padding-top: 16px; margin-top: 22px; }
+.report-import-preview button + button { margin-left: 10px; }
+details { margin: 20px 0; } summary { cursor: pointer; color: #355f40; font-weight: 600; }
+pre { max-height: 280px; overflow: auto; font-size: 12px; padding: 16px; background: #f5f6f2; }
+code { overflow-wrap: anywhere; }
+.report-list { list-style: none; padding: 0; }
+.report-list li { border-top: 1px solid #e1e6df; }
+.report-list a { display: grid; gap: 8px; padding: 20px 0; text-decoration: none; }
+.report-list span { color: #758170; font-size: 13px; }
+.report-badge { display: inline-block; background: #edf3e5; border: 1px solid #dce7d2; border-radius: 20px; padding: 6px 11px; font-size: 12px; color: #385c30; }
+.report-actions { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.report-confirm { padding: 18px; background: #fff5e9; border: 1px solid #dfcbb1; border-radius: 8px; margin-top: 22px; }
+.report-confirm button { margin-right: 10px; }
+.report-stats { display: grid; grid-template-columns: repeat(3,1fr); gap: 18px; margin: 28px 0; }
+.report-stats div { display: grid; gap: 8px; background: #f6f8f2; border-radius: 8px; padding: 18px; }
+.report-stats strong { font-size: 28px; }.report-stats span,.report-muted { font-size: 13px; color: #6d7a69; }
+.report-chart, .report-table { overflow-x: auto; width: 100%; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; } th,td { text-align: left; padding: 12px 10px; border-bottom: 1px solid #e1e6df; }
+[role=alert] { color: #a13326; padding: 12px; background: #fff0eb; border-radius: 8px; }
+[role=status] { color: #34632d; }.report-notice { font-size: 13px; }
+.report-footer { padding: 32px 0; color: #7a8774; font-size: 12px; }
+@media(max-width:600px) { .report-shell { padding: 0 16px; }.report-header { align-items: flex-start; padding: 22px 0; flex-direction: column; }.report-header nav { gap: 18px; font-size: 14px; }.report-card { padding: 20px; }.report-stats { gap: 7px; }.report-stats div { padding: 12px; }.report-stats strong { font-size: 23px; }.report-steps { gap: 12px; } }

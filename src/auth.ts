@@ -5,7 +5,7 @@ export type AppAuth = {
   user: { email: string; firstName?: string | null } | null
   signIn: () => void
   signOut: () => void
-  getAccessToken: () => Promise<string | undefined>
+  getAccessToken: (options?: { forceRefresh?: boolean }) => Promise<string | undefined>
 }
 export const publicAuth: AppAuth = { configured: false, isLoading: false, user: null, signIn() {}, signOut() {}, async getAccessToken() { return undefined } }
 

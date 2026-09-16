@@ -1,11 +1,13 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "vite",
-  "buildCommand": "bun run build:showcase",
+  "buildCommand": "bun scripts/vercel-build.ts",
   "outputDirectory": "dist",
   "rewrites": [
     { "source": "/", "destination": "/index.html" },
     { "source": "/login", "destination": "/index.html" },
-    { "source": "/studio", "destination": "/studio.html" }
+    { "source": "/studio", "destination": "/studio.html" },
+    { "source": "/reports", "destination": "/reports.html" },
+    { "source": "/share", "destination": "/reports.html" }
   ]
 }
