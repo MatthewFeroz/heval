@@ -8,6 +8,7 @@
     "cli:build": "bun packages/cli/scripts/build.ts",
     "cli:test": "bun test packages/cli/src",
     "cli:smoke": "bun packages/cli/scripts/smoke.ts",
+    "cli:smoke:published": "bun packages/cli/scripts/smoke.ts --registry",
     "cli:pack": "bun run cli:build && npm pack ./packages/cli --pack-destination .scratch",
     "dev": "vite --host 0.0.0.0",
     "build": "bun run social:build && tsc -b && vite build",

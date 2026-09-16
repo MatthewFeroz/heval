@@ -35,6 +35,11 @@ checks real browser rendering and SVG/PNG/bundle downloads. It uses no model
 credits. Install Playwright Chromium for this development check if necessary:
 `bunx playwright install chromium`.
 
+After publication, run `bun run cli:smoke:published` to repeat the walkthrough
+against the registry release using a fresh npm cache and an empty npm user
+configuration. It also checks trial inspection, filtering, bundle reimport,
+mobile width, and raw Harbor/normalized JSON imports. It never launches an eval.
+
 ## First publication and ownership
 
 Log in to the `mattferoz` npm account, with two-factor authentication
