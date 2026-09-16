@@ -21,17 +21,17 @@
     "report": "bun harbor/report/build-report.ts",
     "poster": "bun harbor/report/build-poster.ts",
     "social:build": "bun harbor/social/build-completion.ts",
-    "social:check": "HYPERFRAMES_NO_TELEMETRY=1 hyperframes check results/harbor/social/terminal-bench-composio-mirror --at 0,2.8,5.7,7.9",
+    "social:check": "HYPERFRAMES_NO_TELEMETRY=1 hyperframes check results/harbor/social/terminal-bench-comparison --at 0,2.8,5.7,7.9",
     "status": "bash harbor/status.sh",
     "test:server": "bun test server",
     "test:docker": "bun run worker:build && bun test --env-file=.env.docker-test server/docker.integration.test.ts",
     "worker:build": "docker build -f server/worker/Dockerfile -t heval-worker:local .",
-    "poster:comparison": "bun run poster results/harbor/terminal-bench-composio-mirror.json --only-combined --models glm-5.3,glm-5.3-flash,kimi-k3,deepseek-v4-flash,deepseek-v4-pro-0813 --source \"Source: Heval evaluations\" --out results/harbor/posters/merge-gateway-five-models",
-    "poster:comparison:social": "bun run poster results/harbor/terminal-bench-composio-mirror.json --only-combined --models glm-5.3,glm-5.3-flash,kimi-k3,deepseek-v4-flash,deepseek-v4-pro-0813 --source \"Source: Merge Evaluations\" --out results/harbor/posters/merge-gateway-five-models-social --no-title --no-kicker",
+    "poster:comparison": "bun run poster results/harbor/terminal-bench-comparison.json --only-combined --models glm-5.3,glm-5.3-flash,kimi-k3,deepseek-v4-flash,deepseek-v4-pro-0813 --source \"Source: Heval evaluations\" --out results/harbor/posters/merge-gateway-five-models",
+    "poster:comparison:social": "bun run poster results/harbor/terminal-bench-comparison.json --only-combined --models glm-5.3,glm-5.3-flash,kimi-k3,deepseek-v4-flash,deepseek-v4-pro-0813 --source \"Source: Merge Evaluations\" --out results/harbor/posters/merge-gateway-five-models-social --no-title --no-kicker",
     "thread": "bun harbor/report/build-thread.ts",
-    "thread:merge": "bun run thread results/harbor/terminal-bench-composio-mirror.json harbor/report/thread-merge.json results/harbor/threads/merge-evaluations",
+    "thread:merge": "bun run thread results/harbor/terminal-bench-comparison.json harbor/report/thread-merge.json results/harbor/threads/merge-evaluations",
     "experiment": "bun harbor/experiment.ts",
-    "thread:merge:all": "bun run thread results/harbor/terminal-bench-composio-mirror.json harbor/report/thread-merge-all.json results/harbor/threads/merge-evaluations-all"
+    "thread:merge:all": "bun run thread results/harbor/terminal-bench-comparison.json harbor/report/thread-merge-all.json results/harbor/threads/merge-evaluations-all"
   },
   "dependencies": {
     "@earendil-works/pi-coding-agent": "0.84.4",

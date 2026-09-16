@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#080909">
-<title>composio-mirror-smoke &middot; Heval report</title>
+<title>terminal-bench-comparison-smoke &middot; Heval report</title>
 <style>
 /*
  * Heval design tokens - the one place the brand lives as CSS.
@@ -227,22 +227,22 @@
 <body>
 <header class="topbar">
   <a class="brand" href="/"><span class="brand-mark"><span>h</span></span>Heval<span class="beta-pill">REPORT</span></a>
-  <div class="crumbs"><a href="/#reports">Reports</a><span>/</span><strong>composio-mirror-smoke</strong></div>
+  <div class="crumbs"><a href="/#reports">Reports</a><span>/</span><strong>terminal-bench-comparison-smoke</strong></div>
   <div class="actions">
     <div class="canvas-toggle" role="radiogroup" aria-label="Chart canvas">
       <label class="canvas-btn"><input type="radio" name="canvas" value="dark" class="sr-only" checked><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>Dark mode</label>
       <label class="canvas-btn"><input type="radio" name="canvas" value="light" class="sr-only"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>Light mode</label>
     </div>
     <span class="divider"></span>
-    <a class="btn" href="./composio-mirror-smoke.json" download>Trials JSON</a>
-    <a class="btn primary" href="/studio?job=composio-mirror-smoke&recipe=bar&x=modelShort&color=none&measure=passed&intervals=1&labels=1">Open in studio <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg></a>
+    <a class="btn" href="./terminal-bench-comparison-smoke.json" download>Trials JSON</a>
+    <a class="btn primary" href="/studio?job=terminal-bench-comparison-smoke&recipe=bar&x=modelShort&color=none&measure=passed&intervals=1&labels=1">Open in studio <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg></a>
   </div>
 </header>
 
 <main class="page">
   <div class="head">
     <span class="eyebrow">Static report &middot; generated 2026-09-02</span>
-    <h1>composio-mirror-smoke</h1>
+    <h1>terminal-bench-comparison-smoke</h1>
     <div class="meta">
       <span><b>1</b> trials</span><i>&middot;</i>
       <span><b>1</b> harness: codex</span><i>&middot;</i>
@@ -299,7 +299,7 @@
         <h2>Tasks completed per model</h2>
         <p class="lede">The headline number, and the one to read most carefully: bars carry Wilson 95% intervals, and at one attempt per task those intervals are wide enough to overlap across most of the field. Ranking is fair game; declaring an adjacent pair different is not.</p>
       </div>
-      <a class="btn" href="/studio?job=composio-mirror-smoke&recipe=bar&x=modelShort&color=none&measure=passed&intervals=1&labels=1">Open in studio <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg></a>
+      <a class="btn" href="/studio?job=terminal-bench-comparison-smoke&recipe=bar&x=modelShort&color=none&measure=passed&intervals=1&labels=1">Open in studio <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg></a>
     </div>
     <div class="card">
       <div class="card-head">
@@ -323,7 +323,7 @@
         <h2>Quality versus cost</h2>
         <p class="lede">Mean cost per trial against pass rate, one point per stack. The muted line is the Pareto frontier: nothing above-left of it exists in this job. Cost per *completed* task is the fairer figure and is charted below - mean per-trial cost rewards a stack for failing cheaply.</p>
       </div>
-      <a class="btn" href="/studio?job=composio-mirror-smoke&recipe=scatter&x=modelShort&color=none&measure=passed&xMeasure=costUsd&labels=1">Open in studio <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg></a>
+      <a class="btn" href="/studio?job=terminal-bench-comparison-smoke&recipe=scatter&x=modelShort&color=none&measure=passed&xMeasure=costUsd&labels=1">Open in studio <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg></a>
     </div>
     <div class="card">
       <div class="card-head">
@@ -347,7 +347,7 @@
         <h2>Cost per completed task</h2>
         <p class="lede">Total spend divided by passes, which is what a reader actually buys. A stack that fails fast and cheaply looks good on mean per-trial cost and bad here. Stacks that never passed cannot be priced and are absent.</p>
       </div>
-      <a class="btn" href="/studio?job=composio-mirror-smoke&recipe=bar&x=modelShort&color=none&measure=costUsd&aggregate=mean&sort=asc&intervals=0&labels=1&title=Cost+per+completed+task">Open in studio <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg></a>
+      <a class="btn" href="/studio?job=terminal-bench-comparison-smoke&recipe=bar&x=modelShort&color=none&measure=costUsd&aggregate=mean&sort=asc&intervals=0&labels=1&title=Cost+per+completed+task">Open in studio <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg></a>
     </div>
     <div class="card">
       <div class="card-head">
@@ -371,7 +371,7 @@
         <h2>Median time per completed task</h2>
         <p class="lede">Median agent-step wall clock over passed trials only. Failures are excluded on purpose: a timed-out run contributes the cap rather than a duration, which would rank a stack faster for giving up sooner.</p>
       </div>
-      <a class="btn" href="/studio?job=composio-mirror-smoke&recipe=bar&x=modelShort&color=none&measure=agentSeconds&aggregate=mean&sort=asc&intervals=0&labels=1&title=Median+time+per+completed+task">Open in studio <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg></a>
+      <a class="btn" href="/studio?job=terminal-bench-comparison-smoke&recipe=bar&x=modelShort&color=none&measure=agentSeconds&aggregate=mean&sort=asc&intervals=0&labels=1&title=Median+time+per+completed+task">Open in studio <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg></a>
     </div>
     <div class="card">
       <div class="card-head">
@@ -395,7 +395,7 @@
         <h2>Agent time per trial</h2>
         <p class="lede">Every trial, passed or not - the spread the two medians above are drawn from. Wall-clock of the agent step alone; environment build, harness install and verification are excluded. The tick is the group mean.</p>
       </div>
-      <a class="btn" href="/studio?job=composio-mirror-smoke&recipe=strip&x=modelShort&color=none&measure=agentSeconds&aggregate=mean&labels=0">Open in studio <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg></a>
+      <a class="btn" href="/studio?job=terminal-bench-comparison-smoke&recipe=strip&x=modelShort&color=none&measure=agentSeconds&aggregate=mean&labels=0">Open in studio <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg></a>
     </div>
     <div class="card">
       <div class="card-head">
@@ -419,7 +419,7 @@
         <h2>Share of trials over 5 minutes</h2>
         <p class="lede">Tail risk, not central tendency. A stack can hold a respectable median and still be unusable if it blows the budget on a third of tasks; timeouts are counted here as well as separately below.</p>
       </div>
-      <a class="btn" href="/studio?job=composio-mirror-smoke&recipe=bar&x=modelShort&color=none&measure=overSlow&labels=1">Open in studio <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg></a>
+      <a class="btn" href="/studio?job=terminal-bench-comparison-smoke&recipe=bar&x=modelShort&color=none&measure=overSlow&labels=1">Open in studio <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg></a>
     </div>
     <div class="card">
       <div class="card-head">
@@ -443,7 +443,7 @@
         <h2>Per-task breakdown</h2>
         <p class="lede">Single-hue ramp keyed to pass rate; the job here is magnitude, so one hue light-to-dark is correct. Tasks are the columns because a job has many of them and few stacks.</p>
       </div>
-      <a class="btn" href="/studio?job=composio-mirror-smoke&recipe=matrix&x=task&row=stack&measure=passed&labels=1">Open in studio <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg></a>
+      <a class="btn" href="/studio?job=terminal-bench-comparison-smoke&recipe=matrix&x=task&row=stack&measure=passed&labels=1">Open in studio <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg></a>
     </div>
     <div class="card">
       <div class="card-head">
@@ -512,7 +512,7 @@
   </div>
 
   <div class="block" id="table">
-    <div class="block-head"><div><span class="eyebrow">Every trial</span><h2>Table view</h2></div><a class="btn" href="/studio?job=composio-mirror-smoke&recipe=bar&x=modelShort&color=none&measure=passed&intervals=1&labels=1">Explore in studio <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg></a></div>
+    <div class="block-head"><div><span class="eyebrow">Every trial</span><h2>Table view</h2></div><a class="btn" href="/studio?job=terminal-bench-comparison-smoke&recipe=bar&x=modelShort&color=none&measure=passed&intervals=1&labels=1">Explore in studio <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg></a></div>
     <div class="panel"><div class="card-body"><table><thead><tr><th>Result</th><th>Harness</th><th>Model (short)</th><th>Task</th><th class="num">Reward</th><th class="num">Agent time (s)</th><th class="num">Input tok</th><th class="num">Cache tok</th><th class="num">Output tok</th><th class="num">Cost (USD)</th></tr></thead><tbody><tr><td><span class="pill pass"><i></i>pass</span></td><td>codex</td><td>glm-5.3-flash</td><td>fix-git</td><td class="num">100%</td><td class="num">32.6s</td><td class="num">121.7k</td><td class="num">108.7k</td><td class="num">2.9k</td><td class="num">-</td></tr></tbody></table></div></div>
   </div>
 

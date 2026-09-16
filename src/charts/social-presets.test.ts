@@ -3,7 +3,7 @@ import { resolveSocial, socialSettings, SOCIAL_DEFAULTS } from './social-presets
 import { socialSvg } from './social-render'
 import type { TrialRow } from './trial'
 import { readFileSync } from 'node:fs'
-const real = JSON.parse(readFileSync('results/harbor/terminal-bench-composio-mirror.json', 'utf8'))
+const real = JSON.parse(readFileSync('results/harbor/terminal-bench-comparison.json', 'utf8'))
   .rows as TrialRow[]
 const models = ['glm-5.3', 'glm-5.3-flash', 'kimi-k3', 'deepseek-v4-flash', 'deepseek-v4-pro-0813']
 const options = { ...SOCIAL_DEFAULTS, models }

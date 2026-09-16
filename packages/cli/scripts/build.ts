@@ -71,7 +71,7 @@ const result = await Bun.build({
 })
 if (!result.success) throw new AggregateError(result.logs, 'CLI build failed')
 chmodSync(join(dist, 'cli.js'), 0o755)
-const example = JSON.parse(readFileSync(join(root, 'results/harbor/terminal-bench-composio-mirror.json'), 'utf8'))
+const example = JSON.parse(readFileSync(join(root, 'results/harbor/terminal-bench-comparison.json'), 'utf8'))
 example.source = 'Bundled archived example; not a new evaluation'
 writeFileSync(join(dist, 'example.json'), JSON.stringify(example) + '\n')
 writeFileSync(join(dist, 'THIRD_PARTY_NOTICES.txt'), [...notices].sort(([a], [b]) => a.localeCompare(b)).map(([, text]) => text).join('\n\n----------------------------------------\n\n') + '\n')

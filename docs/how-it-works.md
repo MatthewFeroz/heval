@@ -38,7 +38,7 @@ directly.
 **2. `bun run report` normalizes it.** Point it at a job directory:
 
 ```bash
-bun run report jobs/terminal-bench-composio-mirror
+bun run report jobs/terminal-bench-comparison
 ```
 
 That writes three things into `results/harbor/`:

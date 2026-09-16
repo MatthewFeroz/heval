@@ -225,7 +225,7 @@ success, and median time. Each image includes its title, sample size, model labe
 line, so it can stand on its own outside the report.
 
 ```bash
-bun run poster results/harbor/terminal-bench-composio-mirror.json --open-weight
+bun run poster results/harbor/terminal-bench-comparison.json --open-weight
 ```
 
 The command writes 2400x2400 PNGs and editable HTML files under

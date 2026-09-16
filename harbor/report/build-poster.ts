@@ -2,8 +2,8 @@ import { fileURLToPath } from 'node:url'
 /**
  * Normalized job -> individual poster graphs, sized for a social post.
  *
- *   bun harbor/report/build-poster.ts results/harbor/terminal-bench-composio-mirror.json
- *   bun run poster results/harbor/terminal-bench-composio-mirror.json --open-weight
+ *   bun harbor/report/build-poster.ts results/harbor/terminal-bench-comparison.json
+ *   bun run poster results/harbor/terminal-bench-comparison.json --open-weight
  *
  * Writes, under results/harbor/posters/<job>/ (override with --out <dir>):
  *

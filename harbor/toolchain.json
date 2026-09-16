@@ -102,7 +102,7 @@
       "validation": "Every pin checked against the live catalog, then probed on /v1/openai/responses through the proxy: all six returned HTTP 200 with status=completed and an x-merge-vendor matching the pin.",
       "containerReachability": "Containers reach the host proxy at http://host.docker.internal:8787 with no extra host mapping on Docker Desktop; verified 2026-09-02.",
       "provenance": "The proxy pins the vendor but leaves no trace in Harbor's output, so each agent also sets HEVAL_VENDOR to the vendor its model is pinned to. harbor/report/trials.ts reads it into TrialRow.vendor; without it routeFor() refuses to guess a rate card and every Codex row drops out of the cost chart. The yaml's HEVAL_VENDOR values are checked against pins.json - they are two copies of one fact and must not drift.",
-      "smokeVerified": "2026-09-02, jobs/composio-mirror-smoke: 1/1 trials, reward 1.0, 2m29s. 19 proxy requests all HTTP 200 with served vendor == pinned vendor on every one, and 0 websocket/403/reconnect lines in the in-container codex log."
+      "smokeVerified": "2026-09-02, jobs/terminal-bench-comparison-smoke: 1/1 trials, reward 1.0, 2m29s. 19 proxy requests all HTTP 200 with served vendor == pinned vendor on every one, and 0 websocket/403/reconnect lines in the in-container codex log."
     }
   },
   "models": {
@@ -136,7 +136,7 @@
         "Gateway lists four vendors at a 10x price spread (particle/zai $0.015/$0.05 per Mtok; wafer/baseten $0.15/$0.50). Vendor is not pinned, so it is an uncontrolled variable that must appear in snapshot limitations."
       ]
     },
-    "composioMirrorSweep": {
+    "terminalBenchComparisonSweep": {
       "source": "https://x.com/composio/status/2092983288423927939 (2026-08-27): 5 open-weight models on 30 multi-step agentic tasks.",
       "verifiedOn": "2026-09-02",
       "verifiedAgainst": "https://api-gateway.merge.dev/v1/models",
@@ -231,14 +231,14 @@
         "Reported input-token counts for identical work vary ~50% across vendors of the same model (448k baseten / 664k fireworks / 669k togetherai on one probe). Vendor therefore affects the measured cost through token accounting, not just the rate card, which is a further reason the vendor is pinned and recorded per trial."
       ],
       "runProvenance": {
-        "job": "terminal-bench-composio-mirror",
+        "job": "terminal-bench-comparison",
         "stoppedEarly": true,
         "stopReason": "Stopped deliberately at 20 of 30 tasks on cost grounds. The run was killed once the 20th task had results from all six models, so every published row is a complete paired comparison.",
         "tasksCompleted": 20,
         "tasksConfigured": 30,
         "trialsPublished": 120,
         "trialsParked": 13,
-        "parkedNote": "13 trial dirs from three tasks that never reached all six models (financial-document-processor, query-optimize, regex-log) are moved to jobs/terminal-bench-composio-mirror/_incomplete/. They are excluded, not deleted: scoring models on partially different task sets would break the paired design that makes n=20 workable at all.",
+        "parkedNote": "13 trial dirs from three tasks that never reached all six models (financial-document-processor, query-optimize, regex-log) are moved to jobs/terminal-bench-comparison/_incomplete/. They are excluded, not deleted: scoring models on partially different task sets would break the paired design that makes n=20 workable at all.",
         "knownDefects": [
           "chess-best-move / deepseek-v4-pro-0813 is recorded as reward 0.0 but the trial never ran - a baseten HTTP 429 killed it at startup (agent_execution_time_sec: null). It was not retried because include_exceptions was scoped to AgentSetupTimeoutError only. Not re-run: chess-best-move scored 0/6 across every model that did execute, so the cell is non-discriminating and a repair would not move any published number."
         ],
