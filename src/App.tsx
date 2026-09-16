@@ -1,17 +1,12 @@
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import {
   ArrowRight,
   BarChart3,
-  ChevronDown,
   Clock3,
   Coins,
   ExternalLink,
   LogIn,
   LogOut,
-  Pause,
-  Play,
-  RotateCcw,
-  Trophy,
   Zap,
 } from 'lucide-react'
 import { featuredExperiment, type Runner } from './data'
@@ -24,6 +19,7 @@ import { STATIC_SITE } from './deployment'
 import { LandingHero } from './landing/LandingHero'
 import { HarnessTui } from './landing/HarnessTui'
 import { useSectionMotion } from './landing/useSectionMotion'
+import { useDemoAutoplay } from './landing/useDemoAutoplay'
 import './landing/landing.css'
 
 const runnerEnd = (runner: Runner) => Math.max(...runner.events.map((event) => event.at))
@@ -86,31 +82,31 @@ function RunnerLane({ runner, time, focused, onFocus, rawData, liveStatus, onLiv
         <div className="runner-avatar"><img src={runner.logo} alt="" /></div>
         <div className="runner-title">
           <strong>{runner.name}</strong>
-          <span>{runner.version}</span>
+          <span>{runner.version} · demo</span>
         </div>
-        <div className={`lane-state ${isDone ? runner.outcome : time ? 'running' : 'ready'}`}>
-          <span />{liveStatus || (isDone ? runner.outcome : time ? 'running' : 'ready')}
+        <div className="lane-tools">
+          <div className="lane-stats" aria-label="Sample run metrics">
+            <span title="Cost" aria-label={`Cost: ${runner.cost === null ? 'pending' : `$${(runner.cost * progress).toFixed(2)}`}`}><Coins size={12} /> {runner.cost === null ? 'pending' : `$${(runner.cost * progress).toFixed(2)}`}</span>
+            <span className="lane-elapsed" title="Elapsed time" aria-label={`Elapsed time: ${elapsed} seconds`}><Clock3 size={12} /> {elapsed}s</span>
+            <span title="Tokens" aria-label={`Tokens: ${runner.tokens === null ? 'pending' : Math.round(runner.tokens * progress)}`}><Zap size={12} /> {runner.tokens === null ? formatTokens(null) : formatTokens(Math.round(runner.tokens * progress))}</span>
+          </div>
+          <div className={`lane-state ${isDone ? runner.outcome : time ? 'running' : 'ready'}`}>
+            <span />{liveStatus || (isDone ? runner.outcome : time ? 'running' : 'ready')}
+          </div>
+          {!STATIC_SITE && <button className="live-run-button" onClick={(event) => { event.stopPropagation(); onLiveRun() }}>{liveStatus === 'running' ? 'LIVE' : 'RUN REAL'}</button>}
         </div>
-        {!STATIC_SITE && <button className="live-run-button" onClick={(event) => { event.stopPropagation(); onLiveRun() }}>{liveStatus === 'running' ? 'LIVE' : 'RUN REAL'}</button>}
       </div>
       <div className="terminal-body">
         <HarnessTui runner={runner} visibleEvents={visibleEvents} isDone={isDone} started={time > 0} rawData={rawData} />
-      </div>
-      <div className="lane-progress"><span style={{ width: `${progress * 100}%` }} /></div>
-      <div className="lane-stats">
-        <span><Coins size={13} /> {runner.cost === null ? 'pending' : `$${(runner.cost * progress).toFixed(2)}`}</span>
-        <span><Clock3 size={13} /> {elapsed}s</span>
-        <span><Zap size={13} /> {runner.tokens === null ? formatTokens(null) : formatTokens(Math.round(runner.tokens * progress))}</span>
       </div>
     </article>
   )
 }
 
 function RaceStage({ auth }: { auth: AppAuth }) {
-  const [time, setTime] = useState(0)
-  const [playing, setPlaying] = useState(false)
+  const demo = useRef<HTMLDivElement>(null)
+  const time = useDemoAutoplay(demo, maxTime)
   const [focused, setFocused] = useState<string | null>(null)
-  const finished = time >= maxTime
 
   async function startLiveRun(harness: string) {
     if (!auth.user) {
@@ -122,43 +118,8 @@ function RaceStage({ auth }: { auth: AppAuth }) {
     document.getElementById('evaluations')?.scrollIntoView({ behavior: 'smooth' })
   }
 
-  useEffect(() => {
-    if (!playing) return
-    const timer = window.setInterval(() => {
-      setTime((current) => {
-        if (current >= maxTime) {
-          setPlaying(false)
-          return maxTime
-        }
-        return current + 1
-      })
-    }, 180)
-    return () => window.clearInterval(timer)
-  }, [playing])
-
-  const togglePlayback = () => {
-    if (finished) setTime(0)
-    setPlaying((value) => !value || finished)
-  }
-
   return (
-    <div className="race-shell">
-      <div className="race-toolbar">
-        <div className="window-dots"><span /><span /><span /></div>
-        <div className="race-meta">
-          <span className="example-chip">INTERACTIVE EXAMPLE</span>
-          <span>SAMPLE DATA</span>
-        </div>
-        <a className="manifest-button" href="#methodology">View demo protocol <ExternalLink size={13} /></a>
-      </div>
-      <div className="task-strip">
-        <div className="task-number">01</div>
-        <div>
-          <span className="eyebrow">{featuredExperiment.type} · {featuredExperiment.task}</span>
-          <p>{featuredExperiment.prompt}</p>
-        </div>
-        <div className="task-tags"><span>{featuredExperiment.language}</span><span>{featuredExperiment.difficulty}</span></div>
-      </div>
+    <div className="replay-demo" ref={demo} role="group" aria-label="Scripted coding-agent demo">
       <div className={`runner-grid ${focused ? 'has-focus' : ''}`}>
         {featuredExperiment.runners.map((runner) => (
           <RunnerLane
@@ -171,22 +132,6 @@ function RaceStage({ auth }: { auth: AppAuth }) {
           />
         ))}
       </div>
-      <div className="playback">
-        <button className="play-button" onClick={togglePlayback} aria-label={playing ? 'Pause replay' : 'Play replay'}>
-          {playing ? <Pause size={16} fill="currentColor" /> : finished ? <RotateCcw size={16} /> : <Play size={16} fill="currentColor" />}
-        </button>
-        <span className="play-time">{String(time).padStart(2, '0')}s</span>
-        <input aria-label="Replay timeline" type="range" min="0" max={maxTime} value={time} onChange={(event) => { setPlaying(false); setTime(Number(event.target.value)) }} />
-        <span className="play-time">{maxTime}s</span>
-        <button className="speed-button">5× <ChevronDown size={12} /></button>
-      </div>
-      {finished && (
-        <div className="race-verdict">
-          <Trophy size={18} />
-          <span><strong>Example replay complete.</strong> These scripted events illustrate the replay controls. Explore published evaluations in Studio for measured results.</span>
-          <button onClick={() => { setTime(0); setPlaying(true) }}>Replay <RotateCcw size={13} /></button>
-        </div>
-      )}
     </div>
   )
 }

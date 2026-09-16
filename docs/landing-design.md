@@ -1,7 +1,7 @@
 # Homepage design sources
 
 The Heval homepage adapts the typography, dark grid, floating agent cards,
-staggered entrances, pointer parallax, and preview tilt from [T3 Code](https://t3.codes/).
+staggered entrances, pointer parallax, and preview sizing from [T3 Code](https://t3.codes/).
 The implementation was inspected on 2026-09-16 and adapted to React, Heval's
 evaluation workflows, and its eight featured ecosystem projects.
 
@@ -39,6 +39,10 @@ The ANSI renderers reproduce their logo, prompt, help, border, and status layout
 with the sample fixture's versions and model configuration. They use a generic
 project path and omit account details, update notices, and personalized tips.
 These are responsive illustrations, not live CLI sessions or screenshots.
-The panels start idle; sample events appear only after playback starts.
+The four panes stand alone without an enclosing window, task banner, or player.
+Cost, elapsed time, and token metrics live in each pane's header, alongside its
+status and a small demo label. The sample automatically loops while visible,
+with a short pause on the startup screens and completed results. It pauses when
+offscreen or in a hidden tab; reduced motion shows the idle startup screens.
 Xterm's rendered cell dimensions determine the columns and rows on resize,
 including when a lane is focused, so text and borders fit the available space.

@@ -78,11 +78,6 @@
 .landing-page .race-area { width: min(1176px, calc(100% - 64px)); margin: 0 auto; padding: 0 0 110px; }
 .landing-page .section-heading h2, .landing-page .studio-intro h2 { font-weight: 500; letter-spacing: -.04em; line-height: 1.1; }
 .landing-page .split-heading > p { color: #a1a1aa; line-height: 1.7; }
-.landing-page .race-shell { border-color: #ffffff1a; border-radius: 14px; transform: perspective(2000px) rotateX(2deg); transition: transform .6s; box-shadow: 0 28px 64px -28px #000c; }
-.landing-page .race-shell:hover, .landing-page .race-shell:focus-within { transform: perspective(2000px) rotateX(0deg); }
-.landing-page .race-toolbar { height: 36px; }
-.landing-page .task-strip { padding: 12px 20px; }
-.landing-page .lane-head { height: 48px; padding-block: 8px; }
 .landing-page .real-terminal { height: 100%; }
 .landing-page .studio-showcase { padding-block: 100px; border-top: 1px solid var(--line-soft); gap: 80px; }
 .landing-page .studio-intro h2 { font-size: clamp(32px, 3.5vw, 48px); }
@@ -174,7 +169,6 @@
   .hero-links { font-size: 12px; }
   .hero-harnesses { overflow: clip; }
   .landing-page .race-area { width: calc(100% - 24px); padding-block: 0 65px; }
-  .landing-page .race-shell { transform: none; }
   .landing-page .terminal-body { height: 300px; }
   .landing-page .studio-showcase { padding-block: 64px; gap: 28px; }
   .landing-page .studio-intro p { font-size: 15px; }
@@ -197,5 +191,4 @@
   .hero-float-mark { translate: none; transition: none; }
   .hero h1 > span, .hero-copy, .hero-actions { animation: none; }
   .landing-page *, .landing-page *::before, .landing-page *::after { transition-duration: 0s !important; }
-  .landing-page .race-shell { transform: none; }
 }
