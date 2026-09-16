@@ -3,7 +3,7 @@ export type AppAuth = {
   configured: boolean
   isLoading: boolean
   user: { email: string; firstName?: string | null } | null
-  signIn: () => void
+  signIn: () => void | Promise<void>
   signOut: () => void
   getAccessToken: (options?: { forceRefresh?: boolean }) => Promise<string | undefined>
 }

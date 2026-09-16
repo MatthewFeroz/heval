@@ -3,6 +3,11 @@ import { expect, test } from '@playwright/test'
 
 const JOB = 'terminal-bench-glm53-smoke'
 test.beforeEach(async ({ page }) => {
+  // Exercise the real gated route with a signed-in, test-only provider.
+  await page.route('**/studio?*', async route => {
+    const response = await route.fetch({ url: new URL('/tests/fixtures/workbench.html', route.request().url()).href })
+    await route.fulfill({ response })
+  })
   await page.goto(`/studio?job=${JOB}&recipe=bar&x=agent&color=modelShort&measure=passed`)
   await expect(page.getByRole('heading', { name: JOB })).toBeVisible()
   await expect(page.locator('.card svg')).toBeVisible()

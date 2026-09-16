@@ -7,7 +7,7 @@ function Connected({ children }: { children: (auth: AppAuth) => ReactNode }) {
   useEffect(() => {
     if (location.pathname === '/login') void signIn()
   }, [signIn])
-  const auth = useMemo(() => ({ configured: true, isLoading, user, signIn: () => { void signIn({ state: { returnTo: location.pathname + location.search + location.hash } }) }, signOut, getAccessToken }), [isLoading, user, signIn, signOut, getAccessToken])
+  const auth = useMemo(() => ({ configured: true, isLoading, user, signIn: () => signIn({ state: { returnTo: location.pathname + location.search + location.hash } }), signOut, getAccessToken }), [isLoading, user, signIn, signOut, getAccessToken])
   return <AuthContext.Provider value={auth}>{children(auth)}</AuthContext.Provider>
 }
 

@@ -1,0 +1,17 @@
+.studio-access { min-height: 100vh; padding: 28px 32px 64px; background: #09090b; color: #f4f4f5; }
+.studio-access-brand { display: inline-block; font-size: 24px; font-weight: 600; letter-spacing: -.06em; }
+.studio-access-card { width: min(100%, 440px); margin: clamp(64px, 13vh, 150px) auto 0; padding: 36px; border: 1px solid #ffffff14; border-radius: 18px; background: #101012; }
+.studio-access-icon { display: grid; place-items: center; width: 48px; height: 48px; border: 1px solid #ffffff18; border-radius: 12px; background: #ffffff05; color: #d4d4d8; }
+.studio-access-kicker { margin: 24px 0 8px; color: #71717a; font: 10px var(--mono); letter-spacing: .12em; }
+.studio-access-card h1 { margin: 0 0 12px; font-size: clamp(26px, 4vw, 32px); line-height: 1.2; letter-spacing: -.04em; font-weight: 500; }
+.studio-access-card > p:not(.studio-access-kicker) { margin: 0 0 24px; color: #a1a1aa; font-size: 14px; line-height: 1.7; }
+.studio-access-signin { display: flex; justify-content: center; align-items: center; gap: 10px; width: 100%; min-height: 46px; margin: 24px 0; padding: 12px 18px; border: 0; border-radius: 10px; background: #f4f4f5; color: #09090b; font-size: 14px; font-weight: 600; cursor: pointer; }
+.studio-access-signin:hover:not(:disabled) { background: #fff; }
+.studio-access-signin:disabled { opacity: .6; cursor: wait; }
+.studio-access-back { display: inline-flex; align-items: center; gap: 7px; color: #a1a1aa; font-size: 13px; }
+.studio-access-back:hover { color: #f4f4f5; }
+.studio-access-card > p.studio-access-error { color: #fca5a5; }
+@media (max-width: 480px) {
+  .studio-access { padding: 22px 20px 40px; }
+  .studio-access-card { padding: 26px; margin-top: 56px; }
+}

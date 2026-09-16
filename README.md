@@ -108,7 +108,7 @@ for its storage, access rules, and deployment instructions.
 
 ## Authentication
 
-The public showcase works without configuration. WorkOS AuthKit sign-in gates real evaluation controls and the Bun server verifies every runner access token against WorkOS's JWKS.
+The public showcase works without configuration. WorkOS AuthKit sign-in gates the hosted Studio page and real evaluation controls. Studio waits for session verification before loading either editor, preserves the requested URL through sign-in, and stays closed if authentication is unconfigured. The Bun server verifies every runner access token against WorkOS's JWKS. The CLI's local results viewer remains account-free.
 
 1. In the WorkOS Dashboard, copy your environment's client ID into both `VITE_WORKOS_CLIENT_ID` and `WORKOS_CLIENT_ID` in `.env.local` (start from `.env.example`). The client ID is public; no WorkOS API key is used by this integration.
 2. Add `http://localhost:5173` as an allowed web origin and sign-in callback redirect URI.

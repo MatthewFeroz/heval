@@ -90,3 +90,21 @@ HEVAL_SMOKE_URL=https://YOUR-PREVIEW.convex.cloud \
 Use a disposable deployment: the script installs a test JWT issuer there. It refuses production deploy keys and requires the URL to match the key’s deployment. It does not modify production auth or inject an administrator key into the browser. Videos, screenshots, and a JSON check report go to `recordings/hosted-report-flow/`. Keep deploy-key files private and delete the temporary key when finished.
 
 The production integration follows [Convex’s Vercel deployment guide](https://docs.convex.dev/production/hosting/vercel) and [WorkOS AuthKit integration](https://docs.convex.dev/auth/authkit/add-to-app). The isolated smoke identity uses Convex’s documented [custom JWT verification](https://docs.convex.dev/auth/advanced/custom-jwt).
+
+## Studio sign-in gate
+
+Every hosted Studio entry (`/studio` and `/studio.html`, including job, run, and
+saved-report links) requires a resolved WorkOS session. The editor bundle and
+its data requests start only after sign-in. Loading, signed-out, and
+unconfigured-auth states never mount either editor. Sign-in keeps the complete
+requested path, query, and fragment in AuthKit state; the existing callback
+accepts only destinations on this origin. Signing out or losing the session
+unmounts Studio.
+
+This page gate complements the existing Convex membership checks and Bun bearer
+token checks; it does not make intentionally published report files private.
+Shared report links remain available through `/share`. The separately packaged
+local CLI viewer does not use the hosted route and still works without login.
+Browser tests inject sessions through files under `tests/fixtures/`, which are
+excluded from production builds; there is no query parameter or storage flag
+that bypasses authentication in the shipped app.
