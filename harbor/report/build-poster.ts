@@ -34,6 +34,7 @@ import {
   PANELS,
   POSTER_INK,
   POSTER_MAX_SERIES,
+  POSTER_METRIC_SERIES,
   POSTER_COMPARISON_SERIES,
   POSTER_WINNER,
   POSTER_SURFACE,
@@ -393,6 +394,13 @@ const LOGO_SPOTS = ['axis-inline', 'axis-below', 'above-bar', 'in-bar'] as const
 type LogoSpot = (typeof LOGO_SPOTS)[number]
 
 /**
+ * `in-bar` rather than the tightest option, because this is now the default
+ * look rather than one of four experiments: the mark is large enough to read at
+ * thumbnail size and costs no vertical space under the axis.
+ */
+const DEFAULT_LOGO_SPOT: LogoSpot = 'in-bar'
+
+/**
  * Bar fraction a mark needs to sit inside the bar rather than over it.
  *
  * The plot is about 25 type units tall at either export size, and the mark plus
@@ -417,8 +425,8 @@ function modelLogo(model: string): string {
  * the two-line break the label ladder already chose.
  */
 function axisLabelHtml(b: PanelData['bars'][number]): string {
-  const inline = has('designer') && logoSpot === 'axis-inline'
-  const below = has('designer') && logoSpot === 'axis-below'
+  const inline = designer && logoSpot === 'axis-inline'
+  const below = designer && logoSpot === 'axis-below'
   const lines = inline ? b.lines.flatMap((line) => line.split(' ')) : b.lines
   const name = `<div class="model-name">${lines.map((l) => `<span>${esc(l)}</span>`).join('')}</div>`
   return `<div class="bar-labels">${inline ? modelLogo(b.key) : ''}${name}${below ? modelLogo(b.key) : ''}</div>`
@@ -435,10 +443,14 @@ function panelHtml(d: PanelData): string {
   const bars = d.bars
     .map((b) => {
       const winner = b.value === best
-      const color = has('designer') ? ({ completion: '#ABCAD8', 'cost-per-success': '#C6ADCA', 'median-time': '#96A58D' }[d.panel.id]) : winner ? POSTER_WINNER : POSTER_COMPARISON_SERIES[comparisonIndex++ % POSTER_COMPARISON_SERIES.length]
+      const color = designer
+        ? POSTER_METRIC_SERIES[d.panel.id]
+        : winner
+          ? POSTER_WINNER
+          : POSTER_COMPARISON_SERIES[comparisonIndex++ % POSTER_COMPARISON_SERIES.length]
       const inBar = logoSpot === 'in-bar' && b.frac >= IN_BAR_MIN_FRAC
       const stacked = logoSpot === 'above-bar' || (logoSpot === 'in-bar' && !inBar)
-      const mark = (where: boolean) => (has('designer') && where ? modelLogo(b.key) : '')
+      const mark = (where: boolean) => (designer && where ? modelLogo(b.key) : '')
       return `        <div class="bar-col${winner ? ' winner' : ''}">
           <div class="bar-stack" style="bottom:${(b.frac * 100).toFixed(3)}%">${mark(stacked)}<div class="bar-value">${esc(d.panel.id === 'cost-per-success' ? `$${b.value.toFixed(2)}` : d.panel.format(b.value))}</div></div>
           <div class="bar" style="height:${(b.frac * 100).toFixed(3)}%;background:${color}">${mark(inBar)}</div>
@@ -475,7 +487,7 @@ async function frameHtml(f: Frame, fonts: string): Promise<string> {
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><title>${esc(f.title || 'Heval model comparison')}</title>
 <style>${css(fonts, f.size, s)}</style></head>
-<body class="${f.panels.length === 1 ? 'single' : 'combined'}${has('large-text') ? ' large-text' : ''}${has('large-brand') ? ' large-brand' : ''}${has('no-brand') ? ' no-brand' : ''}${has('brand-right') ? ' brand-right' : ''}${has('designer') ? ' designer' : ''} ${logoSpot}">
+<body class="${f.panels.length === 1 ? 'single' : 'combined'}${largeText ? ' large-text' : ''}${has('large-brand') ? ' large-brand' : ''}${has('no-brand') ? ' no-brand' : ''}${brandRight ? ' brand-right' : ''}${designer ? ' designer' : ''} ${logoSpot}">
   <header>
     ${has('no-brand') ? '' : `<div class="brand">${MERGE_LOCKUP}<span class="brand-product">Gateway</span></div>`}
     <div class="head-text">
@@ -524,11 +536,24 @@ const flag = (name: string): string | undefined => {
 }
 const has = (name: string) => args.includes(`--${name}`)
 
-const logoSpot = (flag('logo-spot') ?? LOGO_SPOTS[0]) as LogoSpot
+const logoSpot = (flag('logo-spot') ?? DEFAULT_LOGO_SPOT) as LogoSpot
 if (!LOGO_SPOTS.includes(logoSpot)) {
   console.error(`unknown --logo-spot: ${logoSpot} - pick from ${LOGO_SPOTS.join(', ')}`)
   process.exit(2)
 }
+
+/**
+ * The Merge dark look is the default, not a flag.
+ *
+ * These four were switches while the treatment was being chosen; it has been
+ * chosen, and every poster that has actually gone out used all four. Leaving
+ * them opt-in meant the published look was the one nobody got by default, and a
+ * poster built without them quietly shipped in a style we no longer use. Each
+ * keeps an escape hatch for the unbranded case.
+ */
+const designer = !has('plain')
+const brandRight = !has('brand-left')
+const largeText = !has('small-text')
 
 const input = args.find((a, i) => {
   if (a.startsWith('--')) return false
@@ -554,12 +579,13 @@ if (!input || has('help')) {
   --no-panel-notes  omit the metric explanation lines
   --no-caveat       omit the left footer text
   --no-source       omit the source stamp; with --no-caveat the footer rule goes too
-  --large-text      enlarge headings, labels, ticks and source credit
+  --small-text      revert to the compact type scale
   --large-brand     double the logo and Gateway wordmark size
   --no-brand        omit the logo and Gateway wordmark
-  --designer        dark background, metric colors and model logo tiles
-  --brand-right     put the lockup top right, in line with the title
-  --logo-spot <w>   with --designer: ${LOGO_SPOTS.join(' | ')} (default: ${LOGO_SPOTS[0]})
+  --plain           drop the Merge dark treatment: charcoal canvas, winner
+                    colouring, no model logo tiles
+  --brand-left      put the lockup back above the title
+  --logo-spot <w>   unless --plain: ${LOGO_SPOTS.join(' | ')} (default: ${DEFAULT_LOGO_SPOT})
   --title <text>     frame title (default: derived from the selection)
   --kicker <text>    the mono line under the title
   --source <text>    the source stamp, bottom right
