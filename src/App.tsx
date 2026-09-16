@@ -504,7 +504,7 @@ export default function App({ auth = publicAuth }: { auth?: AppAuth }) {
             ))}
           </div>
           <h1>The <span className="keep-together">open-source</span> harness evaluation platform</h1>
-          <p className="hero-copy">Understand what makes a coding agent work.<br />Compare results, inspect every trial, and turn evaluations into insights you can share.</p>
+          <p className="hero-copy">Run evaluations locally with Harbor.<br />Inspect every trial and turn results into insights you can share.</p>
           <div className="hero-actions">
             <a className="primary-button" href={studioUrl}>Get started <ArrowRight size={21} /></a>
             <a className="hero-github" href="https://github.com/MatthewFeroz/heval" target="_blank" rel="noreferrer" aria-label="Explore the code on GitHub">
@@ -513,7 +513,6 @@ export default function App({ auth = publicAuth }: { auth?: AppAuth }) {
             </a>
           </div>
         </section>
-        <StudioShowcase />
         <section className="race-area shell" id="compare" aria-labelledby="replay-heading">
           <div className="section-heading split-heading replay-heading">
             <div><span className="kicker">INSIDE AN AGENT RUN</span><h2 id="replay-heading">See how a replay works.</h2></div>
@@ -521,6 +520,7 @@ export default function App({ auth = publicAuth }: { auth?: AppAuth }) {
           </div>
           <RaceStage auth={auth} />
         </section>
+        <StudioShowcase />
         <ReportSection />
         <Methodology />
         <Signup />
