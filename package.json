@@ -39,6 +39,7 @@
     "@vitejs/plugin-react": "latest",
     "@workos-inc/authkit-react": "^0.16.2",
     "@xterm/xterm": "^6.0.0",
+    "convex": "^1.45.0",
     "gsap": "3.14.2",
     "jose": "^6.2.10",
     "lucide-react": "latest",
@@ -55,12 +56,14 @@
     "@types/bun": "^1.4.0",
     "@types/react": "latest",
     "@types/react-dom": "latest",
+    "convex-test": "^0.0.58",
     "eslint": "latest",
     "eslint-plugin-react-hooks": "latest",
     "eslint-plugin-react-refresh": "latest",
     "globals": "latest",
     "hyperframes": "0.8.27",
     "typescript": "~5.9.3",
-    "typescript-eslint": "latest"
+    "typescript-eslint": "latest",
+    "vitest": "^5.0.1"
   }
 }
