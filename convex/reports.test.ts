@@ -22,7 +22,7 @@ test('private import → owner reload → anonymous share → revoke → new lin
   await owner.mutation(api.reports.share, { id, token })
   const shared = await t.query(api.reports.shared, { token })
   expect(shared).toMatchObject({ title: payload.title })
-  expect(Object.keys(shared!).sort()).toEqual(['data', 'title'])
+  expect(Object.keys(shared!).sort()).toEqual(['data', 'project', 'title', 'version'])
   expect(JSON.parse(shared!.data).rows).toHaveLength(fixture.rows.length)
   await owner.mutation(api.reports.revoke, { id })
   expect(await t.query(api.reports.shared, { token })).toBeNull()
