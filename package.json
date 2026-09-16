@@ -18,6 +18,7 @@
     "test:e2e": "playwright test",
     "test:deployments": "bun scripts/deployment-smoke.ts",
     "test:unit": "bun test src/project src/charts",
+    "test:reports": "vitest run",
     "preview": "vite preview --host 0.0.0.0",
     "report": "bun harbor/report/build-report.ts",
     "poster": "bun harbor/report/build-poster.ts",
@@ -56,6 +57,7 @@
     "vite": "latest"
   },
   "devDependencies": {
+    "@edge-runtime/vm": "^5.0.0",
     "@eslint/js": "latest",
     "@playwright/test": "^1.55.1",
     "@types/bun": "^1.4.0",

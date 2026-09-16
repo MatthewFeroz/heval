@@ -46,6 +46,8 @@ jobs:
         run: bun run test:server
       - name: Project and chart regression tests
         run: bun run test:unit
+      - name: Report access and storage regression tests
+        run: bun run test:reports
       - name: Docker isolation smoke test (no model calls)
         run: bun run test:docker
       - name: Install Chromium
