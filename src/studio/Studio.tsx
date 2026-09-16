@@ -1,6 +1,9 @@
 import { useAppAuth, authorizedFetch } from '../auth'
 import { THREAD_PRESETS } from '../charts/social-presets'
 import { STATIC_SITE } from '../deployment'
+import { ConvexError } from 'convex/values'
+import type { ReportData } from '../reports/format'
+import type { ReportProject } from '../reports/project'
 import { SocialPreview } from './SocialPreview'
 import { NUMERIC, columnLabel, cellText } from './table-values'
 import { StatTiles, FilterBar, RunList, RunDrawer, type RunSort } from './TrialPanels'
@@ -136,12 +139,15 @@ function readFilters(search: string): Filters {
   return out
 }
 
-export function Studio({ localViewer = false }: { localViewer?: boolean }) {
-  const serverExports = !localViewer && !STATIC_SITE
+export type HostedStudioSession = { id: string; initial: ReportProject; artifact: EvaluationArtifact; data: ReportData; version: number; newerVersion?: boolean; save: (document: ReportProject) => Promise<void> }
+const fingerprint = (document: ReportProject) => JSON.stringify(document, (key, value) => key === 'createdAt' || key === 'updatedAt' ? undefined : value)
+
+export function Studio({ localViewer = false, hosted }: { localViewer?: boolean; hosted?: HostedStudioSession }) {
+  const serverExports = !localViewer && !STATIC_SITE && !hosted
   const auth = useAppAuth()
   const [runIds, setRunIds] = useState(() => new URLSearchParams(window.location.search).get('runs'))
   const initial = useMemo(() => readUrl(window.location.search), [])
-  const editor = useChartDocument({ chart: initial.state, filters: Object.entries(readFilters(window.location.search)).filter(([, values]) => values.length).map(([field, values]) => ({ field, values })), sourceIds: [], customSpec: null })
+  const editor = useChartDocument(hosted ? viewDocument(hosted.initial.project.analysisViews.find(v => v.id === hosted.initial.viewId)!) : { chart: initial.state, filters: Object.entries(readFilters(window.location.search)).filter(([, values]) => values.length).map(([field, values]) => ({ field, values })), sourceIds: [], customSpec: null })
   const { setState, setSourceIds, setOverride: setAnalysisOverride, setDocumentFilters } = editor
   const { chart: state, sourceIds, customSpec: analysisOverride } = editor.document
   const filters = useMemo(() => {
@@ -153,11 +159,11 @@ export function Studio({ localViewer = false }: { localViewer?: boolean }) {
     const next = typeof action === 'function' ? action(filters) : action
     setDocumentFilters(Object.entries(next).filter(([, values]) => values.length).map(([field, values]) => ({ field, values })))
   }
-  const [mode, setMode] = useState<StudioMode>(() => new URLSearchParams(window.location.search).get('mode') === 'presentation' ? 'presentation' : 'analysis')
+  const [mode, setMode] = useState<StudioMode>(() => hosted?.initial.mode ?? (new URLSearchParams(window.location.search).get('mode') === 'presentation' ? 'presentation' : 'analysis'))
   const [index, setIndex] = useState<JobIndexEntry[]>([])
-  const [catalogLoaded, setCatalogLoaded] = useState(false)
-  const [job, setJob] = useState<string | null>(initial.job)
-  const [data, setData] = useState<JobExport | null>(null)
+  const [catalogLoaded, setCatalogLoaded] = useState(!!hosted)
+  const [job, setJob] = useState<string | null>(hosted ? null : initial.job)
+  const [data, setData] = useState<JobExport | null>(hosted ? { ...hosted.data, jobId: hosted.id, source: '', agentVersions: {} } : null)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [tab, setTab] = useState<Tab>(mode === 'presentation' && serverExports ? 'social' : 'chart')
   const [specDraft, setSpecDraft] = useState<string | null>(null)
@@ -165,10 +171,13 @@ export function Studio({ localViewer = false }: { localViewer?: boolean }) {
   const [selected, setSelected] = useState<string | null>(null)
   const [copied, setCopied] = useState<string | null>(null)
   const [runSort, setRunSort] = useState<RunSort>({ key: 'agent', dir: 1 })
-  const [project, setProject] = useState<HevalProject | null>(null)
-  const [artifacts, setArtifacts] = useState<Map<string, EvaluationArtifact>>(() => new Map())
-  const [activeViewId, setActiveViewId] = useState<string | null>(null)
-  const [activePresentationId, setActivePresentationId] = useState<string | null>(null)
+  const [project, setProject] = useState<HevalProject | null>(hosted?.initial.project ?? null)
+  const [artifacts, setArtifacts] = useState<Map<string, EvaluationArtifact>>(() => hosted ? new Map([[hosted.artifact.id, hosted.artifact]]) : new Map())
+  const [activeViewId, setActiveViewId] = useState<string | null>(hosted?.initial.viewId ?? null)
+  const [activePresentationId, setActivePresentationId] = useState<string | null>(hosted?.initial.presentationId ?? null)
+  const [cloudBusy, setCloudBusy] = useState(false)
+  const [cloudError, setCloudError] = useState('')
+  const [savedFingerprint, setSavedFingerprint] = useState(() => hosted ? fingerprint(hosted.initial) : '')
 
   const filePicker = useRef<HTMLInputElement>(null)
   const importedHashes = useRef(new Map<string, string>())
@@ -201,6 +210,7 @@ export function Studio({ localViewer = false }: { localViewer?: boolean }) {
   // -- data ------------------------------------------------------------------
 
   useEffect(() => {
+    if (hosted) return
     fetch(`${RESULTS}/index.json`)
       .then((r) => (r.ok ? r.json() : { jobs: [] }))
       .then((catalog: JobIndex) => {
@@ -209,7 +219,7 @@ export function Studio({ localViewer = false }: { localViewer?: boolean }) {
       })
       .catch(() => setIndex([]))
       .finally(() => setCatalogLoaded(true))
-  }, [runIds])
+  }, [runIds, hosted])
 
   useEffect(() => {
     if (!job) return
@@ -299,6 +309,7 @@ export function Studio({ localViewer = false }: { localViewer?: boolean }) {
   // -- url + theme -----------------------------------------------------------
 
   useEffect(() => {
+    if (hosted) { document.documentElement.dataset.theme = chartState.theme; return }
     const extra: Record<string, string> = runIds ? { runs: runIds } : job ? { job } : {}
     if (mode === 'presentation') extra.mode = mode
     for (const k of FILTER_KEYS) if (filters[k].length) extra[FILTER_PARAM[k]] = filters[k].join(',')
@@ -307,7 +318,7 @@ export function Studio({ localViewer = false }: { localViewer?: boolean }) {
     const params = paramsFromState(chartState, extra)
     window.history.replaceState(null, '', `${window.location.pathname}?${params.toString()}`)
     document.documentElement.dataset.theme = chartState.theme
-  }, [chartState, job, filters, mode, runIds])
+  }, [chartState, job, filters, mode, runIds, hosted])
 
   useEffect(() => {
     if (!copied) return
@@ -494,6 +505,22 @@ export function Studio({ localViewer = false }: { localViewer?: boolean }) {
     download(`${project.label}.heval-project.json`, new Blob([JSON.stringify(projectWithDraft(), null, 2)], { type: 'application/json' }))
   }
 
+  const cloudDocument: ReportProject | null = hosted && project && activeView ? { project: projectWithDraft()!, mode, viewId: activeView.id, presentationId: activePresentation?.id ?? null } : null
+  const cloudDirty = !!cloudDocument && fingerprint(cloudDocument) !== savedFingerprint
+  useEffect(() => {
+    if (!cloudDirty) return
+    const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = '' }
+    window.addEventListener('beforeunload', warn)
+    return () => window.removeEventListener('beforeunload', warn)
+  }, [cloudDirty])
+  const saveCloud = async () => {
+    if (!hosted || !cloudDocument) return
+    setCloudBusy(true); setCloudError('')
+    try { await hosted.save(cloudDocument); setSavedFingerprint(fingerprint(cloudDocument)) }
+    catch (error) { setCloudError(error instanceof ConvexError && typeof error.data === 'string' ? error.data : error instanceof Error ? error.message : 'Could not save your draft.') }
+    finally { setCloudBusy(false) }
+  }
+
   const saveBundleFile = async () => {
     if (!project) return
     const bundle = await makeBundle(projectWithDraft()!, project.sources.map((source) => artifacts.get(source.artifactId)).filter((artifact): artifact is EvaluationArtifact => !!artifact))
@@ -544,13 +571,13 @@ export function Studio({ localViewer = false }: { localViewer?: boolean }) {
   return (
     <div
       className={`studio${dragging ? ' dragging' : ''}`}
-      onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
+      onDragOver={(e) => { e.preventDefault(); if (!hosted) setDragging(true) }}
       onDragLeave={() => setDragging(false)}
       onDrop={(e) => {
         e.preventDefault()
         setDragging(false)
         const file = e.dataTransfer.files[0]
-        if (file) void openFile(file)
+        if (file && !hosted) void openFile(file)
       }}
     >
       <header className="topbar">
@@ -560,7 +587,7 @@ export function Studio({ localViewer = false }: { localViewer?: boolean }) {
           <span className="beta-pill">{localViewer ? 'LOCAL RESULTS' : 'STUDIO'}</span>
         </a>
 
-        <div className="crumbs">
+        <div className="crumbs" hidden={!!hosted}>
           <ChevronRight size={14} />
           <span>{project ? 'project' : 'jobs'}</span>
           <ChevronRight size={14} />
@@ -576,6 +603,7 @@ export function Studio({ localViewer = false }: { localViewer?: boolean }) {
         </div>
 
         <div className="actions">
+          {hosted && <><a className="btn" href={`/reports?id=${hosted.id}`}>View report</a><button className="btn primary" disabled={cloudBusy || !cloudDirty || hosted.newerVersion} onClick={() => void saveCloud()}>{cloudBusy ? 'Saving draft…' : 'Save draft'}</button></>}
           {!localViewer && <a className="btn ghost" href="/reports">Saved reports</a>}
           <input
             ref={filePicker}
@@ -584,7 +612,7 @@ export function Studio({ localViewer = false }: { localViewer?: boolean }) {
             style={{ display: 'none' }}
             onChange={(e) => { const f = e.target.files?.[0]; if (f) void openFile(f) }}
           />
-          <button type="button" className="btn ghost" aria-label="Open export" onClick={() => filePicker.current?.click()}>
+          <button type="button" className="btn ghost" hidden={!!hosted} aria-label="Open export" onClick={() => filePicker.current?.click()}>
             <FolderOpen size={14} /><span className="label-text">Open export</span>
           </button>
           <button type="button" className="btn" onClick={saveProjectFile} disabled={!project}><Save size={14} />Project</button>
@@ -592,11 +620,13 @@ export function Studio({ localViewer = false }: { localViewer?: boolean }) {
           <span className="divider" />
           <button type="button" className="btn" style={{ display: tab === 'social' ? 'none' : undefined }} onClick={() => void exportSvg()} disabled={!chart}><Download size={14} />SVG</button>
           <button type="button" className="btn" style={{ display: tab === 'social' ? 'none' : undefined }} onClick={() => void exportPng()} disabled={!chart}><ImageIcon size={14} />PNG @2x</button>
-          <button type="button" className="btn primary" onClick={() => copy('link', window.location.href)} disabled={!chart || !canShareLink} title={canShareLink ? undefined : "Download a bundle to share this project and its data"}>
+          <button type="button" className="btn primary" hidden={!!hosted} onClick={() => copy('link', window.location.href)} disabled={!chart || !canShareLink} title={canShareLink ? undefined : "Download a bundle to share this project and its data"}>
             {copied === 'link' ? <Check size={14} /> : <Link2 size={14} />}{copied === 'link' ? 'Copied' : localViewer ? 'Copy local link' : 'Copy link'}
           </button>
         </div>
       </header>
+
+      {hosted && <div className="hosted-status"><span role="status">{cloudBusy ? 'Saving…' : cloudDirty ? 'Unsaved draft changes' : `Draft saved online · version ${hosted.version}`}</span><span>Public links show the published revision. Save here, then publish from your report.</span>{hosted.newerVersion && <div role="alert">A teammate saved a newer version. Download your Bundle to keep local changes, then <button className="btn sm" onClick={() => location.reload()}>Reload latest</button>.</div>}{cloudError && <div role="alert">{cloudError}</div>}</div>}
 
       {localViewer && <div className="local-viewer-note" role="note">
         <strong>Local results viewer</strong>
@@ -636,10 +666,10 @@ export function Studio({ localViewer = false }: { localViewer?: boolean }) {
                   </label>
                 ))}
               </div>
-              <div className="row"><button type="button" className="btn sm" disabled={!editor.canUndo} onClick={editor.undo}>Undo</button><button type="button" className="btn sm" disabled={!editor.canRedo} onClick={editor.redo}>Redo</button><small>{activeView && JSON.stringify(viewDocument(activeView)) !== JSON.stringify(editor.document) ? 'Unsaved changes' : 'Saved'}</small></div>
+              <div className="row"><button type="button" className="btn sm" disabled={!editor.canUndo} onClick={editor.undo}>Undo</button><button type="button" className="btn sm" disabled={!editor.canRedo} onClick={editor.redo}>Redo</button><small>{hosted ? 'Use Save draft to save online' : activeView && JSON.stringify(viewDocument(activeView)) !== JSON.stringify(editor.document) ? 'Unsaved changes' : 'Saved'}</small></div>
               <div className="row">
-                <button type="button" className="btn sm" onClick={() => saveAnalysisView(false)}><Save size={12} />Save view</button>
-                <button type="button" className="btn sm ghost" onClick={() => saveAnalysisView(true)}>Save as new</button>
+                {!hosted && <button type="button" className="btn sm" onClick={() => saveAnalysisView(false)}><Save size={12} />Save view</button>}
+                <button type="button" className="btn sm ghost" onClick={() => saveAnalysisView(true)}>{hosted ? 'Add view to draft' : 'Save as new'}</button>
               </div>
             </div>
           )}
@@ -982,7 +1012,7 @@ export function Studio({ localViewer = false }: { localViewer?: boolean }) {
                   <button type="button" className="btn sm" onClick={() => { setOverride(null); setSpecDraft(null) }} disabled={override === null && specDraft === null}>
                     <RotateCcw size={12} />Revert to controls
                   </button>
-                  <button type="button" className="btn sm" disabled={specDraft === null} onClick={() => {
+                  <button type="button" className="btn sm" disabled={!!hosted || specDraft === null} onClick={() => {
                     try {
                       const parsed: unknown = JSON.parse(specText)
                       if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('The spec must be a JSON object.')
@@ -994,7 +1024,8 @@ export function Studio({ localViewer = false }: { localViewer?: boolean }) {
                   </button>
                 </div>
               </div>
-              <textarea className="spec" spellCheck={false} value={specText} aria-label="Vega-Lite JSON" onChange={(e) => setSpecDraft(e.target.value)} />
+              {hosted && <p className="hint">Hosted projects use the chart controls. Custom Vega specs remain available in local Studio projects.</p>}
+              <textarea className="spec" readOnly={!!hosted} spellCheck={false} value={specText} aria-label="Vega-Lite JSON" onChange={(e) => setSpecDraft(e.target.value)} />
             </div>
           )}
 

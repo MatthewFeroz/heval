@@ -31,9 +31,8 @@ const otherToken = await jwt(`smoke-other-${Date.now()}`)
 await mkdir(resolve(temporary, 'src/reports'), { recursive: true })
 await mkdir(resolve(temporary, 'src/charts'), { recursive: true })
 await cp(resolve(root, 'convex'), resolve(temporary, 'convex'), { recursive: true })
-await rm(resolve(temporary, 'convex/reports.test.ts'))
-await cp(resolve(root, 'src/reports/format.ts'), resolve(temporary, 'src/reports/format.ts'))
-await cp(resolve(root, 'src/charts/trial.ts'), resolve(temporary, 'src/charts/trial.ts'))
+for (const test of new Bun.Glob('*.test.ts').scanSync(resolve(temporary, 'convex'))) await rm(resolve(temporary, 'convex', test))
+await cp(resolve(root, 'src'), resolve(temporary, 'src'), { recursive: true })
 await symlink(resolve(root, 'node_modules'), resolve(temporary, 'node_modules'))
 await writeFile(resolve(temporary, 'package.json'), JSON.stringify({ type: 'module', dependencies: { convex: '^1.45.0' } }))
 await writeFile(resolve(temporary, 'convex/auth.config.ts'), `export default ${JSON.stringify({ providers: [{ type: 'customJwt', issuer, applicationID: 'heval-smoke', algorithm: 'RS256', jwks: `data:text/plain;charset=utf-8;base64,${Buffer.from(JSON.stringify({ keys: [jwk] })).toString('base64')}` }] })}`)
@@ -44,7 +43,7 @@ console.log('Deployed real report functions to isolated cloud preview.')
 process.env.VITE_CONVEX_URL = url
 const server = await createServer({ root, server: { host: '127.0.0.1', port: 5337, strictPort: true }, plugins: [{
   name: 'report-smoke-identity', enforce: 'pre',
-  resolveId(source, importer) { if (source === '../AuthBoundary' && importer?.endsWith('/src/reports/main.tsx')) return '\0report-smoke-auth' },
+  resolveId(source, importer) { if (source === '../AuthBoundary' && (importer?.endsWith('/src/reports/main.tsx') || importer?.endsWith('/src/studio/main.tsx'))) return '\0report-smoke-auth' },
   load(id) {
     if (id !== '\0report-smoke-auth') return
     return `import React from 'react'; import {AuthContext,publicAuth} from '/src/auth.ts';
@@ -90,7 +89,7 @@ try {
   await chapter(page, '2 · Import Harbor JSON and review exactly what will be saved')
   await page.screenshot({ path: resolve(evidence, '01-import.png'), fullPage: true })
   await page.getByRole('button', { name: 'Save private report' }).click()
-  await expect(page.getByText('Private · Only you', { exact: true })).toBeVisible()
+  await expect(page.getByText('Public link off', { exact: true })).toBeVisible()
   const savedUrl = page.url()
   await page.reload()
   await expect(page.getByRole('heading', { name: 'Terminal Bench · team review' })).toBeVisible()

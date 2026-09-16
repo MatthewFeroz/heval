@@ -531,3 +531,10 @@ td.dim { color: var(--muted); }
 .local-viewer-note { display: flex; flex-wrap: wrap; gap: 6px 16px; padding: 12px 20px; border-bottom: 1px solid var(--line); color: var(--muted); font-size: 12px; line-height: 1.6; }
 .local-viewer-note strong { color: var(--white); }
 .local-viewer-note code { color: var(--white); }
+
+/* Cloud projects use the existing Studio, with explicit draft persistence. */
+.studio [hidden] { display: none !important; }
+.hosted-status { padding: 12px 24px; display: flex; flex-wrap: wrap; gap: 12px 24px; border-bottom: 1px solid var(--line); font-size: 12px; }
+.hosted-status [role=alert] { width: 100%; color: #ca714a; }
+.hosted-gate { max-width: 720px; margin: 80px auto; padding: 24px; }
+.hosted-gate a, .hosted-gate button { margin-right: 20px; }

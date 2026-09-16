@@ -8,6 +8,8 @@
  * @module
  */
 
+import type * as reportAccess from "../reportAccess.js";
+import type * as reportProjects from "../reportProjects.js";
 import type * as reports from "../reports.js";
 
 import type {
@@ -17,6 +19,8 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  reportAccess: typeof reportAccess;
+  reportProjects: typeof reportProjects;
   reports: typeof reports;
 }>;
 

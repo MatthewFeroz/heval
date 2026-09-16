@@ -7,13 +7,30 @@ Open [Heval reports](https://temporary-rushing-violet-xu17m97.vercel.app/reports
 1. **Open Your reports and sign in.** The homepage’s **Import your results** button leads here. Sign-in returns to the workspace.
 2. **Choose Harbor JSON.** Import a normalized `schemaVersion: 1` export containing `rows`. An invalid file produces an explanation before anything is saved.
 3. **Review and name it.** Check trial, model, and task counts. Expand **Review exact saved data** to inspect the complete sanitized payload. Edit the title.
-4. **Save private report.** Heval saves the snapshot online and opens its report page. The badge says **Private · Only you**. Reloading preserves the report; **Your saved reports** lets you find it later.
+4. **Save private report.** Heval saves the snapshot online and opens its report page. The badge says **Public link off**. Reloading preserves the report; **Your saved reports** lets you find it later.
 5. **Read the result.** Inspect completion rates, filter by model, and expand the trial table. These controls explore the snapshot without changing the saved data. Small setup runs are explicitly not full benchmark scores.
 6. **Create share link → Copy link.** Sharing is an explicit action after saving. Anyone holding the link can read the complete report without signing in. The shared page has no owner controls.
 7. **Revoke link → Yes, revoke link.** Existing connected viewers switch to **This link is unavailable**. Fresh visits also fail. Your private report stays saved.
 8. **Share again when needed.** A new link gets a new token. The old link stays revoked.
 
 Revocation stops future access through Heval. It cannot erase screenshots or copies a recipient already saved. Links are unlisted capabilities, not invitations restricted to particular recipients. A disconnected shared page hides the report while it checks access again.
+
+## Team editing (feature branch)
+
+The `feat/team-report-editor` branch adds this flow. These changes are not yet merged into the production site:
+
+1. Open a saved report and choose **Edit chart in Studio**. Change the chart recipe, measures, labels, filters, or presentation settings, then **Save draft**.
+2. Return through **View report** to review the saved draft. The hosted viewer renders the same chart recipe and filters as Studio. Reloading restores saved settings.
+3. On the first **Create share link**, the saved draft becomes the published version. Later edits remain private to the report team until the owner clicks **Publish saved draft**. Revoking and recreating a link preserves the last published version.
+4. Under **Edit with your team**, create an editor or viewer invitation. Send the link directly to a teammate; they sign in and accept. Each invitation admits one account and expires in seven days. A report supports up to 20 teammates.
+5. Editors can save drafts. Viewers can inspect drafts. Only the owner can publish, manage public links, create invitations, or remove teammates. Removing a teammate denies future reads and writes; revoking a public link does not remove team access.
+6. If someone else saves first, Studio blocks overwriting that version. Download **Bundle** to keep your local edits, then **Reload latest**. This is versioned collaboration, not simultaneous cursor editing or automatic merging.
+
+Hosted saving supports the built-in chart controls and up to 20 views and 20 presentations per report (150 KB of settings). Custom Vega specs remain a local-bundle feature. Public viewers receive the imported data as well as the published chart settings; chart filters are presentation controls, not data access restrictions.
+
+Backend tests cover publication boundaries, stale writes, roles, invitation expiry/revocation, removal, legacy reports, immutable evidence, and custom-spec rejection. The original browser recording below predates team editing. A full cloud browser smoke test of invitation → editor save → owner publish is still needed before merging this feature branch.
+
+The next planned work is running Harbor on separate machines from the browser, with a machine/worker connection flow similar to t3code. That execution layer is not part of this branch.
 
 ## Recording and smoke evidence
 
@@ -39,7 +56,7 @@ Production was separately checked for public routing and the WorkOS sign-in redi
 - Normalized Harbor JSON only: 1–500 trials, at most 750,000 bytes, up to 100 reports per account. Raw job folders, raw Harbor `result.json`, and Studio project/bundle files are not accepted.
 - Generate an export from a Heval checkout with `bun run report path/to/harbor-job`. Upload the resulting `results/harbor/<job>.json`. The published CLI can inspect results locally; this release does not add CLI upload or a CLI JSON-export command.
 - The server independently validates every import. It stores an allowlist of trial labels, outcomes, timings, usage, cost, and selected provenance fields. Configuration, local source paths, error text, logs, and unknown fields are discarded. Labels can still contain sensitive text, so review them before sharing.
-- Reports are immutable snapshots. Editing/deleting saved reports, custom Studio presentation import, invitations, and cloud evaluation execution are future work. No model calls or Docker compute are required to import or view results.
+- Imported evaluation data remains immutable. Chart drafts, saved views, presentation settings, and report titles can be edited in hosted Studio. Deleting reports, uploading existing Studio bundles, and cloud evaluation execution remain future work. No model calls or Docker compute are required to import, edit, or view results.
 - Sharing tokens live in the URL fragment, so they are not sent to Vercel as request paths or referrers. Every data read checks the active token in Convex; there is no public storage-file URL that can outlive revocation.
 
 ## Deployment
