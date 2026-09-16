@@ -1,11 +1,19 @@
-import { POSTER_INK, POSTER_SURFACE, POSTER_WINNER, POSTER_COMPARISON_SERIES } from './poster'
-/** Complete, named publishing themes. Merge tokens follow the weekly benchmark skill. */
+import { POSTER_INK, POSTER_DESIGNER_SURFACE, POSTER_WINNER, POSTER_COMPARISON_SERIES } from './poster'
+/**
+ * Complete, named publishing themes. Merge tokens follow the weekly benchmark skill.
+ *
+ * `merge-dark` is the default (see SOCIAL_DEFAULTS) and renders on
+ * POSTER_DESIGNER_SURFACE, the same near-black the poster exporter uses, so a
+ * chart published from the hosted app and one built from the CLI are the same
+ * artwork. It used to sit on Merge Charcoal, which made those two paths
+ * disagree by a shade that was obvious once both appeared in one thread.
+ */
 export const SOCIAL_THEMES = {
   'merge-dark': {
     label: 'Merge Gateway dark',
     brand: true,
     display: 'FH Oscar Pro,Inter,sans-serif',
-    surface: POSTER_SURFACE,
+    surface: POSTER_DESIGNER_SURFACE,
     primary: POSTER_INK.primary,
     muted: POSTER_INK.muted,
     line: POSTER_INK.line,

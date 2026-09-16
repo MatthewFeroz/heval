@@ -275,6 +275,11 @@ The command writes 2400x2400 PNGs and editable HTML files under
 `--models <model-a>,<model-b>` to set the field and color order, or `--combined` to also export a
 three-panel 3200x1800 image. Run `bun run poster --help` for the full option list.
 
+`--brand-right` sets the title and the Gateway lockup on one line, headline left and lockup right.
+Under `--designer`, `--logo-spot` decides where each model's mark sits: `axis-inline` beside the model
+name, `axis-below` under it, `above-bar` stacked over the value label, or `in-bar` inside the bar under
+the value label. A bar too short to hold its own mark falls back to `above-bar` for that column.
+
 ## Repository Layout
 
 ```text

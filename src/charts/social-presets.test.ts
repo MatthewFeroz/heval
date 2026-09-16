@@ -13,6 +13,13 @@ test('thread presets reproduce the audited cohort and use 20 actual tasks', () =
   const cost = resolveSocial(real, { ...options, preset: 'total-cost' })
   expect(cost.title).toBe('Total cost across 20 tasks')
   expect(cost.bars.find((b) => b.key === 'glm-5.3')!.value).toBeCloseTo(4.43102134)
+  expect(cost.bars.find((b) => b.key === 'glm-5.3-flash')!.value).toBeCloseTo(0.78682721)
+  const perSuccess = resolveSocial(real, { ...options, preset: 'cost-per-success' })
+  expect(perSuccess.bars.slice(-2).map((b) => b.key)).toEqual([
+    'glm-5.3-flash',
+    'deepseek-v4-flash',
+  ])
+  expect(perSuccess.bars.at(-1)!.value).toBeCloseTo(0.03222819)
   const slow = resolveSocial(real, { ...options, preset: 'slow-timeouts' })
   expect(slow.bars.find((b) => b.key === 'deepseek-v4-flash')).toMatchObject({ value: 10, timeout: 4 })
   const matrix = resolveSocial(real, { ...options, preset: 'disagreement' })

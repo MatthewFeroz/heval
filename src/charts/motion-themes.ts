@@ -1,4 +1,4 @@
-import { POSTER_INK, POSTER_SURFACE, POSTER_WINNER, POSTER_COMPARISON_SERIES } from './poster'
+import { POSTER_INK, POSTER_DESIGNER_SURFACE, POSTER_METRIC_SERIES } from './poster'
 /**
  * Themes for the social composition.
  *
@@ -61,9 +61,12 @@ export const MOTION_THEMES: Record<ThemeId, MotionTheme> = {
   // static poster stay the same artwork.
   'merge-gateway': {
     label: 'Merge Gateway',
-    surface: POSTER_SURFACE,
+    surface: POSTER_DESIGNER_SURFACE,
     ink: POSTER_INK,
-    series: [POSTER_WINNER, POSTER_COMPARISON_SERIES[0]],
+    // The completion hue leads, because completion is the metric this
+    // composition animates. Matching the static poster's per-metric colour
+    // keeps the video and the still frame the same artwork.
+    series: [POSTER_METRIC_SERIES.completion, '#797771'],
     display: `'FH Oscar Pro', ${INTER}`,
     body: INTER,
     oscar: true,

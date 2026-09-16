@@ -15,7 +15,7 @@ import {
   type SocialSettings,
   type SocialBar,
 } from './social-presets'
-export const SOCIAL_RENDERER_VERSION = 'social-presets/2'
+export const SOCIAL_RENDERER_VERSION = 'social-presets/3'
 const esc = (s: string) =>
   s.replace(
     /[&<>"']/g,

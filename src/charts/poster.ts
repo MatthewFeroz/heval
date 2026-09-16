@@ -49,6 +49,32 @@ export const POSTER_COMPARISON_SERIES = [
 /** Hard cap. A seventh model folds into a second poster, never a generated hue. */
 export const POSTER_MAX_SERIES = 6
 
+/**
+ * The canvas for the shipped Gateway look, darker than POSTER_SURFACE.
+ *
+ * POSTER_SURFACE is Merge Charcoal, which is the right card colour inside a
+ * report that has a page around it. A poster has no page: the canvas runs to
+ * the crop, and charcoal reads as a washed-out grey rectangle on a timeline
+ * that is usually already dark. This drops to near-black so the ivory type and
+ * the logo tiles carry the frame.
+ */
+export const POSTER_DESIGNER_SURFACE = '#12110F'
+
+/**
+ * The model logo tile - an ivory chip the provider mark sits in.
+ *
+ * Provider marks arrive in their own brand colours against assorted
+ * backgrounds; several are near-black and vanish on this canvas. Rather than
+ * recolouring someone else's mark, each one gets an ivory chip to sit on, which
+ * is also what makes a bar identifiable without reading the axis label.
+ */
+export const POSTER_LOGO_TILE = {
+  bg: '#F5F2EE',
+  ink: '#181916',
+  /** Hairline so the chip has an edge where it meets a light bar. */
+  border: '#ffffff40',
+} as const
+
 export const POSTER_INK = {
   /** Title, value labels. */
   primary: '#F5F2EE',
@@ -138,6 +164,22 @@ export const PANELS: Record<PanelId, Panel> = {
 }
 
 export const PANEL_IDS = Object.keys(PANELS) as PanelId[]
+
+/**
+ * One hue per metric, replacing the winner-versus-comparison split.
+ *
+ * The winner/comparison scheme answers "who won this panel", which a reader can
+ * already see from the bar heights. Posting the panels as a thread asks a
+ * different question: which metric am I looking at. Colouring by metric rather
+ * than by rank makes each image identifiable at thumbnail size and keeps a
+ * model's colour from changing between panels, which previously implied a
+ * ranking that moved when it had not.
+ */
+export const POSTER_METRIC_SERIES: Record<PanelId, string> = {
+  completion: '#ABCAD8', // robin-40
+  'cost-per-success': '#C6ADCA', // lilac-40
+  'median-time': '#96A58D', // sage-40
+}
 
 /** `0.008716` -> `0.0087`, `0.3172` -> `0.32`, `12.4` -> `12`. Trailing zeros dropped. */
 export function sigFigs(v: number, digits: number): string {

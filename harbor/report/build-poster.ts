@@ -34,6 +34,7 @@ import {
   PANELS,
   POSTER_INK,
   POSTER_MAX_SERIES,
+  POSTER_METRIC_SERIES,
   POSTER_COMPARISON_SERIES,
   POSTER_WINNER,
   POSTER_SURFACE,
@@ -41,6 +42,21 @@ import {
   type PanelId,
 } from '../../src/charts/poster'
 import type { JobExport, TrialRow } from '../../src/charts/trial'
+
+/**
+ * Direction cue for the "higher / lower is better" label, lucide `arrow-up` and
+ * `arrow-down`, inlined the way build-report.ts inlines its icons so the frame
+ * stays one self-contained file.
+ *
+ * No width or height here: the CSS sizes them in `em` so they track the label's
+ * font-size, and `currentColor` keeps them on the label's ink. POSTER_INK.good
+ * and .muted are the same value on purpose, so direction is carried by which
+ * way the arrow points rather than by a second accent colour.
+ */
+const LUCIDE = (paths: string) =>
+  `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`
+const ARROW_UP = LUCIDE('<path d="m5 12 7-7 7 7"/><path d="M12 19V5"/>')
+const ARROW_DOWN = LUCIDE('<path d="M12 5v14"/><path d="m19 12-7 7-7-7"/>')
 
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 
@@ -163,6 +179,24 @@ body > * { position: relative; z-index: 1; }
   gap: ${u(1.25)};
 }
 .brand svg { width: auto; height: ${u(1.9)}; display: block; }
+.large-brand .brand { height: ${u(5.2)}; gap: ${u(2)}; }
+.large-brand .brand svg { height: ${u(3.8)}; }
+.large-brand .brand-product { font-size: ${u(2.9)}; }
+.no-brand .title { margin-top: 0; }
+/* --brand-right: title and lockup on one line, headline left, brand right.
+   row-reverse rather than reordered markup, so the lockup stays first in the
+   document for anything reading the frame as text. */
+.brand-right header {
+  display: flex;
+  flex-direction: row-reverse;
+  align-items: center;
+  justify-content: space-between;
+  gap: ${u(3)};
+}
+.brand-right .brand { height: ${u(3.5)}; gap: ${u(1.7)}; flex: none; }
+.brand-right .brand svg { height: ${u(2.9)}; }
+.brand-right .brand-product { font-size: ${u(2.15)}; }
+.brand-right .title { margin-top: 0; }
 .brand-product {
   font-size: ${u(1.45)};
   font-weight: 400;
@@ -194,10 +228,19 @@ body > * { position: relative; z-index: 1; }
 .panel-heading { font-family: 'FH Oscar Pro', 'Inter', system-ui, sans-serif; font-size: ${u(1.65)}; font-weight: 500; letter-spacing: -0.02em; }
 .single .panel-heading { display: none; }
 .panel-eyebrow {
-  margin-top: ${u(0.55)};
-  font-size: ${u(0.85)};
-  font-weight: 500;
+  margin-top: ${u(0.6)};
+  display: flex;
+  align-items: center;
+  gap: ${u(0.38)};
+  /* Same size, weight and ink as the source stamp in .foot, so the two bits of
+     chrome that frame the plot read as one pair rather than two decisions. */
+  font-size: ${u(0.82)};
+  font-weight: 400;
+  color: ${POSTER_INK.muted};
+  letter-spacing: -0.01em;
 }
+/* Sized in em so the arrow follows the label; --large-text moves both at once. */
+.panel-eyebrow svg { width: 1em; height: 1em; flex: none; }
 .panel-eyebrow.higher { color: ${POSTER_INK.good}; }
 .panel-eyebrow.lower { color: ${POSTER_INK.muted}; }
 .panel-note {
@@ -230,20 +273,29 @@ body > * { position: relative; z-index: 1; }
   min-width: 0;
 }
 .bar-col { flex: 1; position: relative; height: 100%; min-width: 0; }
-.bar-value {
+/* Anchored to the top of its bar and growing upward, so whatever rides above a
+   bar - the value, and under --logo-spot above-bar the mark too - stays one
+   stack with one gap to the bar. */
+.bar-stack {
   position: absolute; width: 100%;
-  font-size: ${u(1.25)};
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-bottom: ${u(0.45)};
+}
+.bar-value {
+  font-size: ${u(s.panels > 1 ? 1 : 1.25)};
   font-weight: 600;
   letter-spacing: -0.01em;
   text-align: center;
-  padding-bottom: ${u(0.45)};
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
 .bar-col:not(.winner) .bar-value { color: ${POSTER_INK.muted}; font-weight: 500; }
 /* 4px rounded data-end at the free end only; the baseline end stays square so
    the bar reads as anchored to zero. */
-.bar { position: absolute; bottom: 0; border-radius: ${u(0.3)} ${u(0.3)} 0 0; width: 100%; }
+.bar { position: absolute; bottom: 0; border-radius: ${u(0.3)} ${u(0.3)} 0 0; width: 100%; overflow: hidden; }
 .axis-labels { display: flex; gap: ${u(1.1)}; margin-left: ${u(3.8)}; min-height: ${u(3.2)}; }
 .bar-labels {
   flex: 1; min-width: 0;
@@ -254,6 +306,7 @@ body > * { position: relative; z-index: 1; }
   line-height: 1.25;
   color: ${POSTER_INK.secondary};
 }
+.bar-labels span { position: relative; left: 50%; width: max-content; transform: translateX(-50%); }
 .bar-labels span { display: block; }
 .bar-labels span + span { color: ${POSTER_INK.muted}; font-weight: 600; }
 .foot {
@@ -269,7 +322,114 @@ body > * { position: relative; z-index: 1; }
   color: ${POSTER_INK.muted};
 }
 .foot .caveat { max-width: 60%; }
+.foot .caveat:empty { display: none; }
+.foot > span:last-child { margin-left: auto; }
+.large-text .panel-heading { font-size: ${u(1.95)}; }
+.large-text .panel-eyebrow { font-size: ${u(1.6)}; font-weight: 500; color: ${POSTER_INK.primary}; }
+.large-text .ticks { font-size: ${u(1)}; }
+.large-text .bar-value { font-size: ${u(1.12)}; }
+.large-text .bar-labels { font-size: ${u(0.9)}; letter-spacing: -0.025em; }
+.large-text .foot { font-size: ${u(1.6)}; font-weight: 500; color: ${POSTER_INK.primary}; }
+.designer { background: #12110F; }
+.designer::before { opacity: 0.10; }
+.designer .plot { margin-top: ${u(1.7)}; }
+.designer .bar-col .bar-value { color: #F5F2EE; font-weight: 600; }
+.model-app { width: 100%; aspect-ratio: 1; border-radius: 22%; background: #F5F2EE; color: #181916; display: flex; align-items: center; justify-content: center; margin-bottom: ${u(0.5)}; border: 1px solid #ffffff40; }
+.model-app svg { width: 70%; height: 70%; }
+.designer .bar-labels { position: relative; font-size: ${u(0.9)}; }
+.designer.axis-inline .bar-labels .model-app { position: absolute; left: calc(50% - ${u(2.1)}); top: ${u(1.95)}; width: ${u(0.85)}; height: ${u(0.85)}; margin: 0; border: 0; border-radius: 20%; }
+.designer .bar-labels .model-app svg { width: 85%; height: 85%; }
+/* The other three placements. A mark that is not crowding the model name can
+   be a plain square in the flow, so each of these is a size and a gap. */
+/* Names run two or three lines once "5.3 Flash" wraps in a 6-across column;
+   reserving three keeps every mark on one row instead of a ragged one. */
+.axis-below .bar-labels .model-name { min-height: 3.75em; }
+.axis-below .bar-labels .model-app { margin: ${u(0.55)} auto 0; width: ${u(1.4)}; height: ${u(1.4)}; border: 0; border-radius: 20%; }
+.axis-below .axis-labels { min-height: ${u(6.2)}; }
+.bar-stack .model-app { margin: 0 0 ${u(0.3)}; width: ${u(1.15)}; height: ${u(1.15)}; border: 0; border-radius: 20%; }
+/* Headroom for the taller stack: the tallest bar in a panel reaches ~87% of the
+   plot, and mark + value no longer fit in the 13% that leaves. */
+.above-bar .plot { margin-top: ${u(3.3)}; }
+.bar > .model-app {
+  position: absolute;
+  top: ${u(0.55)};
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  width: ${u(1.5)};
+  height: ${u(1.5)};
+  border: 0;
+  border-radius: 20%;
+}
+/* A single square panel spreads six bars over the full frame width, so each bar
+   is roughly twice the width it gets in a combined three-panel frame. The mark
+   scales with it; at ${u(1.5)} it reads as a speck against a bar that wide. */
+.single .bar > .model-app { width: ${u(2.2)}; height: ${u(2.2)}; top: ${u(0.7)}; }
+.single .bar-stack .model-app { width: ${u(1.7)}; height: ${u(1.7)}; }
+/* Single-panel titles are metric names, short enough to hold one line beside the
+   lockup once the header gap stops reserving room a headline would need. */
+.single.brand-right header { gap: ${u(2.2)}; }
+.single.brand-right .head-text { flex: 1; min-width: 0; }
+/* "Cost per success" is the longest of the three metric names and overruns the
+   space beside the lockup at the shared ${u(3.4)}; this holds it on one line
+   with a real gap rather than letting it crowd the wordmark. */
+.single.brand-right .title { white-space: nowrap; font-size: ${u(2.8)}; }
+.designer .bar-labels .model-name { flex: 0 0 auto; }
+.designer .bar-labels span { position: static; width: auto; transform: none; }
+.designer .panel[data-metric='completion'] .panel-heading { color: #ABCAD8; }
+.designer .panel[data-metric='cost-per-success'] .panel-heading { color: #C6ADCA; }
+.designer .panel[data-metric='median-time'] .panel-heading { color: #96A58D; }
 `
+}
+
+/**
+ * Where the model's mark sits relative to its bar, under --designer.
+ *
+ *   axis-inline  beside the model name in the axis label (the tightest option)
+ *   axis-below   under the model name, centred in the axis label
+ *   above-bar    small, stacked over the value label
+ *   in-bar       inside the bar, under the value label
+ */
+const LOGO_SPOTS = ['axis-inline', 'axis-below', 'above-bar', 'in-bar'] as const
+type LogoSpot = (typeof LOGO_SPOTS)[number]
+
+/**
+ * `in-bar` rather than the tightest option, because this is now the default
+ * look rather than one of four experiments: the mark is large enough to read at
+ * thumbnail size and costs no vertical space under the axis.
+ */
+const DEFAULT_LOGO_SPOT: LogoSpot = 'in-bar'
+
+/**
+ * Bar fraction a mark needs to sit inside the bar rather than over it.
+ *
+ * The plot is about 25 type units tall at either export size, and the mark plus
+ * its inset needs ~2.6 of them. Below this a bar is shorter than its own mark,
+ * so that column falls back to the above-bar stack instead of being clipped.
+ */
+const IN_BAR_MIN_FRAC = 0.15
+
+function modelLogo(model: string): string {
+  const brand = model.startsWith('glm') ? 'zai' : model.startsWith('deepseek') ? 'deepseek' : model.startsWith('kimi') ? 'kimi' : 'claude'
+  // Z.ai and Kimi ship near-white marks that vanish on the ivory tile, so those
+  // two take the monochrome file and inherit the tile's ink.
+  const mono = brand === 'zai' || brand === 'kimi'
+  return `<div class="model-app">${readFileSync(join(fileURLToPath(ASSETS), 'model-logos', `${brand}${mono ? '' : '-color'}.svg`), 'utf8')}</div>`
+}
+
+/**
+ * One axis category label: the model name, and the mark if it belongs here.
+ *
+ * axis-inline sets the mark beside the name, which only fits if the name breaks
+ * one word per line; the other placements leave the name on its own and keep
+ * the two-line break the label ladder already chose.
+ */
+function axisLabelHtml(b: PanelData['bars'][number]): string {
+  const inline = designer && logoSpot === 'axis-inline'
+  const below = designer && logoSpot === 'axis-below'
+  const lines = inline ? b.lines.flatMap((line) => line.split(' ')) : b.lines
+  const name = `<div class="model-name">${lines.map((l) => `<span>${esc(l)}</span>`).join('')}</div>`
+  return `<div class="bar-labels">${inline ? modelLogo(b.key) : ''}${name}${below ? modelLogo(b.key) : ''}</div>`
 }
 
 function panelHtml(d: PanelData): string {
@@ -283,17 +443,24 @@ function panelHtml(d: PanelData): string {
   const bars = d.bars
     .map((b) => {
       const winner = b.value === best
-      const color = winner ? POSTER_WINNER : POSTER_COMPARISON_SERIES[comparisonIndex++ % POSTER_COMPARISON_SERIES.length]
+      const color = designer
+        ? POSTER_METRIC_SERIES[d.panel.id]
+        : winner
+          ? POSTER_WINNER
+          : POSTER_COMPARISON_SERIES[comparisonIndex++ % POSTER_COMPARISON_SERIES.length]
+      const inBar = logoSpot === 'in-bar' && b.frac >= IN_BAR_MIN_FRAC
+      const stacked = logoSpot === 'above-bar' || (logoSpot === 'in-bar' && !inBar)
+      const mark = (where: boolean) => (designer && where ? modelLogo(b.key) : '')
       return `        <div class="bar-col${winner ? ' winner' : ''}">
-          <div class="bar-value" style="bottom:${(b.frac * 100).toFixed(3)}%">${esc(d.panel.format(b.value))}</div>
-          <div class="bar" style="height:${(b.frac * 100).toFixed(3)}%;background:${color}"></div>
+          <div class="bar-stack" style="bottom:${(b.frac * 100).toFixed(3)}%">${mark(stacked)}<div class="bar-value">${esc(d.panel.id === 'cost-per-success' ? `$${b.value.toFixed(2)}` : d.panel.format(b.value))}</div></div>
+          <div class="bar" style="height:${(b.frac * 100).toFixed(3)}%;background:${color}">${mark(inBar)}</div>
         </div>`
     })
     .join('\n')
-  return `    <section class="panel">
+  return `    <section class="panel" data-metric="${d.panel.id}">
       <div class="panel-heading">${esc(d.panel.heading)}</div>
-      <div class="panel-eyebrow ${d.panel.better}">${esc(`${d.panel.better[0].toUpperCase()}${d.panel.better.slice(1)} is better`)}</div>
-      <div class="panel-note">${esc(d.panel.note ?? '')}</div>
+      <div class="panel-eyebrow ${d.panel.better}">${d.panel.better === 'higher' ? ARROW_UP : ARROW_DOWN}<span>${esc(`${d.panel.better[0].toUpperCase()}${d.panel.better.slice(1)} is better`)}</span></div>
+      ${has('no-panel-notes') ? '' : `<div class="panel-note">${esc(d.panel.note ?? '')}</div>`}
       <div class="panel-rule"></div>
       <div class="plot">
         <div class="ticks">${ticks}</div>
@@ -301,7 +468,7 @@ function panelHtml(d: PanelData): string {
 ${bars}
         </div>
       </div>
-      <div class="axis-labels">${d.bars.map((b) => `<div class="bar-labels">${b.lines.map((l) => `<span>${esc(l)}</span>`).join('')}</div>`).join('')}</div>
+      <div class="axis-labels">${d.bars.map((b) => axisLabelHtml(b)).join('')}</div>
     </section>`
 }
 
@@ -320,19 +487,27 @@ async function frameHtml(f: Frame, fonts: string): Promise<string> {
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><title>${esc(f.title || 'Heval model comparison')}</title>
 <style>${css(fonts, f.size, s)}</style></head>
-<body class="${f.panels.length === 1 ? 'single' : 'combined'}">
+<body class="${f.panels.length === 1 ? 'single' : 'combined'}${largeText ? ' large-text' : ''}${has('large-brand') ? ' large-brand' : ''}${has('no-brand') ? ' no-brand' : ''}${brandRight ? ' brand-right' : ''}${designer ? ' designer' : ''} ${logoSpot}">
   <header>
-    <div class="brand">${MERGE_LOCKUP}<span class="brand-product">Gateway</span></div>
-    ${f.title ? `<h1 class="title">${esc(f.title)}</h1>` : ''}
-    ${f.kicker ? `<div class="kicker">${esc(f.kicker)}</div>` : ''}
+    ${has('no-brand') ? '' : `<div class="brand">${MERGE_LOCKUP}<span class="brand-product">Gateway</span></div>`}
+    <div class="head-text">
+      ${f.title ? `<h1 class="title">${esc(f.title)}</h1>` : ''}
+      ${f.kicker ? `<div class="kicker">${esc(f.kicker)}</div>` : ''}
+    </div>
   </header>
   <div class="panels">
 ${f.panels.map((p) => panelHtml(p)).join('\n')}
   </div>
-  <footer class="foot">
+  ${
+    // An empty footer still draws its rule and reserves its padding, which reads
+    // as a stray line under the plot. With nothing to say, say nothing.
+    f.caveat || f.source
+      ? `<footer class="foot">
     <span class="caveat">${esc(f.caveat)}</span>
-    <span>${esc(f.source)}</span>
-  </footer>
+    ${f.source ? `<span>${esc(f.source)}</span>` : ''}
+  </footer>`
+      : ''
+  }
 </body></html>`
 }
 
@@ -354,12 +529,31 @@ const isOpenWeight = (r: TrialRow) => !!r.provider && OPEN_WEIGHT_PROVIDERS.has(
 
 const args = process.argv.slice(2)
 /** Flags that consume the next argument. Everything else is a bare switch. */
-const VALUED = ['panels', 'size', 'models', 'exclude', 'title', 'kicker', 'source', 'caveat', 'out']
+const VALUED = ['panels', 'size', 'axis-max', 'models', 'exclude', 'title', 'kicker', 'source', 'caveat', 'out', 'logo-spot']
 const flag = (name: string): string | undefined => {
   const i = args.indexOf(`--${name}`)
   return i >= 0 ? args[i + 1] : undefined
 }
 const has = (name: string) => args.includes(`--${name}`)
+
+const logoSpot = (flag('logo-spot') ?? DEFAULT_LOGO_SPOT) as LogoSpot
+if (!LOGO_SPOTS.includes(logoSpot)) {
+  console.error(`unknown --logo-spot: ${logoSpot} - pick from ${LOGO_SPOTS.join(', ')}`)
+  process.exit(2)
+}
+
+/**
+ * The Merge dark look is the default, not a flag.
+ *
+ * These four were switches while the treatment was being chosen; it has been
+ * chosen, and every poster that has actually gone out used all four. Leaving
+ * them opt-in meant the published look was the one nobody got by default, and a
+ * poster built without them quietly shipped in a style we no longer use. Each
+ * keeps an escape hatch for the unbranded case.
+ */
+const designer = !has('plain')
+const brandRight = !has('brand-left')
+const largeText = !has('small-text')
 
 const input = args.find((a, i) => {
   if (a.startsWith('--')) return false
@@ -373,11 +567,25 @@ if (!input || has('help')) {
   --combined         also write every panel in one frame
   --only-combined    write only the combined frame
   --size <name>      ${Object.keys(SIZES).join(' | ')} (default: square single, landscape combined)
+  --axis-max <spec>  axis ceiling in the units the ticks print. '80' for every
+                     panel, or per panel: 'completion=80,median-time=300'.
+                     Default: 100% for completion, fitted for cost and time.
+                     Bars keep a zero baseline.
   --open-weight      keep only models whose weights are published
   --models <list>    comma-separated modelShort values, in the order to color them
   --exclude <list>   comma-separated modelShort values to drop
   --no-title        omit the visible frame title
   --no-kicker       omit the trial-count line
+  --no-panel-notes  omit the metric explanation lines
+  --no-caveat       omit the left footer text
+  --no-source       omit the source stamp; with --no-caveat the footer rule goes too
+  --small-text      revert to the compact type scale
+  --large-brand     double the logo and Gateway wordmark size
+  --no-brand        omit the logo and Gateway wordmark
+  --plain           drop the Merge dark treatment: charcoal canvas, winner
+                    colouring, no model logo tiles
+  --brand-left      put the lockup back above the title
+  --logo-spot <w>   unless --plain: ${LOGO_SPOTS.join(' | ')} (default: ${DEFAULT_LOGO_SPOT})
   --title <text>     frame title (default: derived from the selection)
   --kicker <text>    the mono line under the title
   --source <text>    the source stamp, bottom right
@@ -447,7 +655,65 @@ if (unknown.length) {
   process.exit(2)
 }
 
-const built = panelIds.map((id) => buildPanel(rows, PANELS[id], order))
+/**
+ * Per-render axis ceilings, in the units the ticks print.
+ *
+ * `PANELS.completion` pins its ceiling to 1 so a pass rate is never read
+ * against a data-fitted top. That is the right default and stays the default;
+ * this flag is the deliberate opt-out for a frame whose tallest bar leaves a
+ * third of the plot empty. Bars keep their zero baseline either way, so the
+ * length ratio between two bars is unchanged - only the headroom moves.
+ *
+ * Two forms, because a combined frame needs a ceiling per panel and a single
+ * panel does not:
+ *
+ *   --axis-max 80                     every rendered panel
+ *   --axis-max completion=80          that panel only
+ *   --axis-max completion=80,median-time=300
+ *
+ * Completion is stored as a 0-1 fraction but reads as a percentage, so a value
+ * above 1 is taken as one: `completion=80` and `completion=0.8` both mean 80%.
+ */
+const axisMaxArg = flag('axis-max')
+const axisMaxFor = new Map<PanelId, number>()
+let axisMaxAll: number | null = null
+if (axisMaxArg !== undefined) {
+  for (const part of axisMaxArg.split(',').map((s) => s.trim()).filter(Boolean)) {
+    const eq = part.indexOf('=')
+    const name = eq >= 0 ? part.slice(0, eq).trim() : null
+    const raw = eq >= 0 ? part.slice(eq + 1).trim() : part
+    const value = Number(raw)
+    if (!Number.isFinite(value) || value <= 0) {
+      console.error(`--axis-max wants a positive number, got "${raw}" in "${part}"`)
+      process.exit(2)
+    }
+    if (name === null) {
+      axisMaxAll = value
+      continue
+    }
+    if (!PANEL_IDS.includes(name as PanelId)) {
+      console.error(`--axis-max: unknown panel "${name}" - pick from ${PANEL_IDS.join(', ')}`)
+      process.exit(2)
+    }
+    axisMaxFor.set(name as PanelId, value)
+  }
+  const unused = [...axisMaxFor.keys()].filter((id) => !panelIds.includes(id))
+  if (unused.length) console.warn(`! --axis-max names ${unused.join(', ')}, which this frame does not render`)
+}
+
+const built = panelIds.map((id) => {
+  const panel = PANELS[id]
+  const given = axisMaxFor.get(id) ?? axisMaxAll
+  if (given === undefined || given === null) return buildPanel(rows, panel, order)
+  const ceiling = id === 'completion' && given > 1 ? given / 100 : given
+  const tallest = Math.max(0, ...order.map((k) => panel.value(rows.filter((r) => r.modelShort === k)) ?? 0))
+  if (tallest > ceiling) {
+    console.error(`--axis-max for ${id} is ${panel.tick(ceiling)}, below its tallest bar (${panel.tick(tallest)}) - it would clip.`)
+    process.exit(2)
+  }
+  console.log(`${id}: axis ceiling ${panel.tick(ceiling)} (default ${panel.axisMax === null ? 'fitted' : panel.tick(panel.axisMax)})`)
+  return buildPanel(rows, { ...panel, axisMax: ceiling }, order)
+})
 for (const d of built) {
   if (d.omitted.length) {
     console.warn(`! ${d.panel.id}: no value for ${d.omitted.join(', ')} - absent from the chart, not plotted as zero.`)
@@ -462,7 +728,7 @@ const perCell = rows.length / (order.length * tasks)
 
 const title = has('no-title') ? '' : flag('title') ?? `${order.length} models, compared`
 const kicker = has('no-kicker') ? '' : flag('kicker') ?? `${rows.length} trials · ${tasks} tasks · ${harnesses.join(' + ')}`
-const source = flag('source') ?? `source: heval · ${exp.job}`
+const source = has('no-source') ? '' : flag('source') ?? `source: heval · ${exp.job}`
 /**
  * The line the numbers cannot carry themselves.
  *
@@ -471,7 +737,7 @@ const source = flag('source') ?? `source: heval · ${exp.job}`
  * and a bar chart cannot say that - this line has to.
  */
 const caveat =
-  flag('caveat') ??
+  has('no-caveat') ? '' : flag('caveat') ??
   (perCell < 3
     ? `${perCell < 1.05 ? 'One attempt' : `${perCell.toFixed(1)} attempts`} per task per model. Treat small differences as directional`
     : `${perCell.toFixed(1)} attempts per task per model`)

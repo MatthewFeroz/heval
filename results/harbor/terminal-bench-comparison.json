@@ -9,6 +9,16 @@
       "0.152.1"
     ]
   },
+  "pricingAdjustments": [
+    {
+      "model": "zai/glm-5.3-flash",
+      "basis": "standard Gateway route rates",
+      "inputPerMillion": 0.15,
+      "cacheReadPerMillion": 0.03,
+      "outputPerMillion": 0.5,
+      "multiplierFromRecordedParticleRate": 10
+    }
+  ],
   "rows": [
     {
       "trial": "break-filter-js-from-html__BKPVcnE",
@@ -86,7 +96,7 @@
       "cacheTokens": 74560,
       "outputTokens": 2437,
       "totalTokens": 100874,
-      "costUsd": 0.000703685,
+      "costUsd": 0.00703685,
       "costSource": "derived",
       "startedAt": "2026-09-02T17:45:40.169068Z",
       "error": null
@@ -194,7 +204,7 @@
       "cacheTokens": 5817600,
       "outputTokens": 25295,
       "totalTokens": 7277483,
-      "costUsd": 0.040236369999999994,
+      "costUsd": 0.40236369999999994,
       "costSource": "derived",
       "startedAt": "2026-09-02T19:09:12.472761Z",
       "error": null
@@ -383,7 +393,7 @@
       "cacheTokens": 120192,
       "outputTokens": 5269,
       "totalTokens": 179264,
-      "costUsd": 0.0014310710000000001,
+      "costUsd": 0.014310710000000002,
       "costSource": "derived",
       "startedAt": "2026-09-02T19:15:53.005218Z",
       "error": null
@@ -599,7 +609,7 @@
       "cacheTokens": 181760,
       "outputTokens": 4973,
       "totalTokens": 265192,
-      "costUsd": 0.001970815,
+      "costUsd": 0.01970815,
       "costSource": "derived",
       "startedAt": "2026-09-02T18:55:51.047396Z",
       "error": null
@@ -788,7 +798,7 @@
       "cacheTokens": 80832,
       "outputTokens": 1598,
       "totalTokens": 177671,
-      "costUsd": 0.0017510110000000002,
+      "costUsd": 0.017510110000000002,
       "costSource": "derived",
       "startedAt": "2026-09-02T19:54:32.753036Z",
       "error": null
@@ -950,7 +960,7 @@
       "cacheTokens": 549056,
       "outputTokens": 5247,
       "totalTokens": 971357,
-      "costUsd": 0.008165328,
+      "costUsd": 0.08165328,
       "costSource": "derived",
       "startedAt": "2026-09-02T19:02:14.176034Z",
       "error": "AgentTimeoutError"
@@ -1031,7 +1041,7 @@
       "cacheTokens": 183744,
       "outputTokens": 4732,
       "totalTokens": 218471,
-      "costUsd": 0.0012377570000000001,
+      "costUsd": 0.012377570000000002,
       "costSource": "derived",
       "startedAt": "2026-09-02T18:39:55.984123Z",
       "error": null
@@ -1166,7 +1176,7 @@
       "cacheTokens": 27776,
       "outputTokens": 1178,
       "totalTokens": 68156,
-      "costUsd": 0.0007302579999999999,
+      "costUsd": 0.007302579999999999,
       "costSource": "derived",
       "startedAt": "2026-09-02T19:37:28.715783Z",
       "error": null
@@ -1463,7 +1473,7 @@
       "cacheTokens": 355392,
       "outputTokens": 5038,
       "totalTokens": 387261,
-      "costUsd": 0.001720541,
+      "costUsd": 0.01720541,
       "costSource": "derived",
       "startedAt": "2026-09-02T20:23:44.596841Z",
       "error": null
@@ -1571,7 +1581,7 @@
       "cacheTokens": 121344,
       "outputTokens": 2146,
       "totalTokens": 136831,
-      "costUsd": 0.0006714469999999999,
+      "costUsd": 0.006714469999999999,
       "costSource": "derived",
       "startedAt": "2026-09-02T19:41:48.096358Z",
       "error": null
@@ -1679,7 +1689,7 @@
       "cacheTokens": 199104,
       "outputTokens": 2918,
       "totalTokens": 268045,
-      "costUsd": 0.001733557,
+      "costUsd": 0.01733557,
       "costSource": "derived",
       "startedAt": "2026-09-02T19:24:21.747225Z",
       "error": null
@@ -1922,7 +1932,7 @@
       "cacheTokens": 58816,
       "outputTokens": 1987,
       "totalTokens": 103799,
-      "costUsd": 0.0009207379999999999,
+      "costUsd": 0.009207379999999999,
       "costSource": "derived",
       "startedAt": "2026-09-02T19:45:41.399675Z",
       "error": null
@@ -2084,7 +2094,7 @@
       "cacheTokens": 281408,
       "outputTokens": 6467,
       "totalTokens": 315128,
-      "costUsd": 0.0015763690000000002,
+      "costUsd": 0.015763690000000003,
       "costSource": "derived",
       "startedAt": "2026-09-02T18:18:35.630502Z",
       "error": null
@@ -2192,7 +2202,7 @@
       "cacheTokens": 683968,
       "outputTokens": 11181,
       "totalTokens": 801536,
-      "costUsd": 0.004206759,
+      "costUsd": 0.04206759,
       "costSource": "derived",
       "startedAt": "2026-09-02T17:45:40.097703Z",
       "error": null
@@ -2381,7 +2391,7 @@
       "cacheTokens": 140480,
       "outputTokens": 35302,
       "totalTokens": 191500,
-      "costUsd": 0.0024223100000000004,
+      "costUsd": 0.024223100000000004,
       "costSource": "derived",
       "startedAt": "2026-09-02T17:56:31.907336Z",
       "error": null
@@ -2570,7 +2580,7 @@
       "cacheTokens": 129216,
       "outputTokens": 1596,
       "totalTokens": 154667,
-      "costUsd": 0.000825273,
+      "costUsd": 0.00825273,
       "costSource": "derived",
       "startedAt": "2026-09-02T18:24:51.529653Z",
       "error": null
@@ -2705,7 +2715,7 @@
       "cacheTokens": 9216,
       "outputTokens": 1627,
       "totalTokens": 41208,
-      "costUsd": 0.0005644729999999999,
+      "costUsd": 0.005644729999999999,
       "costSource": "derived",
       "startedAt": "2026-09-02T18:46:46.828447Z",
       "error": null
@@ -2786,7 +2796,7 @@
       "cacheTokens": 329536,
       "outputTokens": 12331,
       "totalTokens": 371870,
-      "costUsd": 0.002055203,
+      "costUsd": 0.02055203,
       "costSource": "derived",
       "startedAt": "2026-09-02T18:09:53.608983Z",
       "error": null
@@ -3056,7 +3066,7 @@
       "cacheTokens": 68352,
       "outputTokens": 3567,
       "totalTokens": 166592,
-      "costUsd": 0.001803501,
+      "costUsd": 0.01803501,
       "costSource": "derived",
       "startedAt": "2026-09-02T20:07:03.458553Z",
       "error": null
@@ -3137,7 +3147,7 @@
       "cacheTokens": 272000,
       "outputTokens": 20149,
       "totalTokens": 434336,
-      "costUsd": 0.0039562550000000005,
+      "costUsd": 0.03956255000000001,
       "costSource": "derived",
       "startedAt": "2026-09-02T19:49:08.981704Z",
       "error": "AgentTimeoutError"

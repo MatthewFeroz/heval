@@ -17,9 +17,17 @@
  *          legend, direct labels (<= 4 series), and a table view; do not remove
  *          those to "clean up" a dark chart.
  *
- * SURFACE NOTE. The dark theme renders on Merge Charcoal. Grid and ink use the
- * shared marketing tokens, and the display keeps all marks opaque so the
- * embossed report background cannot show through them.
+ * SURFACE NOTE. The dark theme renders on POSTER_DESIGNER_SURFACE (#12110F),
+ * the same near-black the poster exporter and the social themes use, so a chart
+ * read in the report and the same chart posted as an image are one artwork.
+ * Grid and ink use the shared marketing tokens, and the display keeps all marks
+ * opaque so the embossed report background cannot show through them.
+ *
+ * The recorded dark validation below was run on #3a3833. Dropping the surface
+ * raises ink and series contrast against it and leaves the all-pairs CVD
+ * distances untouched, since those are pair-to-pair and not surface-relative -
+ * so nothing that passed can have started failing. Re-run the validator on
+ * #12110F before adding or re-stepping a dark series colour.
  *
  * A fifth categorical value is never a generated hue. `recipes.ts` refuses the
  * color channel past four values and tells the user to facet instead.
@@ -70,8 +78,8 @@ export const THEMES: Record<ThemeMode, Theme> = {
   },
   dark: {
     mode: 'dark',
-    bg: '#2C2A25',
-    surface: '#2C2A25',
+    bg: '#12110F',
+    surface: '#12110F',
     ink: '#F5F2EE',
     inkMuted: '#D6CFC7',
     grid: '#5A5751',
