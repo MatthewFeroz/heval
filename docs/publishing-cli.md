@@ -6,6 +6,11 @@ The executable and UI are built ahead of publication; users only need Node.js.
 npm rejected the unscoped name `heval` as too similar to `level`. The package
 uses the maintainer's scope; its executable is still named `heval`.
 
+Version `0.1.0` is published with public access and the `latest` tag under the
+`mattferoz` account. The registry tarball SHA-1 is
+`9aaa6b1dd4dd96aca14c514f925120e08677ab30`, matching the tested release artifact.
+The release currently uses `UNLICENSED` for Heval's own code.
+
 ## Prepare a release
 
 1. Set the next version in `packages/cli/package.json`.
