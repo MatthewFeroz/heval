@@ -1,0 +1,20 @@
+[Unit]
+Description=Heval connected Harbor runner
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# Replace these three paths with absolute paths for your dedicated Linux account.
+ExecStart=/usr/local/bin/heval runner start --state /home/heval-worker/.heval/runner --harbor /home/heval-worker/.local/bin/harbor
+WorkingDirectory=/home/heval-worker
+Restart=on-failure
+RestartSec=10
+# Detached run supervisors must survive a daemon restart. Stop evaluations in
+# the Heval UI before deliberately shutting down the entire machine.
+KillMode=process
+TimeoutStopSec=25
+UMask=0077
+
+[Install]
+WantedBy=default.target

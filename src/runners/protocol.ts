@@ -14,7 +14,7 @@ export function validateProfiles(profiles: RunnerProfile[]) {
   if (profiles.length > MAX_RUNNER_PROFILES || new Set(profiles.map(p => p.id)).size !== profiles.length) throw new Error('Use up to 20 profiles with unique IDs.')
   for (const p of profiles) {
     if (!/^[a-z0-9][a-z0-9-]{0,63}$/.test(p.id) || !/^[a-f0-9]{64}$/.test(p.digest)) throw new Error('Invalid profile identity.')
-    for (const label of [p.title, p.benchmark, p.agent, p.model]) if (!label.trim() || label.length > 160 || /[\u0000-\u001f]/.test(label)) throw new Error('Use short profile labels.')
+    for (const label of [p.title, p.benchmark, p.agent, p.model]) if (!label.trim() || label.length > 160 || [...label].some(c => c.charCodeAt(0) < 32)) throw new Error('Use short profile labels.')
     if (![p.tasks, p.attempts, p.timeoutSeconds].every(Number.isSafeInteger) || p.tasks < 1 || p.attempts < 1 || p.tasks * p.attempts > MAX_RUNNER_TRIALS || p.timeoutSeconds < 30 || p.timeoutSeconds > 7200) throw new Error('Profiles require 1–60 trials and a 30–7200 second time limit.')
   }
   return profiles

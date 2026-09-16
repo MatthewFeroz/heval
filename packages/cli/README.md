@@ -9,7 +9,7 @@ dependencies or install scripts.
 
 ## Start here
 
-After the first npm release is published:
+For the published local viewer:
 
 ```sh
 npx @mattferoz/heval@latest open
@@ -118,3 +118,13 @@ Until a project license is selected, Heval's own code is marked `UNLICENSED`;
 bundled third-party components retain their licenses in
 `dist/THIRD_PARTY_NOTICES.txt`. Harbor is a separately installed Apache-2.0 tool
 and is not bundled.
+
+## Connected runner preview
+
+The `0.2.0-preview.0` source build adds `heval runner connect`, `start`, `status`,
+and `cleanup` for Linux machines with Harbor 0.22.0 and Docker. It is not yet
+published on npm. Pair through the hosted Machines page, then keep the daemon
+running to execute locally approved profiles and save results to your account.
+The default Oracle setup check uses no model API calls. See the
+[connected runner setup guide](https://github.com/MatthewFeroz/heval/blob/feat/connected-harbor-runners/docs/connected-runners.md)
+for tarball installation, credentials, a Linux service, and recovery.

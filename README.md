@@ -41,6 +41,17 @@ Open [Your reports](https://temporary-rushing-violet-xu17m97.vercel.app/reports)
 
 See the [user walkthrough and recording](docs/hosted-reports.md) for the complete flow, supported files, limits, and deployment setup.
 
+### Connected Harbor runners (preview)
+
+The `feat/connected-harbor-runners` branch connects the browser workspace to
+a Linux machine or cloud VM using an outbound runner. Queue a setup check,
+monitor it from another browser, and open the automatically saved report.
+The preview includes content-pinned local profiles, durable claims, cancellation,
+and daemon-restart recovery. It does not provision VMs or migrate live containers.
+
+See [installation, workflow, and limits](docs/connected-runners.md). The published
+0.1.0 CLI remains a local viewer; build the preview tarball for runner commands.
+
 ### Installable local results viewer
 
 The CLI is available on npm as [`@mattferoz/heval`](https://www.npmjs.com/package/@mattferoz/heval).

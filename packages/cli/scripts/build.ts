@@ -1,4 +1,4 @@
-import { chmodSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
+import { chmodSync, cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { build, type Plugin } from 'vite'
@@ -21,7 +21,13 @@ const licenses: Plugin = {
       for (const id of Object.keys(chunk.modules)) {
         if (!id.includes('/node_modules/')) continue
         let folder = dirname(id.split('?')[0])
-        while (folder.includes('node_modules') && !existsSync(join(folder, 'package.json'))) folder = dirname(folder)
+        // Some packages put {"type":"module"} in a dist subdirectory. Find the
+        // actual package manifest so we collect its name and license text.
+        while (folder.includes('node_modules')) {
+          const path = join(folder, 'package.json')
+          if (existsSync(path)) { const info = JSON.parse(readFileSync(path, 'utf8')); if (info.name && info.version) break }
+          folder = dirname(folder)
+        }
         const manifestFile = join(folder, 'package.json')
         if (!existsSync(manifestFile)) continue
         const info = JSON.parse(readFileSync(manifestFile, 'utf8')) as { name: string; version: string; license?: string }
@@ -62,7 +68,7 @@ await build({
   },
 })
 const result = await Bun.build({
-  entrypoints: [join(pkg, 'src/cli.ts')],
+  entrypoints: [join(pkg, 'src/cli.ts'), join(pkg, 'src/runner-supervisor.ts')],
   outdir: dist,
   target: 'node',
   format: 'esm',
@@ -71,6 +77,7 @@ const result = await Bun.build({
 })
 if (!result.success) throw new AggregateError(result.logs, 'CLI build failed')
 chmodSync(join(dist, 'cli.js'), 0o755)
+cpSync(join(pkg, 'runner-task'), join(dist, 'runner-task'), { recursive: true })
 const example = JSON.parse(readFileSync(join(root, 'results/harbor/terminal-bench-comparison.json'), 'utf8'))
 example.source = 'Bundled archived example; not a new evaluation'
 writeFileSync(join(dist, 'example.json'), JSON.stringify(example) + '\n')
