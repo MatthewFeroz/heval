@@ -3,6 +3,7 @@ import { useConvexAuth, useMutation, useQuery, useConvexConnectionState } from '
 import { api } from '../../convex/_generated/api'
 import type { Id } from '../../convex/_generated/dataModel'
 import { useAppAuth } from '../auth'
+import { AccountControls } from '../account/AccountControls'
 import { ProjectReportView } from './ProjectReportView'
 import { TeamAccess, AcceptInvitation } from './TeamAccess'
 import { message, token } from './helpers'
@@ -90,7 +91,7 @@ export function ReportsApp() {
   const hash = useSyncExternalStore(subscribeHashChange, () => location.hash)
   const invitation = hash.startsWith('#invite=') ? hash.slice(8) : null
   const id = new URLSearchParams(location.search).get('id')
-  return <div className="report-shell"><header className="report-header"><a href="/" className="report-logo">heval<span> / reports</span></a><nav><a href="/machines">Machines &amp; runs</a><a href="/reports">Your reports</a><a href="/studio">Studio</a>{!isShared && auth.user && <button className="secondary" onClick={auth.signOut}>Sign out</button>}</nav></header><main>
+  return <div className="report-shell"><header className="report-header"><a href="/" className="report-logo">heval<span> / reports</span></a><nav><a href="/machines">Machines &amp; runs</a><a href="/reports">Your reports</a><a href="/studio">Studio</a>{!isShared && <AccountControls auth={auth} showSignIn={false} />}</nav></header><main>
     {isShared ? <SharedReport /> : isLoading ? <p role="status">Connecting your workspace…</p> : !isAuthenticated ? <section className="report-card"><span className="report-eyebrow">IMPORT → SAVE → SHARE</span><h1>Your evaluations, ready to share.</h1><p>Sign in to save reports privately and manage who can open them.</p>{auth.configured ? <button onClick={auth.signIn}>Sign in to your workspace</button> : <p>Sign-in isn’t configured on this deployment yet.</p>}{auth.user && <p role="alert">Your account hasn’t connected to report storage. Try signing out and back in.</p>}</section> : invitation ? <AcceptInvitation token={invitation} /> : id ? <SavedReport id={id as Id<'reports'>} /> : <Workspace />}
   </main><footer className="report-footer">Heval reports · Imported evidence, with sharing you control.</footer></div>
 }

@@ -1,0 +1,29 @@
+.account-controls { display: inline-flex; position: relative; align-items: center; flex: none; gap: 16px; font-family: var(--sans, system-ui, sans-serif); }
+.account-controls .account-trigger, .account-controls .account-sign-in { display: inline-flex; align-items: center; justify-content: center; gap: 9px; min-height: 40px; margin: 0; padding: 5px 10px; border: 1px solid #ffffff26; border-radius: 999px; background: #191919; color: #f4f4f5; font: 500 13px/1.4 var(--sans, system-ui, sans-serif); white-space: nowrap; cursor: pointer; }
+.account-controls .account-sign-in { padding-inline: 16px; }
+.account-controls .account-trigger:hover, .account-controls .account-trigger[aria-expanded=true], .account-controls .account-sign-in:hover { background: #242424; border-color: #ffffff45; }
+.account-controls .account-sign-in:disabled { opacity: .6; cursor: wait; }
+.account-controls .account-avatar { display: grid; place-items: center; flex: none; width: 27px; height: 27px; border-radius: 50%; background: #e4e4e7; color: #18181b; font: 600 12px/1 var(--sans, system-ui, sans-serif); }
+.account-name { max-width: 120px; overflow: hidden; text-overflow: ellipsis; }
+.account-controls a.account-studio-link { display: inline-flex; align-items: center; gap: 5px; min-height: 40px; color: #f4f4f5; font: 500 13px/1.4 var(--sans, system-ui, sans-serif); text-decoration: none; white-space: nowrap; }
+.account-controls a.account-studio-link:hover { color: #fff; text-decoration: underline; text-underline-offset: 4px; }
+.account-loading { color: #a1a1aa; font-size: 12px; white-space: nowrap; }
+.account-menu { position: fixed; z-index: 1000; width: min(280px, calc(100vw - 16px)); max-height: calc(100dvh - 16px); box-sizing: border-box; overflow: auto; padding: 6px; border: 1px solid #ffffff26; border-radius: 14px; background: #181818; color: #f4f4f5; box-shadow: 0 16px 48px #0008; font: 400 13px/1.5 var(--sans, system-ui, sans-serif); text-align: left; }
+.account-identity { display: grid; gap: 3px; padding: 10px 12px 14px; margin-bottom: 4px; border-bottom: 1px solid #ffffff1a; }
+.account-identity > span:first-child { color: #a1a1aa; font-size: 11px; }
+.account-identity strong { color: #f4f4f5; font-size: 14px; overflow-wrap: anywhere; }
+.account-email { color: #a1a1aa; font-size: 12px; overflow-wrap: anywhere; }
+.account-menu .account-menu-item { display: flex; align-items: center; gap: 10px; box-sizing: border-box; width: 100%; min-height: 40px; margin: 0; padding: 9px 12px; border: 0; border-radius: 8px; background: transparent; color: #d4d4d8; font: inherit; text-align: left; text-decoration: none; cursor: pointer; }
+.account-menu-item svg { flex: none; color: #a1a1aa; }
+.account-menu .account-menu-item:hover, .account-menu .account-menu-item:focus-visible { background: #ffffff0d; color: #fff; }
+.account-menu .account-menu-item:disabled { opacity: .5; cursor: wait; }
+.account-menu-divider { height: 1px; margin: 5px 6px; background: #ffffff1a; }
+.account-controls :is(a, button):focus-visible, .account-menu .account-menu-item:focus-visible { outline: 2px solid #a1a1aa; outline-offset: 2px; }
+.account-error { color: #fca5a5; margin: 8px 12px; font-size: 12px; white-space: normal; }
+.account-controls > .account-error { position: absolute; right: 0; top: 100%; width: min(240px, 80vw); padding: 10px; border: 1px solid #ffffff26; border-radius: 8px; background: #181818; }
+.account-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+@media (max-width: 540px) {
+  .account-controls { gap: 10px; }
+  .account-controls .account-trigger { gap: 5px; padding-inline: 6px; }
+  .account-name { display: none; }
+}

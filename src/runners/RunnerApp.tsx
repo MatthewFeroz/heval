@@ -3,6 +3,7 @@ import { useConvexAuth, useMutation, useQuery } from 'convex/react'
 import { api } from '../../convex/_generated/api'
 import type { Id } from '../../convex/_generated/dataModel'
 import { useAppAuth } from '../auth'
+import { AccountControls } from '../account/AccountControls'
 import { message, token } from '../reports/helpers'
 import { RUNNER_ONLINE_MS } from './protocol'
 
@@ -64,5 +65,5 @@ function Workspace() {
 
 export function RunnerApp() {
   const auth = useAppAuth(), { isLoading, isAuthenticated } = useConvexAuth()
-  return <div className="report-shell"><header className="report-header"><a href="/" className="report-logo">heval<span> / machines</span></a><nav><a href="/reports">Your reports</a><a href="/machines">Machines &amp; runs</a>{auth.user && <button className="secondary" onClick={auth.signOut}>Sign out</button>}</nav></header><main>{isLoading ? <p>Connecting your workspace…</p> : isAuthenticated ? <Workspace /> : <section className="report-card"><h1>Your evaluations, on your machines.</h1><p>Sign in to connect a Linux computer or cloud VM. You can monitor the same evaluation from different browser sessions.</p>{auth.configured ? <button onClick={auth.signIn}>Sign in to connect a machine</button> : <p>Sign-in is not configured on this deployment.</p>}</section>}</main><footer className="report-footer">Heval · Your machine executes. Your workspace keeps the results.</footer></div>
+  return <div className="report-shell"><header className="report-header"><a href="/" className="report-logo">heval<span> / machines</span></a><nav><a href="/reports">Your reports</a><a href="/machines">Machines &amp; runs</a><AccountControls auth={auth} showSignIn={false} /></nav></header><main>{isLoading ? <p>Connecting your workspace…</p> : isAuthenticated ? <Workspace /> : <section className="report-card"><h1>Your evaluations, on your machines.</h1><p>Sign in to connect a Linux computer or cloud VM. You can monitor the same evaluation from different browser sessions.</p>{auth.configured ? <button onClick={auth.signIn}>Sign in to connect a machine</button> : <p>Sign-in is not configured on this deployment.</p>}</section>}</main><footer className="report-footer">Heval · Your machine executes. Your workspace keeps the results.</footer></div>
 }
