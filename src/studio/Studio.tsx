@@ -134,7 +134,7 @@ function readFilters(search: string): Filters {
   return out
 }
 
-export function Studio() {
+export function Studio({ localViewer = false }: { localViewer?: boolean }) {
   const initial = useMemo(() => readUrl(window.location.search), [])
   const editor = useChartDocument({ chart: initial.state, filters: Object.entries(readFilters(window.location.search)).filter(([, values]) => values.length).map(([field, values]) => ({ field, values })), sourceIds: [], customSpec: null })
   const { setState, setSourceIds, setOverride: setAnalysisOverride, setDocumentFilters } = editor
@@ -153,7 +153,7 @@ export function Studio() {
   const [job, setJob] = useState<string | null>(initial.job)
   const [data, setData] = useState<JobExport | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
-  const [tab, setTab] = useState<Tab>(mode === 'presentation' ? 'social' : 'chart')
+  const [tab, setTab] = useState<Tab>(mode === 'presentation' && !localViewer ? 'social' : 'chart')
   const [specDraft, setSpecDraft] = useState<string | null>(null)
   const [dragging, setDragging] = useState(false)
   const [selected, setSelected] = useState<string | null>(null)
@@ -266,7 +266,7 @@ export function Studio() {
       setActivePresentationId(created.id)
     }
     setMode(next)
-    setTab(next === 'presentation' ? 'social' : 'chart')
+    setTab(next === 'presentation' && !localViewer ? 'social' : 'chart')
     setSpecDraft(null)
   }
 
@@ -531,7 +531,7 @@ export function Studio() {
         <a className="brand" href="/" aria-label="Heval home">
           <span className="brand-mark"><span>H</span></span>
           <span className="brand-name">Heval</span>
-          <span className="beta-pill">STUDIO</span>
+          <span className="beta-pill">{localViewer ? 'LOCAL RESULTS' : 'STUDIO'}</span>
         </a>
 
         <div className="crumbs">
@@ -563,17 +563,23 @@ export function Studio() {
           <button type="button" className="btn" style={{ display: tab === 'social' ? 'none' : undefined }} onClick={() => void exportSvg()} disabled={!chart}><Download size={14} />SVG</button>
           <button type="button" className="btn" style={{ display: tab === 'social' ? 'none' : undefined }} onClick={() => void exportPng()} disabled={!chart}><ImageIcon size={14} />PNG @2x</button>
           <button type="button" className="btn primary" onClick={() => copy('link', window.location.href)} disabled={!chart || !canShareLink} title={canShareLink ? undefined : "Download a bundle to share this project and its data"}>
-            {copied === 'link' ? <Check size={14} /> : <Link2 size={14} />}{copied === 'link' ? 'Copied' : 'Copy link'}
+            {copied === 'link' ? <Check size={14} /> : <Link2 size={14} />}{copied === 'link' ? 'Copied' : localViewer ? 'Copy local link' : 'Copy link'}
           </button>
         </div>
       </header>
+
+      {localViewer && <div className="local-viewer-note" role="note">
+        <strong>Local results viewer</strong>
+        <span>Explore trials and download SVG, PNG, or a bundle. Links work while this viewer is running; use a bundle to share results.</span>
+        <span>To open another Harbor job: <code>heval open ./jobs/my-job</code>. This release does not launch evaluations or render social images and videos.</span>
+      </div>}
 
       <div className="modebar">
         <div className="mode-switch" role="tablist" aria-label="Studio mode">
           <button type="button" role="tab" aria-selected={mode === 'analysis'} onClick={() => switchMode('analysis')}>Analysis</button>
           <button type="button" role="tab" aria-selected={mode === 'presentation'} disabled={!project || !activeView} onClick={() => switchMode('presentation')}>Presentation</button>
         </div>
-        <span>{mode === 'analysis' ? 'Compare compatible metrics across sources and save the analysis.' : 'Choose a question and export. Your saved analysis stays intact.'}</span>
+        <span>{mode === 'analysis' ? 'Compare compatible metrics across sources and save the analysis.' : localViewer ? 'Export this saved view as SVG or PNG. Your analysis stays intact.' : 'Choose a question and export. Your saved analysis stays intact.'}</span>
         {project && <strong>{project.label} · {project.sources.length} {project.sources.length === 1 ? 'source' : 'sources'}</strong>}
       </div>
 
@@ -759,7 +765,7 @@ export function Studio() {
             </div>
             {project?.sources.map((source) => <p className="hint" key={source.id}><code>{source.uri}</code></p>)}
             <div className="row">
-              {job && index.some((i) => i.job === job) && (
+              {!localViewer && job && index.some((i) => i.job === job) && (
                 <a className="btn sm" href={`${RESULTS}/${job}.html`} target="_blank" rel="noreferrer">
                   <ExternalLink size={12} />Static report
                 </a>
@@ -832,7 +838,7 @@ export function Studio() {
                 ['social', 'Social images', <ImageIcon size={13} key="i" />, null],
                 ['motion', 'Motion', <Film size={13} key="i" />, null],
                 ['spec', 'Vega-Lite spec', <Braces size={13} key="i" />, null],
-              ]) as [Tab, string, ReactNode, number | null][]).map(([t, label, icon, count]) => (
+              ]) as [Tab, string, ReactNode, number | null][]).filter(([t]) => !localViewer || (t !== 'social' && t !== 'motion')).map(([t, label, icon, count]) => (
                 <button key={t} type="button" role="tab" className="tab" aria-selected={tab === t} disabled={t === 'spec' && !chart && override === null} onClick={() => setTab(t)}>
                   {icon}{label}{count !== null && <small>{count}</small>}
                 </button>

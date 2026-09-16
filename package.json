@@ -5,6 +5,9 @@
   "packageManager": "bun@1.4.0",
   "type": "module",
   "scripts": {
+    "cli:build": "bun packages/cli/scripts/build.ts",
+    "cli:test": "bun test packages/cli/src",
+    "cli:pack": "bun run cli:build && npm pack ./packages/cli --pack-destination .scratch",
     "dev": "vite --host 0.0.0.0",
     "build": "bun run social:build && tsc -b && vite build",
     "start": "bun run build && bun server/index.ts",

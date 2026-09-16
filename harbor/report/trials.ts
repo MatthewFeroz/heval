@@ -117,8 +117,8 @@ export function loadTrials(jobDir: string, catalog: Catalog | null = loadCatalog
   return rows.sort((a, b) => a.trial.localeCompare(b.trial))
 }
 
-export function exportJob(jobDir: string): JobExport {
-  const rows = loadTrials(jobDir)
+export function exportJob(jobDir: string, catalog: Catalog | null = loadCatalog()): JobExport {
+  const rows = loadTrials(jobDir, catalog)
   const jobResult = join(jobDir, 'result.json')
   const jobId = existsSync(jobResult) ? str((JSON.parse(readFileSync(jobResult, 'utf8')) as Json).id) : null
   const agentVersions: Record<string, string[]> = {}
