@@ -5,6 +5,30 @@ on:
   pull_request:
 
 jobs:
+  cli:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: [22, 24]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
+      - run: bun install --frozen-lockfile
+      - run: bunx tsc -p packages/cli/tsconfig.json
+      - run: bun run cli:test
+      - run: bun run cli:pack
+      - run: bunx playwright install --with-deps chromium
+      - run: bun run cli:smoke
+      - uses: actions/upload-artifact@v4
+        with:
+          name: heval-cli-node-${{ matrix.node }}
+          path: .scratch/heval-*.tgz
+
   verify:
     runs-on: ubuntu-latest
     steps:

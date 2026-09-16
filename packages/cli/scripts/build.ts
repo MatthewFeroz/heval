@@ -41,7 +41,19 @@ await build({
   configFile: false,
   root: join(pkg, 'web'),
   publicDir: join(root, 'public'),
-  plugins: [react(), licenses],
+  plugins: [react(), licenses, {
+    name: 'heval-offline-fonts',
+    generateBundle(_options, bundle) {
+      // Vite resolves CSS @imports internally, so remove the remote font import
+      // from the final CSS. The existing font stacks include system fallbacks.
+      for (const asset of Object.values(bundle)) {
+        if (asset.type === 'asset' && asset.fileName.endsWith('.css')) {
+          const css = typeof asset.source === 'string' ? asset.source : new TextDecoder().decode(asset.source)
+          asset.source = css.replace(/@import\s+(?:url\()?(['"])https:\/\/fonts\.googleapis\.com[^'"]+\1\)?\s*;/g, '')
+        }
+      }
+    },
+  }],
   build: {
     outDir: join(dist, 'web'),
     emptyOutDir: true,

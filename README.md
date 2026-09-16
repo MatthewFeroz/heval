@@ -34,6 +34,27 @@ See [`results/concurrent-cache-v1-current.json`](results/concurrent-cache-v1-cur
 
 ## Quick Start
 
+### Installable local results viewer
+
+The first CLI release is prepared under [`packages/cli`](packages/cli/README.md).
+It provides `heval doctor` and `heval open` for example results, normalized JSON,
+or raw Harbor job directories. The installed viewer requires Node.js 22+, with
+no Bun, Docker, or account needed to explore existing data.
+
+Before npm publication, build and install the package locally:
+
+```sh
+bun install --frozen-lockfile
+bun run cli:pack
+npm install -g ./.scratch/heval-0.1.0.tgz
+heval open
+```
+
+After publication, users can use `npx heval@latest open`. See
+[Publishing the CLI](docs/publishing-cli.md) for the release procedure.
+This release does not launch evaluations; execute a Harbor job, then open its
+results with `heval open ./jobs/your-job`.
+
 ### Requirements
 
 - [Bun](https://bun.sh/) 1.4 or newer
