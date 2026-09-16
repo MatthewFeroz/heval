@@ -25,8 +25,7 @@ button { color: inherit; }
 .hero-harness { position: relative; display: grid; place-items: center; width: 62px; height: 62px; border: 1px solid #ffffff12; border-radius: 17px; background: linear-gradient(145deg, #222323, #111212); box-shadow: 0 8px 25px #0005, inset 0 1px #ffffff09; animation: breathe 5.2s ease-in-out infinite; }
 .hero-harness img { width: 30px; height: 30px; object-fit: contain; }
 .hero-harness img[src*="codex"] { filter: invert(1); }
-.hero-harness span { position: absolute; top: calc(100% + 10px); white-space: nowrap; font-size: 10px; color: #b9babb; opacity: 0; transition: opacity .2s; }
-.hero-harness:hover span, .hero-harness:focus-visible span { opacity: 1; }
+.hero-harness span { position: absolute; top: calc(100% + 10px); white-space: nowrap; font-size: 10px; color: #b9babb; }
 .hero h1 { max-width: 930px; margin: 0 auto; font-size: clamp(48px, 6.1vw, 80px); line-height: 1.08; letter-spacing: -.055em; font-weight: 700; text-wrap: balance; }
 .keep-together { white-space: nowrap; }
 .hero-copy { max-width: 570px; margin: 28px auto 0; color: #999b9f; font-size: 17px; line-height: 1.8; text-wrap: pretty; }

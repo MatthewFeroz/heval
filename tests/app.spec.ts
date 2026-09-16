@@ -47,7 +47,12 @@ test('opens the responsive navigation', async ({ page }, testInfo) => {
 test('shows the product entry point and measured evaluation preview', async ({ page }) => {
   await expect(page.locator('.nav .brand')).toHaveText('heval')
   await expect(page.locator('.hero-harness')).toHaveCount(4)
-  await expect(page.locator('.hero-copy')).toContainText('Run evaluations locally with Harbor.')
+  await expect(page.locator('.hero-copy')).toContainText('Compare Claude Code, Codex, OpenCode, and Pi.')
+  await expect(page.locator('.hero-copy')).toContainText('Run evaluations locally with Harbor')
+  for (const label of await page.locator('.hero-harness span').all()) {
+    await expect(label).toBeVisible()
+    await expect(label).toHaveCSS('opacity', '1')
+  }
   await expect(page.locator('main > section').nth(1)).toHaveAttribute('id', 'compare')
   await expect(page.locator('main > section').nth(2)).toHaveClass(/studio-showcase/)
   const start = page.getByRole('link', { name: 'Get started', exact: true })

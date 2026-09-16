@@ -504,7 +504,7 @@ export default function App({ auth = publicAuth }: { auth?: AppAuth }) {
             ))}
           </div>
           <h1>The <span className="keep-together">open-source</span> harness evaluation platform</h1>
-          <p className="hero-copy">Run evaluations locally with Harbor.<br />Inspect every trial and turn results into insights you can share.</p>
+          <p className="hero-copy">Compare Claude Code, Codex, OpenCode, and Pi.<br />Run evaluations locally with Harbor, inspect every trial, and share the results.</p>
           <div className="hero-actions">
             <a className="primary-button" href={studioUrl}>Get started <ArrowRight size={21} /></a>
             <a className="hero-github" href="https://github.com/MatthewFeroz/heval" target="_blank" rel="noreferrer" aria-label="Explore the code on GitHub">
