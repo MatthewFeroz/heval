@@ -118,6 +118,8 @@ The public showcase works without configuration. WorkOS AuthKit sign-in gates th
 
 Without a custom Authentication API domain, Heval enables AuthKit's browser-persisted staging session so sign-in survives navigation and reloads on Vercel. A same-site custom Authentication API domain uses HttpOnly-cookie sessions instead. See [WorkOS's session configuration](https://github.com/workos/authkit-react#authkitprovider-). Homepage and `/login` sign-ins open Studio; report/chart deep links keep their destination. Cloud reports belong to the signed-in account; use **Save private report** and **Save draft** to persist data and edits.
 
+Signed-in accounts with no getting-started progress see a skippable CLI walkthrough before their workspace opens. It covers the published demo, prerequisites, Harbor execution, and saving results. Convex stores progress per account, including skips and completion; **CLI guide** in Studio reopens it. See the [flow plan](docs/plans/first-login-cli-guide.md). Validate with `bun run test:onboarding`, `bun run test:reports`, and the onboarding Playwright tests.
+
 Set `HEVAL_ENABLE_RUNNER=1` only where real harness execution should be allowed. Browser evaluators connect their own key in **Provider settings**. Saved keys are encrypted server-side; workers receive temporary proxy tokens. Never use a `VITE_` prefix for secrets. See [provider connections](docs/provider-connections.md).
 
 ## Commands

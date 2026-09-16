@@ -48,6 +48,7 @@ try {
   await page.goto(new URL('/studio.html?report=private-report', staticServer.url).href)
   await expect(page.getByRole('heading', { name: 'Sign in to Studio' })).toBeVisible()
   assert.equal(await Bun.file(join(dist, 'tests/fixtures/studio-auth.html')).exists(), false)
+  assert.equal(await Bun.file(join(dist, 'tests/fixtures/onboarding.html')).exists(), false)
   await page.goto(new URL('/login', staticServer.url).href)
   await expect(page.getByRole('heading', { name: 'The open-source evaluation platform for coding agents.' })).toBeVisible()
   await page.setViewportSize({ width: 393, height: 851 })

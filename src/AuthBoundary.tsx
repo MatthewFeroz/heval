@@ -1,7 +1,10 @@
-import { useEffect, useMemo, type ReactNode } from 'react'
+import { lazy, Suspense, useEffect, useMemo, type ReactNode } from 'react'
 import { AuthKitProvider, useAuth } from '@workos-inc/authkit-react'
 import { AuthContext, publicAuth, type AppAuth } from './auth'
 import { authReturnUrl, requiresBrowserSession } from './auth-session'
+
+const OnboardingBoundary = lazy(() => import('./onboarding/OnboardingBoundary'))
+const workspacePaths = ['/studio', '/studio.html', '/reports', '/reports.html', '/machines', '/evaluations']
 
 function Connected({ children }: { children: (auth: AppAuth) => ReactNode }) {
   const { isLoading, user, signIn, signOut, getAccessToken } = useAuth()
@@ -11,7 +14,9 @@ function Connected({ children }: { children: (auth: AppAuth) => ReactNode }) {
     else void signIn({ state: { returnTo: '/studio' } })
   }, [isLoading, user, signIn])
   const auth = useMemo(() => ({ configured: true, isLoading, user, signIn: () => signIn({ state: { returnTo: authReturnUrl(location.href, location.origin) } }), signOut, getAccessToken }), [isLoading, user, signIn, signOut, getAccessToken])
-  return <AuthContext.Provider value={auth}>{children(auth)}</AuthContext.Provider>
+  return <AuthContext.Provider value={auth}>{!isLoading && user && workspacePaths.includes(location.pathname)
+    ? <Suspense fallback={<main role="status">Opening your workspace…</main>}><OnboardingBoundary key={user.id}>{children(auth)}</OnboardingBoundary></Suspense>
+    : children(auth)}</AuthContext.Provider>
 }
 
 export function AuthBoundary({ children }: { children: (auth: AppAuth) => ReactNode }) {

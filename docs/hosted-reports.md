@@ -122,3 +122,24 @@ local CLI viewer does not use the hosted route and still works without login.
 Browser tests inject sessions through files under `tests/fixtures/`, which are
 excluded from production builds; there is no query parameter or storage flag
 that bypasses authentication in the shipped app.
+
+## First-login walkthrough
+
+After sign-in, accounts without completed/skipped guide progress see a four-step
+CLI walkthrough before Studio, Reports, or Machines opens. It preserves the
+original destination, resumes interrupted progress, and can be skipped.
+**CLI guide** in Studio reopens it at `/studio?guide=cli`. Anonymous share links
+and the account-free local CLI viewer are unaffected.
+
+The `onboardingProgress` table stores the authenticated account's furthest step
+and dismissal status. Backend functions derive the owner from the verified
+identity and never accept an owner ID as input. Finishing the guide records that
+the guide was viewed, not that terminal commands executed. If account storage
+is unavailable, the user can retry or continue without saving guide progress.
+
+The walkthrough uses the published `@mattferoz/heval@0.1.0` commands. Local
+viewing does not upload results; cloud imports require normalized JSON. The
+connected-runner preview still requires a source build and repository access.
+`bun run test:onboarding` exercises the real AuthKit/provider/HTTP-client flow
+with isolated service responses; `bun run test:reports` validates actual Convex
+ownership and persistence logic. Browser fixtures are excluded from builds.

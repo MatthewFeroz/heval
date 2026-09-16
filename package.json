@@ -17,6 +17,7 @@
     "lint": "eslint .",
     "test:e2e": "playwright test",
     "test:auth": "bun scripts/auth-session-smoke.ts",
+    "test:onboarding": "HEVAL_TEST_ONBOARDING=1 bun scripts/auth-session-smoke.ts",
     "test:deployments": "bun scripts/deployment-smoke.ts",
     "test:unit": "bun test src/project src/charts",
     "test:reports": "vitest run",

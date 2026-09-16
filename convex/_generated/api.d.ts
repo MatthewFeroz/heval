@@ -9,6 +9,7 @@
  */
 
 import type * as reportAccess from "../reportAccess.js";
+import type * as onboarding from "../onboarding.js";
 import type * as reportProjects from "../reportProjects.js";
 import type * as reports from "../reports.js";
 import type * as runnerValidators from "../runnerValidators.js";
@@ -21,6 +22,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  onboarding: typeof onboarding;
   reportAccess: typeof reportAccess;
   reportProjects: typeof reportProjects;
   reports: typeof reports;
