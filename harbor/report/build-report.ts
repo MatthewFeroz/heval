@@ -856,7 +856,7 @@ const args = process.argv.slice(2)
 const jobDir = args.find((a) => !a.startsWith('--'))
 const outDir = args.includes('--out') ? args[args.indexOf('--out') + 1] : 'results/harbor'
 if (!jobDir) {
-  console.error('usage: bun harbor/report/build-report.ts <job-dir> [--out results/harbor]')
+  console.error('usage: bun harbor/report/build-report.ts <job-dir|job.json> [--out results/harbor]')
   process.exit(2)
 }
 if (!existsSync(jobDir)) {
@@ -864,7 +864,13 @@ if (!existsSync(jobDir)) {
   process.exit(2)
 }
 
-const exp = exportJob(jobDir)
+// A normalized export may carry a deliberate pricing adjustment that is not
+// present in the raw Harbor output. Render it directly instead of rebuilding
+// it from the trial directories and discarding that adjustment.
+const fromExport = jobDir.endsWith('.json')
+const exp = fromExport
+  ? (JSON.parse(readFileSync(jobDir, 'utf8')) as JobExport)
+  : exportJob(jobDir)
 if (!exp.rows.length) {
   console.error(`no readable trials in ${jobDir} - is this a finished Harbor job directory?`)
   process.exit(1)
@@ -873,7 +879,7 @@ if (!exp.rows.length) {
 mkdirSync(outDir, { recursive: true })
 const jsonPath = join(outDir, `${exp.job}.json`)
 const htmlPath = join(outDir, `${exp.job}.html`)
-writeFileSync(jsonPath, JSON.stringify(exp, null, 2))
+if (!fromExport) writeFileSync(jsonPath, JSON.stringify(exp, null, 2))
 writeFileSync(htmlPath, await render(exp))
 
 const indexPath = join(outDir, 'index.json')
@@ -890,6 +896,10 @@ index.jobs = [
     tasks: [...new Set(exp.rows.map((r) => r.task))].sort(),
   },
 ].sort((a, b) => b.generatedAt.localeCompare(a.generatedAt))
-writeFileSync(indexPath, JSON.stringify(index, null, 2))
+if (!fromExport) writeFileSync(indexPath, JSON.stringify(index, null, 2))
 
-console.log(`${exp.rows.length} trials -> ${jsonPath}, ${htmlPath}, ${indexPath}`)
+console.log(
+  fromExport
+    ? `${exp.rows.length} trials from ${jobDir} -> ${htmlPath}`
+    : `${exp.rows.length} trials -> ${jsonPath}, ${htmlPath}, ${indexPath}`,
+)

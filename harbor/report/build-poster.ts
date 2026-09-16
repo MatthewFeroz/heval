@@ -42,6 +42,21 @@ import {
 } from '../../src/charts/poster'
 import type { JobExport, TrialRow } from '../../src/charts/trial'
 
+/**
+ * Direction cue for the "higher / lower is better" label, lucide `arrow-up` and
+ * `arrow-down`, inlined the way build-report.ts inlines its icons so the frame
+ * stays one self-contained file.
+ *
+ * No width or height here: the CSS sizes them in `em` so they track the label's
+ * font-size, and `currentColor` keeps them on the label's ink. POSTER_INK.good
+ * and .muted are the same value on purpose, so direction is carried by which
+ * way the arrow points rather than by a second accent colour.
+ */
+const LUCIDE = (paths: string) =>
+  `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`
+const ARROW_UP = LUCIDE('<path d="m5 12 7-7 7 7"/><path d="M12 19V5"/>')
+const ARROW_DOWN = LUCIDE('<path d="M12 5v14"/><path d="m19 12-7 7-7-7"/>')
+
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 
 // -- fonts ----------------------------------------------------------------------
@@ -212,10 +227,19 @@ body > * { position: relative; z-index: 1; }
 .panel-heading { font-family: 'FH Oscar Pro', 'Inter', system-ui, sans-serif; font-size: ${u(1.65)}; font-weight: 500; letter-spacing: -0.02em; }
 .single .panel-heading { display: none; }
 .panel-eyebrow {
-  margin-top: ${u(0.55)};
-  font-size: ${u(0.85)};
-  font-weight: 500;
+  margin-top: ${u(0.6)};
+  display: flex;
+  align-items: center;
+  gap: ${u(0.38)};
+  /* Same size, weight and ink as the source stamp in .foot, so the two bits of
+     chrome that frame the plot read as one pair rather than two decisions. */
+  font-size: ${u(0.82)};
+  font-weight: 400;
+  color: ${POSTER_INK.muted};
+  letter-spacing: -0.01em;
 }
+/* Sized in em so the arrow follows the label; --large-text moves both at once. */
+.panel-eyebrow svg { width: 1em; height: 1em; flex: none; }
 .panel-eyebrow.higher { color: ${POSTER_INK.good}; }
 .panel-eyebrow.lower { color: ${POSTER_INK.muted}; }
 .panel-note {
@@ -300,12 +324,12 @@ body > * { position: relative; z-index: 1; }
 .foot .caveat:empty { display: none; }
 .foot > span:last-child { margin-left: auto; }
 .large-text .panel-heading { font-size: ${u(1.95)}; }
-.large-text .panel-eyebrow { font-size: ${u(1.05)}; }
+.large-text .panel-eyebrow { font-size: ${u(1.6)}; font-weight: 500; color: ${POSTER_INK.primary}; }
 .large-text .ticks { font-size: ${u(1)}; }
 .large-text .bar-value { font-size: ${u(1.12)}; }
 .large-text .bar-labels { font-size: ${u(0.9)}; letter-spacing: -0.025em; }
 .large-text .foot { font-size: ${u(1.6)}; font-weight: 500; color: ${POSTER_INK.primary}; }
-.designer { background: #141513; }
+.designer { background: #12110F; }
 .designer::before { opacity: 0.10; }
 .designer .plot { margin-top: ${u(1.7)}; }
 .designer .bar-col .bar-value { color: #F5F2EE; font-weight: 600; }
@@ -336,6 +360,19 @@ body > * { position: relative; z-index: 1; }
   border: 0;
   border-radius: 20%;
 }
+/* A single square panel spreads six bars over the full frame width, so each bar
+   is roughly twice the width it gets in a combined three-panel frame. The mark
+   scales with it; at ${u(1.5)} it reads as a speck against a bar that wide. */
+.single .bar > .model-app { width: ${u(2.2)}; height: ${u(2.2)}; top: ${u(0.7)}; }
+.single .bar-stack .model-app { width: ${u(1.7)}; height: ${u(1.7)}; }
+/* Single-panel titles are metric names, short enough to hold one line beside the
+   lockup once the header gap stops reserving room a headline would need. */
+.single.brand-right header { gap: ${u(2.2)}; }
+.single.brand-right .head-text { flex: 1; min-width: 0; }
+/* "Cost per success" is the longest of the three metric names and overruns the
+   space beside the lockup at the shared ${u(3.4)}; this holds it on one line
+   with a real gap rather than letting it crowd the wordmark. */
+.single.brand-right .title { white-space: nowrap; font-size: ${u(2.8)}; }
 .designer .bar-labels .model-name { flex: 0 0 auto; }
 .designer .bar-labels span { position: static; width: auto; transform: none; }
 .designer .panel[data-metric='completion'] .panel-heading { color: #ABCAD8; }
@@ -410,7 +447,7 @@ function panelHtml(d: PanelData): string {
     .join('\n')
   return `    <section class="panel" data-metric="${d.panel.id}">
       <div class="panel-heading">${esc(d.panel.heading)}</div>
-      <div class="panel-eyebrow ${d.panel.better}">${esc(`${d.panel.better[0].toUpperCase()}${d.panel.better.slice(1)} is better`)}</div>
+      <div class="panel-eyebrow ${d.panel.better}">${d.panel.better === 'higher' ? ARROW_UP : ARROW_DOWN}<span>${esc(`${d.panel.better[0].toUpperCase()}${d.panel.better.slice(1)} is better`)}</span></div>
       ${has('no-panel-notes') ? '' : `<div class="panel-note">${esc(d.panel.note ?? '')}</div>`}
       <div class="panel-rule"></div>
       <div class="plot">
@@ -449,10 +486,16 @@ async function frameHtml(f: Frame, fonts: string): Promise<string> {
   <div class="panels">
 ${f.panels.map((p) => panelHtml(p)).join('\n')}
   </div>
-  <footer class="foot">
+  ${
+    // An empty footer still draws its rule and reserves its padding, which reads
+    // as a stray line under the plot. With nothing to say, say nothing.
+    f.caveat || f.source
+      ? `<footer class="foot">
     <span class="caveat">${esc(f.caveat)}</span>
-    <span>${esc(f.source)}</span>
-  </footer>
+    ${f.source ? `<span>${esc(f.source)}</span>` : ''}
+  </footer>`
+      : ''
+  }
 </body></html>`
 }
 
@@ -474,7 +517,7 @@ const isOpenWeight = (r: TrialRow) => !!r.provider && OPEN_WEIGHT_PROVIDERS.has(
 
 const args = process.argv.slice(2)
 /** Flags that consume the next argument. Everything else is a bare switch. */
-const VALUED = ['panels', 'size', 'models', 'exclude', 'title', 'kicker', 'source', 'caveat', 'out', 'logo-spot']
+const VALUED = ['panels', 'size', 'axis-max', 'models', 'exclude', 'title', 'kicker', 'source', 'caveat', 'out', 'logo-spot']
 const flag = (name: string): string | undefined => {
   const i = args.indexOf(`--${name}`)
   return i >= 0 ? args[i + 1] : undefined
@@ -499,6 +542,10 @@ if (!input || has('help')) {
   --combined         also write every panel in one frame
   --only-combined    write only the combined frame
   --size <name>      ${Object.keys(SIZES).join(' | ')} (default: square single, landscape combined)
+  --axis-max <spec>  axis ceiling in the units the ticks print. '80' for every
+                     panel, or per panel: 'completion=80,median-time=300'.
+                     Default: 100% for completion, fitted for cost and time.
+                     Bars keep a zero baseline.
   --open-weight      keep only models whose weights are published
   --models <list>    comma-separated modelShort values, in the order to color them
   --exclude <list>   comma-separated modelShort values to drop
@@ -506,6 +553,7 @@ if (!input || has('help')) {
   --no-kicker       omit the trial-count line
   --no-panel-notes  omit the metric explanation lines
   --no-caveat       omit the left footer text
+  --no-source       omit the source stamp; with --no-caveat the footer rule goes too
   --large-text      enlarge headings, labels, ticks and source credit
   --large-brand     double the logo and Gateway wordmark size
   --no-brand        omit the logo and Gateway wordmark
@@ -581,7 +629,65 @@ if (unknown.length) {
   process.exit(2)
 }
 
-const built = panelIds.map((id) => buildPanel(rows, PANELS[id], order))
+/**
+ * Per-render axis ceilings, in the units the ticks print.
+ *
+ * `PANELS.completion` pins its ceiling to 1 so a pass rate is never read
+ * against a data-fitted top. That is the right default and stays the default;
+ * this flag is the deliberate opt-out for a frame whose tallest bar leaves a
+ * third of the plot empty. Bars keep their zero baseline either way, so the
+ * length ratio between two bars is unchanged - only the headroom moves.
+ *
+ * Two forms, because a combined frame needs a ceiling per panel and a single
+ * panel does not:
+ *
+ *   --axis-max 80                     every rendered panel
+ *   --axis-max completion=80          that panel only
+ *   --axis-max completion=80,median-time=300
+ *
+ * Completion is stored as a 0-1 fraction but reads as a percentage, so a value
+ * above 1 is taken as one: `completion=80` and `completion=0.8` both mean 80%.
+ */
+const axisMaxArg = flag('axis-max')
+const axisMaxFor = new Map<PanelId, number>()
+let axisMaxAll: number | null = null
+if (axisMaxArg !== undefined) {
+  for (const part of axisMaxArg.split(',').map((s) => s.trim()).filter(Boolean)) {
+    const eq = part.indexOf('=')
+    const name = eq >= 0 ? part.slice(0, eq).trim() : null
+    const raw = eq >= 0 ? part.slice(eq + 1).trim() : part
+    const value = Number(raw)
+    if (!Number.isFinite(value) || value <= 0) {
+      console.error(`--axis-max wants a positive number, got "${raw}" in "${part}"`)
+      process.exit(2)
+    }
+    if (name === null) {
+      axisMaxAll = value
+      continue
+    }
+    if (!PANEL_IDS.includes(name as PanelId)) {
+      console.error(`--axis-max: unknown panel "${name}" - pick from ${PANEL_IDS.join(', ')}`)
+      process.exit(2)
+    }
+    axisMaxFor.set(name as PanelId, value)
+  }
+  const unused = [...axisMaxFor.keys()].filter((id) => !panelIds.includes(id))
+  if (unused.length) console.warn(`! --axis-max names ${unused.join(', ')}, which this frame does not render`)
+}
+
+const built = panelIds.map((id) => {
+  const panel = PANELS[id]
+  const given = axisMaxFor.get(id) ?? axisMaxAll
+  if (given === undefined || given === null) return buildPanel(rows, panel, order)
+  const ceiling = id === 'completion' && given > 1 ? given / 100 : given
+  const tallest = Math.max(0, ...order.map((k) => panel.value(rows.filter((r) => r.modelShort === k)) ?? 0))
+  if (tallest > ceiling) {
+    console.error(`--axis-max for ${id} is ${panel.tick(ceiling)}, below its tallest bar (${panel.tick(tallest)}) - it would clip.`)
+    process.exit(2)
+  }
+  console.log(`${id}: axis ceiling ${panel.tick(ceiling)} (default ${panel.axisMax === null ? 'fitted' : panel.tick(panel.axisMax)})`)
+  return buildPanel(rows, { ...panel, axisMax: ceiling }, order)
+})
 for (const d of built) {
   if (d.omitted.length) {
     console.warn(`! ${d.panel.id}: no value for ${d.omitted.join(', ')} - absent from the chart, not plotted as zero.`)
@@ -596,7 +702,7 @@ const perCell = rows.length / (order.length * tasks)
 
 const title = has('no-title') ? '' : flag('title') ?? `${order.length} models, compared`
 const kicker = has('no-kicker') ? '' : flag('kicker') ?? `${rows.length} trials · ${tasks} tasks · ${harnesses.join(' + ')}`
-const source = flag('source') ?? `source: heval · ${exp.job}`
+const source = has('no-source') ? '' : flag('source') ?? `source: heval · ${exp.job}`
 /**
  * The line the numbers cannot carry themselves.
  *
