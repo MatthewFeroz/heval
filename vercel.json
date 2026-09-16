@@ -3,5 +3,8 @@
   "framework": "vite",
   "buildCommand": "bun run build",
   "outputDirectory": "dist",
-  "cleanUrls": true
+  "rewrites": [
+    { "source": "/", "destination": "/index.html" },
+    { "source": "/studio", "destination": "/studio.html" }
+  ]
 }

@@ -44,3 +44,4 @@ results/harbor/social/**/assets/
 /results/harbor/threads/*/all-presets.json
 /results/harbor/threads/recreated/
 /.scratch/merge-comparison-run.yaml*
+.vercel
