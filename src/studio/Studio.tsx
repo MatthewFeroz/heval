@@ -1,5 +1,6 @@
 import { useAppAuth, authorizedFetch } from '../auth'
 import { THREAD_PRESETS } from '../charts/social-presets'
+import { STATIC_SITE } from '../deployment'
 import { SocialPreview } from './SocialPreview'
 import { NUMERIC, columnLabel, cellText } from './table-values'
 import { StatTiles, FilterBar, RunList, RunDrawer, type RunSort } from './TrialPanels'
@@ -136,6 +137,7 @@ function readFilters(search: string): Filters {
 }
 
 export function Studio({ localViewer = false }: { localViewer?: boolean }) {
+  const serverExports = !localViewer && !STATIC_SITE
   const auth = useAppAuth()
   const [runIds, setRunIds] = useState(() => new URLSearchParams(window.location.search).get('runs'))
   const initial = useMemo(() => readUrl(window.location.search), [])
@@ -153,10 +155,11 @@ export function Studio({ localViewer = false }: { localViewer?: boolean }) {
   }
   const [mode, setMode] = useState<StudioMode>(() => new URLSearchParams(window.location.search).get('mode') === 'presentation' ? 'presentation' : 'analysis')
   const [index, setIndex] = useState<JobIndexEntry[]>([])
+  const [catalogLoaded, setCatalogLoaded] = useState(false)
   const [job, setJob] = useState<string | null>(initial.job)
   const [data, setData] = useState<JobExport | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
-  const [tab, setTab] = useState<Tab>(mode === 'presentation' && !localViewer ? 'social' : 'chart')
+  const [tab, setTab] = useState<Tab>(mode === 'presentation' && serverExports ? 'social' : 'chart')
   const [specDraft, setSpecDraft] = useState<string | null>(null)
   const [dragging, setDragging] = useState(false)
   const [selected, setSelected] = useState<string | null>(null)
@@ -205,6 +208,7 @@ export function Studio({ localViewer = false }: { localViewer?: boolean }) {
         if (!runIds) setJob((current) => current ?? catalog.jobs?.[0]?.job ?? null)
       })
       .catch(() => setIndex([]))
+      .finally(() => setCatalogLoaded(true))
   }, [runIds])
 
   useEffect(() => {
@@ -288,7 +292,7 @@ export function Studio({ localViewer = false }: { localViewer?: boolean }) {
       setActivePresentationId(created.id)
     }
     setMode(next)
-    setTab(next === 'presentation' && !localViewer ? 'social' : 'chart')
+    setTab(next === 'presentation' && serverExports ? 'social' : 'chart')
     setSpecDraft(null)
   }
 
@@ -566,7 +570,7 @@ export function Studio({ localViewer = false }: { localViewer?: boolean }) {
               {index.map((i) => <option key={i.job} value={i.job}>{i.job}</option>)}
             </select>
             {runIds && !auth.user && <span role="status">{auth.configured ? <button className="btn" onClick={auth.signIn}>Sign in to open your saved attempts</button> : 'Configure evaluation sign-in to open private results. You can also import an exported JSON file.'}</span>}
-            {auth.configured && !auth.user && !runIds && <button className="btn" onClick={auth.signIn}>Sign in for exports</button>}
+            {serverExports && auth.configured && !auth.user && !runIds && <button className="btn" onClick={auth.signIn}>Sign in for exports</button>}
 
           </div>
         </div>
@@ -579,7 +583,7 @@ export function Studio({ localViewer = false }: { localViewer?: boolean }) {
             style={{ display: 'none' }}
             onChange={(e) => { const f = e.target.files?.[0]; if (f) void openFile(f) }}
           />
-          <button type="button" className="btn ghost" onClick={() => filePicker.current?.click()}>
+          <button type="button" className="btn ghost" aria-label="Open export" onClick={() => filePicker.current?.click()}>
             <FolderOpen size={14} /><span className="label-text">Open export</span>
           </button>
           <button type="button" className="btn" onClick={saveProjectFile} disabled={!project}><Save size={14} />Project</button>
@@ -604,7 +608,7 @@ export function Studio({ localViewer = false }: { localViewer?: boolean }) {
           <button type="button" role="tab" aria-selected={mode === 'analysis'} onClick={() => switchMode('analysis')}>Analysis</button>
           <button type="button" role="tab" aria-selected={mode === 'presentation'} disabled={!project || !activeView} onClick={() => switchMode('presentation')}>Presentation</button>
         </div>
-        <span>{mode === 'analysis' ? 'Compare compatible metrics across sources and save the analysis.' : localViewer ? 'Export this saved view as SVG or PNG. Your analysis stays intact.' : 'Choose a question and export. Your saved analysis stays intact.'}</span>
+        <span>{mode === 'analysis' ? 'Compare compatible metrics across sources and save the analysis.' : !serverExports ? 'Export this saved view as SVG or PNG. Your analysis stays intact.' : 'Choose a question and export. Your saved analysis stays intact.'}</span>
         {project && <strong>{project.label} · {project.sources.length} {project.sources.length === 1 ? 'source' : 'sources'}</strong>}
       </div>
 
@@ -863,7 +867,7 @@ export function Studio({ localViewer = false }: { localViewer?: boolean }) {
                 ['social', 'Social images', <ImageIcon size={13} key="i" />, null],
                 ['motion', 'Motion', <Film size={13} key="i" />, null],
                 ['spec', 'Vega-Lite spec', <Braces size={13} key="i" />, null],
-              ]) as [Tab, string, ReactNode, number | null][]).filter(([t]) => !localViewer || (t !== 'social' && t !== 'motion')).map(([t, label, icon, count]) => (
+              ]) as [Tab, string, ReactNode, number | null][]).filter(([t]) => serverExports || (t !== 'social' && t !== 'motion')).map(([t, label, icon, count]) => (
                 <button key={t} type="button" role="tab" className="tab" aria-selected={tab === t} disabled={t === 'spec' && !chart && override === null} onClick={() => setTab(t)}>
                   {icon}{label}{count !== null && <small>{count}</small>}
                 </button>
@@ -897,7 +901,9 @@ export function Studio({ localViewer = false }: { localViewer?: boolean }) {
               </div>
             </div>
             <div className={`canvas${mode === 'presentation' ? ' presentation-canvas' : ''}`} data-canvas={chartState.theme} data-format={activePresentation?.canvas}>
-              {!project && !loadError ? (
+              {!project && !job && !runIds && catalogLoaded && !loadError ? (
+                <div className="placeholder"><div><strong>No published results yet</strong><p>Use Open export to explore a Harbor result or a saved workspace with data.</p></div></div>
+              ) : !project && !loadError ? (
                 <div className="placeholder"><div><strong>Loading export</strong><p>Reading {job ?? 'the job index'} from {RESULTS}.</p></div></div>
               ) : !chart ? (
                 <div className="placeholder">

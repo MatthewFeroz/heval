@@ -68,6 +68,25 @@ bun run dev
 
 Open `http://localhost:5173`.
 
+For the full development app, also run `bun run serve` after an initial
+`bun run build`. Vite forwards `/api` requests to the Bun server on port 4173.
+Alternatively, `bun run start` builds and serves the complete app on port 4173.
+
+### Deployment targets
+
+The consolidated repository supports three entry points:
+
+| Target | Build | Capabilities |
+| --- | --- | --- |
+| Vercel showcase | `bun run build:showcase` (configured in `vercel.json`) | Published results, Studio, browser SVG/PNG and bundle exports; no runner or signup API |
+| Bun application | `bun run build`, then `bun run serve` | Workbench, authenticated run history, provider connections and optional server exports |
+| Invited hosted Bun deployment | `bun run build:public` | Uses only the explicitly published catalog; requires persistent storage and the configuration in [deployment.md](docs/deployment.md) |
+
+The npm CLI remains a separate Node-only results viewer. Convex dependencies
+are installed as preparation; no Convex backend or hosted import/share service
+is connected yet. See [the stable baseline](docs/stable-baseline.md) before
+continuing that work.
+
 ## Authentication
 
 The public showcase works without configuration. WorkOS AuthKit sign-in gates real evaluation controls and the Bun server verifies every runner access token against WorkOS's JWKS.
@@ -90,6 +109,7 @@ Set `HEVAL_ENABLE_RUNNER=1` only where real harness execution should be allowed.
 | `bun run start` | Build, then start the Bun server |
 | `bun run lint` | Run ESLint |
 | `bun run test:e2e` | Run desktop and mobile Playwright tests |
+| `bun run test:deployments` | Build and browser-test the Vercel showcase and public Bun app (leaves `dist` as the public build) |
 | `bun run report <job-dir>` | Normalize a Harbor job into `results/harbor/` and build its static report |
 | `bun run poster <job.json>` | Export one Merge-branded social PNG per headline graph |
 

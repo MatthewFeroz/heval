@@ -23,6 +23,7 @@ import featuredResults from '../results/harbor/terminal-bench-comparison.json'
 import { publicAuth, type AppAuth } from './auth'
 import { Signup } from './Signup'
 import { RunWorkbench } from './RunWorkbench'
+import { STATIC_SITE } from './deployment'
 
 const runnerEnd = (runner: Runner) => Math.max(...runner.events.map((event) => event.at))
 const maxTime = Math.max(...featuredExperiment.runners.map(runnerEnd))
@@ -229,7 +230,7 @@ function RunnerLane({ runner, time, focused, onFocus, rawData, liveStatus, onLiv
         <div className={`lane-state ${isDone ? runner.outcome : 'running'}`}>
           <span />{liveStatus || (isDone ? runner.outcome : 'running')}
         </div>
-        <button className="live-run-button" onClick={(event) => { event.stopPropagation(); onLiveRun() }}>{liveStatus === 'running' ? 'LIVE' : 'RUN REAL'}</button>
+        {!STATIC_SITE && <button className="live-run-button" onClick={(event) => { event.stopPropagation(); onLiveRun() }}>{liveStatus === 'running' ? 'LIVE' : 'RUN REAL'}</button>}
       </div>
       <div className="model-row">
         <span>{runner.model}</span>
@@ -460,10 +461,10 @@ export default function App({ auth = publicAuth }: { auth?: AppAuth }) {
           <RaceStage auth={auth} />
         </section>
         <StudioShowcase />
-        <RunWorkbench key={auth.user?.email || 'public'} auth={auth} />
+        {!STATIC_SITE && <RunWorkbench key={auth.user?.email || 'public'} auth={auth} />}
         <ReportSection />
         <Methodology />
-        <Signup />
+        {!STATIC_SITE && <Signup />}
       </main>
       <Footer />
     </>

@@ -16,6 +16,7 @@
     "serve": "bun server/index.ts",
     "lint": "eslint .",
     "test:e2e": "playwright test",
+    "test:deployments": "bun scripts/deployment-smoke.ts",
     "test:unit": "bun test src/project src/charts",
     "preview": "vite preview --host 0.0.0.0",
     "report": "bun harbor/report/build-report.ts",
@@ -33,6 +34,7 @@
     "experiment": "bun harbor/experiment.ts",
     "thread:merge:all": "bun run thread results/harbor/terminal-bench-comparison.json harbor/report/thread-merge-all.json results/harbor/threads/merge-evaluations-all",
     "build:public": "HEVAL_PUBLIC_BUILD=1 VITE_HEVAL_PUBLIC_DEMO=1 bun run build",
+    "build:showcase": "VITE_HEVAL_STATIC_SITE=1 bun run build",
     "demo:nvidia": "bun scripts/nvidia-demo.ts",
     "publish:result": "bun scripts/publish-result.ts"
   },

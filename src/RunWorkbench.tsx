@@ -33,12 +33,15 @@ function RunTerminal({ chunks }: { chunks: Run['chunks'] }) {
     const term = new Terminal({ cols: 96, rows: 20, convertEol: true, disableStdin: true, fontSize: 12,
       fontFamily: '"DM Mono", monospace', scrollback: 5000, theme: { background: '#0d100e', foreground: '#d8ded9' } })
     term.open(host.current); terminal.current = term; written.current = 0
+    let frame = 0
     const resize = new ResizeObserver(([entry]) => {
       const cols = Math.max(28, Math.floor(entry.contentRect.width / 7.3))
-      if (cols !== term.cols) term.resize(cols, 20)
+      // xterm changes its own layout; defer it out of the observer delivery loop.
+      cancelAnimationFrame(frame)
+      frame = requestAnimationFrame(() => { if (cols !== term.cols) term.resize(cols, 20) })
     })
     resize.observe(host.current)
-    return () => { resize.disconnect(); terminal.current = null; term.dispose() }
+    return () => { resize.disconnect(); cancelAnimationFrame(frame); terminal.current = null; term.dispose() }
   }, [])
   useEffect(() => {
     if (chunks.length < written.current) { terminal.current?.reset(); written.current = 0 }

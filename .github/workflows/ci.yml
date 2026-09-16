@@ -52,3 +52,5 @@ jobs:
         run: bunx playwright install --with-deps chromium
       - name: Test
         run: bun run test:e2e
+      - name: Deployment builds and browser smoke tests
+        run: bun run test:deployments

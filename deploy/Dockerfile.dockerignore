@@ -14,6 +14,11 @@ deploy/*.env
 results/**
 !results/public
 !results/public/**
+# TypeScript resolves the showcase imports even in the separate public build.
+# Vite excludes the showcase entry and these fixtures from that build's assets.
+!results/harbor
+!results/harbor/index.json
+!results/harbor/terminal-bench-comparison.json
 
 # Tests import internal comparison fixtures; they are verified before deployment.
 tests

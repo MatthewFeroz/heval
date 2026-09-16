@@ -3,6 +3,8 @@ import { exportRuns } from '../server/run-export'
 import type { Run } from '../server/types'
 
 test('configure, launch, inspect measured results, reload history and open Studio', async ({ page }) => {
+  const errors: string[] = []
+  page.on('pageerror', error => errors.push(error.message))
   const runs: Run[] = []
   await page.route('**/api/config', route => route.fulfill({ json: { models: ['nvidia/lightning', 'nvidia/super'], harnesses: ['pi-agent'], tasks: [{ id: 'concurrent-cache-v1', label: 'Async cache race condition' }], maxTimeoutMs: 300000, maxDailyPerUser: 6, runnerEnabled: true, canRun: true } }))
   await page.route('**/api/runs', async route => {
@@ -36,6 +38,7 @@ test('configure, launch, inspect measured results, reload history and open Studi
   await page.getByRole('tab', { name: /Raw trials/ }).click()
   await expect(page.locator('table.runs tbody')).toContainText('super')
   await expect(page.getByRole('button', { name: 'Bundle', exact: true })).toBeEnabled()
+  expect(errors).toEqual([])
 })
 
 test('failed launch keeps the configuration and reports capacity', async ({ page }) => {
