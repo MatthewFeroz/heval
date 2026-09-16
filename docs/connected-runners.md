@@ -135,6 +135,11 @@ Preview limits: 20 paired-machine records per owner, 200 evaluation records, 10 
 
 ## Validation and deployment
 
+The [recorded browser walkthrough](media/connected-runner-flow.mp4) shows pairing,
+dispatch, queued transfer, daemon recovery, results, and cancellation. The
+[16-check smoke evidence](evidence/connected-runner-smoke.json) records the tested
+versions and limits. No model calls or paid VM provisioning were used.
+
 `bun run test:reports` includes queue/ownership/claim tests. `bun run cli:test` covers profile hashing, immutable copies, URL validation, private state, and compatibility with Harbor's default-elided configs. Build the CLI before the cloud smoke:
 
 ```sh
