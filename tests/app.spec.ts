@@ -43,10 +43,13 @@ test('keeps the showcase public while real runs require authentication', async (
   await page.getByRole('button', { name: 'RUN REAL' }).first().click()
 })
 
-test('opens the responsive navigation', async ({ page }, testInfo) => {
-  test.skip(!testInfo.project.name.includes('mobile'), 'Mobile-only behavior')
-  await page.getByRole('button', { name: 'Toggle navigation' }).click()
-  await expect(page.getByRole('link', { name: 'Reports', exact: true })).toBeVisible()
+test('shows the GitHub link in the simplified navigation', async ({ page }) => {
+  const nav = page.getByRole('navigation')
+  const github = nav.getByRole('link', { name: 'GitHub', exact: true })
+  await expect(github).toBeVisible()
+  await expect(github).toHaveAttribute('href', 'https://github.com/MatthewFeroz/heval')
+  await expect(github).toHaveAttribute('target', '_blank')
+  await expect(nav.getByRole('link', { name: /^(Replay|Reports|Methodology|Studio|Your reports|Machines & runs)$/ })).toHaveCount(0)
 })
 
 test('shows the product entry point and measured evaluation preview', async ({ page }) => {

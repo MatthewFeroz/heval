@@ -12,12 +12,8 @@ button { color: inherit; }
 .nav-wrap { position: sticky; top: 0; z-index: 50; border-bottom: 1px solid rgba(255,255,255,.06); background: rgba(8,9,9,.82); backdrop-filter: blur(18px); }
 .nav { height: 72px; display: flex; align-items: center; justify-content: space-between; }
 .brand { display: flex; align-items: center; font-size: 25px; font-weight: 800; letter-spacing: -.06em; }
-.nav-links { display: flex; align-items: center; gap: 30px; margin-left: auto; margin-right: 32px; color: #9ba09e; font-size: 13px; font-weight: 600; }
-.nav-links a { transition: color .2s; }
-.nav-links a:hover { color: var(--white); }
 .nav-cta, .primary-button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; background: var(--white); color: #0c0d0d; border-radius: 9px; font-size: 12px; font-weight: 800; }
 .nav-cta { padding: 10px 14px; }
-.menu-button { display: none; background: none; border: 0; }
 
 /* The invited Bun deployment has its own compact hero. */
 .public-hero { padding: 94px 24px 72px; text-align: center; position: relative; isolation: isolate; }
@@ -259,7 +255,6 @@ a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outlin
 @keyframes reveal { from { opacity: 0; transform: translateY(-7px); } }
 
 @media (max-width: 960px) {
-  .nav-links { gap: 18px; margin-right: 18px; }
   .runner-grid { grid-template-columns: 1fr 1fr; }
   .split-heading { grid-template-columns: 1fr; gap: 25px; }
   .score-layout { grid-template-columns: 1fr; }
@@ -278,11 +273,6 @@ a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outlin
   .nav { height: 62px; }
   .nav-cta { display: none; }
   .nav-cta.auth-button { display: inline-flex; margin-left: auto; margin-right: 18px; font-size: 12px; }
-  .menu-button { display: grid; place-items: center; }
-  .menu-lines,.menu-lines::before,.menu-lines::after { width: 18px; height: 1px; display: block; background: #abb0ad; position: relative; }
-  .menu-lines::before,.menu-lines::after { content: ''; position: absolute; left: 0; }.menu-lines::before { top: -5px; }.menu-lines::after { top: 5px; }
-  .nav-links { display: none; position: absolute; top: 62px; left: 0; right: 0; margin: 0; padding: 22px 20px; flex-direction: column; align-items: flex-start; background: #0c0d0d; border-bottom: 1px solid var(--line); }
-  .nav-links.open { display: flex; }
   .public-hero { padding: 70px 8px 56px; }
   .public-hero h1 { font-size: clamp(37px, 9.8vw, 62px); line-height: 1.13; }
   .public-hero .hero-copy { font-size: 15px; }
