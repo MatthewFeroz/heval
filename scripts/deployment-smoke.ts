@@ -7,7 +7,7 @@ import { chromium, expect } from '@playwright/test'
 const root = resolve(import.meta.dirname, '..')
 const dist = join(root, 'dist')
 const temporary = await mkdtemp(join(tmpdir(), 'heval-deployment-'))
-const env = { ...process.env, VITE_WORKOS_CLIENT_ID: '', WORKOS_CLIENT_ID: '', HEVAL_ENABLE_RUNNER: '0', HEVAL_ENABLE_EXPORTS: '0' }
+const env = { ...process.env, VITE_WORKOS_CLIENT_ID: '', VITE_CONVEX_URL: '', WORKOS_CLIENT_ID: '', HEVAL_ENABLE_RUNNER: '0', HEVAL_ENABLE_EXPORTS: '0' }
 const browser = await chromium.launch()
 let staticServer: ReturnType<typeof Bun.serve> | undefined
 let backend: Bun.Subprocess<'ignore', 'pipe', 'pipe'> | undefined
@@ -38,7 +38,9 @@ try {
   await expect(page.getByRole('heading', { name: 'The open-source harness evaluation platform' })).toBeVisible()
   await expect(page.getByRole('button', { name: 'RUN REAL' })).toHaveCount(0)
   await expect(page.getByPlaceholder('you@company.com')).toHaveCount(0)
-  await page.getByRole('link', { name: 'Get started', exact: true }).click()
+  await page.getByRole('link', { name: 'Import your results', exact: true }).click()
+  await expect(page.getByRole('heading', { name: 'Saved reports are coming online' })).toBeVisible()
+  await page.goto(new URL('/studio?job=terminal-bench-comparison&recipe=bar&x=modelShort&color=none&measure=passed', staticServer.url).href)
   await expect(page.locator('.card svg .mark-rect.role-mark path')).toHaveCount(6)
   await page.getByRole('tab', { name: 'Presentation', exact: true }).click()
   await expect(page.getByRole('tab', { name: 'Poster', exact: true })).toHaveAttribute('aria-selected', 'true')
@@ -95,6 +97,9 @@ try {
   assert.equal((await fetch(`${output}/api/runs`)).status, 401)
   await page.goto(output)
   await expect(page.getByRole('heading', { name: 'Show the work. Then compare.' })).toBeVisible()
+  await page.getByRole('link', { name: 'Your reports', exact: true }).click()
+  await expect(page.getByRole('heading', { name: 'Saved reports are coming online' })).toBeVisible()
+  await page.goto(output)
   await page.getByRole('link', { name: 'Explore public results' }).click()
   await expect(page.getByRole('button', { name: 'Open export' })).toBeVisible()
   if (!published.jobs.length) await expect(page.getByText('No published results yet', { exact: true })).toBeVisible()
