@@ -1,7 +1,11 @@
 import { defineSchema, defineTable } from 'convex/server'
 import { v } from 'convex/values'
+import { profileValidator, runStatusValidator } from './runnerValidators'
 
 export default defineSchema({
+  runnerPairings: defineTable({ owner: v.string(), name: v.string(), codeHash: v.string(), expiresAt: v.number(), runner: v.optional(v.id('runners')) }).index('by_hash', ['codeHash']).index('by_owner', ['owner']),
+  runners: defineTable({ owner: v.string(), name: v.string(), credentialHash: v.string(), revoked: v.boolean(), lastSeen: v.number(), ready: v.boolean(), health: v.string(), profiles: v.array(profileValidator), session: v.optional(v.string()), leaseUntil: v.number(), activeRun: v.optional(v.id('runnerRuns')) }).index('by_owner', ['owner']).index('by_credential', ['credentialHash']),
+  runnerRuns: defineTable({ owner: v.string(), runner: v.id('runners'), requestId: v.string(), profile: profileValidator, status: runStatusValidator, claimId: v.optional(v.string()), startedAt: v.optional(v.number()), finishedAt: v.optional(v.number()), report: v.optional(v.id('reports')), phase: v.string(), message: v.optional(v.string()) }).index('by_owner', ['owner']).index('by_request', ['owner', 'requestId']).index('by_runner_status', ['runner', 'status']),
   reports: defineTable({
     owner: v.string(), title: v.string(), trials: v.number(),
     shareToken: v.union(v.string(), v.null()),

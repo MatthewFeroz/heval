@@ -77,6 +77,7 @@ function Nav({ auth }: { auth: AppAuth }) {
           <a href="#methodology">Methodology</a>
           <a href="/studio">Studio</a>
           <a href="/reports">Your reports</a>
+          <a href="/machines">Machines &amp; runs</a>
         </div>
         {auth.configured && (auth.user
           ? <button className="nav-cta auth-button" onClick={auth.signOut} title={`Sign out ${auth.user.email}`}>{auth.user.firstName || auth.user.email} <LogOut size={15} /></button>

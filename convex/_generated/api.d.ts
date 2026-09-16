@@ -11,6 +11,8 @@
 import type * as reportAccess from "../reportAccess.js";
 import type * as reportProjects from "../reportProjects.js";
 import type * as reports from "../reports.js";
+import type * as runnerValidators from "../runnerValidators.js";
+import type * as runners from "../runners.js";
 
 import type {
   ApiFromModules,
@@ -22,6 +24,8 @@ declare const fullApi: ApiFromModules<{
   reportAccess: typeof reportAccess;
   reportProjects: typeof reportProjects;
   reports: typeof reports;
+  runnerValidators: typeof runnerValidators;
+  runners: typeof runners;
 }>;
 
 /**

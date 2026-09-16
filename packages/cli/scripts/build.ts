@@ -1,4 +1,4 @@
-import { chmodSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
+import { chmodSync, cpSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { build, type Plugin } from 'vite'
@@ -61,7 +61,7 @@ await build({
   },
 })
 const result = await Bun.build({
-  entrypoints: [join(pkg, 'src/cli.ts')],
+  entrypoints: [join(pkg, 'src/cli.ts'), join(pkg, 'src/runner-supervisor.ts')],
   outdir: dist,
   target: 'node',
   format: 'esm',
@@ -70,6 +70,7 @@ const result = await Bun.build({
 })
 if (!result.success) throw new AggregateError(result.logs, 'CLI build failed')
 chmodSync(join(dist, 'cli.js'), 0o755)
+cpSync(join(pkg, 'runner-task'), join(dist, 'runner-task'), { recursive: true })
 const example = JSON.parse(readFileSync(join(root, 'results/harbor/terminal-bench-comparison.json'), 'utf8'))
 example.source = 'Bundled archived example; not a new evaluation'
 writeFileSync(join(dist, 'example.json'), JSON.stringify(example) + '\n')

@@ -1,0 +1,62 @@
+{
+  "passed": true,
+  "backend": "https://dapper-clam-353.convex.cloud",
+  "harbor": "0.22.0",
+  "physicalHosts": 1,
+  "runnerInstances": 2,
+  "browserSessions": 3,
+  "modelCalls": 0,
+  "identity": "Isolated signed test JWT; real WorkOS login not exercised",
+  "events": [
+    {
+      "step": "1 · Two independently paired machines; outbound connections, no forwarded ports",
+      "seconds": 6
+    },
+    {
+      "step": "2 · Browser dispatches one real Harbor + Docker setup task, with no model calls",
+      "seconds": 12
+    },
+    {
+      "step": "3 · Queued work moves to the cloud runner; another browser sees the same active evaluation",
+      "seconds": 18
+    },
+    {
+      "step": "4 · Killing the polling daemon does not kill Harbor; results wait safely on disk",
+      "seconds": 47
+    },
+    {
+      "step": "5 · Restarting the daemon uploads the existing result once, without rerunning the task",
+      "seconds": 52
+    },
+    {
+      "step": "6 · Harbor results arrive as a private report, ready for Studio and sharing",
+      "seconds": 54
+    },
+    {
+      "step": "7 · Stop requests wait for the machine’s cleanup acknowledgment",
+      "seconds": 89
+    },
+    {
+      "step": "8 · Disconnecting a runner revokes its credential; saved reports remain",
+      "seconds": 90
+    }
+  ],
+  "checks": [
+    "pairing",
+    "machine-independent profile digest",
+    "real Harbor and Docker execution",
+    "move queued evaluation",
+    "cross-session history",
+    "cross-account denial",
+    "daemon crash leaves supervisor running",
+    "restart uploads existing outcome",
+    "private saved report",
+    "hosted Studio save",
+    "shared chart matches editor",
+    "live share revocation",
+    "cooperative cancellation",
+    "runner revocation",
+    "mobile layout",
+    "no browser exceptions"
+  ]
+}

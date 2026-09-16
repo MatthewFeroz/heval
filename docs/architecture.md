@@ -19,6 +19,17 @@ Sandbox provider
 Postgres metadata + object storage artifacts
 ```
 
+## Connected-runner preview
+
+The implemented hosted path now uses Vercel + WorkOS + Convex for the web
+workspace, owned-machine registry, queue and sanitized reports. A Linux daemon
+polls outbound, while an independent local supervisor launches pinned Harbor
+in Docker. Durable claims prevent automatic duplicate runs across reconnects;
+only queued work can move between compatible machines. This is separate from
+the older Bun compatibility runner below. Provider provisioning and object
+storage for raw traces remain future work; raw Harbor artifacts stay on the
+worker. See [connected runners](connected-runners.md).
+
 ## Boundaries
 
 - **Heval owns:** normalized manifests, reproducibility, comparison logic, run pages, visualizations, reports, alerts, and historical data.

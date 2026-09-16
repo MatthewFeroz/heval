@@ -20,6 +20,7 @@
     "test:unit": "bun test src/project src/charts",
     "test:reports": "vitest run",
     "test:reports:smoke": "bun scripts/report-smoke.ts",
+    "test:runners:smoke": "bun scripts/runner-smoke.ts",
     "preview": "vite preview --host 0.0.0.0",
     "report": "bun harbor/report/build-report.ts",
     "poster": "bun harbor/report/build-poster.ts",

@@ -39,7 +39,11 @@ export function readTrial(dir: string, catalog?: Catalog | null): TrialRow | nul
   if (!existsSync(cfgPath) || !existsSync(resPath)) return null
   const cfg = JSON.parse(readFileSync(cfgPath, 'utf8')) as Json
   const res = JSON.parse(readFileSync(resPath, 'utf8')) as Json
-  const agentCfg = (cfg.agent ?? {}) as Json
+  // Harbor may omit default values (including the Oracle agent) from config.json.
+  // result.json retains the fully resolved configuration; old exports keep the
+  // explicit per-trial config as the overriding source.
+  const resolvedCfg = (res.config ?? {}) as Json
+  const agentCfg = { ...((resolvedCfg.agent ?? {}) as Json), ...((cfg.agent ?? {}) as Json) }
   const agent = str(agentCfg.name)
   if (!agent) return null
   // Harbor records the agent's configured env per trial, so the vendor the job

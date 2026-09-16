@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { ReportProvider } from './ReportProvider'
 import { AuthBoundary } from '../AuthBoundary'
 import { ReportsApp } from './ReportsApp'
+import { RunnerApp } from '../runners/RunnerApp'
 import './reports.css'
 
 class ReportErrorBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
@@ -14,5 +15,5 @@ class ReportErrorBoundary extends Component<{ children: ReactNode }, { failed: b
 }
 
 createRoot(document.getElementById('root')!).render(<StrictMode><ReportErrorBoundary>
-  <AuthBoundary>{() => <ReportProvider><ReportsApp /></ReportProvider>}</AuthBoundary>
+  <AuthBoundary>{auth => <ReportProvider>{['/machines', '/evaluations'].includes(location.pathname) ? <RunnerApp key={auth.user?.email ?? 'public'} /> : <ReportsApp key={auth.user?.email ?? 'public'} />}</ReportProvider>}</AuthBoundary>
 </ReportErrorBoundary></StrictMode>)
