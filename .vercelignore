@@ -1,0 +1,14 @@
+.git/
+.env
+.env.*
+node_modules/
+dist/
+.scratch/
+recordings/
+test-results/
+playwright-report/
+data/
+jobs/
+deploy/ssh/
+deploy/*.env
+docs/media/
