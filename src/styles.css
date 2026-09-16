@@ -56,7 +56,6 @@ button { color: inherit; }
 .evaluation-actions strong { font-size: 12px; }
 .evaluation-actions small { color: #a4aba0; font-size: 11px; line-height: 1.5; }
 .evaluation-card .evaluation-note { margin: 16px 0 0; font-size: 10px; }
-.replay-heading { scroll-margin-top: 95px; }
 #compare, #reports, #methodology { scroll-margin-top: 95px; }
 .example-chip { color: #d4d9d0; }
 .report-count { display: flex; align-items: baseline; gap: 10px; padding-block: 30px; color: #a2a7a4; font-size: 12px; }
@@ -166,9 +165,6 @@ a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outlin
 .section-heading h2 { margin: 14px 0 0; font-size: clamp(38px,5vw,59px); line-height: 1.02; letter-spacing: -.055em; }
 .split-heading { display: grid; grid-template-columns: 1.3fr .7fr; align-items: end; gap: 80px; margin-bottom: 52px; }
 .split-heading > p { margin: 0 0 4px; color: #888d8a; font-size: 14px; line-height: 1.8; }
-.replay-heading { gap: 28px; margin-bottom: 28px; }
-.replay-heading h2 { font-size: clamp(28px, 3vw, 38px); }
-.replay-heading > p { font-size: 12px; }
 .score-layout { display: grid; grid-template-columns: 1.55fr .75fr; gap: 14px; }
 .leaderboard-card, .stat, .report-card, .method-step { border: 1px solid var(--line); background: var(--panel); }
 .leaderboard-card { border-radius: 14px; overflow: hidden; }
@@ -278,7 +274,6 @@ a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outlin
   .public-hero .hero-copy { font-size: 15px; }
   .studio-showcase { grid-template-columns: 1fr; gap: 28px; padding-block: 12px 65px; }
   .evaluation-card { padding: 20px; }
-  .replay-heading { padding-inline: 7px; }
   .race-area { width: calc(100% - 14px); }
   .race-meta span:not(:first-child),.manifest-button { display: none; }
   .task-strip { grid-template-columns: auto 1fr; }

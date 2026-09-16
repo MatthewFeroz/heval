@@ -433,11 +433,7 @@ export default function App({ auth = publicAuth }: { auth?: AppAuth }) {
       <Nav auth={auth} />
       <main id="top">
         <LandingHero />
-        <section data-home-reveal className="race-area shell" id="compare" aria-labelledby="replay-heading">
-          <div className="section-heading split-heading replay-heading">
-            <div><span className="kicker">INSIDE AN AGENT RUN</span><h2 id="replay-heading">See how a replay works.</h2></div>
-            <p>Play or scrub through four sample agent timelines. Select a lane to focus on its actions. This is a scripted illustration; measured evaluations are available in Studio.</p>
-          </div>
+        <section data-home-reveal className="race-area" id="compare" aria-label="Interactive coding-agent replay">
           <RaceStage auth={auth} />
         </section>
         <StudioShowcase />
