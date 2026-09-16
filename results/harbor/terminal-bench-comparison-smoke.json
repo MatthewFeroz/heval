@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "job": "composio-mirror-smoke",
+  "job": "terminal-bench-comparison-smoke",
   "jobId": "08a8485c-ceef-4be9-9648-ce5ea81e0176",
   "generatedAt": "2026-09-02T16:29:40.075Z",
-  "source": "/Users/mattferoz/heval/jobs/composio-mirror-smoke",
+  "source": "/Users/mattferoz/heval/jobs/terminal-bench-comparison-smoke",
   "agentVersions": {
     "codex": [
       "0.152.1"

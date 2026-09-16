@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs'
 import { posterDocuments } from '../server/social-posters'
 import { SOCIAL_DEFAULTS, SOCIAL_PRESETS, type SocialPreset } from '../src/charts/social-presets'
 import { SOCIAL_THEMES, type SocialTheme } from '../src/charts/social-themes'
-const input = JSON.parse(readFileSync('results/harbor/terminal-bench-composio-mirror.json', 'utf8'))
+const input = JSON.parse(readFileSync('results/harbor/terminal-bench-comparison.json', 'utf8'))
 for (const theme of Object.keys(SOCIAL_THEMES) as SocialTheme[]) {
   test('all social layouts fit with six models: ' + theme, async ({ page }) => {
     for (const preset of Object.keys(SOCIAL_PRESETS) as SocialPreset[]) {
@@ -56,7 +56,7 @@ test('publishing opens with a ready question, optional customization, and saved 
     const payload = route.request().postDataJSON()
     await route.fulfill({ json: posterDocuments(payload.input, payload.settings) })
   })
-  await page.goto('/studio?job=terminal-bench-composio-mirror')
+  await page.goto('/studio?job=terminal-bench-comparison')
   await expect(page.locator('.card svg')).toBeVisible()
   await page.getByRole('tab', { name: 'Presentation', exact: true }).click()
   await expect(page.getByLabel('Question', { exact: true })).toHaveValue('completed')

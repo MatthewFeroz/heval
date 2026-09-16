@@ -21,7 +21,7 @@ import {
 } from 'lucide-react'
 import { featuredExperiment, type RunEvent, type Runner } from './data'
 import resultCatalog from '../results/harbor/index.json'
-import featuredResults from '../results/harbor/terminal-bench-composio-mirror.json'
+import featuredResults from '../results/harbor/terminal-bench-comparison.json'
 import { localStorageAdapter } from './storage'
 
 const runnerEnd = (runner: Runner) => Math.max(...runner.events.map((event) => event.at))
@@ -374,7 +374,7 @@ function StudioShowcase() {
       <div className="evaluation-card">
         <div className="evaluation-header"><span>FEATURED EVALUATION</span><span className="dataset-badge">Published data</span></div>
         <h3>Six models. The same task set.</h3>
-        <p>Terminal-Bench · Composio mirror · Codex harness</p>
+        <p>Terminal Bench Comparison · Codex harness</p>
         <dl className="evaluation-stats">
           <div><dt>Models</dt><dd>{featuredJob.models.length}</dd></div>
           <div><dt>Tasks</dt><dd>{featuredJob.tasks.length}</dd></div>

@@ -2,10 +2,10 @@
   "schemaVersion": 1,
   "id": "merge-comparison",
   "baseline": {
-    "file": "results/harbor/terminal-bench-composio-mirror.json",
-    "sha256Json": "504e9ecde1c8fad8cf790cd5f82861c5b86a5b5303e9968abc67a32a39d8b854"
+    "file": "results/harbor/terminal-bench-comparison.json",
+    "sha256Json": "e9e2982c2e19da7ef87403401c8f6a780ad675057087a2e089ccf948c8fe6c43"
   },
-  "runTemplate": "harbor/jobs/terminal-bench-composio-mirror.yaml",
+  "runTemplate": "harbor/jobs/terminal-bench-comparison.yaml",
   "chartSettings": "harbor/report/thread-merge.json",
   "allChartSettings": "harbor/report/thread-merge-all.json",
   "benchmark": {

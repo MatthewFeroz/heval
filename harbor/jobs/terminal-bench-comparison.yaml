@@ -1,4 +1,4 @@
-# Composio mirror: 5 open-weight models plus a frontier control, one harness,
+# Terminal Bench Comparison: 5 open-weight models plus a frontier control, one harness,
 # 30 hand-picked Terminal-Bench 2.0 tasks, through Merge Gateway.
 #
 # WHAT THIS MIRRORS. Composio's thread of 2026-08-27 tested 5 open-weight models
@@ -83,12 +83,12 @@
 #     single pairwise gap is real.
 #
 # Validate without spending anything:
-#   harbor run -c harbor/jobs/terminal-bench-composio-mirror.yaml --print-config
+#   harbor run -c harbor/jobs/terminal-bench-comparison.yaml --print-config
 #
 # Run:
-#   harbor run -c harbor/jobs/terminal-bench-composio-mirror.yaml --env-file .env.local
+#   harbor run -c harbor/jobs/terminal-bench-comparison.yaml --env-file .env.local
 
-job_name: terminal-bench-composio-mirror
+job_name: terminal-bench-comparison
 
 n_attempts: 1
 n_concurrent_trials: 8

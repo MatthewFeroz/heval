@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "job": "terminal-bench-composio-mirror",
+  "job": "terminal-bench-comparison",
   "jobId": "a269ff7c-f31a-4862-a320-ff94bd720cf5",
   "generatedAt": "2026-09-02T21:17:43.943Z",
-  "source": "/Users/mattferoz/heval/jobs/terminal-bench-composio-mirror",
+  "source": "/Users/mattferoz/heval/jobs/terminal-bench-comparison",
   "agentVersions": {
     "codex": [
       "0.152.1"
