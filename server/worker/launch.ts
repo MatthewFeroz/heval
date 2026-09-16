@@ -3,7 +3,6 @@ import { join } from 'node:path'
 import type { HarnessId } from '../types'
 
 const prompt = 'Fix the race condition in the async cache and make the full test suite pass. Preserve the public API.'
-const gatewayModel = process.env.HEVAL_GATEWAY_MODEL || 'anthropic/claude-sonnet-4-5-20250929'
 const gatewayKeyEnv = 'HEVAL_GATEWAY_API_KEY'
 const mergeOpenAIBaseUrl = 'https://api-gateway.merge.dev/v1/openai'
 const mergeAnthropicBaseUrl = 'https://api-gateway.merge.dev/v1/anthropic'
@@ -11,7 +10,11 @@ const mergeAnthropicBaseUrl = 'https://api-gateway.merge.dev/v1/anthropic'
 type Launch = { command: string[]; env: Record<string, string | undefined> }
 
 export function prepareLaunch(harness: HarnessId, workspace: string): Launch {
-  if (!process.env[gatewayKeyEnv]) throw new Error(`${gatewayKeyEnv} is not configured`)
+  const gatewayModel = process.env.HEVAL_GATEWAY_MODEL || 'anthropic/claude-sonnet-4-5-20250929'
+  const nvidia = process.env.HEVAL_PROVIDER === 'nvidia'
+  const key = process.env[gatewayKeyEnv]
+  if (nvidia && harness !== 'pi-agent') throw new Error('Direct NVIDIA access requires Pi Agent')
+  if (!key) throw new Error(`${gatewayKeyEnv} is not configured`)
   const configRoot = join(workspace, '.heval')
   mkdirSync(configRoot, { recursive: true })
   const env: Record<string, string | undefined> = {
@@ -19,7 +22,7 @@ export function prepareLaunch(harness: HarnessId, workspace: string): Launch {
     HOME: '/tmp/heval-home',
     TERM: 'xterm-256color',
     COLORTERM: 'truecolor',
-    MERGE_GATEWAY_API_KEY: process.env[gatewayKeyEnv],
+    MERGE_GATEWAY_API_KEY: key,
   }
 
   if (harness === 'codex') {
@@ -109,19 +112,21 @@ export function prepareLaunch(harness: HarnessId, workspace: string): Launch {
     return { command: ['opencode', '--auto', '--model', `merge-gateway/${gatewayModel}`, '--prompt', prompt], env }
   }
 
+  const pins: Record<string, string> = JSON.parse(process.env.HEVAL_VENDOR_PINS_JSON || '{}')
   const piRoot = join(configRoot, 'pi')
   mkdirSync(piRoot, { recursive: true })
   writeFileSync(join(piRoot, 'models.json'), JSON.stringify({
     providers: {
-      'merge-gateway': {
-        name: 'Merge Gateway',
-        baseUrl: mergeOpenAIBaseUrl,
+      [nvidia ? 'nvidia' : 'merge-gateway']: {
+        name: nvidia ? 'NVIDIA' : 'Merge Gateway',
+        baseUrl: process.env.HEVAL_INFERENCE_BASE_URL || (nvidia ? 'https://integrate.api.nvidia.com/v1' : mergeOpenAIBaseUrl),
         api: 'openai-completions',
         apiKey: '$MERGE_GATEWAY_API_KEY',
-        compat: { supportsReasoningEffort: false },
+        compat: { supportsReasoningEffort: false, supportsDeveloperRole: false, maxTokensField: 'max_tokens' },
         models: [{
           id: gatewayModel,
           name: gatewayModel,
+          ...(pins[gatewayModel] && !nvidia ? { samplingParams: { vendor: pins[gatewayModel] } } : {}),
           reasoning: true,
           input: ['text', 'image'],
           contextWindow: 200000,
@@ -132,7 +137,7 @@ export function prepareLaunch(harness: HarnessId, workspace: string): Launch {
   }, null, 2))
   env.PI_CODING_AGENT_DIR = piRoot
   return {
-    command: ['pi', '--model', `merge-gateway/${gatewayModel}`, prompt],
+    command: ['pi', '--print', '--model', `${nvidia ? 'nvidia' : 'merge-gateway'}/${gatewayModel}`, prompt],
     env,
   }
 }

@@ -1,0 +1,16 @@
+{$HEVAL_DOMAIN} {
+  encode zstd gzip
+  header {
+    X-Content-Type-Options nosniff
+    Referrer-Policy strict-origin-when-cross-origin
+    Strict-Transport-Security "max-age=31536000"
+  }
+  request_body {
+    max_size 8MB
+  }
+  @private path /api/*
+  header @private Cache-Control "no-store"
+  reverse_proxy web:4173 {
+    header_up X-Real-IP {remote_host}
+  }
+}

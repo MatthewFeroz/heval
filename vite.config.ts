@@ -1,4 +1,4 @@
-import { cpSync, existsSync } from 'node:fs'
+import { cpSync, existsSync, mkdirSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { defineConfig, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
@@ -24,14 +24,24 @@ function hevalResults(): Plugin {
       })
     },
     closeBundle() {
-      const from = resolve(root, 'results')
-      if (existsSync(from)) cpSync(from, resolve(root, 'dist/results'), { recursive: true })
+      if (process.env.HEVAL_PUBLIC_BUILD === '1') {
+        const target = resolve(root, 'dist/results/harbor')
+        mkdirSync(target, { recursive: true })
+        const from = resolve(root, 'results/public')
+        if (existsSync(from)) cpSync(from, target, { recursive: true })
+        if (!existsSync(resolve(target, 'index.json'))) writeFileSync(resolve(target, 'index.json'), JSON.stringify({ schemaVersion: 1, jobs: [] }))
+        writeFileSync(resolve(root, 'dist/public-build.json'), JSON.stringify({ public: true }))
+      } else {
+        const from = resolve(root, 'results')
+        if (existsSync(from)) cpSync(from, resolve(root, 'dist/results'), { recursive: true })
+      }
     },
   }
 }
 
 export default defineConfig({
   plugins: [react(), hevalResults()],
+  server: { proxy: { '/api': { target: 'http://127.0.0.1:4173', ws: true } } },
   // results/ is served straight from the project root in dev, which Vite allows
   // because it is inside the root; no extra fs.allow entry needed.
   build: {

@@ -50,3 +50,8 @@ results/harbor/social/**/assets/
 /results/harbor/threads/recreated/
 /.scratch/merge-comparison-run.yaml*
 .vercel
+
+# Persistent application state and private deployment configuration.
+/data/
+/deploy/ssh/
+/deploy/*.env

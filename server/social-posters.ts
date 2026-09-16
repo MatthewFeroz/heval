@@ -24,7 +24,8 @@ const fonts =
         ).toString('base64') +
         ')}',
     )
-    .join('') + readFileSync(join(assets, 'inter.css'), 'utf8')
+    .join('')
+const plainFonts = readFileSync(join(assets, 'inter.css'), 'utf8')
 export function posterDocuments(input: JobExport, settings: SocialSettings) {
   const chart = resolveSocial(input.rows, settings)
   return {
@@ -36,7 +37,7 @@ export function posterDocuments(input: JobExport, settings: SocialSettings) {
       },
       (_, page) =>
         '<!doctype html><html lang="en"><meta charset="utf-8"><style>' +
-        fonts +
+        (settings.theme === 'plain-light' ? plainFonts : fonts + plainFonts) +
         'html,body{margin:0;background:' +
         SOCIAL_THEMES[settings.theme ?? 'merge-dark'].surface +
         '}svg{font-feature-settings:"liga" 0,"calt" 0;display:block;width:100%;height:auto}</style>' +

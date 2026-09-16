@@ -30,6 +30,10 @@ export class Recording {
     }).catch((error) => { this.failure = error; this.onError(error) })
     return this.writing
   }
+  async checkpoint() {
+    await this.flush()
+    if (this.failure) throw this.failure
+  }
   async close() {
     clearInterval(this.timer)
     await this.flush()
