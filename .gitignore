@@ -46,6 +46,9 @@ results/harbor/social/**/assets/
 /results/reference/
 /results/harbor/posters/merge-gateway-five-models/
 /results/harbor/posters/merge-gateway-five-models-social/
+# Poster HTML is an editable, fully reproducible rendering that inlines fonts.
+# Keep the much smaller PNG examples, but do not commit generated HTML copies.
+/results/harbor/posters/**/*.html
 /results/harbor/threads/*/images/
 /results/harbor/threads/*/*.png
 /results/harbor/threads/*/studio-export.zip

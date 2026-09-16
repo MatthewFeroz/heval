@@ -51,8 +51,14 @@ test('opens the responsive navigation', async ({ page }, testInfo) => {
 
 test('shows the product entry point and measured evaluation preview', async ({ page }) => {
   await expect(page.locator('.nav .brand')).toHaveText('heval')
-  await expect(page.locator('.hero-harness')).toHaveCount(4)
-  await expect(page.locator('.hero-copy')).toContainText('Compare Claude Code, Codex, OpenCode, and Pi.')
+  await expect(page.locator('.hero-harness')).toHaveCount(10)
+  await expect(page.locator('.hero-harnesses')).toContainText('Deep Agents')
+  await expect(page.locator('.hero-harnesses')).toContainText('Antigravity')
+  await expect(page.locator('.hero-harnesses')).toContainText('Hermes')
+  await expect(page.getByRole('link', { name: 'Visit Deep Agents' })).toHaveAttribute('href', 'https://github.com/langchain-ai/deepagents')
+  await expect(page.getByRole('link', { name: 'Visit Antigravity' })).toHaveAttribute('href', 'https://antigravity.google/')
+  await expect(page.getByRole('link', { name: 'Visit Hermes' })).toHaveAttribute('href', 'https://github.com/NousResearch/hermes-agent')
+  await expect(page.locator('.hero-copy')).toContainText('Compare leading coding-agent harnesses')
   await expect(page.locator('.hero-copy')).toContainText('Run evaluations locally with Harbor')
   for (const label of await page.locator('.hero-harness span').all()) {
     await expect(label).toBeVisible()
