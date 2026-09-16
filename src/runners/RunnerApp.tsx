@@ -34,7 +34,7 @@ function Workspace() {
     <div className="report-intro"><span className="report-eyebrow">YOUR CONNECTED WORKSPACE</span><h1>Run here. Execute on your machine.</h1><p>Connect a Linux computer or cloud VM, choose an approved evaluation, then follow it from any signed-in browser. Results arrive in Your reports.</p><ol className="report-steps"><li>Connect a machine</li><li>Run a setup check</li><li>Open your report</li></ol></div>
     {error && <p role="alert">{error}</p>}{status && <p role="status">{status}</p>}
     <section className="report-card" aria-label="Connect a machine"><h2>Connect a machine</h2><p>The machine needs Linux, Docker Engine with Compose, and Harbor 0.22.0. Its runner makes an outbound connection; you don’t need to open a port.</p>
-      <p><a href="https://github.com/MatthewFeroz/heval/blob/feat/connected-harbor-runners/docs/connected-runners.md" target="_blank" rel="noreferrer">Install the runner preview and set up Linux ↗</a></p>
+      <p><a href="https://github.com/MatthewFeroz/heval/blob/main/docs/connected-runners.md" target="_blank" rel="noreferrer">Install the runner preview and set up Linux ↗</a></p>
       <label>Machine name<input value={name} maxLength={80} onChange={e => setName(e.target.value)} /></label>
       <button disabled={busy || !name.trim()} onClick={() => void act(async () => { const code = token(); const result = await pair({ name, code }); setPairing({ code, ...result }) }, 'Pairing code ready. Complete the connection on your machine.')}>Create pairing code</button>
       {pairing && <div className="report-import-preview"><h3>On the machine that will run Harbor</h3><p>With the runner preview installed, run:</p><pre><code>{`heval runner connect --url ${import.meta.env.VITE_CONVEX_URL}`}</code></pre>

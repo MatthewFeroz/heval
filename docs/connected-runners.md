@@ -1,6 +1,6 @@
 # Run Harbor from the browser on connected machines
 
-Heval's connected runner is a preview on `feat/connected-harbor-runners`. The currently published npm 0.1.0 CLI does **not** contain these commands. Build/install this branch's tarball until a new CLI release is published. The website and Convex deployment must also run this branch.
+Heval's connected runner is available as a preview on `main`. The currently published npm 0.1.0 CLI does **not** contain these commands. Build/install the tarball from `main` until a new CLI release is published. The website and Convex deployment must use the same version.
 
 ```text
 Browser on laptop / another browser session
@@ -25,10 +25,10 @@ Use a dedicated Linux machine or VM you control, with Node.js 22+, Docker Engine
 
 Docker access grants substantial control of the host. This is a personal/trusted-worker architecture, not a public sandbox for untrusted users. Approve task files and agent configuration on the worker itself. Start with one task and one attempt.
 
-Build the CLI once from this branch (Bun is needed only for this build):
+Build the CLI once from `main` (Bun is needed only for this build):
 
 ```sh
-git clone --branch feat/connected-harbor-runners https://github.com/MatthewFeroz/heval.git
+git clone --branch main https://github.com/MatthewFeroz/heval.git
 cd heval
 bun install --frozen-lockfile
 bun run cli:pack

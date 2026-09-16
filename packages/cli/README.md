@@ -126,5 +126,5 @@ and `cleanup` for Linux machines with Harbor 0.22.0 and Docker. It is not yet
 published on npm. Pair through the hosted Machines page, then keep the daemon
 running to execute locally approved profiles and save results to your account.
 The default Oracle setup check uses no model API calls. See the
-[connected runner setup guide](https://github.com/MatthewFeroz/heval/blob/feat/connected-harbor-runners/docs/connected-runners.md)
+[connected runner setup guide](https://github.com/MatthewFeroz/heval/blob/main/docs/connected-runners.md)
 for tarball installation, credentials, a Linux service, and recovery.

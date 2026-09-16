@@ -45,7 +45,7 @@ See the [user walkthrough and recording](docs/hosted-reports.md) for the complet
 
 ### Connected Harbor runners (preview)
 
-The `feat/connected-harbor-runners` branch connects the browser workspace to
+The `main` branch connects the browser workspace to
 a Linux machine or cloud VM using an outbound runner. Queue a setup check,
 monitor it from another browser, and open the automatically saved report.
 The preview includes content-pinned local profiles, durable claims, cancellation,
