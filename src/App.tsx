@@ -24,6 +24,9 @@ import { publicAuth, type AppAuth } from './auth'
 import { Signup } from './Signup'
 import { RunWorkbench } from './RunWorkbench'
 import { STATIC_SITE } from './deployment'
+import { LandingHero } from './landing/LandingHero'
+import { useSectionMotion } from './landing/useSectionMotion'
+import './landing/landing.css'
 
 const runnerEnd = (runner: Runner) => Math.max(...runner.events.map((event) => event.at))
 const maxTime = Math.max(...featuredExperiment.runners.map(runnerEnd))
@@ -38,21 +41,6 @@ const completionResults = featuredJob.models.map((model) => {
   return { model: rows[0].modelShort, passed: rows.filter((row) => row.passed === 1).length, total: rows.length }
 }).sort((a, b) => b.passed / b.total - a.passed / a.total)
 const studioUrl = `/studio?job=${featuredJob.job}&recipe=bar&x=modelShort&color=none&measure=passed`
-const harnessEcosystem = [
-  ...featuredExperiment.runners.map((runner) => ({
-    id: runner.id,
-    name: runner.name,
-    logo: runner.logo,
-    href: '#compare',
-    external: false,
-  })),
-  { id: 'deep-agents', name: 'Deep Agents', logo: '/harnesses/deepagents.svg', href: 'https://github.com/langchain-ai/deepagents', external: true },
-  { id: 'antigravity', name: 'Antigravity', logo: '/harnesses/antigravity.png', href: 'https://antigravity.google/', external: true },
-  { id: 'hermes', name: 'Hermes', logo: '/harnesses/hermes.svg', href: 'https://github.com/NousResearch/hermes-agent', external: true },
-  { id: 'gemini-cli', name: 'Gemini CLI', logo: '/harnesses/gemini-cli.png', href: 'https://github.com/google-gemini/gemini-cli', external: true },
-  { id: 'goose', name: 'Goose', logo: '/harnesses/goose.svg', href: 'https://github.com/block/goose', external: true },
-  { id: 'openhands', name: 'OpenHands', logo: '/harnesses/openhands.svg', href: 'https://github.com/All-Hands-AI/OpenHands', external: true },
-]
 
 const formatTokens = (tokens: number | null) => tokens === null ? 'pending' : `${(tokens / 1000).toFixed(1)}k`
 
@@ -71,7 +59,7 @@ function Nav({ auth }: { auth: AppAuth }) {
     <header className="nav-wrap">
       <nav className="nav shell">
         <Brand />
-        <div className={`nav-links ${open ? 'open' : ''}`}>
+        <div id="home-navigation" className={`nav-links ${open ? 'open' : ''}`} onClick={() => setOpen(false)}>
           <a href="#compare">Replay</a>
           <a href="#reports">Reports</a>
           <a href="#methodology">Methodology</a>
@@ -83,7 +71,7 @@ function Nav({ auth }: { auth: AppAuth }) {
           ? <button className="nav-cta auth-button" onClick={auth.signOut} title={`Sign out ${auth.user.email}`}>{auth.user.firstName || auth.user.email} <LogOut size={15} /></button>
           : <button className="nav-cta auth-button" onClick={auth.signIn} disabled={auth.isLoading}>Sign in <LogIn size={15} /></button>)}
         {!auth.configured && <a className="nav-cta" href={studioUrl}>Open Studio <ArrowRight size={15} /></a>}
-        <button className="menu-button" onClick={() => setOpen((value) => !value)} aria-label="Toggle navigation">
+        <button className="menu-button" onClick={() => setOpen((value) => !value)} aria-label="Toggle navigation" aria-expanded={open} aria-controls="home-navigation">
           {open ? <X size={19} /> : <span className="menu-lines" />}
         </button>
       </nav>
@@ -354,7 +342,7 @@ function RaceStage({ auth }: { auth: AppAuth }) {
 
 function StudioShowcase() {
   return (
-    <section className="studio-showcase shell" aria-labelledby="studio-heading">
+    <section data-home-reveal className="studio-showcase shell" aria-labelledby="studio-heading">
       <div className="studio-intro">
         <span className="kicker">THE WORKSPACE</span>
         <h2 id="studio-heading">Turn evaluation results<br />into a clear comparison.</h2>
@@ -394,13 +382,13 @@ function ReportSection() {
   return (
     <section className="reports-section section-pad" id="reports">
       <div className="shell">
-        <div className="section-heading reports-heading">
+        <div data-home-reveal className="section-heading reports-heading">
           <div><span className="kicker">PUBLISHED EVALUATIONS</span><h2>Start with the evidence.</h2></div>
           <a href="/studio">Open all results in Studio <ArrowRight size={15} /></a>
         </div>
         <div className="report-grid">
           {resultCatalog.jobs.map((job) => (
-            <article className="report-card" key={job.job}>
+            <article data-home-reveal className="report-card" key={job.job}>
               <div className="report-top"><span>{job.trials > 4 ? 'Model comparison' : 'Smoke test'}</span><small>{job.generatedAt.slice(0, 10)}</small></div>
               <div className="report-count"><strong>{job.trials}</strong><span>recorded {job.trials === 1 ? 'trial' : 'trials'}</span></div>
               <h3>{job.job.split('-').join(' ')}</h3>
@@ -427,9 +415,9 @@ function Methodology() {
 
   return (
     <section className="method-section shell section-pad" id="methodology">
-      <div className="section-heading centered-heading"><span className="kicker">NO MAGIC SCORE</span><h2>Evidence you can inspect.</h2><p>Enough rigor to make comparisons useful. Enough transparency to disagree with us.</p></div>
+      <div data-home-reveal className="section-heading centered-heading"><span className="kicker">NO MAGIC SCORE</span><h2>Evidence you can inspect.</h2><p>Enough rigor to make comparisons useful. Enough transparency to disagree with us.</p></div>
       <div className="method-grid">
-        {steps.map(([number, title, copy]) => <div className="method-step" key={number}><span>{number}</span><h3>{title}</h3><p>{copy}</p></div>)}
+        {steps.map(([number, title, copy]) => <div data-home-reveal className="method-step" key={number}><span>{number}</span><h3>{title}</h3><p>{copy}</p></div>)}
       </div>
     </section>
   )
@@ -447,38 +435,14 @@ function Footer() {
 }
 
 export default function App({ auth = publicAuth }: { auth?: AppAuth }) {
+  const landing = useRef<HTMLDivElement>(null)
+  useSectionMotion(landing)
   return (
-    <>
+    <div className="landing-page" ref={landing}>
       <Nav auth={auth} />
       <main id="top">
-        <section className="hero shell">
-          <div className="hero-harnesses" aria-label="Coding agent harness ecosystem">
-            {harnessEcosystem.map((harness, index) => (
-              <a
-                className="hero-harness"
-                href={harness.href}
-                key={harness.id}
-                target={harness.external ? '_blank' : undefined}
-                rel={harness.external ? 'noreferrer' : undefined}
-                aria-label={harness.external ? `Visit ${harness.name}` : `See ${harness.name} in the example replay`}
-                style={{ animationDelay: `${index * -.52}s` }}
-              >
-                <img src={harness.logo} alt="" />
-                <span>{harness.name}</span>
-              </a>
-            ))}
-          </div>
-          <h1>The <span className="keep-together">open-source</span> harness evaluation platform</h1>
-          <p className="hero-copy">Compare leading coding-agent harnesses—from Claude Code and Codex to Deep Agents, Antigravity, Hermes, and more.<br />Run evaluations locally with Harbor, inspect every trial, and share the results.</p>
-          <div className="hero-actions">
-            <a className="primary-button" href="/reports">Import your results <ArrowRight size={21} /></a>
-            <a className="hero-github" href="https://github.com/MatthewFeroz/heval" target="_blank" rel="noreferrer" aria-label="Explore the code on GitHub">
-              <svg width="21" height="21" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.37.5 0 5.87 0 12.5c0 5.3 3.44 9.8 8.21 11.39.6.11.82-.26.82-.58v-2.23c-3.34.73-4.04-1.42-4.04-1.42-.55-1.39-1.33-1.76-1.33-1.76-1.09-.75.08-.73.08-.73 1.2.08 1.84 1.23 1.84 1.23 1.07 1.83 2.81 1.3 3.49.99.11-.78.42-1.3.76-1.6-2.67-.3-5.47-1.34-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.12-.3-.54-1.52.12-3.17 0 0 1.01-.32 3.3 1.23a11.5 11.5 0 0 1 6 0c2.29-1.55 3.3-1.23 3.3-1.23.66 1.65.24 2.87.12 3.17.77.84 1.24 1.91 1.24 3.22 0 4.6-2.8 5.63-5.48 5.93.43.37.81 1.1.81 2.22v3.3c0 .32.22.69.83.58A12 12 0 0 0 24 12.5c0-6.63-5.37-12-12-12Z" /></svg>
-              Explore the code <ExternalLink size={15} />
-            </a>
-          </div>
-        </section>
-        <section className="race-area shell" id="compare" aria-labelledby="replay-heading">
+        <LandingHero />
+        <section data-home-reveal className="race-area shell" id="compare" aria-labelledby="replay-heading">
           <div className="section-heading split-heading replay-heading">
             <div><span className="kicker">INSIDE AN AGENT RUN</span><h2 id="replay-heading">See how a replay works.</h2></div>
             <p>Play or scrub through four sample agent timelines. Select a lane to focus on its actions. This is a scripted illustration; measured evaluations are available in Studio.</p>
@@ -492,6 +456,6 @@ export default function App({ auth = publicAuth }: { auth?: AppAuth }) {
         {!STATIC_SITE && <Signup />}
       </main>
       <Footer />
-    </>
+    </div>
   )
 }

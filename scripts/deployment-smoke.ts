@@ -35,7 +35,7 @@ try {
   const errors: string[] = []
   page.on('pageerror', error => errors.push(error.message))
   await page.goto(String(staticServer.url))
-  await expect(page.getByRole('heading', { name: 'The open-source harness evaluation platform' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'The open-source evaluation platform for coding agents.' })).toBeVisible()
   await expect(page.getByRole('button', { name: 'RUN REAL' })).toHaveCount(0)
   await expect(page.getByPlaceholder('you@company.com')).toHaveCount(0)
   await page.getByRole('link', { name: 'Import your results', exact: true }).click()
@@ -50,7 +50,7 @@ try {
   await page.getByRole('button', { name: 'SVG', exact: true }).click()
   assert.match(await readFile((await (await pending).path())!, 'utf8'), /<svg/)
   await page.goto(new URL('/login', staticServer.url).href)
-  await expect(page.getByRole('heading', { name: 'The open-source harness evaluation platform' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'The open-source evaluation platform for coding agents.' })).toBeVisible()
   await page.setViewportSize({ width: 393, height: 851 })
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth), false)
   assert.deepEqual(apiRequests, [], 'The static deployment must not depend on Bun APIs')

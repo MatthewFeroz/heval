@@ -7,7 +7,7 @@ test.beforeEach(async ({ page }) => {
 })
 
 test('replays the example and reveals its verdict', async ({ page }) => {
-  await expect(page.getByRole('heading', { name: 'The open-source harness evaluation platform', exact: true })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'The open-source evaluation platform for coding agents.', exact: true })).toBeVisible()
   const timeline = page.getByLabel('Replay timeline')
 
   await page.getByRole('button', { name: 'Play replay' }).click()
@@ -35,7 +35,7 @@ test('focuses a runner and submits an early-access signup', async ({ page }) => 
 })
 
 test('keeps the showcase public while real runs require authentication', async ({ page }) => {
-  await expect(page.getByRole('heading', { name: 'The open-source harness evaluation platform', exact: true })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'The open-source evaluation platform for coding agents.', exact: true })).toBeVisible()
   page.once('dialog', async (dialog) => {
     expect(dialog.message()).toContain('WorkOS AuthKit')
     await dialog.dismiss()
@@ -51,19 +51,14 @@ test('opens the responsive navigation', async ({ page }, testInfo) => {
 
 test('shows the product entry point and measured evaluation preview', async ({ page }) => {
   await expect(page.locator('.nav .brand')).toHaveText('heval')
-  await expect(page.locator('.hero-harness')).toHaveCount(10)
-  await expect(page.locator('.hero-harnesses')).toContainText('Deep Agents')
-  await expect(page.locator('.hero-harnesses')).toContainText('Antigravity')
-  await expect(page.locator('.hero-harnesses')).toContainText('Hermes')
+  await expect(page.locator('.hero-harness')).toHaveCount(7)
   await expect(page.getByRole('link', { name: 'Visit Deep Agents' })).toHaveAttribute('href', 'https://github.com/langchain-ai/deepagents')
   await expect(page.getByRole('link', { name: 'Visit Antigravity' })).toHaveAttribute('href', 'https://antigravity.google/')
-  await expect(page.getByRole('link', { name: 'Visit Hermes' })).toHaveAttribute('href', 'https://github.com/NousResearch/hermes-agent')
-  await expect(page.locator('.hero-copy')).toContainText('Compare leading coding-agent harnesses')
+  await expect(page.getByRole('link', { name: 'Visit Grok' })).toHaveAttribute('href', 'https://grok.com/')
+  await expect(page.locator('.hero-copy')).toContainText('Compare Claude Code')
   await expect(page.locator('.hero-copy')).toContainText('Run evaluations locally with Harbor')
-  for (const label of await page.locator('.hero-harness span').all()) {
-    await expect(label).toBeVisible()
-    await expect(label).toHaveCSS('opacity', '1')
-  }
+  await expect(page.locator('.hero-harnesses')).toHaveText('')
+  await expect(page.locator('.hero-harnesses').getByRole('link', { name: /Hermes|Goose|OpenHands|Gemini CLI/ })).toHaveCount(0)
   await expect(page.locator('main > section').nth(1)).toHaveAttribute('id', 'compare')
   await expect(page.locator('main > section').nth(2)).toHaveClass(/studio-showcase/)
   const start = page.getByRole('link', { name: 'Import your results', exact: true })
