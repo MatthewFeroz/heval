@@ -1,8 +1,9 @@
-import { chmodSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
+import { chmodSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { build, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
+import { packageForModule } from './package-license'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../../..')
 const pkg = join(root, 'packages/cli')
@@ -20,11 +21,9 @@ const licenses: Plugin = {
       if (chunk.type !== 'chunk') continue
       for (const id of Object.keys(chunk.modules)) {
         if (!id.includes('/node_modules/')) continue
-        let folder = dirname(id.split('?')[0])
-        while (folder.includes('node_modules') && !existsSync(join(folder, 'package.json'))) folder = dirname(folder)
-        const manifestFile = join(folder, 'package.json')
-        if (!existsSync(manifestFile)) continue
-        const info = JSON.parse(readFileSync(manifestFile, 'utf8')) as { name: string; version: string; license?: string }
+        const dependency = packageForModule(id)
+        if (!dependency) throw new Error(`Could not resolve bundled dependency package: ${id}`)
+        const { folder, manifest: info } = dependency
         const key = `${info.name}@${info.version}`
         if (notices.has(key)) continue
         const texts = readdirSync(folder, { withFileTypes: true })
