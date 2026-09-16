@@ -576,6 +576,7 @@ export function Studio({ localViewer = false }: { localViewer?: boolean }) {
         </div>
 
         <div className="actions">
+          {!localViewer && <a className="btn ghost" href="/reports">Saved reports</a>}
           <input
             ref={filePicker}
             type="file"

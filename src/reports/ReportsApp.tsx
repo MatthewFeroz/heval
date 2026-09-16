@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useSyncExternalStore } from 'react'
 import { useConvexAuth, useMutation, useQuery, useConvexConnectionState } from 'convex/react'
 import { api } from '../../convex/_generated/api'
 import type { Id } from '../../convex/_generated/dataModel'
@@ -9,6 +9,7 @@ import { MAX_IMPORT_BYTES, parseReport, type ReportData } from './format'
 
 function message(error: unknown) { return error instanceof Error ? error.message.replace(/^.*Uncaught ConvexError: /s, '').split('\n')[0] : 'Something went wrong. Please retry.' }
 function token() { return Array.from(crypto.getRandomValues(new Uint8Array(32)), n => n.toString(16).padStart(2, '0')).join('') }
+function subscribeHashChange(listener: () => void) { window.addEventListener('hashchange', listener); return () => window.removeEventListener('hashchange', listener) }
 
 function ReportView({ title, data }: { title: string; data: ReportData }) {
   const [model, setModel] = useState('all')
@@ -21,7 +22,7 @@ function ReportView({ title, data }: { title: string; data: ReportData }) {
     <div className="report-eyebrow">SAVED EVALUATION · {new Date(data.generatedAt).toLocaleDateString()}</div>
     <h1>{title}</h1><p>Imported results from <strong>{data.job}</strong>. This report does not run an evaluation.</p>
     <div className="report-stats"><div><strong>{rows.length}</strong><span>Trials shown</span></div><div><strong>{passed} / {rows.length}</strong><span>Completed</span></div><div><strong>{new Set(rows.map(r => r.task)).size}</strong><span>Tasks</span></div></div>
-    <label>Model <select value={model} onChange={event => setModel(event.target.value)}><option value="all">All models</option>{models.map(m => <option key={m}>{m}</option>)}</select></label>
+    <label>Model <select aria-label="Model" value={model} onChange={event => setModel(event.target.value)}><option value="all">All models</option>{models.map(m => <option key={m}>{m}</option>)}</select></label>
     <p className="report-muted">Rates describe these imported trials only. A small setup check is not a full benchmark score.</p>
     {error ? <p role="alert">Chart unavailable. Trial results are shown below.</p> : <div className="report-chart" ref={host} />}
     <details><summary>Inspect {rows.length} trial results</summary><div className="report-table"><table><thead><tr><th>Task</th><th>Agent</th><th>Model</th><th>Result</th><th>Agent time</th></tr></thead><tbody>{rows.map(row => <tr key={row.trial}><td>{row.task}</td><td>{row.agent}</td><td>{row.model}</td><td>{row.passed ? 'Passed' : row.timedOut ? 'Timed out' : 'Not passed'}</td><td>{row.agentSeconds === null ? 'Unknown' : `${row.agentSeconds.toFixed(1)}s`}</td></tr>)}</tbody></table></div></details>
@@ -29,7 +30,7 @@ function ReportView({ title, data }: { title: string; data: ReportData }) {
 }
 
 function SharedReport() {
-  const shareToken = location.hash.slice(1)
+  const shareToken = useSyncExternalStore(subscribeHashChange, () => location.hash.slice(1))
   const report = useQuery(api.reports.shared, { token: shareToken })
   const connection = useConvexConnectionState()
   if (!connection.isWebSocketConnected) return <section className="report-card"><h1>Checking report access…</h1><p>Connect to the internet to view this shared report.</p></section>

@@ -60,8 +60,8 @@ test('shows the product entry point and measured evaluation preview', async ({ p
   }
   await expect(page.locator('main > section').nth(1)).toHaveAttribute('id', 'compare')
   await expect(page.locator('main > section').nth(2)).toHaveClass(/studio-showcase/)
-  const start = page.getByRole('link', { name: 'Get started', exact: true })
-  await expect(start).toHaveAttribute('href', /\/studio\?job=terminal-bench-comparison/)
+  const start = page.getByRole('link', { name: 'Import your results', exact: true })
+  await expect(start).toHaveAttribute('href', '/reports')
   const github = page.getByRole('link', { name: 'Explore the code on GitHub' })
   await expect(github).toHaveAttribute('href', 'https://github.com/MatthewFeroz/heval')
   const startBox = await start.boundingBox()
@@ -73,8 +73,8 @@ test('shows the product entry point and measured evaluation preview', async ({ p
   await page.emulateMedia({ reducedMotion: 'reduce' })
   expect(await page.locator('.hero-harness').first().evaluate((el) => parseFloat(getComputedStyle(el).animationDuration))).toBeLessThan(.001)
   await start.click()
-  await expect(page).toHaveURL(/\/studio\?job=terminal-bench-comparison/)
-  await expect(page.locator('.card svg').first()).toBeVisible()
+  await expect(page).toHaveURL(/\/reports$/)
+  await expect(page.getByRole('heading', { name: /Your evaluations, ready to share|Saved reports are coming online/ })).toBeVisible()
 })
 
 test('signup failure does not claim the email was saved', async ({ page }) => {

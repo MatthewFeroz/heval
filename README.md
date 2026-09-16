@@ -9,6 +9,7 @@ It captures terminal trajectories, grades the resulting workspace with executabl
 
 ## Features
 
+- Hosted report import, private cloud storage, anonymous share links, and revocation
 - Four synchronized coding-agent lanes with pinned harness and model metadata
 - Replay controls with time, token, cost, and pass/fail displays
 - An opt-in Bun control plane for launching isolated local evaluations
@@ -33,6 +34,12 @@ The latest smoke snapshot records one passing attempt for each harness against `
 See [`results/concurrent-cache-v1-current.json`](results/concurrent-cache-v1-current.json) for the machine-readable snapshot and [`docs/first-eval.md`](docs/first-eval.md) for the protocol and limitations.
 
 ## Quick Start
+
+### Hosted reports
+
+Open [Your reports](https://temporary-rushing-violet-xu17m97.vercel.app/reports), sign in, and import a normalized Harbor JSON export. Review it, save privately, then create or revoke a share link. No local server is needed to view a shared report.
+
+See the [user walkthrough and recording](docs/hosted-reports.md) for the complete flow, supported files, limits, and deployment setup.
 
 ### Installable local results viewer
 
@@ -78,14 +85,14 @@ The consolidated repository supports three entry points:
 
 | Target | Build | Capabilities |
 | --- | --- | --- |
-| Vercel showcase | `bun run build:showcase` (configured in `vercel.json`) | Published results, Studio, browser SVG/PNG and bundle exports; no runner or signup API |
+| Vercel + Convex | `bun scripts/vercel-build.ts` (configured in `vercel.json`) | Persistent private reports and revocable sharing, published results, Studio, browser exports; no cloud runner |
 | Bun application | `bun run build`, then `bun run serve` | Workbench, authenticated run history, provider connections and optional server exports |
 | Invited hosted Bun deployment | `bun run build:public` | Uses only the explicitly published catalog; requires persistent storage and the configuration in [deployment.md](docs/deployment.md) |
 
-The npm CLI remains a separate Node-only results viewer. Convex dependencies
-are installed as preparation; no Convex backend or hosted import/share service
-is connected yet. See [the stable baseline](docs/stable-baseline.md) before
-continuing that work.
+The npm CLI remains a separate Node-only results viewer. The hosted report
+workspace uses Convex and the existing WorkOS sign-in. See [hosted reports](docs/hosted-reports.md)
+for its storage, access rules, and deployment instructions. The [stable baseline](docs/stable-baseline.md)
+records the earlier branch consolidation.
 
 ## Authentication
 

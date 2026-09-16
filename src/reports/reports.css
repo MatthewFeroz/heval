@@ -25,7 +25,7 @@ h2 { font-size: 25px; }
 .report-card { padding: 30px; margin: 24px 0; background: #fff; border: 1px solid #dbe2d8; border-radius: 14px; box-shadow: 0 4px 20px #19382504; }
 .report-card h2:first-child { margin-top: 0; }
 .report-file { padding: 24px; border: 1px dashed #a2b59d; border-radius: 10px; background: #f6f9f3; }
-.report-file input { max-width: 100%; padding-top: 6px; }
+.report-file input { width: 100%; min-width: 0; padding-top: 6px; }
 .report-import-preview { border-top: 1px solid #dbe2d8; padding-top: 16px; margin-top: 22px; }
 .report-import-preview button + button { margin-left: 10px; }
 details { margin: 20px 0; } summary { cursor: pointer; color: #355f40; font-weight: 600; }
