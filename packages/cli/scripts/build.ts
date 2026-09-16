@@ -1,8 +1,9 @@
-import { chmodSync, cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
+import { chmodSync, cpSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { build, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
+import { packageForModule } from './package-license'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../../..')
 const pkg = join(root, 'packages/cli')
@@ -20,17 +21,9 @@ const licenses: Plugin = {
       if (chunk.type !== 'chunk') continue
       for (const id of Object.keys(chunk.modules)) {
         if (!id.includes('/node_modules/')) continue
-        let folder = dirname(id.split('?')[0])
-        // Some packages put {"type":"module"} in a dist subdirectory. Find the
-        // actual package manifest so we collect its name and license text.
-        while (folder.includes('node_modules')) {
-          const path = join(folder, 'package.json')
-          if (existsSync(path)) { const info = JSON.parse(readFileSync(path, 'utf8')); if (info.name && info.version) break }
-          folder = dirname(folder)
-        }
-        const manifestFile = join(folder, 'package.json')
-        if (!existsSync(manifestFile)) continue
-        const info = JSON.parse(readFileSync(manifestFile, 'utf8')) as { name: string; version: string; license?: string }
+        const dependency = packageForModule(id)
+        if (!dependency) throw new Error(`Could not resolve bundled dependency package: ${id}`)
+        const { folder, manifest: info } = dependency
         const key = `${info.name}@${info.version}`
         if (notices.has(key)) continue
         const texts = readdirSync(folder, { withFileTypes: true })
