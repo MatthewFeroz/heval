@@ -101,6 +101,20 @@ requested path, query, and fragment in AuthKit state; the existing callback
 accepts only destinations on this origin. Signing out or losing the session
 unmounts Studio.
 
+The current Vercel staging setup uses `api.workos.com`, which cannot set a
+first-party session cookie on the Vercel app. Heval explicitly enables AuthKit's
+browser-persisted refresh token in that setup, including on non-localhost
+deployments. AuthKit rotates that token and revalidates it before restoring the
+account after navigation or reload. Same-site custom Authentication API domains
+continue to use HttpOnly-cookie sessions. Homepage and `/login` sign-ins default
+to Studio, while saved-report and chart links preserve their full destination.
+
+`bun run test:auth` builds the app and exercises the real AuthKit SDK on a
+non-localhost browser origin with isolated WorkOS HTTP responses. It covers the
+PKCE exchange, rotating refresh tokens, callback navigation, page reloads,
+another tab, account restoration, sign-out, and rejected sessions. It uses no
+real credentials and never sends test tokens to Convex or a runner.
+
 This page gate complements the existing Convex membership checks and Bun bearer
 token checks; it does not make intentionally published report files private.
 Shared report links remain available through `/share`. The separately packaged

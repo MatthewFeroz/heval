@@ -116,6 +116,8 @@ The public showcase works without configuration. WorkOS AuthKit sign-in gates th
 4. For the hosted app, add its exact HTTPS origin and root callback in the same places, plus `<origin>/login` as its Sign-in URL.
 5. If using a custom Authentication API domain, set `VITE_WORKOS_API_HOSTNAME` and `WORKOS_API_HOSTNAME` to the hostname only (for example, `auth.example.com`). Otherwise leave the browser value empty and keep the server value at `api.workos.com`.
 
+Without a custom Authentication API domain, Heval enables AuthKit's browser-persisted staging session so sign-in survives navigation and reloads on Vercel. A same-site custom Authentication API domain uses HttpOnly-cookie sessions instead. See [WorkOS's session configuration](https://github.com/workos/authkit-react#authkitprovider-). Homepage and `/login` sign-ins open Studio; report/chart deep links keep their destination. Cloud reports belong to the signed-in account; use **Save private report** and **Save draft** to persist data and edits.
+
 Set `HEVAL_ENABLE_RUNNER=1` only where real harness execution should be allowed. Browser evaluators connect their own key in **Provider settings**. Saved keys are encrypted server-side; workers receive temporary proxy tokens. Never use a `VITE_` prefix for secrets. See [provider connections](docs/provider-connections.md).
 
 ## Commands
