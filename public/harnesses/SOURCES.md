@@ -14,4 +14,6 @@ trademark rights remain with their respective owners.
 | Google Antigravity | [Official Antigravity site](https://antigravity.google/assets/image/antigravity-logo.png) |
 | Grok | [T3 Code Grok mark](https://github.com/pingdotgg/t3code/blob/main/apps/marketing/public/harnesses/grok-dark.svg), identifying [xAI Grok](https://grok.com/) |
 
+| Cursor | [T3 Code Cursor mark](https://github.com/pingdotgg/t3code/blob/main/apps/marketing/public/harnesses/cursor_light.svg), identifying [Cursor](https://cursor.com/) |
+
 New assets were retrieved on 2026-09-16.

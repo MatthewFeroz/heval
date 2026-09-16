@@ -9,6 +9,7 @@ const harnesses = [
   { id: 'codex', name: 'Codex CLI', logo: 'codex.svg' },
   { id: 'grok', name: 'Grok', logo: 'grok.svg' },
   { id: 'pi', name: 'Pi Agent', logo: 'pi.svg' },
+  { id: 'cursor', name: 'Cursor', logo: 'cursor.svg' },
   { id: 'deep-agents', name: 'Deep Agents', logo: 'deepagents.svg' },
 ]
 
@@ -32,7 +33,7 @@ export function LandingHero() {
       </div>
       <div className="hero-inner shell">
         <h1 id="hero-title"><span>The open-source</span>{' '}<span>evaluation platform</span>{' '}<span>for coding agents.</span></h1>
-        <p className="hero-copy">Compare Claude Code, Codex, OpenCode, Pi, Deep Agents, Antigravity, and Grok.<br className="hero-copy-break" /> Run evaluations locally with Harbor. Inspect every trial. Share the evidence.</p>
+        <p className="hero-copy">Compare Claude Code, Codex, OpenCode, Pi, Deep Agents, Antigravity, Cursor, and Grok.<br className="hero-copy-break" /> Run evaluations locally with Harbor. Inspect every trial. Share the evidence.</p>
         <div className="hero-actions">
           <a className="primary-button" href="/reports"><BarChart3 size={21} />Import your results<ArrowRight size={19} /></a>
           <a className="hero-github" href="https://github.com/MatthewFeroz/heval" target="_blank" rel="noreferrer" aria-label="Explore the code on GitHub">

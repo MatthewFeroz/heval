@@ -1,6 +1,4 @@
 import { useEffect, useRef, useState } from 'react'
-import { Terminal } from '@xterm/xterm'
-import '@xterm/xterm/css/xterm.css'
 import {
   ArrowRight,
   BarChart3,
@@ -16,7 +14,7 @@ import {
   Trophy,
   Zap,
 } from 'lucide-react'
-import { featuredExperiment, type RunEvent, type Runner } from './data'
+import { featuredExperiment, type Runner } from './data'
 import resultCatalog from '../results/harbor/index.json'
 import featuredResults from '../results/harbor/terminal-bench-comparison.json'
 import { publicAuth, type AppAuth } from './auth'
@@ -24,6 +22,7 @@ import { Signup } from './Signup'
 import { RunWorkbench } from './RunWorkbench'
 import { STATIC_SITE } from './deployment'
 import { LandingHero } from './landing/LandingHero'
+import { HarnessTui } from './landing/HarnessTui'
 import { useSectionMotion } from './landing/useSectionMotion'
 import './landing/landing.css'
 
@@ -70,140 +69,6 @@ function Nav({ auth }: { auth: AppAuth }) {
   )
 }
 
-const ansi = {
-  reset: '\x1b[0m',
-  dim: '\x1b[2m',
-  bold: '\x1b[1m',
-  gray: '\x1b[38;2;128;128;128m',
-  darkGray: '\x1b[38;2;102;102;102m',
-  white: '\x1b[38;2;238;238;238m',
-  purple: '\x1b[38;2;190;140;245m',
-  blue: '\x1b[38;2;92;156;245m',
-  orange: '\x1b[38;2;245;167;66m',
-  teal: '\x1b[38;2;138;190;183m',
-  yellow: '\x1b[38;2;240;198;116m',
-  greenBg: '\x1b[48;2;36;49;38m',
-  userBg: '\x1b[48;2;52;52;64m',
-  openBg: '\x1b[48;2;30;30;30m',
-}
-
-const line = (text = '') => `${text}\r\n`
-
-function terminalFrame(runner: Runner, events: RunEvent[], isDone: boolean) {
-  const task = 'Fix the race condition in the async cache and make the full test suite pass.'
-  const recent = events.slice(-4)
-  const activity = recent.map((event) => {
-    const tool = event.kind === 'edit' ? 'Edit' : event.kind === 'test' ? 'Bash' : event.kind === 'inspect' ? 'Read' : event.kind === 'think' ? 'Thinking' : event.kind === 'finish' ? 'Done' : 'System'
-    return { ...event, tool }
-  })
-
-  if (runner.id === 'claude-code') {
-    let out = line(` ${ansi.bold}▐▛███▛█${ansi.reset}   ${ansi.bold}Claude Code v2.1.251${ansi.reset}`)
-    out += line(`${ansi.bold}▝▜██████▀${ansi.reset}  Opus 5 · Claude Team`)
-    out += line(`  ▝▝ ▝▝    ~/benchmark/concurrent-cache`)
-    out += line()
-    out += line(`  ${ansi.gray}Tackle your toughest work with Opus 5. Switch anytime with /model.${ansi.reset}`)
-    out += line()
-    out += line(`${ansi.purple}❯${ansi.reset} ${task}`)
-    out += line()
-    activity.forEach((event) => { out += line(`  ${ansi.purple}${event.tool === 'Thinking' ? '✻' : '⏺'} ${event.tool}${ansi.reset} ${event.text}`); out += line(`    ${ansi.gray}${event.detail || ''}${ansi.reset}`) })
-    out += line(`${ansi.gray}${'─'.repeat(96)}${ansi.reset}`)
-    out += line(`${ansi.bold}❯${ansi.reset} ${ansi.gray}${isDone ? 'Try “review my changes”' : ''}${ansi.reset}`)
-    out += line(`${ansi.gray}${'─'.repeat(96)}${ansi.reset}`)
-    out += line(`  ${ansi.gray}⏵⏵ auto mode on (shift+tab to cycle) · ← for agents${ansi.reset}`)
-    return out
-  }
-
-  if (runner.id === 'codex') {
-    let out = line(`${ansi.dim}╭──────────────────────────────────────────────╮${ansi.reset}`)
-    out += line(`${ansi.dim}│ >_ ${ansi.reset}${ansi.bold}OpenAI Codex${ansi.reset}${ansi.dim} (v0.150.1)                   │${ansi.reset}`)
-    out += line(`${ansi.dim}│                                              │${ansi.reset}`)
-    out += line(`${ansi.dim}│ model:     ${ansi.reset}gpt-5.6-sol${ansi.dim}   /model to change    │${ansi.reset}`)
-    out += line(`${ansi.dim}│ directory: ${ansi.reset}~/benchmark/concurrent-cache${ansi.dim}      │${ansi.reset}`)
-    out += line(`${ansi.dim}╰──────────────────────────────────────────────╯${ansi.reset}`)
-    out += line()
-    out += line(`  ${ansi.bold}Tip:${ansi.reset} ${ansi.dim}Use /statusline to configure the status line.${ansi.reset}`)
-    out += line()
-    out += line(`${ansi.bold}›${ansi.reset} ${task}`)
-    out += line()
-    activity.forEach((event) => { out += line(`${ansi.dim}•${ansi.reset} ${ansi.bold}${event.tool}${ansi.reset} ${event.text}`); out += line(`  ${ansi.dim}${event.detail || ''}${ansi.reset}`) })
-    out += line()
-    out += line(`${ansi.bold}›${ansi.reset} ${ansi.dim}Ask Codex to do anything${ansi.reset}${isDone ? '' : ' ▌'}`)
-    out += line(`  ${ansi.dim}gpt-5.6-sol default · ~/benchmark/concurrent-cache${ansi.reset}`)
-    return out
-  }
-
-  if (runner.id === 'opencode') {
-    let out = line()
-    out += line(`              ${ansi.gray}                   ${ansi.white}${ansi.bold}             ▄${ansi.reset}`)
-    out += line(`              ${ansi.gray}█▀▀█ █▀▀█ █▀▀█ █▀▀▄ ${ansi.white}${ansi.bold}█▀▀▀ █▀▀█ █▀▀█ █▀▀▀${ansi.reset}`)
-    out += line(`              ${ansi.gray}█  █ █  █ █▀▀▀ █  █ ${ansi.white}${ansi.bold}█   █ █  █ █  █ █▀▀▀${ansi.reset}`)
-    out += line(`              ${ansi.gray}▀▀▀▀ █▀▀▀ ▀▀▀▀ ▀  ▀ ${ansi.white}${ansi.bold}▀▀▀▀ ▀▀▀▀ ▀▀▀▀ ▀▀▀▀${ansi.reset}`)
-    out += line()
-    out += line(`  ${ansi.blue}┃${ansi.openBg}${' '.repeat(92)}${ansi.reset}`)
-    out += line(`  ${ansi.blue}┃${ansi.openBg}  ${task.padEnd(90)}${ansi.reset}`)
-    out += line(`  ${ansi.blue}┃${ansi.openBg}${' '.repeat(92)}${ansi.reset}`)
-    out += line(`  ${ansi.blue}┃${ansi.openBg}  ${ansi.blue}Build${ansi.reset}${ansi.openBg} · ${ansi.white}GPT-5.6${ansi.gray} OpenAI${' '.repeat(67)}${ansi.reset}`)
-    out += line(`  ${ansi.blue}╹${ansi.reset}${ansi.darkGray}${'▀'.repeat(92)}${ansi.reset}`)
-    activity.forEach((event) => { out += line(`  ${ansi.blue}┃ ${event.tool}${ansi.reset} ${event.text}`); out += line(`    ${ansi.gray}${event.detail || ''}${ansi.reset}`) })
-    if (!activity.length) out += line(`     ${ansi.orange}● Tip${ansi.reset} ${ansi.gray}Run ${ansi.white}/connect${ansi.gray} to add an AI provider${ansi.reset}`)
-    out += line()
-    out += line(`  ${ansi.gray}~/benchmark/concurrent-cache${' '.repeat(34)}1.18.25${ansi.reset}`)
-    return out
-  }
-
-  let out = line(` ${ansi.bold}${ansi.teal}pi${ansi.reset}${ansi.darkGray} v0.84.4${ansi.reset}`)
-  out += line(` ${ansi.darkGray}escape${ansi.gray} interrupt · ${ansi.darkGray}ctrl+c/ctrl+d${ansi.gray} clear/exit · ${ansi.darkGray}/${ansi.gray} commands · ${ansi.darkGray}!${ansi.gray} bash${ansi.reset}`)
-  out += line(` ${ansi.darkGray}Press ctrl+o to show full startup help and loaded resources.${ansi.reset}`)
-  out += line()
-  out += line(`${ansi.userBg} ${task.padEnd(94)}${ansi.reset}`)
-  out += line()
-  activity.forEach((event) => { const bg = event.kind === 'edit' || event.kind === 'test' ? ansi.greenBg : ''; out += line(`${bg}${ansi.bold}${event.tool.toLowerCase()}${ansi.reset}${bg} ${event.text.padEnd(60)}${ansi.reset}`); out += line(`${bg}${ansi.gray}${event.detail || ''}${ansi.reset}`) })
-  out += line(isDone ? 'Task complete.' : `${ansi.dim}Thinking…${ansi.reset}`)
-  out += line(`${ansi.darkGray}${'─'.repeat(96)}${ansi.reset}`)
-  out += line(isDone ? ' ' : '\x1b[7m \x1b[0m')
-  out += line(`${ansi.darkGray}${'─'.repeat(96)}${ansi.reset}`)
-  out += line(`${ansi.darkGray}~/benchmark/concurrent-cache${ansi.reset}`)
-  out += line(`${ansi.darkGray}0.0%/272k (auto)                         (openai) gpt-5.6 · medium${ansi.reset}`)
-  return out
-}
-
-function HarnessTui({ runner, visibleEvents, isDone, rawData }: { runner: Runner; visibleEvents: RunEvent[]; isDone: boolean; rawData?: string }) {
-  const host = useRef<HTMLDivElement>(null)
-  const terminal = useRef<Terminal | null>(null)
-
-  useEffect(() => {
-    if (!host.current) return
-    const term = new Terminal({
-      cols: 96,
-      rows: 24,
-      convertEol: true,
-      cursorBlink: true,
-      disableStdin: true,
-      fontFamily: '"DM Mono", "SFMono-Regular", Consolas, monospace',
-      fontSize: 9,
-      lineHeight: 1.08,
-      scrollback: 0,
-      theme: { background: runner.id === 'opencode' ? '#0a0a0a' : runner.id === 'pi-agent' ? '#282c34' : '#0d0e0e', foreground: '#d8d8d4', cursor: '#f0f0ec' },
-    })
-    term.open(host.current)
-    terminal.current = term
-    const observer = new ResizeObserver(([entry]) => {
-      const size = Math.max(8, Math.min(14, entry.contentRect.width / 55))
-      term.options.fontSize = size
-      term.refresh(0, term.rows - 1)
-    })
-    observer.observe(host.current)
-    return () => { observer.disconnect(); term.dispose(); terminal.current = null }
-  }, [runner.id])
-
-  useEffect(() => {
-    terminal.current?.write(`\x1b[2J\x1b[H${rawData || terminalFrame(runner, visibleEvents, isDone)}`)
-  }, [runner, visibleEvents, isDone, rawData])
-
-  return <div className="real-terminal" ref={host} aria-label={`${runner.name} terminal replay`} />
-}
-
 function RunnerLane({ runner, time, focused, onFocus, rawData, liveStatus, onLiveRun }: { runner: Runner; time: number; focused: boolean; onFocus: () => void; rawData?: string; liveStatus?: string; onLiveRun: () => void }) {
   const visibleEvents = runner.events.filter((event) => event.at <= time)
   const replayDuration = runnerEnd(runner)
@@ -223,18 +88,13 @@ function RunnerLane({ runner, time, focused, onFocus, rawData, liveStatus, onLiv
           <strong>{runner.name}</strong>
           <span>{runner.version}</span>
         </div>
-        <div className={`lane-state ${isDone ? runner.outcome : 'running'}`}>
-          <span />{liveStatus || (isDone ? runner.outcome : 'running')}
+        <div className={`lane-state ${isDone ? runner.outcome : time ? 'running' : 'ready'}`}>
+          <span />{liveStatus || (isDone ? runner.outcome : time ? 'running' : 'ready')}
         </div>
         {!STATIC_SITE && <button className="live-run-button" onClick={(event) => { event.stopPropagation(); onLiveRun() }}>{liveStatus === 'running' ? 'LIVE' : 'RUN REAL'}</button>}
       </div>
-      <div className="model-row">
-        <span>{runner.model}</span>
-        <small>{runner.provider}</small>
-      </div>
       <div className="terminal-body">
-        <div className="terminal-top"><span /><span /><span /><small>~/benchmark/{featuredExperiment.task}</small></div>
-        <HarnessTui runner={runner} visibleEvents={visibleEvents} isDone={isDone} rawData={rawData} />
+        <HarnessTui runner={runner} visibleEvents={visibleEvents} isDone={isDone} started={time > 0} rawData={rawData} />
       </div>
       <div className="lane-progress"><span style={{ width: `${progress * 100}%` }} /></div>
       <div className="lane-stats">

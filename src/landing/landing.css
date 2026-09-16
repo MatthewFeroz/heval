@@ -65,7 +65,9 @@
 .hf-codex { --x: min(560px, 39vw); --y: 128px; --s: 96px; --rot: 7deg; --depth: 1.2; --d: 460ms; --dur: 9.2s; --dx: -4px; --dy: -10px; --wob: 2deg; --fx: 160px; --fy: -40px; }
 .hf-grok { --x: max(-440px, -32vw); --y: 440px; --s: 80px; --rot: -6deg; --depth: .9; --d: 540ms; --dur: 11.5s; --dx: 3px; --dy: -9px; --wob: -3deg; --fx: -120px; --fy: 80px; }
 .hf-pi { --x: min(440px, 32vw); --y: 440px; --s: 80px; --rot: 7deg; --depth: .9; --d: 700ms; --dur: 7.8s; --dx: -3px; --dy: -11px; --wob: 3deg; --fx: 120px; --fy: 80px; }
-.hf-deep-agents { --x: 0px; --y: 20px; --s: 58px; --rot: -4deg; --depth: .45; --d: 780ms; --dur: 10s; --dx: 2px; --dy: -8px; --wob: 3deg; --fx: 0px; --fy: -80px; --tint: #7fc8ff12; }
+.hf-deep-agents { --x: -80px; --y: 20px; --s: 58px; --rot: -4deg; --depth: .45; --d: 780ms; --dur: 10s; --dx: 2px; --dy: -8px; --wob: 3deg; --fx: 0px; --fy: -80px; --tint: #7fc8ff12; }
+
+.hf-cursor { --x: 80px; --y: 20px; --s: 58px; --rot: 5deg; --depth: .45; --d: 820ms; --dur: 9s; --dx: -2px; --dy: -8px; --wob: -3deg; --fx: 20px; --fy: -80px; }
 
 @keyframes home-rise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
 @keyframes home-mark-in { from { opacity: 0; transform: translate(var(--fx), var(--fy)) rotate(calc(var(--rot) + 24deg)) scale(.6); } to { opacity: 1; transform: translate(0, 0) rotate(var(--rot)) scale(1); } }
@@ -73,7 +75,7 @@
 
 /* Carry the same restrained surfaces and spacing through the product sections. */
 .landing-page .kicker { color: #a1a1aa; font-size: 10px; letter-spacing: .12em; }
-.landing-page .race-area { width: calc(100% - 48px); margin: 0 auto; padding: 0 0 110px; }
+.landing-page .race-area { width: min(1176px, calc(100% - 64px)); margin: 0 auto; padding: 0 0 110px; }
 .landing-page .section-heading h2, .landing-page .studio-intro h2 { font-weight: 500; letter-spacing: -.04em; line-height: 1.1; }
 .landing-page .split-heading > p { color: #a1a1aa; line-height: 1.7; }
 .landing-page .race-shell { border-color: #ffffff1a; border-radius: 14px; transform: perspective(2000px) rotateX(2deg); transition: transform .6s; box-shadow: 0 28px 64px -28px #000c; }
@@ -81,8 +83,6 @@
 .landing-page .race-toolbar { height: 36px; }
 .landing-page .task-strip { padding: 12px 20px; }
 .landing-page .lane-head { height: 48px; padding-block: 8px; }
-.landing-page .model-row { height: 28px; }
-.landing-page .terminal-top { display: none; }
 .landing-page .real-terminal { height: 100%; }
 .landing-page .studio-showcase { padding-block: 100px; border-top: 1px solid var(--line-soft); gap: 80px; }
 .landing-page .studio-intro h2 { font-size: clamp(32px, 3.5vw, 48px); }
@@ -133,6 +133,7 @@
   .landing-page .studio-showcase { gap: 40px; }
 }
 @media (max-width: 960px) {
+  .landing-page .race-area { width: min(860px, calc(100% - 24px)); }
   .landing-page .method-grid { grid-template-columns: 1fr 1fr; }
   .landing-page .report-card:last-child { grid-column: 1 / -1; }
 }
@@ -142,7 +143,7 @@
   .hero-copy { font-size: 16px; margin-bottom: 20px; }
   .hero-actions { gap: 12px; }
   .hero-actions .primary-button { min-height: 48px; padding: 12px 22px; font-size: 15px; }
-  .hf-opencode, .hf-antigravity, .hf-deep-agents { --y: 12px; --s: 48px; }
+  .hf-opencode, .hf-antigravity, .hf-deep-agents, .hf-cursor { --y: 12px; --s: 48px; }
   .hf-grok, .hf-pi { --y: calc(100% - 120px); }
 }
 @media (max-width: 820px) {
@@ -154,9 +155,10 @@
   .hf-opencode { --x: -11vw; --y: 20px; --s: 46px; --rot: -4deg; }
   .hf-antigravity { --x: 11vw; --y: 20px; --s: 46px; --rot: 5deg; }
   .hf-codex { --x: 34vw; --y: 14px; --s: 52px; --rot: 8deg; }
-  .hf-grok { --x: -23vw; --y: 82px; --s: 44px; }
-  .hf-pi { --x: 23vw; --y: 82px; --s: 44px; }
-  .hf-deep-agents { --y: 78px; --s: 44px; }
+  .hf-grok { --x: -34vw; --y: 82px; --s: 44px; }
+  .hf-pi { --x: 34vw; --y: 82px; --s: 44px; }
+  .hf-deep-agents { --x: -11vw; --y: 78px; --s: 44px; }
+  .hf-cursor { --x: 11vw; --y: 78px; --s: 44px; }
 }
 @media (max-width: 720px) {
   .landing-page .shell { width: calc(100% - 40px); }
@@ -173,6 +175,7 @@
   .hero-harnesses { overflow: clip; }
   .landing-page .race-area { width: calc(100% - 24px); padding-block: 0 65px; }
   .landing-page .race-shell { transform: none; }
+  .landing-page .terminal-body { height: 300px; }
   .landing-page .studio-showcase { padding-block: 64px; gap: 28px; }
   .landing-page .studio-intro p { font-size: 15px; }
   .landing-page .evaluation-card { padding: 20px; }

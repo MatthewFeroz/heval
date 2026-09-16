@@ -107,16 +107,13 @@ a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outlin
 .lane-state.failed span { background: #d57a70; }
 .live-run-button { flex: 0 0 auto; padding: 4px 6px; border: 1px solid #343735; border-radius: 5px; background: #171918; color: #858a87; font: 500 7px 'DM Mono'; cursor: pointer; }
 .live-run-button:hover { border-color: var(--runner-color); color: #e4e5e1; }
-.model-row { height: 37px; display: flex; align-items: center; justify-content: space-between; padding: 0 13px; border-bottom: 1px solid var(--line-soft); background: #111212; font-family: 'DM Mono'; }
-.model-row span { color: #b5b9b6; font-size: 9px; }
-.model-row small { color: #515553; font-size: 7px; text-transform: uppercase; }
 .terminal-body { height: 320px; overflow: hidden; background: radial-gradient(circle at 50% 0,rgba(255,255,255,.018),transparent 50%); }
 .terminal-top { height: 28px; display: flex; align-items: center; gap: 4px; padding: 0 11px; border-bottom: 1px solid #191b1a; }
 .terminal-top > span { width: 5px; height: 5px; border-radius: 50%; background: #333635; }
 .terminal-top small { margin-left: auto; color: #404442; font-family: 'DM Mono'; font-size: 7px; }
-.real-terminal { width: 100%; height: calc(100% - 28px); padding: 10px 12px 6px; overflow: hidden; }
+.real-terminal { width: 100%; height: 100%; background: #0d0e0e; padding: 10px 12px 6px; overflow: hidden; }
 .real-terminal .xterm { height: 100%; }
-.real-terminal .xterm-viewport { overflow: hidden !important; }
+.real-terminal .xterm .xterm-viewport { overflow: hidden !important; background: #0d0e0e; }
 .real-terminal .xterm-screen { margin: 0 auto; }
 .native-tui { height: calc(100% - 28px); overflow: hidden; padding: 14px 16px; font-family: 'DM Mono'; font-size: 9px; line-height: 1.45; color: #aeb2af; }
 .native-tui b { font-weight: 500; color: #e3e4df; }
