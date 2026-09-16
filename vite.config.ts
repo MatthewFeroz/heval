@@ -20,7 +20,7 @@ function hevalResults(): Plugin {
         if (req.url === '/studio' || req.url?.startsWith('/studio?')) {
           req.url = `/studio.html${req.url.slice('/studio'.length)}`
         }
-        if (req.url?.match(/^\/(reports|share)(\?|$)/)) req.url = `/reports.html${req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : ''}`
+        if (req.url?.match(/^\/(reports|share|machines|evaluations)(\?|$)/)) req.url = `/reports.html${req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : ''}`
         next()
       })
     },

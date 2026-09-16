@@ -48,6 +48,13 @@ code { overflow-wrap: anywhere; }
 .report-invite { margin-top: 22px; border-top: 1px solid #dbe2d8; }
 .report-members { list-style: none; padding: 0; }
 .report-members li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; border-top: 1px solid #dbe2d8; padding: 16px 0; overflow-wrap: anywhere; }
+.runner-machines, .runner-runs { list-style: none; padding: 0; }
+.runner-machines li, .runner-runs li { padding: 20px 0; border-top: 1px solid #dbe2d8; overflow-wrap: anywhere; }
+.runner-machines strong { margin-right: 12px; }
+.runner-review { background: #f6f8f2; padding: 20px; margin: 20px 0; border-radius: 8px; }
+.runner-review dl { margin: 0; display: grid; gap: 14px; }
+.runner-review dl div { display: grid; grid-template-columns: 90px 1fr; gap: 14px; }
+.runner-review dt { color: #6d7a69; }.runner-review dd { margin: 0; overflow-wrap: anywhere; }
 table { width: 100%; border-collapse: collapse; font-size: 13px; } th,td { text-align: left; padding: 12px 10px; border-bottom: 1px solid #e1e6df; }
 [role=alert] { color: #a13326; padding: 12px; background: #fff0eb; border-radius: 8px; }
 [role=status] { color: #34632d; }.report-notice { font-size: 13px; }

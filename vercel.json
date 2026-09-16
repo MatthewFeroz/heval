@@ -8,6 +8,8 @@
     { "source": "/login", "destination": "/index.html" },
     { "source": "/studio", "destination": "/studio.html" },
     { "source": "/reports", "destination": "/reports.html" },
-    { "source": "/share", "destination": "/reports.html" }
+    { "source": "/share", "destination": "/reports.html" },
+    { "source": "/machines", "destination": "/reports.html" },
+    { "source": "/evaluations", "destination": "/reports.html" }
   ]
 }
