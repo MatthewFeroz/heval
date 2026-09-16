@@ -23,5 +23,5 @@ reports, Studio, and connected-machine entry points retain Heval's own data and 
 
 Motion stops for reduced-motion preferences and pauses outside the viewport or
 when the tab is hidden. Pointer parallax is enabled only for a fine pointer.
-Cards retain accessible names for screen readers and keyboard navigation;
-no visible text labels or hover highlights are shown.
+The icons are non-interactive images with accessible names for screen readers;
+no links, visible text labels, or hover highlights are shown.

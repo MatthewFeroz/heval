@@ -3,13 +3,13 @@ import { ArrowRight, ArrowUpRight, BarChart3 } from 'lucide-react'
 import { startHomeMotion } from './motion'
 
 const harnesses = [
-  { id: 'claude', name: 'Claude Code', logo: 'claude.svg', href: '#compare' },
-  { id: 'opencode', name: 'OpenCode', logo: 'opencode.svg', href: '#compare' },
-  { id: 'antigravity', name: 'Antigravity', logo: 'antigravity.png', href: 'https://antigravity.google/' },
-  { id: 'codex', name: 'Codex CLI', logo: 'codex.svg', href: '#compare' },
-  { id: 'grok', name: 'Grok', logo: 'grok.svg', href: 'https://grok.com/' },
-  { id: 'pi', name: 'Pi Agent', logo: 'pi.svg', href: '#compare' },
-  { id: 'deep-agents', name: 'Deep Agents', logo: 'deepagents.svg', href: 'https://github.com/langchain-ai/deepagents' },
+  { id: 'claude', name: 'Claude Code', logo: 'claude.svg' },
+  { id: 'opencode', name: 'OpenCode', logo: 'opencode.svg' },
+  { id: 'antigravity', name: 'Antigravity', logo: 'antigravity.png' },
+  { id: 'codex', name: 'Codex CLI', logo: 'codex.svg' },
+  { id: 'grok', name: 'Grok', logo: 'grok.svg' },
+  { id: 'pi', name: 'Pi Agent', logo: 'pi.svg' },
+  { id: 'deep-agents', name: 'Deep Agents', logo: 'deepagents.svg' },
 ]
 
 export function LandingHero() {
@@ -23,17 +23,12 @@ export function LandingHero() {
   return (
     <section className="hero" ref={hero} aria-labelledby="hero-title">
       <div className="hero-grid" aria-hidden="true" />
-      <div className="hero-harnesses" ref={field} aria-label="Coding agent harness ecosystem">
-        {harnesses.map(harness => {
-          const external = harness.href.startsWith('https:')
-          return (
-            <a className={`hero-float-mark hf-${harness.id}`} href={harness.href} key={harness.id}
-              target={external ? '_blank' : undefined} rel={external ? 'noreferrer' : undefined}
-              aria-label={external ? `Visit ${harness.name}` : `See ${harness.name} in the example replay`}>
-              <span className="hero-harness"><img src={`/harnesses/${harness.logo}`} alt="" width="64" height="64" /></span>
-            </a>
-          )
-        })}
+      <div className="hero-harnesses" ref={field} role="group" aria-label="Coding agent harness ecosystem">
+        {harnesses.map(harness => (
+          <span className={`hero-float-mark hf-${harness.id}`} key={harness.id}>
+            <span className="hero-harness"><img src={`/harnesses/${harness.logo}`} alt={harness.name} width="64" height="64" /></span>
+          </span>
+        ))}
       </div>
       <div className="hero-inner shell">
         <h1 id="hero-title"><span>The open-source</span>{' '}<span>evaluation platform</span>{' '}<span>for coding agents.</span></h1>
