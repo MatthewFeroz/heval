@@ -121,6 +121,66 @@ and is not bundled.
 
 ## Connected runner preview
 
+### One Merge Gateway key for Heval evaluations
+
+The source-built preview supports Codex, Claude Code, OpenCode, and Pi through
+Harbor 0.23.0. These commands do not change your standalone harness settings.
+Use the same `--state /absolute/directory` on every command when overriding
+the default `~/.heval/runner` state directory.
+
+```sh
+heval provider connect merge
+# Paste the key at the hidden prompt; validation reads the Merge model catalog.
+heval provider status merge
+# Choose an exact model ID from the validated tool-capable models.
+heval runner setup --model YOUR_MODEL_ID --harnesses codex,claude-code,opencode,pi
+```
+
+Setup creates four one-task smoke profiles without running models. A saved key
+is shared by all profiles marked `"provider": "merge"`. No per-harness env files
+are needed. Each profile keeps its own model selection; edit its JSON to change
+that selection or its local task paths. Existing profiles are never overwritten.
+
+On Linux with Harbor and Docker installed, test the full local execution path:
+
+```sh
+heval runner test --profile merge-codex
+heval runner test --profile merge-claude-code
+heval runner test --profile merge-opencode
+heval runner test --profile merge-pi
+```
+
+**Each test makes real model calls and consumes credits.** It launches the
+selected harness on the bundled file-writing task and checks the executable
+grader result. It requires no website, sign-in, or pairing. A successful run
+prints the results path for `heval open`; failed execution or grading exits
+nonzero. Ctrl+C requests cancellation and waits for cleanup. If cleanup fails,
+use `heval runner cleanup RUN_ID` with the same state directory before retrying.
+This is a connection smoke test, not a capability benchmark or spending cap.
+
+The same profiles appear on the connected machine after `runner connect` and
+`runner start`. Keys stay on the machine; only profile metadata and normalized
+results go to the hosted workspace. The local key is stored in `merge.json` with
+0600 permissions (not encrypted). `provider status` never prints it. The supervisor
+reads the current key when a run starts and injects only the selected harness's
+credential variable. Generated profiles and execution metadata contain no key.
+Raw third-party harness logs should still be treated as sensitive.
+
+Re-run `provider connect merge` to validate and replace the key or refresh the
+catalog. Failed validation preserves the old connection. Use
+`heval provider disconnect merge` to remove the saved key; this blocks future
+Merge launches but does not revoke the upstream key or stop already running jobs.
+For automation, pipe a key from your secret manager into
+`heval provider connect merge --key-stdin`; never put it in command arguments.
+
+Harbor's OpenCode and Pi adapters use an `openai/` routing prefix in raw job
+metadata, preserving the full Merge model ID after that prefix. Codex uses
+Responses with WebSockets disabled; Claude uses Anthropic Messages; Pi uses
+Chat Completions. Catalog validation does not prove every model works with every
+harness: run the relevant smoke profiles to verify your chosen combinations.
+
+This preview does not extend the separate Bun web workbench's Pi-only BYOK proxy.
+
 The `0.2.0-preview.0` source build adds `heval runner connect`, `start`, `status`,
 and `cleanup` for Linux machines with Harbor 0.23.0 and Docker. It is not yet
 published on npm. Pair through the hosted Machines page, then keep the daemon

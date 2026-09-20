@@ -81,7 +81,7 @@ export async function runDaemon(options: { directory: string; harbor: string; su
         const registry = options.profileFile ?? join(directory, 'profiles.json')
         let profiles: ReturnType<typeof loadProfiles> = []
         let readiness = health
-        try { profiles = loadProfiles(registry) } catch { readiness = { ready: false, health: 'An approved profile is invalid. Check profiles.json on this machine.' } }
+        try { profiles = loadProfiles(registry, directory) } catch { readiness = { ready: false, health: 'An approved profile or provider connection is invalid. Check profiles.json and provider status on this machine.' } }
         const runsRoot = join(directory, 'runs')
         if (existsSync(runsRoot) && readdirSync(runsRoot).some(id => existsSync(join(runsRoot, id, 'cleanup-required.json')))) readiness = { ready: false, health: 'A previous execution needs local cleanup. See the runner documentation.' }
         const pendingPath = join(directory, 'pending-claim.json')
@@ -110,7 +110,7 @@ export async function runDaemon(options: { directory: string; harbor: string; su
               try { snapshotProfile(requestedProfile(profile, active.requestedAttempts), runDir) }
               catch { await cloud.mutation(api.runners.finish, { ...args, status: 'failed', message: 'Task files changed or could not be copied. Review the machine profile before starting again.' }); continue }
             }
-            writeJson(executionPath, { claimId: active.claimId, harbor: options.harbor, timeoutSeconds: active.profile.timeoutSeconds, envFile: profile.envFile })
+            writeJson(executionPath, { claimId: active.claimId, harbor: options.harbor, timeoutSeconds: active.profile.timeoutSeconds, envFile: profile.envFile, mergeConnection: profile.mergeConnection })
           }
           if (readJson<{ claimId: string }>(executionPath).claimId !== active.claimId) throw new Error('Local execution identity differs from the cloud claim. Inspect this state directory.')
           rmSync(pendingPath, { force: true })

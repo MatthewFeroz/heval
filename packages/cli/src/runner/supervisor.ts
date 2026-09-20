@@ -5,9 +5,10 @@ import { join } from 'node:path'
 import { exportJob } from '../../../../harbor/report/trials'
 import { parseReport } from '../../../../src/reports/format'
 import { readJson, writeJson } from './files'
+import { mergeEnvironment } from '../merge'
 
 const exec = promisify(execFile)
-export type Execution = { claimId: string; harbor: string; timeoutSeconds: number; envFile?: string }
+export type Execution = { claimId: string; harbor: string; timeoutSeconds: number; envFile?: string; mergeConnection?: string }
 export type Outcome = { status: 'completed' | 'failed' | 'cancelled' | 'interrupted'; json?: string; message?: string }
 export function processKey(pid: number): string | null {
   try {
@@ -75,11 +76,17 @@ export async function supervise(directory: string) {
   let child: ReturnType<typeof spawn> | undefined
   let timer: ReturnType<typeof setInterval> | undefined
   let killTimer: ReturnType<typeof setTimeout> | undefined
+  let terminate: (() => void) | undefined
   let cancelled = false, timedOut = false, stopping = false
   const log = openSync(join(directory, 'harbor.log'), 'a', 0o600)
   try {
     // Do not inherit the daemon's cloud credential or unrelated host credentials.
     const env = Object.fromEntries(['PATH', 'HOME', 'LANG', 'LC_ALL', 'TMPDIR', 'SSL_CERT_FILE', 'SSL_CERT_DIR', 'DOCKER_HOST', 'DOCKER_CONTEXT', 'DOCKER_CONFIG', 'DOCKER_CERT_PATH', 'DOCKER_TLS_VERIFY', 'SSH_AUTH_SOCK'].flatMap(k => process.env[k] ? [[k, process.env[k]!]] : []))
+    if (input.mergeConnection) {
+      if (input.envFile) throw new Error('Merge runs must not override the saved connection with envFile.')
+      const config = readJson<{ agents: { name: string }[] }>(join(directory, 'harbor.json'))
+      Object.assign(env, mergeEnvironment(input.mergeConnection, config.agents[0].name))
+    }
     const args = ['run', '--config', join(directory, 'harbor.json')]
     if (input.envFile) args.push('--env-file', input.envFile)
     child = spawn(input.harbor, args, { cwd: directory, env: { ...env, HARBOR_TELEMETRY: '0' }, detached: true, stdio: ['ignore', log, log] })
@@ -91,8 +98,9 @@ export async function supervise(directory: string) {
       try { process.kill(-pid, 'SIGINT') } catch { /* already exited */ }
       killTimer = setTimeout(() => { try { process.kill(-pid, 'SIGKILL') } catch { /* exited */ } }, 20_000)
     }
-    process.once('SIGTERM', () => { cancelled = true; stop() })
-    process.once('SIGINT', () => { cancelled = true; stop() })
+    terminate = () => { cancelled = true; stop() }
+    process.once('SIGTERM', terminate)
+    process.once('SIGINT', terminate)
     const deadline = Date.now() + input.timeoutSeconds * 1000
     timer = setInterval(() => {
       if (existsSync(join(directory, 'cancel'))) { cancelled = true; stop() }
@@ -113,6 +121,7 @@ export async function supervise(directory: string) {
     }
   } catch { outcome = { status: 'failed', message: 'Harbor could not start. Check the machine’s local logs and approved profile.' } }
   finally {
+    if (terminate) { process.removeListener('SIGTERM', terminate); process.removeListener('SIGINT', terminate) }
     if (timer) clearInterval(timer)
     if (killTimer) clearTimeout(killTimer)
     closeSync(log)

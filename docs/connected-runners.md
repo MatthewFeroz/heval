@@ -66,6 +66,23 @@ The daemon stores its credential, profiles, and runs under `~/.heval/runner` by 
 
 ## 3. Approve a model-backed evaluation
 
+For Merge Gateway, the CLI can now create the connection and profiles for you:
+
+```sh
+heval provider connect merge
+heval provider status merge
+heval runner setup --model YOUR_MODEL_ID --harnesses codex,claude-code,opencode,pi
+heval runner test --profile merge-codex
+```
+
+The hidden key prompt validates the catalog; setup makes no model calls. The
+last command runs a real model-backed smoke test locally and uses credits.
+No pairing is needed for local testing. Once paired, these same profiles are
+available from Machines & runs. Use the same `--state` directory throughout.
+See [the CLI connection guide](../packages/cli/README.md#one-merge-gateway-key-for-heval-evaluations)
+for replacement, removal, per-harness tests, and storage details. Merge profiles
+use `"provider": "merge"` instead of `envFile`; mixing the two is rejected.
+
 The browser can select only profiles advertised by its paired machine. It cannot supply shell commands, file paths, Docker settings, or model keys. This release supports **explicit local Harbor task directories**, one agent/model per profile, 1–60 total trials, one concurrent trial, no automatic Harbor retries, and a maximum two-hour job deadline. Download/prepare benchmark tasks on the machine first. Unverified catalog versions, registry globs, multi-agent sweeps, and automatic cloud provisioning aren't offered as runnable choices.
 
 Add an entry to `~/.heval/runner/profiles.json` while retaining the setup profile:
@@ -103,7 +120,7 @@ Create `one-task.json` alongside it, replacing the example model and task path w
 }
 ```
 
-Put the provider variables required by that Harbor agent in the local `envFile`, e.g. `OPENAI_API_KEY=...`, with restricted permissions. Never paste them into Heval or commit them. The supervisor deliberately does not inherit arbitrary credentials from the daemon's environment. Agent `kwargs`, `env`, and explicit setup/execution timeout overrides are accepted from the locally approved JSON. Supported built-in agents are Oracle, Codex, Claude Code, OpenCode, Pi, and Terminus 2; only the Oracle/Docker route has been exercised without paid credentials in the automated smoke test. Other combinations need your own compatibility/model-access check.
+For manually configured providers, put the variables required by the Harbor agent in the local `envFile`, e.g. `OPENAI_API_KEY=...`, with restricted permissions. Never commit them. The supervisor deliberately does not inherit arbitrary credentials from the daemon's environment. Agent `kwargs`, `env`, and explicit setup/execution timeout overrides are accepted from manually configured JSON. Merge profiles generate routing and harness settings automatically and reject manual `kwargs`/`env` overrides. Supported built-in agents are Oracle, Codex, Claude Code, OpenCode, Pi, and Terminus 2; only the Oracle/Docker route has been exercised without paid credentials in the automated cloud smoke test. Model-backed combinations need your own compatibility/model-access check.
 
 Task contents and executable configuration contribute to the profile digest. Each claimed run gets a copied task snapshot; a concurrent task edit aborts before execution. A changed profile cannot silently execute under an older browser selection. Identical profile metadata/configuration and task contents on two machines give the same digest despite different absolute task paths. Base image tags and provider model aliases may still change upstream; pin those yourself for published comparisons. Harness installation dependencies are not automatically frozen by Heval.
 
