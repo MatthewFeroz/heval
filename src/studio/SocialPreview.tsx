@@ -1,6 +1,8 @@
+import { PRESENTATION_DEFAULT_THEME } from '../charts/presentation-defaults'
+import { browserSocialPreview } from './browser-social-preview'
 import { useAppAuth, authorizedFetch } from '../auth'
 import { SOCIAL_THEMES, type SocialTheme } from '../charts/social-themes'
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, type ReactNode } from 'react'
 import {
   SOCIAL_DEFAULTS,
   SOCIAL_PRESETS,
@@ -14,11 +16,15 @@ import type { TrialRow } from '../charts/trial'
 
 export function SocialPreview({
   rows,
+  serverExports = true,
+  hostedExportControls,
   options,
   onChange,
   unavailableReason,
   collectionUnavailableReason,
 }: {
+  hostedExportControls?: (ready: boolean, collectionReady: boolean) => ReactNode
+  serverExports?: boolean
   rows: readonly TrialRow[]
   options?: SocialSettings
   onChange: (settings: SocialSettings) => void
@@ -27,7 +33,7 @@ export function SocialPreview({
 }) {
   const auth = useAppAuth()
   const frames = useRef<(HTMLIFrameElement | null)[]>([])
-  const [checks, setChecks] = useState<Record<number, { errors: string[]; adjustments: string[] }>>(
+  const [checks, setChecks] = useState<Record<number, { errors: string[]; adjustments: string[]; svg?: string }>>(
     {},
   )
   useEffect(() => {
@@ -68,6 +74,13 @@ export function SocialPreview({
       setChecks({})
       setError('')
       setLoading(true)
+      if (!serverExports) {
+        try {
+          setPreview({ ...browserSocialPreview(rows, socialSettings(JSON.parse(payload).settings)), signature: payload })
+        } catch (e) { setError((e as Error).message) }
+        setLoading(false)
+        return
+      }
       authorizedFetch(auth, '/api/posters/preview', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -94,7 +107,7 @@ export function SocialPreview({
       clearTimeout(timer)
       controller.abort()
     }
-  }, [payload, unavailableReason, rows.length, auth])
+  }, [payload, unavailableReason, rows, auth, serverExports])
   const change = (patch: Partial<SocialSettings>) => {
     setHistory((h) => ({ past: [...h.past, settings].slice(-100), future: [] }))
     onChange(socialSettings({ ...settings, ...patch }))
@@ -117,6 +130,20 @@ export function SocialPreview({
     setBusy(true)
     setError('')
     try {
+      if (!serverExports) {
+        if (collection) throw new Error('Use hosted export to create a thread ZIP.')
+        for (let i = 0; i < (preview?.pages.length ?? 0); i++) {
+          const svg = checks[i]?.svg
+          if (!svg) throw new Error('Wait for the preview layout check to finish.')
+          const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }))
+          const a = document.createElement('a')
+          a.href = url
+          a.download = `heval-${settings.preset}-${i + 1}.svg`
+          a.click()
+          setTimeout(() => URL.revokeObjectURL(url), 1000)
+        }
+        return
+      }
       const response = await authorizedFetch(auth, '/api/posters/export', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -138,7 +165,7 @@ export function SocialPreview({
     }
   }
   const layoutReady =
-    !!preview && preview.pages.every((_, i) => checks[i] && !checks[i].errors.length)
+    !!preview && preview.pages.every((_, i) => checks[i] && !checks[i].errors.length && (serverExports || !!checks[i].svg))
   const models = [...new Set(rows.map((r) => r.modelShort))].sort()
   const selected = settings.models.length ? settings.models : models
   return (
@@ -162,7 +189,7 @@ export function SocialPreview({
           Style
           <select
             aria-label="Style"
-            value={settings.theme ?? 'merge-dark'}
+            value={settings.theme ?? PRESENTATION_DEFAULT_THEME}
             onChange={(e) => change({ theme: e.target.value as SocialTheme })}
           >
             {Object.entries(SOCIAL_THEMES).map(([id, t]) => (
@@ -184,16 +211,17 @@ export function SocialPreview({
             disabled={busy || loading || !layoutReady || !!unavailableReason}
             onClick={() => void download(false)}
           >
-            Export image{settings.preset === 'disagreement' ? '(s)' : ''}
+            {serverExports ? 'Export image' : 'Export SVG'}{settings.preset === 'disagreement' ? '(s)' : ''}
           </button>{' '}
           <button
             className="btn primary"
+            hidden={!!hostedExportControls || !serverExports}
             disabled={
               busy ||
               loading ||
               !layoutReady ||
               !!unavailableReason ||
-              !!collectionUnavailableReason
+              !!collectionUnavailableReason || !serverExports
             }
             title={collectionUnavailableReason}
             onClick={() => void download(true)}
@@ -202,6 +230,8 @@ export function SocialPreview({
           </button>
         </div>
       </div>
+      {hostedExportControls?.(layoutReady && !unavailableReason, !collectionUnavailableReason)}
+      {!serverExports && <p>Preview and SVG export use your browser’s fonts. Hosted PNG and ZIP exports use the original presentation fonts.</p>}
       <details className="social-customize">
         <summary>Customize models, text and thread</summary>
         <div className="social-preset-controls">
@@ -254,12 +284,19 @@ export function SocialPreview({
             ))}
           </fieldset>
           <fieldset>
-            <legend>Images in thread</legend>
+            <legend>Charts in ZIP</legend>
+            <p className="social-collection-help" id="social-collection-help">
+              Choose charts for the ZIP export. The Question menu above controls the single-image preview.
+              {' '}Keep at least one chart selected.
+            </p>
+            <span className="social-selection-count" role="status">{settings.collection.length} charts selected</span>
+            <div className="social-chart-choices" aria-describedby="social-collection-help">
             {Object.entries(SOCIAL_PRESETS)
               .filter(([id]) => id !== 'completion')
               .map(([id, p]) => (
-                <label key={id}>
+                <label className="social-chart-choice" key={id}>
                   <input
+                    aria-label={p.label}
                     type="checkbox"
                     checked={settings.collection.includes(id as SocialPreset)}
                     disabled={
@@ -274,9 +311,13 @@ export function SocialPreview({
                       })
                     }
                   />
-                  {p.label}
+                  <span>
+                    <strong>{p.label}</strong>
+                    <small>{SOCIAL_QUESTIONS[id as SocialPreset]}</small>
+                  </span>
                 </label>
               ))}
+            </div>
           </fieldset>
         </div>
       </details>

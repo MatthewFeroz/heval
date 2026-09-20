@@ -74,12 +74,32 @@ test('settings reject unknown presets and preserve deliberately hidden text', ()
   const chart = resolveSocial(real, options),
     svg = socialSvg(chart, options, '')
   expect(svg).not.toContain('tasks per model')
-  expect(svg).toContain('Source: Merge Evaluations')
-  expect(svg).toContain('#C6ADCA')
+  expect(svg).toContain('Source: Evaluation results')
+  expect(svg).not.toContain('Gateway')
+  expect(svg).toContain('#FFFFFF')
 })
 
 test('publishing themes round trip and reject unregistered themes', () => {
   expect(socialSettings({...options,theme:'merge-light'}).theme).toBe('merge-light')
-  expect(socialSettings({...options,theme:undefined}).theme ?? 'merge-dark').toBe('merge-dark')
+  expect(socialSettings({...options,theme:undefined}).theme).toBe('plain-light')
   expect(()=>socialSettings({...options,theme:'unknown'})).toThrow('theme')
+})
+
+test('neutral defaults never acquire Merge branding; explicit brand themes use the designer layout', () => {
+  for (const theme of ['plain-light', 'plain-dark'] as const) {
+    const settings = socialSettings({ ...options, theme })
+    const svg = socialSvg(resolveSocial(real, settings), settings, '<svg><path id="merge-lockup"/></svg>')
+    expect(svg).not.toContain('merge-lockup')
+    expect(svg).not.toContain('Gateway')
+    expect(svg).not.toContain('FH Oscar Pro')
+    expect(svg).not.toContain('data-model-mark')
+  }
+  const settings = socialSettings({ ...options, theme: 'merge-dark', preset: 'cost-per-success' })
+  const svg = socialSvg(resolveSocial(real, settings), settings, '<svg><path id="merge-lockup"/></svg>')
+  expect(svg).toContain('x="1160"')
+  expect(svg).toContain('merge-lockup')
+  expect(svg).toContain('data-model-mark="deepseek-v4-flash"')
+  expect(svg).toContain('#C6ADCA')
+  expect(socialSettings(undefined).theme).toBe('plain-light')
+  expect(socialSettings(undefined).source).toBe('Evaluation results')
 })

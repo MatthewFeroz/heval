@@ -11,6 +11,7 @@ export function HostedStudio() {
   const id = new URLSearchParams(location.search).get('report') as Id<'reports'>
   const report = useQuery(api.reports.get, isAuthenticated ? { id } : 'skip')
   const save = useMutation(api.reportProjects.saveDraft)
+  const requestExport = useMutation(api.presentationExports.request)
   const [loaded, setLoaded] = useState<HostedStudioSession | null>(null)
   const [version, setVersion] = useState<number | null>(null)
   const [error, setError] = useState('')
@@ -19,7 +20,7 @@ export function HostedStudio() {
     let live = true
     const data = JSON.parse(report.data)
     void reportArtifact(data, id).then(artifact => {
-      if (live) { setLoaded({ id, initial: JSON.parse(report.project), artifact, data, version: report.version, save: async () => {} }); setVersion(report.version) }
+      if (live) { setLoaded({ id, initial: JSON.parse(report.project), artifact, data, version: report.version, save: async () => {}, enqueue: async () => {} }); setVersion(report.version) }
     }).catch(e => { if (live) setError(e.message) })
     return () => { live = false }
   }, [report, loaded, id])
@@ -33,5 +34,8 @@ export function HostedStudio() {
     const result = await save({ id, expectedVersion: version, document: JSON.stringify(document) })
     setVersion(result.version)
   }
-  return <Studio hosted={{ ...loaded, version, newerVersion: report.version > version, save: persist }} />
+  return <Studio hosted={{ ...loaded, version, newerVersion: report.version > version, save: persist, enqueue: async (document, collection, requestId) => {
+    const result = await requestExport({ report: id, document: JSON.stringify(document), expectedVersion: version, collection, requestId })
+    setVersion(result.version)
+  } }} />
 }

@@ -46,3 +46,7 @@ with a short pause on the startup screens and completed results. It pauses when
 offscreen or in a hidden tab; reduced motion shows the idle startup screens.
 Xterm's rendered cell dimensions determine the columns and rows on resize,
 including when a lane is focused, so text and borders fit the available space.
+
+The homepage's palette and DM Sans typography now form the shared
+[website design system](design-system.md). Its font registration and brand tokens
+live in `src/tokens.css`; Machines, Reports, the workbench, and Studio consume them.

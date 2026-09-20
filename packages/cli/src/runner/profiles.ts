@@ -4,14 +4,15 @@ import { validateProfiles, type RunnerProfile } from '../../../../src/runners/pr
 import { hashDirectory, readJson, sha256, writeJson } from './files'
 
 type JsonObject = Record<string, unknown>
-type Descriptor = { id: string; title: string; benchmark: string; config: string; timeoutSeconds: number; envFile?: string }
+type Descriptor = { id: string; title: string; benchmark: string; config: string; timeoutSeconds: number; envFile?: string; maxAttempts?: number }
 export type LocalProfile = { public: RunnerProfile; config: JsonObject; taskPaths: string[]; taskHashes: string[]; envFile?: string }
 const object = (value: unknown): JsonObject => { if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('Expected a JSON object in the profile.'); return value as JsonObject }
 export function initializeProfiles(directory: string, bundledTask: string) {
   const path = join(directory, 'profiles.json')
   if (existsSync(path)) return path
   mkdirSync(directory, { recursive: true, mode: 0o700 })
-  cpSync(bundledTask, join(directory, 'tasks/heval-setup'), { recursive: true })
+  // Explicit traversal avoids Node's native recursive-copy failure on Docker Desktop bind mounts.
+  cpSync(bundledTask, join(directory, 'tasks/heval-setup'), { recursive: true, filter: name => !name.split('/').some(part => part === '.git' || part === '__pycache__') })
   writeJson(join(directory, 'setup.json'), { n_attempts: 1, agents: [{ name: 'oracle' }], tasks: [{ path: 'tasks/heval-setup' }] })
   writeJson(path, { schemaVersion: 1, profiles: [{ id: 'heval-setup', title: 'Check this machine', benchmark: 'Heval setup check v1', config: 'setup.json', timeoutSeconds: 300 }] })
   return path
@@ -27,7 +28,7 @@ export function loadProfiles(file: string): LocalProfile[] {
     for (const key of Object.keys(input)) if (!['n_attempts', 'agents', 'tasks'].includes(key)) throw new Error(`Unsupported profile config field: ${key}. This release accepts n_attempts, agents, and explicit local tasks.`)
     if (!Array.isArray(input.agents) || input.agents.length !== 1 || !Array.isArray(input.tasks) || !input.tasks.length || input.tasks.length > 20) throw new Error('Approve one agent/model and 1–20 explicit local task directories per profile.')
     const agent = object(input.agents[0])
-    if (!['oracle', 'codex', 'claude-code', 'opencode', 'terminus-2'].includes(String(agent.name)) || agent.import_path) throw new Error('Use a built-in supported Harbor agent.')
+    if (!['oracle', 'codex', 'claude-code', 'opencode', 'pi', 'terminus-2'].includes(String(agent.name)) || agent.import_path) throw new Error('Use a built-in supported Harbor agent.')
     for (const key of Object.keys(agent)) if (!['name', 'model_name', 'kwargs', 'env', 'override_timeout_sec', 'override_setup_timeout_sec'].includes(key)) throw new Error(`Unsupported agent field: ${key}`)
     if (agent.name !== 'oracle' && (typeof agent.model_name !== 'string' || !agent.model_name)) throw new Error('A model-backed profile needs model_name.')
     const taskPaths = input.tasks.map(t => {
@@ -39,7 +40,7 @@ export function loadProfiles(file: string): LocalProfile[] {
     })
     const taskHashes = taskPaths.map(hashDirectory)
     const config = { n_attempts: input.n_attempts ?? 1, n_concurrent_trials: 1, retry: { max_retries: 0 }, agents: [agent], tasks: taskPaths.map(path => ({ path })), environment: { type: 'docker', delete: true, cpu_enforcement_policy: 'limit', memory_enforcement_policy: 'limit' } }
-    const description = { id: d.id, title: d.title, benchmark: d.benchmark, agent: String(agent.name), model: agent.name === 'oracle' ? 'Reference solution (no model)' : String(agent.model_name), tasks: taskPaths.length, attempts: Number(config.n_attempts), timeoutSeconds: d.timeoutSeconds, setupCheck: agent.name === 'oracle' }
+    const description = { id: d.id, title: d.title, benchmark: d.benchmark, agent: String(agent.name), model: agent.name === 'oracle' ? 'Reference solution (no model)' : String(agent.model_name), tasks: taskPaths.length, attempts: Number(config.n_attempts), timeoutSeconds: d.timeoutSeconds, setupCheck: agent.name === 'oracle', taskSet: sha256(JSON.stringify(taskHashes)), vendor: typeof object(agent.env ?? {}).HEVAL_VENDOR === 'string' ? String(object(agent.env ?? {}).HEVAL_VENDOR) : 'Provider default', maxAttempts: d.maxAttempts ?? Number(config.n_attempts) }
     // Include all executable task content and agent settings, excluding local path names.
     const digest = sha256(JSON.stringify({ description, config: { ...config, tasks: taskHashes } }))
     let envFile: string | undefined
@@ -58,4 +59,11 @@ export function snapshotProfile(profile: LocalProfile, directory: string) {
   })
   const config = { ...profile.config, tasks, job_name: 'evaluation', jobs_dir: join(directory, 'jobs') }
   writeJson(join(directory, 'harbor.json'), config)
+}
+
+/** The browser may vary attempts only inside the worker's explicit approval. */
+export function requestedProfile(profile: LocalProfile, attempts?: number): LocalProfile {
+  if (attempts === undefined) return profile
+  if (!Number.isSafeInteger(attempts) || attempts < 1 || attempts > (profile.public.maxAttempts ?? profile.public.attempts) || attempts * profile.public.tasks > 60) throw new Error('Requested attempts exceed this machine’s approval.')
+  return { ...profile, config: { ...profile.config, n_attempts: attempts } }
 }

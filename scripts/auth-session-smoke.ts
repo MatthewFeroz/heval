@@ -36,7 +36,9 @@ const browser = await chromium.launch()
 const errors: string[] = []
 const diagnostics: string[] = []
 async function session(viewport = { width: 1440, height: 900 }) {
-  const context = await browser.newContext({ viewport, serviceWorkers: 'block' })
+  // Playwright's service-worker blocking shim throws inside opaque sandboxed srcdoc previews.
+  // This app registers no service workers; all network access remains routed below.
+  const context = await browser.newContext({ viewport, serviceWorkers: 'allow' })
   const stats = { authorizations: 0, exchanges: 0, refreshes: 0, rejectRefresh: false }
   let challenge = '', refreshToken = 'test-refresh-0'
   context.on('page', page => {
@@ -164,6 +166,23 @@ try {
   await page.getByRole('button', { name: 'Sign in to Studio', exact: true }).click()
   await expect(page.locator('.studio')).toBeVisible()
   await expect(page.locator('#f-recipe')).toHaveValue('scatter')
+  const posterRequests: string[] = []
+  page.on('request', request => { if (new URL(request.url()).pathname.startsWith('/api/posters/')) posterRequests.push(request.url()) })
+  await page.getByRole('tab', { name: 'Presentation', exact: true }).click()
+  await expect(page.getByLabel('Question', { exact: true })).toBeVisible()
+  await page.getByLabel('Question', { exact: true }).selectOption('cost-per-success')
+  await page.getByLabel('Style', { exact: true }).selectOption('plain-light')
+  await expect(page.frameLocator('iframe[title="Social chart preview 1"]').locator('svg')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Export SVG', exact: true })).toBeEnabled()
+  await page.screenshot({ path: '/tmp/heval-hosted-presentation.png', fullPage: true })
+  const exported = page.waitForEvent('download')
+  await page.getByRole('button', { name: 'Export SVG', exact: true }).click()
+  assert.match((await exported).suggestedFilename(), /cost-per-success.*\.svg$/)
+  assert.deepEqual(posterRequests, [], 'Static-hosted editing must not call the Bun poster API')
+  await page.getByRole('tab', { name: 'Poster', exact: true }).click()
+  await expect(page.locator('#f-recipe')).toBeVisible()
+  await page.getByRole('tab', { name: 'Analysis', exact: true }).click()
+
   await expect(page.locator('#f-color')).toHaveValue('none')
   assert.ok(destinations.filter(url => url === origin + path).length >= 2, 'Sign-in must return to the complete requested URL before Studio normalizes its chart state')
   assert.equal(stats.exchanges, 1)

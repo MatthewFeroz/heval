@@ -61,3 +61,8 @@ results/harbor/social/**/assets/
 /data/
 /deploy/ssh/
 /deploy/*.env
+
+# Isolated study tool downloads and machine-local evidence.
+/.tools/
+/harbor/deepseek-study/local/
+.env*

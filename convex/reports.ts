@@ -2,7 +2,8 @@ import { v, ConvexError } from 'convex/values'
 import { mutation, query } from './_generated/server'
 import { access, identity, projectState } from './reportAccess'
 import { parseReport } from '../src/reports/format'
-import { renderReportProject } from '../src/reports/project'
+import { renderReportProject, initialReportProject, validateReportProject, type ReportProject } from '../src/reports/project'
+import type { AnalysisView } from '../src/project/schema'
 
 export const list = query({ args: {}, handler: async ctx => {
   const user = (await identity(ctx)).subject
@@ -61,4 +62,24 @@ export const revoke = mutation({ args: { id: v.id('reports') }, handler: async (
   const report = await ctx.db.get(id)
   if (!report || report.owner !== user) throw new ConvexError('Report not found.')
   await ctx.db.patch(id, { shareToken: null })
+} })
+
+/** Import a single-source Studio project and its data atomically. */
+export const saveProject = mutation({ args: { json: v.string(), document: v.string() }, handler: async (ctx, args) => {
+  const user = (await identity(ctx)).subject
+  if ((await ctx.db.query('reports').withIndex('by_owner', q => q.eq('owner', user)).take(100)).length >= 100) throw new ConvexError('Your workspace has reached its 100-report limit.')
+  const data = parseReport(args.json)
+  if (new TextEncoder().encode(args.document).length > 150_000) throw new ConvexError('Project settings must be smaller than 150 KB.')
+  const incoming = JSON.parse(args.document) as ReportProject
+  if (incoming.project.sources.length !== 1) throw new ConvexError('Save one evaluation source at a time.')
+  const id = await ctx.db.insert('reports', { owner: user, title: 'Presentation', trials: data.rows.length, shareToken: null })
+  const base = await initialReportProject(data, id, 'Presentation'), source = base.project.sources[0]
+  const remap = (view: AnalysisView): AnalysisView => ({ ...view, sourceIds: view.sourceIds.length ? [source.id] : [] })
+  const document = validateReportProject(JSON.stringify({ ...incoming, project: { ...incoming.project, id, sources: base.project.sources,
+    analysisViews: incoming.project.analysisViews.map(remap), presentations: incoming.project.presentations.map(p => ({ ...p, ...(p.analysisSnapshot ? { analysisSnapshot: remap(p.analysisSnapshot) } : {}) })) } }), base)
+  await renderReportProject(data, document)
+  await ctx.db.patch(id, { title: document.project.label })
+  await ctx.db.insert('reportData', { report: id, json: JSON.stringify(data) })
+  await ctx.db.insert('reportProjects', { report: id, draft: JSON.stringify(document), version: 0, updatedBy: user })
+  return id
 } })

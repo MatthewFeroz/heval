@@ -1,4 +1,6 @@
-import { labelLines, niceMax } from './poster'
+import { labelLines, niceMax, POSTER_METRIC_SERIES, POSTER_LOGO_TILE } from './poster'
+import { modelMark } from './model-marks'
+import { PRESENTATION_DEFAULT_THEME } from './presentation-defaults'
 import { SOCIAL_THEMES } from './social-themes'
 const POSTER_INK = {
   primary: 'var(--primary)',
@@ -7,15 +9,13 @@ const POSTER_INK = {
   line: 'var(--line)',
 }
 const POSTER_SURFACE = 'var(--surface)'
-const POSTER_WINNER = 'var(--winner)'
-const POSTER_COMPARISON_SERIES = Array.from({ length: 5 }, (_, i) => 'var(--series-' + i + ')')
 import {
   SOCIAL_PRESETS,
   type SocialChart,
   type SocialSettings,
   type SocialBar,
 } from './social-presets'
-export const SOCIAL_RENDERER_VERSION = 'social-presets/3'
+export const SOCIAL_RENDERER_VERSION = 'social-presets/4'
 const esc = (s: string) =>
   s.replace(
     /[&<>"']/g,
@@ -69,7 +69,6 @@ const rect = (x: number, y: number, w: number, h: number, fill: string) =>
   '" fill="' +
   fill +
   '" rx="3"/>'
-const name = (key: string) => labelLines(key).join(' ')
 function format(value: number | null, unit: string) {
   if (value === null) return 'N/A'
   if (unit === 'usd')
@@ -95,17 +94,16 @@ function ticks(max: number, unit: string): number[] {
   }
   return [0, 0.25, 0.5, 0.75, 1].map((f) => f * max)
 }
-function colors(bars: SocialBar[], direction: string) {
-  const vals = bars.flatMap((b) => (b.value === null ? [] : [b.value]))
-  const best = direction === 'higher' ? Math.max(...vals) : Math.min(...vals)
-  let i = 0
-  return bars.map((b) =>
-    b.value === null
-      ? '#ABAAA8'
-      : b.value === best
-        ? POSTER_WINNER
-        : POSTER_COMPARISON_SERIES[i++ % POSTER_COMPARISON_SERIES.length],
-  )
+function metricColor(preset: SocialChart['preset']) {
+  if (preset === 'cost-per-success' || preset === 'total-cost') return POSTER_METRIC_SERIES['cost-per-success']
+  if (preset === 'median-time' || preset === 'slow-timeouts') return POSTER_METRIC_SERIES['median-time']
+  return POSTER_METRIC_SERIES.completion
+}
+function logoTile(model: string, x: number, y: number) {
+  const mark = modelMark(model)
+  if (!mark) return ''
+  const nested = mark.replace(/<svg\b([^>]*)>/, (_, attrs: string) => '<svg ' + attrs.replace(/\s(?:width|height|x|y)="[^"]*"/g, '') + ' x="' + (x + 5) + '" y="' + (y + 5) + '" width="30" height="30">')
+  return '<g data-model-mark="' + esc(model) + '" color="' + POSTER_LOGO_TILE.ink + '">' + rect(x, y, 40, 40, POSTER_LOGO_TILE.bg) + nested + '</g>'
 }
 function vertical(
   bars: SocialBar[],
@@ -115,11 +113,11 @@ function vertical(
   h: number,
   max: number,
   unit: string,
-  direction: string,
+  branded: boolean,
+  color: string,
 ) {
   const gutter = 55,
-    slot = (w - gutter) / bars.length,
-    palette = colors(bars, direction)
+    slot = (w - gutter) / bars.length
   let svg = ticks(max, unit)
     .map(
       (v) =>
@@ -137,18 +135,19 @@ function vertical(
   bars.forEach((b, i) => {
     const cx = x + gutter + slot * (i + 0.5),
       bh = ((b.value ?? 0) / max) * h,
-      bw = Math.min(80, slot * 0.43)
+      bw = Math.min(110, slot * 0.55)
     svg +=
-      rect(cx - bw / 2, y + h - bh, bw, bh, palette[i]) +
+      rect(cx - bw / 2, y + h - bh, bw, bh, color) +
       text(
         cx,
-        y + h - bh - 15,
+        y + h - bh - (branded && modelMark(b.key) && bh < 65 ? 64 : 16),
         format(b.value, unit),
-        26,
+        30,
         'middle',
         POSTER_INK.primary,
         'data-max-width="' + (slot - 12) + '"',
       )
+    if (branded) svg += logoTile(b.key, cx - 20, y + h - bh + (bh >= 65 ? 12 : -52))
     labelLines(b.key).forEach((l, j) => {
       svg += text(
         cx,
@@ -163,48 +162,6 @@ function vertical(
   })
   return svg
 }
-function horizontal(chart: SocialChart) {
-  const unit = SOCIAL_PRESETS[chart.preset].unit,
-    max = ceiling(Math.max(0, ...chart.bars.map((b) => b.value ?? 0)), unit)
-  const x = 385,
-    y = 230,
-    w = 995,
-    h = 480,
-    slot = h / chart.bars.length,
-    palette = colors(chart.bars, SOCIAL_PRESETS[chart.preset].direction)
-  let svg = ticks(max, unit)
-    .map(
-      (v) =>
-        line(x + (v / max) * w, y - 15, x + (v / max) * w, y + h) +
-        text(x + (v / max) * w, y + h + 40, format(v, unit), 21, 'middle', POSTER_INK.muted),
-    )
-    .join('')
-  chart.bars.forEach((b, i) => {
-    const cy = y + slot * (i + 0.5),
-      bw = ((b.value ?? 0) / max) * w
-    svg +=
-      text(
-        65,
-        cy + 9,
-        name(b.key),
-        25,
-        'start',
-        POSTER_INK.primary,
-        'data-label="true" data-max-width="300"',
-      ) +
-      rect(x, cy - 25, bw, 50, palette[i]) +
-      text(
-        x + bw + 16,
-        cy + 9,
-        format(b.value, unit),
-        27,
-        'start',
-        POSTER_INK.primary,
-        'data-max-width="' + (1535 - x - bw - 16) + '"',
-      )
-  })
-  return svg
-}
 /** SVG geometry is shared by browser preview and Chromium PNG export. */
 export function socialSvg(
   chart: SocialChart,
@@ -212,7 +169,8 @@ export function socialSvg(
   logo: string,
   page = 0,
 ): string {
-  const theme = SOCIAL_THEMES[settings.theme ?? 'merge-dark']
+  const theme = SOCIAL_THEMES[settings.theme ?? PRESENTATION_DEFAULT_THEME]
+  const barColor = theme.brand ? metricColor(chart.preset) : theme.series[0]
   const variables = Object.entries({
     surface: theme.surface,
     primary: theme.primary,
@@ -236,25 +194,25 @@ export function socialSvg(
     rect(0, 0, 1600, 900, POSTER_SURFACE)
   if (theme.brand)
     svg +=
-      '<svg x="65" y="48" width="160" height="34" fill="var(--primary)" viewBox="0 0 1800 371.7">' +
+      '<svg x="1160" y="60" width="205" height="43" fill="var(--primary)" viewBox="0 0 1800 371.7">' +
       logo.replace(/^[\s\S]*?<svg[^>]*>/, '').replace(/<\/svg>\s*$/, '') +
       '</svg>' +
-      text(241, 75, 'Gateway', 26)
+      text(1385, 93, 'Gateway', 30)
   svg += text(
     65,
-    155,
+    96,
     chart.title,
-    43,
+    46,
     'start',
     POSTER_INK.primary,
-    'data-max-width="1470" data-min-size="32" font-family="' +
+    'data-max-width="' + (theme.brand ? 1040 : 1470) + '" data-min-size="30" font-family="' +
       theme.display +
       '" font-weight="500" style="font-variant-numeric:normal;font-feature-settings: &quot;liga&quot; 0, &quot;calt&quot; 0"',
   )
   if (settings.showSubtitle)
     svg += text(
       65,
-      195,
+      164,
       chart.preset === 'disagreement'
         ? chart.allPassed + ' passed by all; ' + chart.allFailed + ' failed by all'
         : chart.tasks + ' tasks per model',
@@ -265,24 +223,25 @@ export function socialSvg(
   if (settings.showDirection && chart.preset !== 'disagreement')
     svg += text(
       1535,
-      195,
-      SOCIAL_PRESETS[chart.preset].direction === 'higher' ? 'Higher is better' : 'Lower is better',
+      164,
+      SOCIAL_PRESETS[chart.preset].direction === 'higher' ? '↑ Higher is better' : '↓ Lower is better',
       21,
       'end',
       POSTER_INK.muted,
     )
   const layout = SOCIAL_PRESETS[chart.preset].layout
-  if (layout === 'horizontal') svg += horizontal(chart)
-  if (layout === 'vertical')
+  svg += '<path d="M 65 205 H 1535" stroke="' + POSTER_INK.line + '"/>'
+  if (layout === 'vertical' || layout === 'horizontal')
     svg += vertical(
       chart.bars,
       65,
-      245,
+      280,
       1470,
-      450,
-      chart.preset === 'completion' ? 1 : chart.tasks,
+      425,
+      chart.preset === 'completion' ? 1 : chart.preset === 'completed' ? chart.tasks : ceiling(Math.max(0, ...chart.bars.map(b => b.value ?? 0)), SOCIAL_PRESETS[chart.preset].unit),
       SOCIAL_PRESETS[chart.preset].unit,
-      'higher',
+      theme.brand,
+      barColor,
     )
   if (layout === 'paired') {
     svg += text(65, 247, 'Over 5 min, including timeouts', 25) + text(835, 247, 'Timeouts', 25)
@@ -294,7 +253,8 @@ export function socialSvg(
       390,
       ceiling(Math.max(...chart.bars.map((b) => b.value ?? 0)), 'count'),
       'count',
-      'lower',
+      theme.brand,
+      barColor,
     )
     const timeout = chart.bars.map((b) => ({ ...b, value: b.timeout }))
     svg += vertical(
@@ -305,7 +265,8 @@ export function socialSvg(
       390,
       ceiling(Math.max(...timeout.map((b) => b.value!)), 'count'),
       'count',
-      'lower',
+      theme.brand,
+      barColor,
     )
   }
   if (layout === 'matrix') {

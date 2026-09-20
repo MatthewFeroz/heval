@@ -1,3 +1,4 @@
+import { HARBOR_VERSION } from '../packages/cli/src/harbor-version'
 /** Full browser flow against an isolated cloud preview. Only WorkOS is replaced
  * with short-lived signed test identities; production auth config is untouched.
  * HEVAL_SMOKE_ENV points to an ignored env file containing a PREVIEW deploy key.
@@ -34,10 +35,12 @@ const otherToken = await jwt(`smoke-other-${Date.now()}`)
 await mkdir(resolve(temporary, 'src/reports'), { recursive: true })
 await mkdir(resolve(temporary, 'src/charts'), { recursive: true })
 await cp(resolve(root, 'convex'), resolve(temporary, 'convex'), { recursive: true })
+await mkdir(resolve(temporary, 'server/hosted-exports'), { recursive: true })
+await cp(resolve(root, 'server/hosted-exports/render.ts'), resolve(temporary, 'server/hosted-exports/render.ts'))
 for (const test of new Bun.Glob('*.test.ts').scanSync(resolve(temporary, 'convex'))) await rm(resolve(temporary, 'convex', test))
 await cp(resolve(root, 'src'), resolve(temporary, 'src'), { recursive: true })
 await symlink(resolve(root, 'node_modules'), resolve(temporary, 'node_modules'))
-await writeFile(resolve(temporary, 'package.json'), JSON.stringify({ type: 'module', dependencies: { convex: '^1.45.0' } }))
+await writeFile(resolve(temporary, 'package.json'), JSON.stringify({ type: 'module', dependencies: { convex: '^1.45.0', '@vercel/sandbox': '3.3.0', '@vercel/blob': '2.8.0' } }))
 await writeFile(resolve(temporary, 'convex/auth.config.ts'), `export default ${JSON.stringify({ providers: [{ type: 'customJwt', issuer, applicationID: 'heval-smoke', algorithm: 'RS256', jwks: `data:text/plain;charset=utf-8;base64,${Buffer.from(JSON.stringify({ keys: [jwk] })).toString('base64')}` }] })}`)
 const deploy = Bun.spawn(['bunx', 'convex', 'deploy', '-y'], { cwd: temporary, env: { ...process.env, CONVEX_DEPLOY_KEY: key, CONVEX_DEPLOYMENT: undefined }, stdout: 'pipe', stderr: 'pipe' })
 const output = await new Response(deploy.stderr).text()
@@ -186,7 +189,7 @@ try {
   await page.screenshot({ path: resolve(evidence, '03-mobile.png'), fullPage: true })
   expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false)
   expect(errors).toEqual([])
-  await writeFile(resolve(evidence, 'smoke-result.json'), JSON.stringify({ passed: true, backend: url, harbor: '0.22.0', physicalHosts: 1, runnerInstances: 2, browserSessions: 3, modelCalls: 0, identity: 'Isolated signed test JWT; real WorkOS login not exercised', events, checks: ['pairing', 'machine-independent profile digest', 'real Harbor and Docker execution', 'move queued evaluation', 'cross-session history', 'cross-account denial', 'daemon crash leaves supervisor running', 'restart uploads existing outcome', 'private saved report', 'hosted Studio save', 'shared chart matches editor', 'live share revocation', 'cooperative cancellation', 'runner revocation', 'mobile layout', 'no browser exceptions'] }, null, 2))
+  await writeFile(resolve(evidence, 'smoke-result.json'), JSON.stringify({ passed: true, backend: url, harbor: HARBOR_VERSION, physicalHosts: 1, runnerInstances: 2, browserSessions: 3, modelCalls: 0, identity: 'Isolated signed test JWT; real WorkOS login not exercised', events, checks: ['pairing', 'machine-independent profile digest', 'real Harbor and Docker execution', 'move queued evaluation', 'cross-session history', 'cross-account denial', 'daemon crash leaves supervisor running', 'restart uploads existing outcome', 'private saved report', 'hosted Studio save', 'shared chart matches editor', 'live share revocation', 'cooperative cancellation', 'runner revocation', 'mobile layout', 'no browser exceptions'] }, null, 2))
   console.log('PASS: connected Harbor runners; 16 end-to-end checks.')
 } finally {
   // Preserve local output for diagnosis; stop only this test's work and credentials.

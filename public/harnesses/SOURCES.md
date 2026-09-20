@@ -17,3 +17,5 @@ trademark rights remain with their respective owners.
 | Cursor | [T3 Code Cursor mark](https://github.com/pingdotgg/t3code/blob/main/apps/marketing/public/harnesses/cursor_light.svg), identifying [Cursor](https://cursor.com/) |
 
 New assets were retrieved on 2026-09-16.
+
+| DeepSeek Harness | DeepSeek company mark, reused from `harbor/report/assets/model-logos/deepseek-color.svg` (LobeHub icons); identifies [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness), not a separate official harness logo. |

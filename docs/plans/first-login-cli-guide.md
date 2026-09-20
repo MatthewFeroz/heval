@@ -8,7 +8,7 @@ shared reports and the local CLI viewer never show onboarding.
    browser viewer, no model calls. Explain the terminal must stay open.
 2. **Check setup:** the published CLI's `doctor`, what its checks mean, and links
    to Node, Docker, uv, and Harbor prerequisites.
-3. **Run an evaluation:** Harbor 0.22.0 executes a reviewed job configuration;
+3. **Run an evaluation:** Harbor 0.23.0 executes a reviewed job configuration;
    show separate review, run, and local-results commands. Clearly identify
    placeholders and model usage. Do not invent `heval run` or imply the public
    npm release includes the connected-runner preview.

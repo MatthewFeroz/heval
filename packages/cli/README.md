@@ -68,7 +68,7 @@ heval doctor --json
 heval doctor --strict
 ```
 
-Doctor checks Node, Harbor **0.22.0**, Docker daemon availability, optional Bun,
+Doctor checks Node, Harbor **0.23.0**, Docker daemon availability, optional Bun,
 and known provider credential variable names. It never prints credential
 values, installs software, or calls a model. Presence of an environment variable
 does not verify account access, provider routing, or whether a particular job
@@ -85,7 +85,7 @@ social/video rendering. SVG/PNG chart downloads run in your browser.
 Use Harbor for execution, then open its output:
 
 ```sh
-uv tool install harbor==0.22.0
+uv tool install harbor==0.23.0
 harbor run -c ./your-job.yaml --print-config
 # After configuring credentials and reviewing the job:
 harbor run -c ./your-job.yaml
@@ -122,7 +122,7 @@ and is not bundled.
 ## Connected runner preview
 
 The `0.2.0-preview.0` source build adds `heval runner connect`, `start`, `status`,
-and `cleanup` for Linux machines with Harbor 0.22.0 and Docker. It is not yet
+and `cleanup` for Linux machines with Harbor 0.23.0 and Docker. It is not yet
 published on npm. Pair through the hosted Machines page, then keep the daemon
 running to execute locally approved profiles and save results to your account.
 The default Oracle setup check uses no model API calls. See the

@@ -1,14 +1,18 @@
 import { POSTER_INK, POSTER_DESIGNER_SURFACE, POSTER_WINNER, POSTER_COMPARISON_SERIES } from './poster'
-/**
- * Complete, named publishing themes. Merge tokens follow the weekly benchmark skill.
- *
- * `merge-dark` is the default (see SOCIAL_DEFAULTS) and renders on
- * POSTER_DESIGNER_SURFACE, the same near-black the poster exporter uses, so a
- * chart published from the hosted app and one built from the CLI are the same
- * artwork. It used to sit on Merge Charcoal, which made those two paths
- * disagree by a shade that was obvious once both appeared in one thread.
- */
+/** Neutral themes are the product defaults. Merge branding is opt-in. */
 export const SOCIAL_THEMES = {
+  'plain-light': {
+    label: 'White', brand: false, display: 'Inter,system-ui,sans-serif',
+    surface: '#FFFFFF', primary: '#171717', muted: '#525252', line: '#D4D4D4',
+    winner: '#525252', series: ['#737373', '#737373', '#737373', '#737373', '#737373'],
+    pass: '#E5E5E5', fail: '#FFFFFF', cell: '#171717',
+  },
+  'plain-dark': {
+    label: 'Black', brand: false, display: 'Inter,system-ui,sans-serif',
+    surface: '#111111', primary: '#FAFAFA', muted: '#BDBDBD', line: '#404040',
+    winner: '#D4D4D4', series: ['#A3A3A3', '#A3A3A3', '#A3A3A3', '#A3A3A3', '#A3A3A3'],
+    pass: '#404040', fail: '#171717', cell: '#FAFAFA',
+  },
   'merge-dark': {
     label: 'Merge Gateway dark',
     brand: true,
@@ -37,19 +41,6 @@ export const SOCIAL_THEMES = {
     fail: '#EAEAE9',
     cell: '#12110F',
   },
-  'plain-light': {
-    label: 'Plain report',
-    brand: false,
-    display: 'Inter,system-ui,sans-serif',
-    surface: '#FFFFFF',
-    primary: '#12110F',
-    muted: '#565551',
-    line: '#ABAAA8',
-    winner: '#698490',
-    series: ['#ABAAA8', '#87857F', '#C3C5B3', '#96A58D', '#769399'],
-    pass: '#BEC7B8',
-    fail: '#EAEAE9',
-    cell: '#12110F',
-  },
+
 } as const
 export type SocialTheme = keyof typeof SOCIAL_THEMES

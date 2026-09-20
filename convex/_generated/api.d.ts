@@ -8,11 +8,14 @@
  * @module
  */
 
+import type * as presentationExports from "../presentationExports.js";
+import type * as presentationExportWorker from "../presentationExportWorker.js";
 import type * as reportAccess from "../reportAccess.js";
 import type * as onboarding from "../onboarding.js";
 import type * as reportProjects from "../reportProjects.js";
 import type * as reports from "../reports.js";
 import type * as runnerValidators from "../runnerValidators.js";
+import type * as experiments from "../experiments.js";
 import type * as runners from "../runners.js";
 
 import type {
@@ -22,12 +25,15 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  presentationExports: typeof presentationExports;
+  presentationExportWorker: typeof presentationExportWorker;
   onboarding: typeof onboarding;
   reportAccess: typeof reportAccess;
   reportProjects: typeof reportProjects;
   reports: typeof reports;
   runnerValidators: typeof runnerValidators;
   runners: typeof runners;
+  experiments: typeof experiments;
 }>;
 
 /**

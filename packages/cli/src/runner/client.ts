@@ -1,4 +1,5 @@
 import { spawn, execFile } from 'node:child_process'
+import { HARBOR_VERSION, supportedHarborVersion } from '../harbor-version'
 import { promisify } from 'node:util'
 import { existsSync, mkdirSync, writeFileSync, rmSync, openSync, closeSync, readdirSync, statSync } from 'node:fs'
 import { join, resolve } from 'node:path'
@@ -7,7 +8,7 @@ import { ConvexError } from 'convex/values'
 import { api } from '../../../../convex/_generated/api'
 import type { Id } from '../../../../convex/_generated/dataModel'
 import { randomSecret, readJson, writeJson } from './files'
-import { initializeProfiles, loadProfiles, snapshotProfile } from './profiles'
+import { initializeProfiles, loadProfiles, snapshotProfile, requestedProfile } from './profiles'
 import { processKey, supervisorAlive, type Outcome } from './supervisor'
 
 type Connection = { url: string; credential: string; id?: string; name?: string; pendingCode?: string }
@@ -39,8 +40,8 @@ export async function connectRunner(directory: string, url: string, code: string
 }
 export async function checkRunner(harbor: string) {
   if (process.platform !== 'linux') return { ready: false, health: 'Connected runners currently require Linux.' }
-  try { const { stdout } = await exec(harbor, ['--version'], { timeout: 15_000 }); if (!/\b0\.22\.0\b/.test(stdout)) return { ready: false, health: 'Install the supported Harbor version: 0.22.0.' } }
-  catch { return { ready: false, health: 'Harbor is unavailable. Install Harbor 0.22.0 on this machine.' } }
+  try { const { stdout } = await exec(harbor, ['--version'], { timeout: 15_000 }); if (!supportedHarborVersion(stdout)) return { ready: false, health: `Install the supported Harbor version: ${HARBOR_VERSION}.` } }
+  catch { return { ready: false, health: `Harbor is unavailable. Install Harbor ${HARBOR_VERSION} on this machine.` } }
   try { await exec('docker', ['info', '--format', '{{.ServerVersion}}'], { timeout: 15_000 }); await exec('docker', ['compose', 'version'], { timeout: 15_000 }) }
   catch { return { ready: false, health: 'Docker Engine or Docker Compose is unavailable to this account.' } }
   return { ready: true, health: 'Harbor and Docker ready' }
@@ -106,7 +107,7 @@ export async function runDaemon(options: { directory: string; harbor: string; su
             mkdirSync(runDir, { recursive: true, mode: 0o700 })
             if (active.cancel) writeJson(join(runDir, 'outcome.json'), { status: 'cancelled' })
             else {
-              try { snapshotProfile(profile, runDir) }
+              try { snapshotProfile(requestedProfile(profile, active.requestedAttempts), runDir) }
               catch { await cloud.mutation(api.runners.finish, { ...args, status: 'failed', message: 'Task files changed or could not be copied. Review the machine profile before starting again.' }); continue }
             }
             writeJson(executionPath, { claimId: active.claimId, harbor: options.harbor, timeoutSeconds: active.profile.timeoutSeconds, envFile: profile.envFile })

@@ -15,25 +15,30 @@ chart, a table of the numbers, a static HTML report, and a short video.
 
 One run of many trials is a **job**. Everything downstream reads one job.
 
-## The two pages
+## Current pages and execution paths
 
-Heval serves two separate pages. They are different apps and share no controls.
+Start with [Current architecture and running an evaluation](current-evaluation-flow.md)
+for a code-verified walkthrough, including the distinction between direct Harbor,
+connected machines, and the older Bun fixture workbench.
 
-| URL | What it is |
+| URL | Purpose |
 | --- | --- |
-| `/` | Landing page and run launcher. Pick a harness, start a run, watch the terminal stream. |
-| `/studio` | Chart studio. Load an exported job and make charts, tables, and the video. |
+| `/` | Product landing and recorded demo; optional Bun workbench |
+| `/machines` or `/evaluations` | Pair a Linux worker and run approved profiles |
+| `/reports` | Import, save and share evaluation results |
+| `/studio` | Analyze results and create presentations |
+| `/share` | View an explicitly shared report |
 
-If you are looking for editing controls, you want `/studio`. There is nothing
-editable on `/`.
+Hosted workspace features require WorkOS and Convex. Direct Harbor execution and
+local result viewing do not require a Heval account.
 
 ## The pipeline
 
 Four steps, in order.
 
 **1. A run produces raw output.** Trials land in `jobs/<job-name>/`. This is
-whatever the harness wrote — logs, patches, verifier output. Nothing reads it
-directly.
+the Harbor trial output — agent logs, configuration and verifier results.
+The report exporter and the CLI can both read this directory.
 
 **2. `bun run report` normalizes it.** Point it at a job directory:
 

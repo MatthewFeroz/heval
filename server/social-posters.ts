@@ -1,3 +1,4 @@
+import { PRESENTATION_DEFAULT_THEME } from '../src/charts/presentation-defaults'
 import { SOCIAL_THEMES } from '../src/charts/social-themes'
 import { readFileSync, writeFileSync, mkdtempSync, rmSync } from 'node:fs'
 import { join, resolve, sep, basename } from 'node:path'
@@ -8,7 +9,7 @@ import { socialSvg, SOCIAL_RENDERER_VERSION } from '../src/charts/social-render'
 import { resolveSocial, type SocialSettings, type SocialChart } from '../src/charts/social-presets'
 import type { JobExport } from '../src/charts/trial'
 import { acquireExport } from './export-lock'
-const root = resolve(import.meta.dirname, '..')
+const root = process.env.HEVAL_RENDER_ROOT || resolve(import.meta.dirname, '..')
 const layoutScript = readFileSync(join(root, 'harbor/report/layout-check.js'), 'utf8')
 const assets = join(root, 'harbor/report/assets')
 const logo = readFileSync(join(assets, 'merge-lockup.svg'), 'utf8')
@@ -37,9 +38,9 @@ export function posterDocuments(input: JobExport, settings: SocialSettings) {
       },
       (_, page) =>
         '<!doctype html><html lang="en"><meta charset="utf-8"><style>' +
-        (settings.theme === 'plain-light' ? plainFonts : fonts + plainFonts) +
+        (SOCIAL_THEMES[settings.theme ?? PRESENTATION_DEFAULT_THEME].brand ? fonts + plainFonts : plainFonts) +
         'html,body{margin:0;background:' +
-        SOCIAL_THEMES[settings.theme ?? 'merge-dark'].surface +
+        SOCIAL_THEMES[settings.theme ?? PRESENTATION_DEFAULT_THEME].surface +
         '}svg{font-feature-settings:"liga" 0,"calt" 0;display:block;width:100%;height:auto}</style>' +
         socialSvg(chart, settings, logo, page) +
         '<script>' +
@@ -51,7 +52,7 @@ export function posterDocuments(input: JobExport, settings: SocialSettings) {
 async function screenshot(htmlPath: string, pngPath: string) {
   await new Promise<void>((done, fail) => {
     const child = spawn(
-      Bun.which('node') || 'node',
+      process.versions.bun ? 'node' : process.execPath,
       [join(root, 'harbor/report/render-poster.mjs')],
       {
         windowsHide: true,
@@ -157,7 +158,7 @@ export async function renderPosters(
       return { bytes: files[0].bytes, type: 'image/png', filename: files[0].name }
     const manifest = {
       renderer: SOCIAL_RENDERER_VERSION,
-      theme: settings.theme ?? 'merge-dark',
+      theme: settings.theme ?? PRESENTATION_DEFAULT_THEME,
       generatedAt: new Date().toISOString(),
       inputHash: createHash('sha256').update(JSON.stringify(input)).digest('hex'),
       settings,

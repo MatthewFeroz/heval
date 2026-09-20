@@ -1,3 +1,4 @@
+import { PRESENTATION_DEFAULT_THEME } from './presentation-defaults'
 import { POSTER_INK, POSTER_DESIGNER_SURFACE, POSTER_METRIC_SERIES } from './poster'
 /**
  * Themes for the social composition.
@@ -77,7 +78,7 @@ export const MOTION_THEMES: Record<ThemeId, MotionTheme> = {
   // Unbranded dark. No lockup, no emboss, no licensed face - the default to
   // reach for when the chart is not going out as Merge marketing.
   'plain-dark': {
-    label: 'Plain dark',
+    label: 'Black',
     surface: '#141617',
     ink: {
       primary: '#F2F4F5',
@@ -95,7 +96,7 @@ export const MOTION_THEMES: Record<ThemeId, MotionTheme> = {
     pattern: 0,
   },
   'plain-light': {
-    label: 'Plain light',
+    label: 'White',
     surface: '#FFFFFF',
     ink: {
       primary: '#111315',
@@ -114,9 +115,9 @@ export const MOTION_THEMES: Record<ThemeId, MotionTheme> = {
   },
 }
 
-export const THEME_IDS = Object.keys(MOTION_THEMES) as ThemeId[]
+export const THEME_IDS: ThemeId[] = ['plain-light', 'plain-dark', 'merge-gateway']
 
-export const DEFAULT_THEME: ThemeId = 'merge-gateway'
+export const DEFAULT_THEME: ThemeId = PRESENTATION_DEFAULT_THEME
 
 /** Coerce an untrusted theme id. Unknown ids fall back rather than throwing. */
 export function themeId(value: unknown): ThemeId {

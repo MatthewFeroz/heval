@@ -19,9 +19,13 @@ Browser on laptop / another browser session
 
 Your browser doesn't need to stay open. Each machine runs a small polling daemon; a separate local supervisor owns each Harbor execution. Closing/restarting the polling daemon does not terminate that supervisor. The daemon reconnects to the same run and uploads its result once. A machine reboot interrupts execution; a run is never automatically repeated on another machine.
 
+The current source pin is Harbor 0.23.0. This upgrade passed CLI tests, build,
+and config validation. The archived full Docker smoke evidence records 0.22.0;
+it has not been rerun on 0.23.0 because this VM has no Docker engine.
+
 ## 1. Install the preview on Linux
 
-Use a dedicated Linux machine or VM you control, with Node.js 22+, Docker Engine and Compose available to your account, Python 3.12+, and Harbor **0.22.0**. The machine must have outbound HTTPS access to your Convex deployment and any image/model providers used by its tasks. The browser never receives access to the Docker socket.
+Use a dedicated Linux machine or VM you control, with Node.js 22+, Docker Engine and Compose available to your account, Python 3.12+, and Harbor **0.23.0**. The machine must have outbound HTTPS access to your Convex deployment and any image/model providers used by its tasks. The browser never receives access to the Docker socket.
 
 Docker access grants substantial control of the host. This is a personal/trusted-worker architecture, not a public sandbox for untrusted users. Approve task files and agent configuration on the worker itself. Start with one task and one attempt.
 
@@ -41,7 +45,7 @@ Alternatively, copy the built tarball to each machine and install it with `npm i
 With `uv` installed, install the pinned Harbor version:
 
 ```sh
-uv tool install 'harbor==0.22.0'
+uv tool install 'harbor==0.23.0'
 harbor --version
 docker info
 docker compose version
@@ -99,7 +103,7 @@ Create `one-task.json` alongside it, replacing the example model and task path w
 }
 ```
 
-Put the provider variables required by that Harbor agent in the local `envFile`, e.g. `OPENAI_API_KEY=...`, with restricted permissions. Never paste them into Heval or commit them. The supervisor deliberately does not inherit arbitrary credentials from the daemon's environment. Agent `kwargs`, `env`, and explicit setup/execution timeout overrides are accepted from the locally approved JSON. Supported built-in agents are Oracle, Codex, Claude Code, OpenCode, and Terminus 2; only the Oracle/Docker route has been exercised without paid credentials in the automated smoke test. Other combinations need your own compatibility/model-access check.
+Put the provider variables required by that Harbor agent in the local `envFile`, e.g. `OPENAI_API_KEY=...`, with restricted permissions. Never paste them into Heval or commit them. The supervisor deliberately does not inherit arbitrary credentials from the daemon's environment. Agent `kwargs`, `env`, and explicit setup/execution timeout overrides are accepted from the locally approved JSON. Supported built-in agents are Oracle, Codex, Claude Code, OpenCode, Pi, and Terminus 2; only the Oracle/Docker route has been exercised without paid credentials in the automated smoke test. Other combinations need your own compatibility/model-access check.
 
 Task contents and executable configuration contribute to the profile digest. Each claimed run gets a copied task snapshot; a concurrent task edit aborts before execution. A changed profile cannot silently execute under an older browser selection. Identical profile metadata/configuration and task contents on two machines give the same digest despite different absolute task paths. Base image tags and provider model aliases may still change upstream; pin those yourself for published comparisons. Harness installation dependencies are not automatically frozen by Heval.
 

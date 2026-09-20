@@ -11,6 +11,7 @@
     "cli:smoke:published": "bun packages/cli/scripts/smoke.ts --registry",
     "cli:pack": "bun run cli:build && npm pack ./packages/cli --pack-destination .scratch",
     "dev": "vite --host 0.0.0.0",
+    "studio:local": "bun scripts/local-studio.ts",
     "build": "bun run social:build && tsc -b && vite build",
     "start": "bun run build && bun server/index.ts",
     "serve": "bun server/index.ts",
@@ -41,11 +42,18 @@
     "build:public": "HEVAL_PUBLIC_BUILD=1 VITE_HEVAL_PUBLIC_DEMO=1 bun run build",
     "build:showcase": "VITE_HEVAL_STATIC_SITE=1 bun run build",
     "demo:nvidia": "bun scripts/nvidia-demo.ts",
-    "publish:result": "bun scripts/publish-result.ts"
+    "publish:result": "bun scripts/publish-result.ts",
+    "exports:snapshot": "bun scripts/export-snapshot.ts",
+    "test:exports": "vitest run --config vitest.hosted.config.ts",
+    "test:exports:ui": "bun scripts/hosted-export-ui-smoke.ts",
+    "test:exports:renderer": "bun scripts/export-renderer-smoke.ts",
+    "test:evaluations:ui": "bun scripts/evaluation-ui-smoke.ts"
   },
   "dependencies": {
     "@earendil-works/pi-coding-agent": "0.84.4",
     "@hyperframes/player": "0.8.27",
+    "@vercel/blob": "2.8.0",
+    "@vercel/sandbox": "3.3.0",
     "@vitejs/plugin-react": "latest",
     "@workos-inc/authkit-react": "^0.16.2",
     "@xterm/xterm": "^6.0.0",

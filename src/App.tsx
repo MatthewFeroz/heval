@@ -8,17 +8,16 @@ import {
   Zap,
 } from 'lucide-react'
 import { featuredExperiment, type Runner } from './data'
-import resultCatalog from '../results/harbor/index.json'
 import featuredResults from '../results/harbor/terminal-bench-comparison.json'
 import { publicAuth, type AppAuth } from './auth'
 import { Signup } from './Signup'
-import { AccountControls } from './account/AccountControls'
 import { RunWorkbench } from './RunWorkbench'
 import { STATIC_SITE } from './deployment'
 import { LandingHero } from './landing/LandingHero'
 import { HarnessTui } from './landing/HarnessTui'
 import { useSectionMotion } from './landing/useSectionMotion'
 import { useDemoAutoplay } from './landing/useDemoAutoplay'
+import { Brand, SiteHeader } from './components/SiteHeader'
 import './landing/landing.css'
 
 const runnerEnd = (runner: Runner) => Math.max(...runner.events.map((event) => event.at))
@@ -36,31 +35,6 @@ const completionResults = featuredJob.models.map((model) => {
 const studioUrl = `/studio?job=${featuredJob.job}&recipe=bar&x=modelShort&color=none&measure=passed`
 
 const formatTokens = (tokens: number | null) => tokens === null ? 'pending' : `${(tokens / 1000).toFixed(1)}k`
-
-function Brand() {
-  return (
-    <a className="brand" href="#top" aria-label="Heval home">
-      <span className="brand-name">heval</span>
-    </a>
-  )
-}
-
-function Nav({ auth }: { auth: AppAuth }) {
-  return (
-    <header className="nav-wrap">
-      <nav className="nav shell">
-        <Brand />
-        <div className="nav-actions">
-          <a className="nav-github" href="https://github.com/MatthewFeroz/heval" target="_blank" rel="noreferrer">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.65.5.5 5.65.5 12a11.5 11.5 0 007.86 10.93c.58.1.79-.25.79-.56v-2c-3.2.69-3.88-1.37-3.88-1.37-.52-1.33-1.27-1.69-1.27-1.69-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.02 1.76 2.68 1.25 3.33.96.1-.75.4-1.25.72-1.54-2.55-.29-5.24-1.27-5.24-5.67 0-1.25.45-2.28 1.18-3.08-.12-.29-.51-1.45.11-3.02 0 0 .96-.31 3.15 1.18a10.96 10.96 0 015.74 0c2.19-1.49 3.15-1.18 3.15-1.18.62 1.57.23 2.73.11 3.02.74.8 1.18 1.83 1.18 3.08 0 4.41-2.7 5.38-5.27 5.66.41.36.78 1.06.78 2.13v3.16c0 .31.21.67.8.56A11.5 11.5 0 0023.5 12C23.5 5.65 18.35.5 12 .5z" /></svg>
-            GitHub
-          </a>
-          <AccountControls auth={auth} showStudioLink />
-        </div>
-      </nav>
-    </header>
-  )
-}
 
 function RunnerLane({ runner, time, focused, onFocus, rawData, liveStatus, onLiveRun }: { runner: Runner; time: number; focused: boolean; onFocus: () => void; rawData?: string; liveStatus?: string; onLiveRun: () => void }) {
   const visibleEvents = runner.events.filter((event) => event.at <= time)
@@ -171,33 +145,6 @@ function StudioShowcase() {
   )
 }
 
-function ReportSection() {
-  return (
-    <section className="reports-section section-pad" id="reports">
-      <div className="shell">
-        <div data-home-reveal className="section-heading reports-heading">
-          <div><span className="kicker">PUBLISHED EVALUATIONS</span><h2>Start with the evidence.</h2></div>
-          <a href="/studio">Open all results in Studio <ArrowRight size={15} /></a>
-        </div>
-        <div className="report-grid">
-          {resultCatalog.jobs.map((job) => (
-            <article data-home-reveal className="report-card" key={job.job}>
-              <div className="report-top"><span>{job.trials > 4 ? 'Model comparison' : 'Smoke test'}</span><small>{job.generatedAt.slice(0, 10)}</small></div>
-              <div className="report-count"><strong>{job.trials}</strong><span>recorded {job.trials === 1 ? 'trial' : 'trials'}</span></div>
-              <h3>{job.job.split('-').join(' ')}</h3>
-              <p>{job.models.length} {job.models.length === 1 ? 'model' : 'models'} · {job.tasks.length} {job.tasks.length === 1 ? 'task' : 'tasks'} · {job.agents.length} {job.agents.length === 1 ? 'harness' : 'harnesses'}. Read the outcomes and limitations, or explore the underlying data.</p>
-              <div className="report-foot">
-                <a href={`/results/harbor/${job.job}.html`}>Read report <ArrowRight size={14} /></a>
-                <a href={`/studio?job=${job.job}`}>Open in Studio</a>
-              </div>
-            </article>
-          ))}
-        </div>
-      </div>
-    </section>
-  )
-}
-
 function Methodology() {
   const steps = [
     ['01', 'Pin the stack', 'Harness, model, configuration, task image, budget, and evaluator are recorded in one manifest.'],
@@ -221,7 +168,7 @@ function Footer() {
     <footer className="footer shell">
       <Brand />
       <p>A workbench for understanding coding-agent evaluations.</p>
-      <div><a href="#methodology">Methodology</a><a href="#reports">Reports</a><a href="/studio">Studio</a><a href="https://github.com/MatthewFeroz/heval" target="_blank" rel="noreferrer">GitHub</a></div>
+      <div><a href="#methodology">Methodology</a><a href="/reports">Reports</a><a href="/studio">Studio</a><a href="https://github.com/MatthewFeroz/heval" target="_blank" rel="noreferrer">GitHub</a></div>
       <small>© 2026 Heval</small>
     </footer>
   )
@@ -232,7 +179,7 @@ export default function App({ auth = publicAuth }: { auth?: AppAuth }) {
   useSectionMotion(landing)
   return (
     <div className="landing-page" ref={landing}>
-      <Nav auth={auth} />
+      <SiteHeader auth={auth} />
       <main id="top">
         <LandingHero />
         <section data-home-reveal className="race-area" id="compare" aria-label="Interactive coding-agent replay">
@@ -240,7 +187,6 @@ export default function App({ auth = publicAuth }: { auth?: AppAuth }) {
         </section>
         <StudioShowcase />
         {!STATIC_SITE && <RunWorkbench key={auth.user?.email || 'public'} auth={auth} />}
-        <ReportSection />
         <Methodology />
         {!STATIC_SITE && <Signup />}
       </main>

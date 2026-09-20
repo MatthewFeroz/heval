@@ -77,7 +77,7 @@ results with `heval open ./jobs/your-job`.
 
 - [Bun](https://bun.sh/) 1.4 or newer
 - A Chromium-compatible browser
-- [Harbor](https://pypi.org/project/harbor/) 0.22.0 and Docker, for Harbor-based evaluations (`uv tool install harbor==0.22.0`)
+- [Harbor](https://pypi.org/project/harbor/) 0.23.0 and Docker, for Harbor-based evaluations (`uv tool install harbor==0.23.0`)
 
 ```bash
 git clone https://github.com/MatthewFeroz/heval.git
@@ -313,6 +313,13 @@ Heval is experimental and its current results should not be treated as a general
 
 ## Quick guide: results to social images
 
+To open the full editor locally without configuring sign-in, run `bun run studio:local`
+and open <http://localhost:5181/local-studio.html?job=terminal-bench-comparison&mode=presentation>.
+This starts the editor and image-export API on loopback, with evaluation execution disabled.
+The local entry is excluded from production builds; hosted `/studio` still requires sign-in.
+Stop both servers with Ctrl+C. Use `HEVAL_STUDIO_PORT` and `HEVAL_STUDIO_API_PORT` to change ports.
+For image exports, install Chromium once with `bunx playwright install chromium`; Node.js is also required.
+
 For local publishing, install Chromium once and enable the export API before starting the full app. Node.js must also be installed for PNG rendering.
 
 ```powershell
@@ -359,3 +366,12 @@ The early-access form now saves consented signups to server-side SQLite. It repo
 - [Fresh NVIDIA model comparison and GTC recording guide](docs/nvidia-gtc-demo.md)
 
 For API calls during development, run `bun run serve` in one terminal and `bun run dev` in another. Vite now proxies `/api` to the Bun server on port 4173.
+
+## DeepSeek V4.1 Flash harness study
+
+See [the Merge Gateway setup and study protocol](harbor/deepseek-study/README.md)
+for the nine-harness inventory, isolated tools, portable installation, a Harbor
+pilot generator, compatibility gates, and the paired evaluation design.
+
+For the current component map and both terminal/browser evaluation flows, see
+[Current architecture and running an evaluation](docs/current-evaluation-flow.md).

@@ -53,7 +53,7 @@ Fetch and resolve the selected version to immutable dataset/task references.
 Do not silently run latest when the user selects 4.0. Confirm registry syntax
 and resolution against the Harbor version we actually support.
 
-Heval currently recognizes Harbor 0.22.0. Compatibility with this dataset and
+Heval currently recognizes Harbor 0.23.0. Compatibility with this dataset and
 the current registry has not been established. A catalog entry can link to the
 upstream dataset while clearly saying “Execution support not yet verified.”
 It must not look runnable until its adapter and environment have been tested.

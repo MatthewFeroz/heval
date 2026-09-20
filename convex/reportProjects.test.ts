@@ -1,3 +1,5 @@
+import { newPresentation } from '../src/project/schema'
+import { SOCIAL_DEFAULTS } from '../src/charts/social-presets'
 /// <reference types="vite/client" />
 import { convexTest } from 'convex-test'
 import { expect, test } from 'vitest'
@@ -96,4 +98,21 @@ test('legacy shared reports keep their original appearance while drafts change',
   await owner.mutation(api.reportProjects.saveDraft, { id, expectedVersion: 0, document: JSON.stringify(document) })
   const shared = (await t.query(api.reports.shared, { token }))!
   expect(JSON.parse(shared.project).project.analysisViews[0].chart.title).toBe('Completion by agent and model')
+})
+
+test('presentation questions and styles survive cloud save, reload and publication', async () => {
+  const { owner, t, id, document } = await setup()
+  const presentation = newPresentation(document.project, document.project.analysisViews[0])
+  presentation.social = { ...SOCIAL_DEFAULTS, preset: 'cost-per-success', theme: 'merge-light', models: ['glm-5.3', 'claude-sonnet-5'], source: 'Saved source' }
+  document.project.presentations = [presentation]
+  document.presentationId = presentation.id
+  document.mode = 'presentation'
+  await owner.mutation(api.reportProjects.saveDraft, { id, expectedVersion: 0, document: JSON.stringify(document) })
+  const saved = (await owner.query(api.reports.get, { id }))!
+  expect(JSON.parse(saved.project).project.presentations[0].social).toEqual(presentation.social)
+  await owner.mutation(api.reports.share, { id, token })
+  const shared = (await t.query(api.reports.shared, { token }))!
+  expect(JSON.parse(shared.project).project.presentations[0].social).toEqual(presentation.social)
+  presentation.social = { ...presentation.social, preset: 'invalid' as never }
+  await expect(owner.mutation(api.reportProjects.saveDraft, { id, expectedVersion: 1, document: JSON.stringify(document) })).rejects.toThrow()
 })

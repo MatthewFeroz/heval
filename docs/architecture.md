@@ -1,23 +1,26 @@
 # Product architecture
 
+For the implemented paths and exact user steps, see
+[Current architecture and running an evaluation](current-evaluation-flow.md).
+The hosted connected-runner path is:
+
 ```text
-React product and chart studio
-          │
-          ▼
-Bun control plane
-  manifests · queue · WebSockets · artifact API
-          │
-          ▼
-Harbor evaluation worker
-  tasks · agent adapters · verifiers · trials
-          │
-          ▼
-Sandbox provider
-  local Docker → Daytona → optional Vercel Sandbox
-          │
-          ▼
-Postgres metadata + object storage artifacts
+React/Vite workspace on Vercel + WorkOS sign-in
+                    ↕
+Convex: machines, queue, status, private/shared reports
+                    ↕ outbound HTTPS
+Heval Node daemon → independent supervisor on Linux worker
+                    ↓
+Harbor → Docker task → coding harness → model provider
+                    ↓
+Task verifier → raw local artifacts → normalized report
 ```
+
+Direct Harbor jobs can bypass the hosted workspace entirely. The Bun fixture
+runner is a separate implementation, described below. Postgres metadata,
+raw-artifact object storage and automatic sandbox provisioning are design
+options, not the current connected-runner backend.
+
 
 ## Connected-runner preview
 

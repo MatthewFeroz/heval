@@ -143,3 +143,16 @@ connected-runner preview still requires a source build and repository access.
 `bun run test:onboarding` exercises the real AuthKit/provider/HTTP-client flow
 with isolated service responses; `bun run test:reports` validates actual Convex
 ownership and persistence logic. Browser fixtures are excluded from builds.
+
+## Presentation editing on static hosting
+
+Studio's Presentation → Social images tab includes the Question, Style and model
+controls on Vercel and for saved reports. Preview/layout checks and SVG download
+run in the browser without the Bun poster API. Browser previews use available
+fonts. Original-font PNG and thread ZIP rendering can run in Vercel Sandbox,
+with a Convex queue and private Blob storage. See [hosted presentation exports](hosted-presentation-exports.md)
+for configuration and deployment. The Poster tab exposes the graph recipe controls.
+
+Hosted draft saves retain social question/style/model settings across reloads
+and publication. Deploy the frontend and Convex changes together to enable this
+behavior. The packaged local results viewer retains its simpler chart interface.

@@ -1,3 +1,4 @@
+import { socialSettings } from '../charts/social-presets'
 import { adaptJobExportV1, sourceFromArtifact, type AnalysisView, type HevalProject, type Presentation } from '../project/schema'
 import { presentationAnalysis, presentationChart, projectFields, projectRows } from '../project/accessors'
 import { DEFAULT_STATE, buildChart, type ChartState } from '../charts/recipes'
@@ -67,6 +68,7 @@ export function validateReportProject(json: string, base: ReportProject): Report
       theme: choice(item.theme, ['merge-gateway', 'plain-dark', 'plain-light']), canvas: choice(item.canvas, ['landscape', 'square', 'portrait']),
       narrative: { title: text(n.title, 500, true), kicker: text(n.kicker, 500, true), cue: text(n.cue, 500, true), note: text(n.note, 2000, true), source: text(n.source, 500, true) },
       graphOverrides: Object.fromEntries(Object.keys(overrides).filter(k => k in fullChart).map(k => [k, fullChart[k as keyof ChartState]])),
+      social: socialSettings(item.social),
       motion: completionOptions(object(item.motion)), renderer: { version: 'heval-studio/0.2', evaluationSchemaVersion: 2, projectSchemaVersion: 1 }, createdAt: text(item.createdAt), updatedAt: text(item.updatedAt) }
   })
   if (new Set(presentations.map(v => v.id)).size !== presentations.length) throw new Error('Presentation IDs must be unique.')

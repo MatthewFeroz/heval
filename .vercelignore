@@ -12,3 +12,7 @@ jobs/
 deploy/ssh/
 deploy/*.env
 docs/media/
+.tools/
+harbor/deepseek-study/local/
+packages/cli/dist/
+deploy/

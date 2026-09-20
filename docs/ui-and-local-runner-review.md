@@ -222,7 +222,7 @@ Harbor already supplies installation and evaluation commands; Heval should
 orchestrate those capabilities and contribute the experiment/result experience.
 See Harbor's [getting started](https://www.harborframework.com/docs/getting-started)
 and [job configuration](https://www.harborframework.com/docs/core-concepts).
-Those are current upstream docs; this repository pins Harbor 0.22.0, so validate
+Those are current upstream docs; this repository pins Harbor 0.23.0, so validate
 the adapter against that version before adopting newer command flags.
 
 The following is a proposed interface, not commands that exist today:

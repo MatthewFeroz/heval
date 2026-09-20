@@ -1,42 +1,66 @@
 /*
  * Heval design tokens - the one place the brand lives as CSS.
  *
- * Imported by the landing page (styles.css), the chart studio (studio/studio.css)
- * and inlined verbatim into the static report by harbor/report/build-report.ts,
- * so a change here reaches every surface Heval renders. Chart-internal colors are
- * a separate, validator-chosen set in charts/palette.ts; its dark theme is
- * built on the same --bg / --panel / --line values below.
+ * Imported by the homepage, workbench, Machines, Reports and Studio.
+ * Chart/export palettes are separate: changing the app does not recolor data.
+ * The static report exporter also reads these tokens before its own brand theme.
  */
 
-@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Manrope:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&display=swap');
+
+@font-face {
+  font-family: 'Heval DM Sans';
+  src: url('/fonts/dm-sans-latin.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 100 1000;
+  font-display: swap;
+}
 
 :root {
   color-scheme: dark;
-  font-family: 'Manrope', system-ui, sans-serif;
-  color: #f2f1ed;
-  background: #080909;
+  font-family: var(--sans);
+  color: var(--white);
+  background: var(--bg);
+  font-feature-settings: 'ss01', 'ss02';
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
 
-  --bg: #080909;
-  --panel: #101111;
-  --panel-2: #141515;
-  --panel-3: #181a19;
-  --line: #292b2b;
-  --line-soft: #1c1e1e;
-  --line-strong: #343737;
-  --muted: #8d9290;
-  --faint: #5c605f;
-  --white: #f2f1ed;
-  --accent: #d8ff5f;
-  --accent-ink: #11130d;
+  --bg: #09090b;
+  --panel: #101012;
+  --panel-2: #18181b;
+  --panel-3: #202024;
+  --line: #ffffff14;
+  --line-soft: #ffffff0d;
+  --line-strong: #ffffff30;
+  --muted: #a1a1aa;
+  --faint: #85858f;
+  --white: #f4f4f5;
+  --text-secondary: #d4d4d8;
+  --accent: #f4f4f5;
+  --accent-ink: #09090b;
+  --accent-hover: #ffffff;
+  --accent-soft: #ffffff0a;
+  --accent-line: #ffffff30;
+  --header-bg: #09090bd9;
   --pass: #95bf69;
-  --pass-text: #84a75e;
+  --pass-text: #a3cc86;
+  --pass-bg: #95bf6912;
+  --pass-line: #95bf6940;
   --fail: #d57a70;
-  --fail-text: #b26e67;
-  --warn: #d7bd72;
+  --fail-text: #efa398;
+  --fail-bg: #d57a7012;
+  --fail-line: #d57a7040;
+  --warn: #e0c586;
+  --warn-bg: #e0c5860d;
+  --warn-line: #e0c58640;
+
+  --radius-control: 8px;
+  --radius-card: 14px;
+  --radius-pill: 999px;
+  --page-width: 1180px;
+  --header-height: 64px;
 
   --mono: 'DM Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
-  --sans: 'Manrope', system-ui, sans-serif;
+  --sans: 'Heval DM Sans', system-ui, sans-serif;
 }

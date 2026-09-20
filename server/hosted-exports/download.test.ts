@@ -1,0 +1,26 @@
+import { beforeEach, afterEach, expect, test, vi } from 'vitest'
+const mocks = vi.hoisted(() => ({ query: vi.fn(), setAuth: vi.fn(), get: vi.fn() }))
+vi.mock('convex/browser', () => ({ ConvexHttpClient: class { query = mocks.query; setAuth = mocks.setAuth } }))
+vi.mock('@vercel/blob', () => ({ get: mocks.get }))
+import { GET } from '../../api/presentation-export'
+beforeEach(() => { vi.resetAllMocks(); vi.stubEnv('CONVEX_URL', 'https://test.convex.cloud'); vi.stubEnv('BLOB_READ_WRITE_TOKEN', 'private-token') })
+afterEach(() => vi.unstubAllEnvs())
+const request = () => new Request('https://heval.invalid/api/presentation-export?job=job', { headers: { Authorization: 'Bearer user-token' } })
+test('download requires auth and current report access before contacting private storage', async () => {
+  expect((await GET(new Request('https://heval.invalid/api/presentation-export?job=job'))).status).toBe(401)
+  expect(mocks.query).not.toHaveBeenCalled()
+  mocks.query.mockRejectedValue(new Error('No membership'))
+  expect((await GET(request())).status).toBe(404)
+  expect(mocks.get).not.toHaveBeenCalled()
+  expect(mocks.setAuth).toHaveBeenCalledWith('user-token')
+})
+test('download streams authorized artifact without public caching or exposing its storage token', async () => {
+  mocks.query.mockResolvedValue({ pathname: 'private/file.png', contentType: 'image/png', filename: 'file.png' })
+  mocks.get.mockResolvedValue({ statusCode: 200, stream: new Blob(['png-bytes']).stream() })
+  const response = await GET(request())
+  expect(response.status).toBe(200)
+  expect(response.headers.get('cache-control')).toBe('private, no-store')
+  expect(response.headers.get('content-disposition')).toBe('attachment; filename="file.png"')
+  expect(await response.text()).toBe('png-bytes')
+  expect(JSON.stringify([...response.headers])).not.toContain('private-token')
+})

@@ -30,7 +30,7 @@ function checkSession(runner: Doc<'runners'>, session: string) {
   if (runner.session !== session) throw new ConvexError('Another runner session owns this connection. Stop the other daemon before reconnecting.')
 }
 function publicRunner(r: Doc<'runners'>) { return { id: r._id, name: r.name, revoked: r.revoked, lastSeen: r.lastSeen, ready: r.ready, health: r.health, profiles: r.profiles, activeRun: r.activeRun ?? null } }
-function publicRun(r: Doc<'runnerRuns'>) { return { id: r._id, runner: r.runner, profile: r.profile, status: r.status, createdAt: r._creationTime, startedAt: r.startedAt ?? null, finishedAt: r.finishedAt ?? null, report: r.report ?? null, phase: r.phase, message: r.message ?? null } }
+function publicRun(r: Doc<'runnerRuns'>) { return { id: r._id, runner: r.runner, profile: r.profile, experiment: r.experiment ?? null, requestedAttempts: r.requestedAttempts ?? r.profile.attempts, status: r.status, createdAt: r._creationTime, startedAt: r.startedAt ?? null, finishedAt: r.finishedAt ?? null, report: r.report ?? null, phase: r.phase, message: r.message ?? null } }
 
 export const list = query({ args: {}, handler: async ctx => {
   const owner = (await identity(ctx)).subject
@@ -115,7 +115,7 @@ export const poll = mutation({ args: { credential: v.string(), session: v.string
   await ctx.db.patch(runner._id, { session: args.session, leaseUntil: Date.now() + RUNNER_LEASE_MS, lastSeen: Date.now(), ready: args.ready, health: args.health, profiles: args.profiles })
   if (runner.activeRun) {
     const active = await ctx.db.get(runner.activeRun)
-    if (active && (active.status === 'running' || active.status === 'cancelling')) return { id: active._id, profile: active.profile, claimId: active.claimId!, cancel: active.status === 'cancelling' }
+    if (active && (active.status === 'running' || active.status === 'cancelling')) return { id: active._id, profile: active.profile, requestedAttempts: active.requestedAttempts, claimId: active.claimId!, cancel: active.status === 'cancelling' }
     await ctx.db.patch(runner._id, { activeRun: undefined })
   }
   if (!args.ready) return null
@@ -127,7 +127,7 @@ export const poll = mutation({ args: { credential: v.string(), session: v.string
   }
   await ctx.db.patch(next._id, { status: 'running', claimId: args.claimId, startedAt: Date.now(), phase: 'Preparing Harbor on the connected machine' })
   await ctx.db.patch(runner._id, { activeRun: next._id })
-  return { id: next._id, profile: next.profile, claimId: args.claimId, cancel: false }
+  return { id: next._id, profile: next.profile, requestedAttempts: next.requestedAttempts, claimId: args.claimId, cancel: false }
 } })
 async function claimedRun(ctx: MutationCtx, args: { credential: string; session: string; id: Id<'runnerRuns'>; claimId: string }) {
   const runner = await authenticateRunner(ctx, args.credential)
@@ -151,8 +151,8 @@ export const finish = mutation({ args: { ...claimArgs, status: v.union(v.literal
   if (args.json && !cancelled) {
     let data
     try { data = parseReport(args.json) } catch (e) { throw new ConvexError((e as Error).message) }
-    if (data.rows.length > run.profile.tasks * run.profile.attempts) throw new ConvexError('The result exceeds the approved trial count.')
-    if (status === 'completed' && data.rows.length !== run.profile.tasks * run.profile.attempts) throw new ConvexError('Completed evaluations must include every approved trial.')
+    if (data.rows.length > run.profile.tasks * (run.requestedAttempts ?? run.profile.attempts)) throw new ConvexError('The result exceeds the approved trial count.')
+    if (status === 'completed' && data.rows.length !== run.profile.tasks * (run.requestedAttempts ?? run.profile.attempts)) throw new ConvexError('Completed evaluations must include every approved trial.')
     if ((await ctx.db.query('reports').withIndex('by_owner', q => q.eq('owner', run.owner)).take(100)).length >= 100) throw new ConvexError('Report storage is full. Results remain on the machine until storage is available.')
     report = await ctx.db.insert('reports', { owner: run.owner, title: run.profile.title.slice(0, 120), trials: data.rows.length, shareToken: null })
     await ctx.db.insert('reportData', { report, json: JSON.stringify(data) })

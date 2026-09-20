@@ -19,7 +19,7 @@ The first publication will include the complete task and grader. Every later rer
 
 - Clean environment per trial
 - Fixed 96 × 24 PTY
-- Pinned evaluation runner: Harbor 0.22.0 (see [`harbor/toolchain.json`](../harbor/toolchain.json))
+- Pinned evaluation runner: Harbor 0.23.0 (see [`harbor/toolchain.json`](../harbor/toolchain.json))
 - Pinned harness and model versions
 - Identical CPU, memory, timeout, and task files
 - Three attempts per stack for the first article

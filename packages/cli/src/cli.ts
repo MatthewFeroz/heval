@@ -9,6 +9,7 @@ import { createInterface } from 'node:readline/promises'
 import { connectRunner, runDaemon, runnerStatus } from './runner/client'
 import { recoverRun } from './runner/supervisor'
 import { doctor } from './doctor'
+import { HARBOR_VERSION } from './harbor-version'
 import { loadInput } from './input'
 import { startViewer } from './viewer'
 
@@ -33,7 +34,7 @@ Or use Studio's Open export button for a project or bundle.
 
 The viewer supports charts, trial inspection, SVG/PNG, and project bundles.
 Connect a Linux machine through the website's Machines page, then use runner
-connect and runner start. Requires Harbor 0.22.0 and Docker on that machine.
+connect and runner start. Requires Harbor ${HARBOR_VERSION} and Docker on that machine.
 Approved profiles and model credentials stay on the machine; results save online.
 Social/video rendering is not included. Doctor checks prerequisites without
 installing software or making model calls. --strict fails on missing required

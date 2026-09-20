@@ -1,0 +1,27 @@
+[
+  {
+    "path": ".tools/deepseek-study/bin/grok",
+    "sha256": "39ab87666877d64ef3a40aa60fbe0c3b6a6acd7001b78fe60e2c76bb6cfc4a94",
+    "architecture": "linux-arm64"
+  },
+  {
+    "path": ".tools/deepseek-study/bin/agy",
+    "sha256": "1c4c970528cd81fba8cc8d3932a1c20c47025fb0a42b597f7dfa93b01e3007e5",
+    "architecture": "linux-arm64"
+  },
+  {
+    "path": ".tools/deepseek-study/cursor/cursor-agent",
+    "sha256": "2ccc9a8e167797641448b5e5c936f006ba137a2555f117f38c5eb76a5238a233",
+    "architecture": "linux-arm64"
+  },
+  {
+    "path": ".tools/deepseek-study/cursor/index.js",
+    "sha256": "b2398ed8d3c974b41c28d6526bdf187c168e1737eded989f369ba8d8919a246c",
+    "architecture": "linux-arm64"
+  },
+  {
+    "path": ".tools/deepseek-study/cursor/node",
+    "sha256": "47befb5f57df96771ce343d6293349ecf4d46c91110b626423ec3a49d2fee7c1",
+    "architecture": "linux-arm64"
+  }
+]

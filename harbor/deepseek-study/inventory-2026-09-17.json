@@ -1,0 +1,73 @@
+{
+  "timestamp": "2026-09-17T14:57:06.797344+00:00",
+  "architecture": "aarch64",
+  "free_disk_gib": 0.47,
+  "checks": {
+    "bun": {
+      "ok": true,
+      "path": "/home/matt/.local/share/vite-plus/bin/bun",
+      "version": "1.4.0"
+    },
+    "node": {
+      "ok": true,
+      "path": "/home/matt/.local/share/vite-plus/bin/node",
+      "version": "v26.8.2"
+    },
+    "harbor": {
+      "ok": true,
+      "path": "/home/matt/.local/bin/harbor",
+      "version": "0.22.0"
+    },
+    "docker": {
+      "ok": false,
+      "error": "FileNotFoundError"
+    },
+    "claude": {
+      "ok": true,
+      "path": "/home/matt/.local/bin/claude",
+      "version": "2.1.270 (Claude Code)"
+    },
+    "codex": {
+      "ok": true,
+      "path": "/home/matt/.local/bin/codex",
+      "version": "codex-cli 0.154.0"
+    },
+    "opencode": {
+      "ok": true,
+      "path": "/home/matt/.local/bin/opencode",
+      "version": "1.18.30"
+    },
+    "pi": {
+      "ok": true,
+      "path": "/home/matt/.local/bin/pi",
+      "version": "0.85.1"
+    },
+    "grok": {
+      "ok": true,
+      "path": "/home/matt/heval/.tools/deepseek-study/bin/grok",
+      "version": "grok 1.0.34 (3736acbc8658)"
+    },
+    "antigravity": {
+      "ok": true,
+      "path": "/home/matt/heval/.tools/deepseek-study/bin/agy",
+      "version": "1.2.5"
+    },
+    "cursor": {
+      "ok": true,
+      "path": "/home/matt/heval/.tools/deepseek-study/bin/cursor-agent",
+      "version": "2026.09.15-d2fe57e"
+    },
+    "deep-agents": {
+      "ok": true,
+      "path": "/home/matt/.local/bin/deepagents-code",
+      "version": "deepagents-code 0.1.70\ndeepagents (SDK) 0.7.15\n\nInstalled optional dependencies:\n  anthropic     langchain-anthropic     1.7.2\n  google-genai  langchain-google-genai  4.4.0\n  openai        langchain-openai        1.6.2"
+    },
+    "deepseek": {
+      "ok": true,
+      "path": "/home/matt/heval/.tools/deepseek-study/node_modules/.bin/dsh",
+      "version": "0.1.5-rc.2"
+    }
+  },
+  "ready_for_local_benchmarks": false,
+  "note": "Version checks do not establish provider, native tool, or Harbor adapter compatibility. 30 GiB free is a conservative preflight threshold, not a benchmark guarantee."
+}

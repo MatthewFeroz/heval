@@ -1,3 +1,4 @@
+import { PRESENTATION_DEFAULT_THEME, PRESENTATION_DEFAULT_SOURCE } from './presentation-defaults'
 import { SOCIAL_THEMES, type SocialTheme } from './social-themes'
 import type { TrialRow } from './trial'
 import { costPerSuccess, medianTimePassed, completionRate } from './metrics'
@@ -61,13 +62,13 @@ export type SocialSettings = {
 export const SOCIAL_DEFAULTS: SocialSettings = {
   version: 1,
   preset: 'completed',
-  theme: 'merge-dark',
+  theme: PRESENTATION_DEFAULT_THEME,
   models: [],
   collection: THREAD_PRESETS,
   showSubtitle: false,
   showDirection: false,
   showSource: true,
-  source: 'Merge Evaluations',
+  source: PRESENTATION_DEFAULT_SOURCE,
 }
 export function socialSettings(value: unknown): SocialSettings {
   if (value === undefined)
@@ -75,7 +76,8 @@ export function socialSettings(value: unknown): SocialSettings {
   if (!value || typeof value !== 'object' || Array.isArray(value))
     throw new Error('Invalid social settings')
   const v = { ...SOCIAL_DEFAULTS, ...value } as SocialSettings
-  if (!Object.hasOwn(SOCIAL_THEMES, v.theme ?? 'merge-dark'))
+  v.theme ??= PRESENTATION_DEFAULT_THEME
+  if (!Object.hasOwn(SOCIAL_THEMES, v.theme))
     throw new Error('Unknown publishing theme')
   if (v.version !== 1 || !Object.hasOwn(SOCIAL_PRESETS, v.preset))
     throw new Error('Unknown social preset or settings version')

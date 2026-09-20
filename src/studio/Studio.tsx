@@ -1,12 +1,15 @@
+import { Brand } from '../components/SiteHeader'
 import { useAppAuth, authorizedFetch } from '../auth'
 import { guideHref } from '../onboarding/model'
 import { AccountControls } from '../account/AccountControls'
-import { THREAD_PRESETS } from '../charts/social-presets'
+import { SOCIAL_DEFAULTS, THREAD_PRESETS } from '../charts/social-presets'
 import { STATIC_SITE } from '../deployment'
 import { ConvexError } from 'convex/values'
 import type { ReportData } from '../reports/format'
 import type { ReportProject } from '../reports/project'
 import { SocialPreview } from './SocialPreview'
+import { CloudPresentationExports, SavePresentationOnline } from './CloudPresentationExports'
+import { ReportProvider } from '../reports/ReportProvider'
 import { NUMERIC, columnLabel, cellText } from './table-values'
 import { StatTiles, FilterBar, RunList, RunDrawer, type RunSort } from './TrialPanels'
 /**
@@ -141,7 +144,7 @@ function readFilters(search: string): Filters {
   return out
 }
 
-export type HostedStudioSession = { id: string; initial: ReportProject; artifact: EvaluationArtifact; data: ReportData; version: number; newerVersion?: boolean; save: (document: ReportProject) => Promise<void> }
+export type HostedStudioSession = { id: string; initial: ReportProject; artifact: EvaluationArtifact; data: ReportData; version: number; newerVersion?: boolean; save: (document: ReportProject) => Promise<void>; enqueue: (document: ReportProject, collection: boolean, requestId: string) => Promise<void> }
 const fingerprint = (document: ReportProject) => JSON.stringify(document, (key, value) => key === 'createdAt' || key === 'updatedAt' ? undefined : value)
 
 export function Studio({ localViewer = false, hosted }: { localViewer?: boolean; hosted?: HostedStudioSession }) {
@@ -167,7 +170,7 @@ export function Studio({ localViewer = false, hosted }: { localViewer?: boolean;
   const [job, setJob] = useState<string | null>(hosted ? null : initial.job)
   const [data, setData] = useState<JobExport | null>(hosted ? { ...hosted.data, jobId: hosted.id, source: '', agentVersions: {} } : null)
   const [loadError, setLoadError] = useState<string | null>(null)
-  const [tab, setTab] = useState<Tab>(mode === 'presentation' && serverExports ? 'social' : 'chart')
+  const [tab, setTab] = useState<Tab>(mode === 'presentation' && !localViewer ? 'social' : 'chart')
   const [specDraft, setSpecDraft] = useState<string | null>(null)
   const [dragging, setDragging] = useState(false)
   const [selected, setSelected] = useState<string | null>(null)
@@ -304,7 +307,7 @@ export function Studio({ localViewer = false, hosted }: { localViewer?: boolean;
       setActivePresentationId(created.id)
     }
     setMode(next)
-    setTab(next === 'presentation' && serverExports ? 'social' : 'chart')
+    setTab(next === 'presentation' && !localViewer ? 'social' : 'chart')
     setSpecDraft(null)
   }
 
@@ -507,7 +510,8 @@ export function Studio({ localViewer = false, hosted }: { localViewer?: boolean;
     download(`${project.label}.heval-project.json`, new Blob([JSON.stringify(projectWithDraft(), null, 2)], { type: 'application/json' }))
   }
 
-  const cloudDocument: ReportProject | null = hosted && project && activeView ? { project: projectWithDraft()!, mode, viewId: activeView.id, presentationId: activePresentation?.id ?? null } : null
+  const presentationDocument: ReportProject | null = project && activeView ? { project: projectWithDraft()!, mode, viewId: activeView.id, presentationId: activePresentation?.id ?? null } : null
+  const cloudDocument = hosted ? presentationDocument : null
   const cloudDirty = !!cloudDocument && fingerprint(cloudDocument) !== savedFingerprint
   useEffect(() => {
     if (!cloudDirty) return
@@ -583,11 +587,7 @@ export function Studio({ localViewer = false, hosted }: { localViewer?: boolean;
       }}
     >
       <header className="topbar">
-        <a className="brand" href="/" aria-label="Heval home">
-          <span className="brand-mark"><span>H</span></span>
-          <span className="brand-name">Heval</span>
-          <span className="beta-pill">{localViewer ? 'LOCAL RESULTS' : 'STUDIO'}</span>
-        </a>
+        <div className="studio-brand"><Brand /><span className="beta-pill">{localViewer ? 'LOCAL RESULTS' : 'STUDIO'}</span></div>
 
         <div className="crumbs" hidden={!!hosted}>
           <ChevronRight size={14} />
@@ -643,7 +643,7 @@ export function Studio({ localViewer = false, hosted }: { localViewer?: boolean;
           <button type="button" role="tab" aria-selected={mode === 'analysis'} onClick={() => switchMode('analysis')}>Analysis</button>
           <button type="button" role="tab" aria-selected={mode === 'presentation'} disabled={!project || !activeView} onClick={() => switchMode('presentation')}>Presentation</button>
         </div>
-        <span>{mode === 'analysis' ? 'Compare compatible metrics across sources and save the analysis.' : !serverExports ? 'Export this saved view as SVG or PNG. Your analysis stays intact.' : 'Choose a question and export. Your saved analysis stays intact.'}</span>
+        <span>{mode === 'analysis' ? 'Compare compatible metrics across sources and save the analysis.' : 'Choose a question and export. Your saved analysis stays intact.'}</span>
         {project && <strong>{project.label} · {project.sources.length} {project.sources.length === 1 ? 'source' : 'sources'}</strong>}
       </div>
 
@@ -701,7 +701,7 @@ export function Studio({ localViewer = false, hosted }: { localViewer?: boolean;
                 <label htmlFor="f-presentation-theme">Theme preset</label>
                 <select id="f-presentation-theme" value={activePresentation.theme} onChange={(event) => {
                   const theme = event.target.value as typeof activePresentation.theme
-                  updatePresentation((current) => ({ ...current, theme, graphOverrides: { ...current.graphOverrides, theme: theme === 'plain-light' ? 'light' : 'dark' }, motion: { ...current.motion, theme }, updatedAt: new Date().toISOString() }))
+                  updatePresentation((current) => ({ ...current, theme, social: { ...SOCIAL_DEFAULTS, ...current.social, theme: theme === 'merge-gateway' ? 'merge-dark' : theme }, graphOverrides: { ...current.graphOverrides, theme: theme === 'plain-light' ? 'light' : 'dark' }, motion: { ...current.motion, theme }, updatedAt: new Date().toISOString() }))
                 }}>
                   {THEME_IDS.map((id) => <option key={id} value={id}>{MOTION_THEMES[id].label}</option>)}
                 </select>
@@ -902,7 +902,7 @@ export function Studio({ localViewer = false, hosted }: { localViewer?: boolean;
                 ['social', 'Social images', <ImageIcon size={13} key="i" />, null],
                 ['motion', 'Motion', <Film size={13} key="i" />, null],
                 ['spec', 'Vega-Lite spec', <Braces size={13} key="i" />, null],
-              ]) as [Tab, string, ReactNode, number | null][]).filter(([t]) => serverExports || (t !== 'social' && t !== 'motion')).map(([t, label, icon, count]) => (
+              ]) as [Tab, string, ReactNode, number | null][]).filter(([t]) => serverExports || (t !== 'motion' && (t !== 'social' || !localViewer))).map(([t, label, icon, count]) => (
                 <button key={t} type="button" role="tab" className="tab" aria-selected={tab === t} disabled={t === 'spec' && !chart && override === null} onClick={() => setTab(t)}>
                   {icon}{label}{count !== null && <small>{count}</small>}
                 </button>
@@ -955,6 +955,16 @@ export function Studio({ localViewer = false, hosted }: { localViewer?: boolean;
           {tab === 'social' && <SocialPreview
             key={activePresentation?.id ?? 'new-social'}
             rows={socialRows}
+            serverExports={serverExports}
+            hostedExportControls={!localViewer && (hosted || import.meta.env.VITE_CONVEX_URL) ? (ready, collectionReady) => hosted && cloudDocument ? <CloudPresentationExports report={hosted.id}
+              disabled={cloudBusy || !!hosted.newerVersion || !socialRows.length || !ready}
+              collectionDisabled={!collectionReady}
+              enqueue={async (collection, requestId) => {
+                setCloudBusy(true)
+                try { await hosted.enqueue(cloudDocument, collection, requestId); setSavedFingerprint(fingerprint(cloudDocument)) }
+                finally { setCloudBusy(false) }
+              }} /> : !localViewer && import.meta.env.VITE_CONVEX_URL && presentationDocument && data ?
+              <ReportProvider><SavePresentationOnline document={presentationDocument} data={data} /></ReportProvider> : undefined : undefined}
             options={activePresentation?.social}
             collectionUnavailableReason={project && selectedSourceIds.some(id => {
               const keys = projectFields(project, artifacts, [id]).map(field => field.key)
@@ -970,7 +980,10 @@ export function Studio({ localViewer = false, hosted }: { localViewer?: boolean;
               const required = ['task', 'modelShort', 'passed', ...(['total-cost','cost-per-success'].includes(preset) ? ['costUsd'] : []), ...(['median-time','slow-timeouts'].includes(preset) ? ['agentSeconds'] : []), ...(preset === 'slow-timeouts' ? ['timedOut'] : [])]
               return required.some(key => !sourceFields.some(field => field.key === key))
             }) ? 'This preset requires fields that are missing from a selected source. Select compatible data or another preset.' : undefined}
-            onChange={social => updatePresentation(current => ({ ...current, social, updatedAt: new Date().toISOString() }))}
+            onChange={social => updatePresentation(current => {
+              const theme = social.theme === 'plain-light' || social.theme === 'plain-dark' ? social.theme : 'merge-gateway'
+              return { ...current, social, theme, graphOverrides: { ...current.graphOverrides, theme: theme === 'plain-light' ? 'light' : 'dark' }, motion: { ...current.motion, theme }, updatedAt: new Date().toISOString() }
+            })}
           />}
           {tab === 'motion' && <MotionPreview
             key={activePresentation?.id}

@@ -3,7 +3,7 @@ import { mkdtempSync, rmSync, readFileSync, writeFileSync, statSync, symlinkSync
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { cloudUrl } from './client'
-import { initializeProfiles, loadProfiles, snapshotProfile } from './profiles'
+import { initializeProfiles, loadProfiles, snapshotProfile, requestedProfile } from './profiles'
 import { readJson, writeJson } from './files'
 import { processKey } from './supervisor'
 import { exportJob } from '../../../../harbor/report/trials'
@@ -61,4 +61,37 @@ test('Harbor default-elided configs import the resolved Oracle agent from result
   writeJson(join(trial, 'config.json'), { trial_name: 'trial' })
   writeJson(join(trial, 'result.json'), { task_name: 'setup', config: { agent: { name: 'oracle' } }, verifier_result: { rewards: { reward: 1 } }, agent_info: { name: 'oracle', version: '1.0.0' } })
   expect(exportJob(directory, null).rows).toMatchObject([{ agent: 'oracle', reward: 1, passed: 1 }])
+})
+
+test('Codex, Claude Code and Pi profiles retain reviewed provider settings', () => {
+  const dir = state(), registry = initializeProfiles(dir, task)
+  for (const name of ['codex', 'claude-code', 'pi']) {
+    const agent = { name, model_name: 'deepseek/deepseek-v4.1-flash', kwargs: { version: 'test-pin', ...(name === 'pi' ? { model_api: 'openai-completions' } : {}) }, env: { DEEPSEEK_BASE_URL: 'http://worker:8787/v1/openai' } }
+    writeJson(join(dir, 'setup.json'), { n_attempts: 1, agents: [agent], tasks: [{ path: 'tasks/heval-setup' }] })
+    const profile = loadProfiles(registry)[0]
+    expect(profile.public.agent).toBe(name)
+    expect(profile.config.agents).toEqual([agent])
+    expect(profile.public.setupCheck).toBe(false)
+  }
+})
+
+test('browser attempts stay within worker approval and retain a stable task identity', () => {
+  const dir = state(), registry = initializeProfiles(dir, task)
+  const doc = readJson<{ profiles: { maxAttempts?: number }[] }>(registry)
+  doc.profiles[0].maxAttempts = 3
+  writeJson(registry, doc)
+  const profile = loadProfiles(registry)[0]
+  expect(profile.public.maxAttempts).toBe(3)
+  expect(profile.public.taskSet).toMatch(/^[a-f0-9]{64}$/)
+  const requested = requestedProfile(profile, 2)
+  const run = join(dir, 'two-attempt-run')
+  snapshotProfile(requested, run)
+  expect(readJson<{n_attempts:number}>(join(run,'harbor.json')).n_attempts).toBe(2)
+  expect(profile.config.n_attempts).toBe(1)
+  expect(() => requestedProfile(profile, 4)).toThrow('approval')
+  expect(() => requestedProfile(profile, 0)).toThrow('approval')
+  expect(() => requestedProfile(profile, 1.5)).toThrow('approval')
+  doc.profiles[0].maxAttempts = 2
+  writeJson(registry, doc)
+  expect(loadProfiles(registry)[0].public.digest).not.toBe(profile.public.digest)
 })
