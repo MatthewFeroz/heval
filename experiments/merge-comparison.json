@@ -3,7 +3,7 @@
   "id": "merge-comparison",
   "baseline": {
     "file": "results/harbor/terminal-bench-comparison.json",
-    "sha256Json": "e9e2982c2e19da7ef87403401c8f6a780ad675057087a2e089ccf948c8fe6c43"
+    "sha256Json": "91f7792952c2457be6c08d78cc4a862537d50b5e2f0c47cbe76e2751d86749b3"
   },
   "runTemplate": "harbor/jobs/terminal-bench-comparison.yaml",
   "chartSettings": "harbor/report/thread-merge.json",

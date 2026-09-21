@@ -30,7 +30,7 @@
     "social:build": "bun harbor/social/build-completion.ts",
     "social:check": "HYPERFRAMES_NO_TELEMETRY=1 hyperframes check results/harbor/social/terminal-bench-comparison --at 0,2.8,5.7,7.9",
     "status": "bash harbor/status.sh",
-    "test:server": "bun test server",
+    "test:server": "bun test server --path-ignore-patterns 'server/hosted-exports/**'",
     "test:docker": "bun run worker:build && bun test --env-file=.env.docker-test server/docker.integration.test.ts",
     "worker:build": "docker build -f server/worker/Dockerfile -t heval-worker:local .",
     "poster:comparison": "bun run poster results/harbor/terminal-bench-comparison.json --only-combined --models glm-5.3,glm-5.3-flash,kimi-k3,deepseek-v4-flash,deepseek-v4-pro-0813 --source \"Source: Heval evaluations\" --out results/harbor/posters/merge-gateway-five-models",
