@@ -15,6 +15,32 @@ const agentLabel = (s: string) => ({ codex: 'Codex CLI', 'claude-code': 'Claude 
 const unique = (items: string[]) => [...new Set(items)].sort()
 const toggle = (items: string[], item: string) => items.includes(item) ? items.filter(i => i !== item) : [...items, item]
 const done = (s: string) => (terminalStates as readonly string[]).includes(s)
+const publicHarborJob = 'https://hub.harborframework.com/jobs/3de0aee9-6de7-4d94-83c4-ac5e789fe757'
+
+function EvaluationIntro() {
+  return <div className="report-intro"><span className="report-eyebrow">EVALUATIONS</span><h1>Create, run, inspect, and publish.</h1><p>Choose a comparison once. Your connected machine executes it, and Heval carries the same evaluation through results, analysis, and sharing.</p><ol className="report-steps"><li>Create evaluation</li><li>Run on your machine</li><li>Inspect trials</li><li>Publish result</li></ol></div>
+}
+
+function ExampleRunGuide() {
+  return <section className="report-card evaluation-example" id="example" aria-labelledby="example-run-title">
+    <div className="evaluation-example-heading"><div><span className="report-eyebrow">NO SETUP REQUIRED</span><h2 id="example-run-title">See a finished run before you make one.</h2></div><span className="report-badge" data-tone="success">Public Harbor data</span></div>
+    <p className="evaluation-example-lede">This public Terminal-Bench 4.0 job ran the Codex harness with GPT-5.6 Terra. Opening it is read-only: it starts no agents, uses no credentials, and costs you nothing.</p>
+    <div className="evaluation-example-layout">
+      <div>
+        <dl className="evaluation-example-stats" aria-label="Public example summary">
+          <div><dt>Finished trials</dt><dd>330</dd></div><div><dt>Completed</dt><dd>322</dd></div><div><dt>Errors</dt><dd>8</dd></div><div><dt>Average reward</dt><dd>0.22</dd></div>
+        </dl>
+        <p className="report-muted">Completed means Harbor produced a scored result; it does not mean the task passed. The reward tells you how the scored trials performed, while errors stay visible as execution failures.</p>
+        <div className="report-actions"><a className="report-button" href={publicHarborJob} target="_blank" rel="noreferrer">Walk through the public run ↗</a><a href="/results/harbor/terminal-bench-comparison.html">Open a Heval example report</a></div>
+      </div>
+      <ol className="evaluation-example-steps" aria-label="Example walkthrough">
+        <li><span>1</span><div><strong>Read the run summary</strong><p>Identify the dataset, harness, model, trial count, reward, and execution errors.</p></div></li>
+        <li><span>2</span><div><strong>Open one trial</strong><p>Check its task, reward, duration, token use, and trajectory. The evidence matters more than the headline score.</p></div></li>
+        <li><span>3</span><div><strong>Start small in Heval</strong><p>Connect a worker, then run one task × one harness × one model. Expand only after that setup check passes.</p></div></li>
+      </ol>
+    </div>
+  </section>
+}
 
 function ExperimentReport({ id }: { id: Id<'reports'> }) {
   const report = useQuery(api.reports.get, { id })
@@ -151,12 +177,13 @@ function Evaluations() {
   const id=new URLSearchParams(location.search).get('experiment') as Id<'experiments'> | null
   if(id) return <Experiment id={id} now={now}/>
   return <>
-    <div className="report-intro"><span className="report-eyebrow">EVALUATIONS</span><h1>Create, run, inspect, and publish.</h1><p>Choose a comparison once. Your connected machine executes it, and Heval carries the same evaluation through results, analysis, and sharing.</p><ol className="report-steps"><li>Create evaluation</li><li>Run on your machine</li><li>Inspect trials</li><li>Publish result</li></ol></div>
+    <EvaluationIntro />
+    <ExampleRunGuide />
     {machines===undefined ? <p role="status">Loading worker options…</p>:machines.some(m=>!m.revoked)?<Wizard machines={machines.filter(m=>!m.revoked)} now={now}/>:<section className="report-card evaluation-setup"><span className="report-eyebrow">STEP 1 · RUNNER SETUP</span><h2>Connect the machine that will execute this evaluation.</h2><p>Heval keeps orchestration and reports online while Harbor and Docker run on your Linux machine. The runner connects outbound, and your provider credentials stay there.</p><div className="report-actions"><a className="report-button" href="/machines">Connect a runner</a><a href="https://github.com/MatthewFeroz/heval/blob/main/packages/cli/README.md#connected-runner-preview" target="_blank" rel="noreferrer">Read the setup guide ↗</a></div></section>}
     <section className="report-card"><h2>Your experiments</h2>{experiments===undefined ? <p>Loading experiments…</p>:!experiments.length ? <p>Your first experiment will appear here. Earlier individual runs remain in <a href="/machines">Machines</a>.</p>:<ul className="evaluation-history">{experiments.map(e=><li key={e.id}><a href={`/evaluations?experiment=${e.id}`}><strong>{e.title}</strong><span>{e.finished} / {e.runs} runs finished{e.failed ? ` · ${e.failed} need attention`:''}</span></a></li>)}</ul>}</section>
   </>
 }
 export function EvaluationApp() {
   const auth=useAppAuth(),{isLoading,isAuthenticated}=useConvexAuth()
-  return <WorkspaceLayout active="evaluations">{isLoading?<p role="status">Connecting your workspace…</p>:isAuthenticated?<Evaluations/>:<section className="report-card"><h1>Create an evaluation</h1><p>Sign in to choose a worker and keep your experiments in your account.</p>{auth.configured?<button onClick={auth.signIn}>Sign in</button>:<p>Sign-in is not configured.</p>}</section>}</WorkspaceLayout>
+  return <WorkspaceLayout active="evaluations">{isLoading?<><EvaluationIntro/><ExampleRunGuide/><p role="status">Connecting your workspace…</p></>:isAuthenticated?<Evaluations/>:<><EvaluationIntro/><ExampleRunGuide/><section className="report-card"><h2>Create your own evaluation</h2><p>Sign in to choose a worker and keep your experiments in your account.</p>{auth.configured?<button onClick={auth.signIn}>Sign in</button>:<p>Sign-in is not configured.</p>}</section></>}</WorkspaceLayout>
 }
