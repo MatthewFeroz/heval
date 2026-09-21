@@ -9,11 +9,13 @@ For the production boundary and the sandbox story, see
 
 ## What Heval does
 
-It runs the same coding tasks against several models, records every attempt, and
-turns those attempts into four things you can show someone: an interactive
-chart, a table of the numbers, a static HTML report, and a short video.
+It creates an evaluation in the browser, runs the selected matrix through Harbor
+on your connected machine, records every attempt, and combines the results into
+one inspectable and publishable report.
 
-One run of many trials is a **job**. Everything downstream reads one job.
+One experiment can contain several harness/model runs. Each run produces trial
+rows; the experiment report combines those rows and becomes the source for its
+chart, table and published view.
 
 ## Current pages and execution paths
 
@@ -23,24 +25,40 @@ connected machines, and the older Bun fixture workbench.
 
 | URL | Purpose |
 | --- | --- |
-| `/` | Product landing and recorded demo; optional Bun workbench |
-| `/machines` or `/evaluations` | Pair a Linux worker and run approved profiles |
-| `/reports` | Import, save and share evaluation results |
-| `/studio` | Analyze results and create presentations |
+| `/` | Product landing and recorded demo |
+| `/evaluations` | Create, run, inspect and publish one evaluation |
+| `/machines` | Pair and diagnose a Linux runner |
+| `/reports` | Find saved results or import external results |
+| `/studio` | Edit an evaluation's analysis and presentation |
 | `/share` | View an explicitly shared report |
 
 Hosted workspace features require WorkOS and Convex. Direct Harbor execution and
 local result viewing do not require a Heval account.
 
-## The pipeline
+## The connected evaluation pipeline
 
-Four steps, in order.
+Five steps, in order.
 
-**1. A run produces raw output.** Trials land in `jobs/<job-name>/`. This is
-the Harbor trial output — agent logs, configuration and verifier results.
-The report exporter and the CLI can both read this directory.
+**1. Configure.** `/evaluations` builds an approved matrix from the task sets,
+harnesses, models and vendor advertised by one connected runner.
 
-**2. `bun run report` normalizes it.** Point it at a job directory:
+**2. Run.** Convex queues each matrix cell. The outbound CLI runner claims it,
+and an independent supervisor executes Harbor and Docker on the machine.
+
+**3. Normalize and combine.** Raw Harbor artifacts stay on the machine. The
+runner uploads sanitized rows for each cell; after every cell is terminal,
+Convex creates one combined experiment report from the available rows.
+
+**4. Inspect and edit.** The experiment page shows run-level diagnostics plus
+the combined chart and trial table. Studio edits that same saved report.
+
+**5. Publish.** Creating a public link freezes the current presentation version.
+Later edits remain drafts until explicitly published; access can be revoked.
+
+## Direct Harbor and imported results
+
+For full control outside the connected profile limits, a Harbor run produces
+raw output in `jobs/<job-name>/`. Normalize it with:
 
 ```bash
 bun run report jobs/terminal-bench-comparison
@@ -52,11 +70,11 @@ That writes three things into `results/harbor/`:
 - `<job>.html` — a self-contained static report you can email
 - `index.json` — the catalog the studio's job picker lists
 
-**3. The studio loads the normalized JSON.** The job picker at the top reads
+The studio loads the normalized JSON. The job picker at the top reads
 `index.json`. Selecting a job fetches that job's `.json`. The URL carries the
 job and the chart state, so any view you build is a link.
 
-**4. You export.** Four outputs come off the same job file, so they cannot
+Exports come off the same job file, so they cannot
 disagree about the numbers.
 
 ## The Studio tabs

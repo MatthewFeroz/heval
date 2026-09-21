@@ -1,5 +1,11 @@
 # User environment and evaluation setup
 
+## Starting new work
+
+- Before starting a new project, task, or worktree, ask the user whether it is
+  worth refreshing remote references and fast-forwarding from `main`. Do not
+  let a newly created worktree silently start from an older local base.
+
 Remember this environment context when helping with Heval (confirmed with the user on 2026-09-17):
 
 - The user's physical laptop is a MacBook with an M5 Pro chip, running macOS. This host information is user-reported; the guest does not expose the exact Mac model or macOS version.

@@ -21,7 +21,8 @@
     "test:onboarding": "HEVAL_TEST_ONBOARDING=1 bun scripts/auth-session-smoke.ts",
     "test:deployments": "bun scripts/deployment-smoke.ts",
     "test:unit": "bun test src/project src/charts",
-    "test:reports": "vitest run",
+    "test:backend": "vitest run",
+    "test:reports": "bun run test:backend",
     "test:reports:smoke": "bun scripts/report-smoke.ts",
     "test:runners:smoke": "bun scripts/runner-smoke.ts",
     "preview": "vite preview --host 0.0.0.0",
@@ -47,7 +48,8 @@
     "test:exports": "vitest run --config vitest.hosted.config.ts",
     "test:exports:ui": "bun scripts/hosted-export-ui-smoke.ts",
     "test:exports:renderer": "bun scripts/export-renderer-smoke.ts",
-    "test:evaluations:ui": "bun scripts/evaluation-ui-smoke.ts"
+    "test:evaluations:ui": "bun scripts/evaluation-ui-smoke.ts",
+    "test:evaluations:e2e": "bun run cli:build && bun scripts/connected-evaluation-ci.ts"
   },
   "dependencies": {
     "@earendil-works/pi-coding-agent": "0.84.4",

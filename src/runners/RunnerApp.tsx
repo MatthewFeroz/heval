@@ -32,7 +32,7 @@ function Workspace() {
     pending.current = null
   }
   return <>
-    <div className="report-intro"><span className="report-eyebrow">YOUR CONNECTED WORKSPACE</span><h1>Run here.<br />Execute on your machine.</h1><p>Connect a Linux computer or cloud VM, choose an approved evaluation, then follow it from any signed-in browser. Results arrive in Your reports.</p><ol className="report-steps"><li>Connect a machine</li><li>Run a setup check</li><li>Open your report</li></ol></div>
+    <div className="report-intro"><span className="report-eyebrow">RUNNER SETUP</span><h1>Connect the machine.<br />Run from Evaluations.</h1><p>Pair a Linux computer or cloud VM and verify it here. Then create and follow full comparisons from Evaluations; results also remain in Report library.</p><ol className="report-steps"><li>Connect a runner</li><li>Run a setup check</li><li>Create an evaluation</li></ol></div>
     {error && <p role="alert">{error}</p>}{status && <p role="status">{status}</p>}
     <div className="runner-grid"><section className="report-card" aria-label="Connect a machine"><h2>Connect a machine</h2><p>The machine needs Linux, Docker Engine with Compose, and Harbor 0.23.0. Its runner makes an outbound connection; you don’t need to open a port.</p>
       <p><a href="https://github.com/MatthewFeroz/heval/blob/main/docs/connected-runners.md" target="_blank" rel="noreferrer">Install the runner preview and set up Linux ↗</a></p>

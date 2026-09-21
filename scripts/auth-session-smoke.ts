@@ -243,7 +243,7 @@ try {
   assert.equal(new URL(reportTab.url()).search, '?report=saved-report')
   assert.equal(new URL(reportTab.url()).hash, '#draft')
   assert.deepEqual(errors, [])
-  console.log('PASS: saved-report destination preserved; no browser exceptions. Report persistence is covered by test:reports.')
+  console.log('PASS: saved-report destination preserved; no browser exceptions. Report persistence is covered by test:backend.')
   }
 } catch (error) {
   for (const context of contexts) for (const page of context.pages()) {

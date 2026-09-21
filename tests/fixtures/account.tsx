@@ -27,7 +27,7 @@ export function Fixture() {
     <header style={{ position: 'sticky', top: 0, overflowX: 'auto', background: '#101010', padding: 16, backdropFilter: 'blur(18px)' }}>
       <nav style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 20, minWidth: params.has('overflow') ? 900 : undefined }}>
         <a href="#home" style={{ color: 'white', fontSize: 24 }}>heval</a>
-        <AccountControls auth={auth} showStudioLink />
+        <AccountControls auth={auth} showWorkspaceLink />
       </nav>
     </header>
     <main style={{ padding: 24 }}><h1>Account navigation</h1><button>Outside control</button><output aria-label="Sign-out attempts">{signOutCount}</output></main>

@@ -15,6 +15,9 @@ afterEach(() => { for (const path of temporary.splice(0)) rmSync(path, { recursi
 test('pairing refuses credential-bearing URLs, insecure origins and unrelated hosts', () => {
   expect(cloudUrl('https://example.convex.cloud')).toBe('https://example.convex.cloud')
   for (const url of ['http://example.convex.cloud', 'https://example.com', 'https://example.convex.cloud.evil.test', 'https://secret@example.convex.cloud', 'https://example.convex.cloud/?secret=x', 'https://example.convex.cloud/api']) expect(() => cloudUrl(url)).toThrow()
+  expect(cloudUrl('http://127.0.0.1:3210', true)).toBe('http://127.0.0.1:3210')
+  expect(cloudUrl('http://localhost:3210', true)).toBe('http://localhost:3210')
+  expect(() => cloudUrl('http://192.168.1.2:3210', true)).toThrow()
 })
 test('matching profiles are portable across machines and changes alter the content digest', () => {
   const a = state(), b = state()

@@ -2,6 +2,7 @@ import { v, ConvexError } from 'convex/values'
 import { mutation, query } from './_generated/server'
 import { identity } from './reportAccess'
 import { RUNNER_ONLINE_MS, terminalStates } from '../src/runners/protocol'
+import { materializeExperimentReport } from './experimentReports'
 
 export const create = mutation({ args: {
   runner: v.id('runners'), title: v.string(), requestId: v.string(), attempts: v.number(),
@@ -32,7 +33,7 @@ export const create = mutation({ args: {
   const pending = history.filter(r => !terminalStates.includes(r.status as typeof terminalStates[number])).length
   if (history.length + profiles.length > 200 || pending + profiles.length > 10) throw new ConvexError('Not enough queue space. Keep at most ten queued or active runs and 200 total runs.')
   const reports = await ctx.db.query('reports').withIndex('by_owner', q => q.eq('owner', owner)).take(100)
-  if (reports.length + pending + profiles.length > 100) throw new ConvexError('Not enough report storage for this experiment.')
+  if (reports.length + pending + profiles.length + 1 > 100) throw new ConvexError('Not enough report storage for this experiment.')
   const id = await ctx.db.insert('experiments', { owner, title: args.title.trim(), runner: args.runner, requestId: args.requestId, selection, attempts: args.attempts, taskSet: profiles[0].taskSet! })
   for (const p of profiles) await ctx.db.insert('runnerRuns', { owner, runner: args.runner, experiment: id, requestedAttempts: args.attempts, requestId: `${args.requestId}:${p.id}`, profile: p, status: 'queued', phase: 'Queued for this machine' })
   return id
@@ -43,7 +44,7 @@ export const list = query({ args: {}, handler: async ctx => {
   const experiments = await ctx.db.query('experiments').withIndex('by_owner', q => q.eq('owner', owner)).order('desc').take(200)
   return Promise.all(experiments.map(async e => {
     const runs = await ctx.db.query('runnerRuns').withIndex('by_experiment', q => q.eq('experiment', e._id)).take(10)
-    return { id: e._id, title: e.title, createdAt: e._creationTime, runs: runs.length, finished: runs.filter(r => terminalStates.includes(r.status as typeof terminalStates[number])).length, failed: runs.filter(r => r.status === 'failed' || r.status === 'interrupted').length }
+    return { id: e._id, title: e.title, createdAt: e._creationTime, report: e.report ?? null, runs: runs.length, finished: runs.filter(r => terminalStates.includes(r.status as typeof terminalStates[number])).length, failed: runs.filter(r => r.status === 'failed' || r.status === 'interrupted').length }
   }))
 } })
 
@@ -65,7 +66,7 @@ export const get = query({ args: { id: v.id('experiments') }, handler: async (ct
         trials: rows.length, passed: rows.filter(row => row.passed === 1).length, medianSeconds: times.length ? times.length % 2 ? times[mid] : (times[mid-1]+times[mid])/2 : null,
         reportedCost: rows.length && rows.every(row => typeof row.costUsd === 'number') ? rows.reduce((n,row) => n + row.costUsd!,0) : null } : null }
   }))
-  return { id, title: e.title, createdAt: e._creationTime, machine: machine?.name ?? 'Disconnected worker', lastSeen: machine?.lastSeen ?? 0, online: !!machine && !machine.revoked && Date.now()-machine.lastSeen < RUNNER_ONLINE_MS, cells }
+  return { id, title: e.title, createdAt: e._creationTime, report: e.report ?? null, machine: machine?.name ?? 'Disconnected worker', lastSeen: machine?.lastSeen ?? 0, online: !!machine && !machine.revoked && Date.now()-machine.lastSeen < RUNNER_ONLINE_MS, cells }
 } })
 
 export const cancel = mutation({ args: { id: v.id('experiments') }, handler: async (ctx, { id }) => {
@@ -76,4 +77,5 @@ export const cancel = mutation({ args: { id: v.id('experiments') }, handler: asy
     if (r.status === 'queued') await ctx.db.patch(r._id, { status: 'cancelled', phase: 'Cancelled before execution', finishedAt: Date.now() })
     if (r.status === 'running') await ctx.db.patch(r._id, { status: 'cancelling', phase: 'Waiting for the machine to stop and clean up' })
   }
+  await materializeExperimentReport(ctx, id)
 } })

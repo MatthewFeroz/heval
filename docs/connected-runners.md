@@ -19,9 +19,11 @@ Browser on laptop / another browser session
 
 Your browser doesn't need to stay open. Each machine runs a small polling daemon; a separate local supervisor owns each Harbor execution. Closing/restarting the polling daemon does not terminate that supervisor. The daemon reconnects to the same run and uploads its result once. A machine reboot interrupts execution; a run is never automatically repeated on another machine.
 
-The current source pin is Harbor 0.23.0. This upgrade passed CLI tests, build,
-and config validation. The archived full Docker smoke evidence records 0.22.0;
-it has not been rerun on 0.23.0 because this VM has no Docker engine.
+The current source pin is Harbor 0.23.0. It is covered by the required
+connected-evaluation CI job, which runs the setup profile through a live daemon,
+Harbor and Docker and verifies the resulting combined report. Older archived
+manual smoke evidence may still record the Harbor version used when it was
+captured.
 
 ## 1. Install the preview on Linux
 
@@ -55,7 +57,7 @@ The connected runner expects Harbor and its Docker engine on the same Linux mach
 
 ## 2. Pair and run the first check
 
-1. Open **Machines & runs** (`/machines`) in your Heval deployment and sign in.
+1. Open **Runner setup** (`/machines`) in your Heval deployment and sign in.
 2. Name the machine and click **Create pairing code**. The page shows the exact HTTPS Convex URL for this environment.
 3. On the Linux machine, run the displayed `heval runner connect --url https://YOUR-DEPLOYMENT.convex.cloud`. Paste the one-time code when prompted. It expires after ten minutes and can pair one machine. Provider credentials are not involved in pairing.
 4. Run `heval runner start`. If Harbor isn't on PATH, use `--harbor /absolute/path/to/harbor`. Keep it running or install the service below.
@@ -78,7 +80,8 @@ heval runner test --profile merge-codex
 The hidden key prompt validates the catalog; setup makes no model calls. The
 last command runs a real model-backed smoke test locally and uses credits.
 No pairing is needed for local testing. Once paired, these same profiles are
-available from Machines & runs. Use the same `--state` directory throughout.
+available from Runner setup and the Evaluations configuration page. Use the
+same `--state` directory throughout.
 See [the CLI connection guide](../packages/cli/README.md#one-merge-gateway-key-for-heval-evaluations)
 for replacement, removal, per-harness tests, and storage details. Merge profiles
 use `"provider": "merge"` instead of `envFile`; mixing the two is rejected.
@@ -161,7 +164,13 @@ dispatch, queued transfer, daemon recovery, results, and cancellation. The
 [16-check smoke evidence](evidence/connected-runner-smoke.json) records the tested
 versions and limits. No model calls or paid VM provisioning were used.
 
-`bun run test:reports` includes queue/ownership/claim tests. `bun run cli:test` covers profile hashing, immutable copies, URL validation, private state, and compatibility with Harbor's default-elided configs. Build the CLI before the cloud smoke:
+`bun run test:backend` includes queue/ownership/claim tests. `bun run cli:test`
+covers profile hashing, immutable copies, URL validation, private state, and
+compatibility with Harbor's default-elided configs. CI also runs
+`bun run test:evaluations:e2e`: it starts an isolated local Convex backend, a
+separate live daemon process, Harbor and Docker; completes the bundled Oracle
+task without model calls; and requires both the child report and combined
+experiment report. Build the CLI before the broader manual cloud smoke:
 
 ```sh
 bun run cli:build

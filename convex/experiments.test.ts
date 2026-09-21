@@ -63,6 +63,37 @@ test('requested attempts survive claims and result validation; progress survives
  expect(detail.cells[0].report).toBeTruthy()
  expect((await owner.query(api.experiments.list))[0].finished).toBe(1)
 })
+test('the final cell creates one combined experiment report',async()=>{
+ const {t,owner,args,poll,credential,session,claimId}=await setup()
+ const id=await owner.mutation(api.experiments.create,args)
+ for(let i=0;i<3;i++){
+  const run=(await poll())!
+  const json=JSON.stringify({...fixture,generatedAt:`2026-09-0${i+1}T00:00:00.000Z`,rows:[fixture.rows[0],{...fixture.rows[0],trial:'second',attempt:2}]})
+  await t.mutation(api.runners.finish,{credential,session,claimId,id:run.id,status:'completed',json})
+  const report=(await owner.query(api.experiments.get,{id})).report
+  if(i===2) expect(report).toBeTruthy(); else expect(report).toBeNull()
+ }
+ const detail=await owner.query(api.experiments.get,{id})
+ const combined=await owner.query(api.reports.get,{id:detail.report!})
+ const data=JSON.parse(combined!.data) as {job:string;rows:{trial:string}[]}
+ expect(data.job).toBe('Harness study')
+ expect(data.rows).toHaveLength(6)
+ expect(new Set(data.rows.map(row=>row.trial)).size).toBe(6)
+ expect(await owner.query(api.reports.list)).toHaveLength(4)
+})
+test('cancelled cells do not discard completed experiment results',async()=>{
+ const {t,owner,args,poll,credential,session,claimId}=await setup()
+ const id=await owner.mutation(api.experiments.create,args)
+ const run=(await poll())!
+ const json=JSON.stringify({...fixture,rows:[fixture.rows[0],{...fixture.rows[0],trial:'second',attempt:2}]})
+ await t.mutation(api.runners.finish,{credential,session,claimId,id:run.id,status:'completed',json})
+ await owner.mutation(api.experiments.cancel,{id})
+ const detail=await owner.query(api.experiments.get,{id})
+ expect(detail.cells.map(c=>c.status).sort()).toEqual(['cancelled','cancelled','completed'])
+ expect(detail.report).toBeTruthy()
+ const combined=await owner.query(api.reports.get,{id:detail.report!})
+ expect((JSON.parse(combined!.data) as {rows:unknown[]}).rows).toHaveLength(2)
+})
 test('cancelling an experiment stops queued runs and requests acknowledgment for active work',async()=>{
  const {owner,other,args,poll}=await setup()
  const id=await owner.mutation(api.experiments.create,args)

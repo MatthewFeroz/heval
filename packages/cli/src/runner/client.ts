@@ -13,9 +13,11 @@ import { processKey, supervisorAlive, type Outcome } from './supervisor'
 
 type Connection = { url: string; credential: string; id?: string; name?: string; pendingCode?: string }
 const exec = promisify(execFile)
-export function cloudUrl(input: string) {
+export function cloudUrl(input: string, allowLocal = process.env.HEVAL_RUNNER_ALLOW_LOCAL_CONVEX === '1') {
   const url = new URL(input)
-  if (url.protocol !== 'https:' || !/^[a-z0-9-]+\.convex\.cloud$/.test(url.hostname) || url.username || url.password || url.port || url.search || url.hash || url.pathname !== '/') throw new Error('Use the HTTPS convex.cloud deployment URL displayed in Heval.')
+  const cloud = url.protocol === 'https:' && /^[a-z0-9-]+\.convex\.cloud$/.test(url.hostname) && !url.port
+  const loopback = allowLocal && url.protocol === 'http:' && (url.hostname === '127.0.0.1' || url.hostname === 'localhost') && !!url.port
+  if ((!cloud && !loopback) || url.username || url.password || url.search || url.hash || url.pathname !== '/') throw new Error('Use the HTTPS convex.cloud deployment URL displayed in Heval.')
   return url.origin
 }
 function client(url: string) {

@@ -11,7 +11,6 @@ import { featuredExperiment, type Runner } from './data'
 import featuredResults from '../results/harbor/terminal-bench-comparison.json'
 import { publicAuth, type AppAuth } from './auth'
 import { Signup } from './Signup'
-import { RunWorkbench } from './RunWorkbench'
 import { STATIC_SITE } from './deployment'
 import { LandingHero } from './landing/LandingHero'
 import { HarnessTui } from './landing/HarnessTui'
@@ -85,8 +84,7 @@ function RaceStage({ auth }: { auth: AppAuth }) {
       else window.alert('Real runs require WorkOS AuthKit to be configured.')
       return
     }
-    window.dispatchEvent(new CustomEvent('heval-configure', { detail: harness }))
-    document.getElementById('evaluations')?.scrollIntoView({ behavior: 'smooth' })
+    window.location.assign(`/evaluations?harness=${encodeURIComponent(harness)}`)
   }
 
   return (
@@ -168,7 +166,7 @@ function Footer() {
     <footer className="footer shell">
       <Brand />
       <p>A workbench for understanding coding-agent evaluations.</p>
-      <div><a href="#methodology">Methodology</a><a href="/reports">Reports</a><a href="/studio">Studio</a><a href="https://github.com/MatthewFeroz/heval" target="_blank" rel="noreferrer">GitHub</a></div>
+      <div><a href="#methodology">Methodology</a><a href="/evaluations">Evaluations</a><a href="/machines">Runner setup</a><a href="/reports">Report library</a><a href="https://github.com/MatthewFeroz/heval" target="_blank" rel="noreferrer">GitHub</a></div>
       <small>© 2026 Heval</small>
     </footer>
   )
@@ -186,7 +184,6 @@ export default function App({ auth = publicAuth }: { auth?: AppAuth }) {
           <RaceStage auth={auth} />
         </section>
         <StudioShowcase />
-        {!STATIC_SITE && <RunWorkbench key={auth.user?.email || 'public'} auth={auth} />}
         <Methodology />
         {!STATIC_SITE && <Signup />}
       </main>

@@ -13,8 +13,12 @@ are no Continue steps. Advanced settings start collapsed.
 4. Name the experiment, review every combination and its run deadline, then click
    **Start experiment**. This can incur inference charges.
 5. The saved experiment page tracks all child runs. Return through Evaluations
-   after closing the tab. Each run starts collapsed with its status and recorded passes visible.
-   Expand it for timing, token counts, harness version, reported cost and its private report link.
+   after closing the tab. Each run starts collapsed with its status and recorded
+   passes visible. Expand it for timing, token counts, harness version, reported
+   cost and its private diagnostic report.
+6. When every cell is terminal, Heval combines all available trial rows into one
+   private experiment report. Inspect the trials, open Studio to shape the chart,
+   then publish, update or revoke the public link without leaving the experiment.
 
 The MacBook smoke worker advertises Codex, Claude Code and Pi with DeepSeek V4.1
 Flash through particle, on the installed protocol-smoke task. Repeating that study
@@ -48,17 +52,23 @@ A stable submission ID makes retries idempotent; edits require a new ID.
 On claim, the worker checks the profile digest and independently validates the
 attempt override before copying tasks and writing the Harbor config. Backend
 result validation checks the requested trial count rather than the profile's
-original default. Each completed child run saves a private report under the
-experiment owner's account. Cancel stops queued runs and requests acknowledgment
-from the worker for active runs. Offline workers are not silently replaced.
+original default. Each completed child run saves a private diagnostic report
+under the experiment owner's account. When every child run is terminal, the
+backend also creates one combined private report for the experiment. Cancel
+stops queued runs and requests acknowledgment from the worker for active runs.
+Offline workers are not silently replaced. Completed child results are still
+combined when other cells fail, cancel, or are interrupted.
 
 ## Data and scope
 
-`experiments` stores ownership, title, submission identity and immutable selection.
+`experiments` stores ownership, title, submission identity, immutable selection,
+and the combined report reference.
 `runnerRuns` stores the parent experiment and requested attempts. Existing reports
-and old individual runs are retained. They are not silently grouped or re-executed.
-The experiment page is a stack of expandable run summaries; it does not merge trial data into
-a new presentation or implement cross-harness social charts.
+and old individual runs are retained. They are not silently grouped or
+re-executed. New experiment child reports are combined only inside their parent
+experiment; their run-level reports remain available for diagnosis. The combined
+report uses the existing report project, chart, Studio and sharing system rather
+than introducing a second presentation format.
 
 Cost is still harness-reported and not reconciled with Merge billing. Unknown costs
 remain unknown. Successful-task median time excludes failed trials and setup;
@@ -67,7 +77,11 @@ it should not be mistaken for end-to-end latency.
 ## Validation
 
 - Convex tests cover ownership, atomic creation, idempotency, stale options,
-  incompatible task sets, attempt bounds, capacity, results and cancellation.
+  incompatible task sets, attempt bounds, capacity, results, cancellation and
+  final combined-report materialization.
+- The required connected-evaluation CI check crosses a real local Convex queue,
+  live CLI daemon, detached supervisor, Harbor and Docker using Oracle, so it
+  makes no model calls.
 - CLI tests verify attempt overrides cannot exceed worker approval and that the
   resulting task snapshot retains the requested number of attempts.
 - `bun scripts/evaluation-ui-smoke.ts` exercises the actual browser components with

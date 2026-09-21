@@ -70,7 +70,7 @@ A production check: log in, open the comparison in Studio, choose a question/the
 ## Validation
 
 ```sh
-bun run test:reports
+bun run test:backend
 bun run test:exports
 bun run test:exports:renderer
 bun run test:exports:ui

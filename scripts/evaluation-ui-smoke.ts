@@ -2,8 +2,13 @@
 import assert from 'node:assert/strict'
 import { createServer } from 'vite'
 import { chromium, expect } from '@playwright/test'
+import reportFixture from '../results/harbor/terminal-bench-comparison.json'
+import { initialReportProject } from '../src/reports/project'
+import type { ReportData } from '../src/reports/format'
 const profiles=['codex','claude-code','pi'].map((agent,i)=>({id:agent,digest:String(i+1).repeat(64),title:agent,benchmark:'Protocol smoke',agent,model:'deepseek/test',vendor:'particle',taskSet:'a'.repeat(64),maxAttempts:3,tasks:1,attempts:1,timeoutSeconds:1800,setupCheck:false}))
 profiles.push({...profiles[0],id:'other-model',model:'other/model'})
+const combinedData={...reportFixture,job:'My harness comparison',rows:reportFixture.rows.slice(0,1)} as ReportData
+const combinedProject=await initialReportProject(combinedData,'combined-report','My harness comparison')
 process.env.VITE_CONVEX_URL='https://wizard-test.convex.cloud'
 process.env.VITE_HEVAL_STATIC_SITE='1'
 const server=await createServer({server:{host:'127.0.0.1',port:0},plugins:[{
@@ -17,8 +22,8 @@ const server=await createServer({server:{host:'127.0.0.1',port:0},plugins:[{
  const machine={id:'worker',name:'MacBook worker',ready:true,revoked:false,lastSeen:Date.now(),health:'Ready',profiles};
  function commit(){localStorage.setItem('wizard-test',JSON.stringify(cache));window.dispatchEvent(new Event('wizard-change'))}
  export function useQuery(ref,args){const [state,setState]=useState(cache);useEffect(()=>{const fn=()=>setState({...cache});window.addEventListener('wizard-change',fn);return()=>window.removeEventListener('wizard-change',fn)},[]);const n=getFunctionName(ref);
- if(n==='runners:list')return [machine];if(n==='experiments:list')return state.experiment?[{id:'experiment',title:state.experiment.title,runs:3,finished:0,failed:0}]:[];if(n==='experiments:get')return state.experiment;throw Error('Unexpected query '+n)}
- export function useMutation(ref){return async args=>{const n=getFunctionName(ref);if(n==='experiments:create'){cache.count++;cache.input=args;cache.experiment={id:'experiment',title:args.title,machine:'MacBook worker',online:true,lastSeen:Date.now(),cells:args.profiles.map(p=>({id:p.id,profile:profiles.find(x=>x.id===p.id),attempts:args.attempts,status:'queued',phase:'Queued',report:null,result:null}))};commit();return 'experiment'}if(n==='experiments:cancel'){cache.experiment.cells.forEach(c=>{if(c.status==='queued')c.status='cancelled'});commit();return}throw Error('Unexpected mutation '+n)}}`
+ if(n==='runners:list')return [machine];if(n==='experiments:list')return state.experiment?[{id:'experiment',title:state.experiment.title,runs:3,finished:0,failed:0,report:state.experiment.report}]:[];if(n==='experiments:get')return state.experiment;if(n==='reports:get')return args.id==='combined-report'?{id:'combined-report',title:'My harness comparison',data:${JSON.stringify(JSON.stringify(combinedData))},project:${JSON.stringify(JSON.stringify(combinedProject))},shareToken:null,role:'owner',version:0,publishedVersion:null,updatedBy:null}:null;throw Error('Unexpected query '+n)}
+ export function useMutation(ref){return async args=>{const n=getFunctionName(ref);if(n==='experiments:create'){cache.count++;cache.input=args;cache.experiment={id:'experiment',title:args.title,machine:'MacBook worker',online:true,lastSeen:Date.now(),report:null,cells:args.profiles.map(p=>({id:p.id,profile:profiles.find(x=>x.id===p.id),attempts:args.attempts,status:'queued',phase:'Queued',report:null,result:null}))};commit();return 'experiment'}if(n==='experiments:cancel'){cache.experiment.cells.forEach(c=>{if(c.status==='queued')c.status='cancelled'});cache.experiment.report='combined-report';commit();return}throw Error('Unexpected mutation '+n)}}`
  }
 }]})
 await server.listen()
@@ -54,16 +59,19 @@ try {
  assert.equal(saved.count,1);assert.equal(saved.input.profiles.length,3);assert.equal(saved.input.attempts,2)
  await page.evaluate(()=>{const s=JSON.parse(localStorage.getItem('wizard-test')!);s.experiment.cells[0]={...s.experiment.cells[0],status:'completed',report:'saved-report',result:{passed:2,trials:2,medianSeconds:5,reportedCost:null}};localStorage.setItem('wizard-test',JSON.stringify(s))})
  await page.reload()
- await expect(page.getByRole('link',{name:'Open report'})).not.toBeVisible()
+ await expect(page.getByRole('link',{name:'Inspect this run'})).not.toBeVisible()
  await page.locator('.run-accordion > summary').first().press('Enter')
- await expect(page.getByRole('link',{name:'Open report'})).toBeVisible()
- await expect(page.getByRole('link',{name:'Open report'})).toHaveAttribute('href','/reports?id=saved-report')
+ await expect(page.getByRole('link',{name:'Inspect this run'})).toBeVisible()
+ await expect(page.getByRole('link',{name:'Inspect this run'})).toHaveAttribute('href','/reports?id=saved-report')
  await page.screenshot({path:'/tmp/heval-experiment-results.png',fullPage:true})
  await page.evaluate(()=>{const s=JSON.parse(localStorage.getItem('wizard-test')!);s.experiment.lastSeen=0;localStorage.setItem('wizard-test',JSON.stringify(s))})
  await page.reload()
  await expect(page.getByText(/Worker offline./)).toBeVisible()
  await page.getByRole('button',{name:'Cancel unfinished runs'}).click()
  await expect(page.getByText('3 of 3 runs finished',{exact:false})).toBeVisible()
+ await expect(page.getByRole('heading',{name:'Inspect, shape, and publish this evaluation.'})).toBeVisible()
+ await expect(page.getByRole('button',{name:'Publish evaluation'})).toBeVisible()
+ await page.screenshot({path:'/tmp/heval-evaluation-combined.png',fullPage:true})
  assert.deepEqual(errors,[])
- console.log('PASS: browser selects tasks/harnesses/model/vendor/attempts, blocks unsupported cells, submits once, restores experiment and results, cancels pending work.')
+ console.log('PASS: browser configures an evaluation, restores progress, inspects a run, combines terminal results, and exposes publishing.')
 }finally{await browser.close();await server.close()}

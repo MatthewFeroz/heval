@@ -42,7 +42,7 @@ hero may be larger and the Studio editor denser without changing typefaces.
 
 `src/components/SiteHeader.tsx` owns the lowercase wordmark and site header.
 Marketing keeps the compact GitHub/sign-in navigation. Workspace pages expose
-Machines & runs, Your reports, and Studio, with `aria-current` on the active route.
+Evaluations, Runner setup, and Report library, with `aria-current` on the active route.
 Studio's editing toolbar reuses `Brand` while keeping its editor-specific tools.
 
 `src/reports/WorkspaceLayout.tsx` supplies the shared header, content container,

@@ -7,10 +7,10 @@ import type { ReportData } from './format'
 type Rendered = Awaited<ReturnType<typeof renderReportProject>>
 
 /** Keyed by the saved document so an obsolete render never appears as the new revision. */
-export function ProjectReportView({ data, project }: { data: string; project: string }) {
-  return <LoadReport key={project} data={data} project={project} />
+export function ProjectReportView({ data, project, context = 'report' }: { data: string; project: string; context?: 'report' | 'evaluation' }) {
+  return <LoadReport key={project} data={data} project={project} context={context} />
 }
-function LoadReport({ data, project }: { data: string; project: string }) {
+function LoadReport({ data, project, context }: { data: string; project: string; context: 'report' | 'evaluation' }) {
   const [rendered, setRendered] = useState<Rendered | null>(null)
   const [error, setError] = useState('')
   const document = useMemo(() => JSON.parse(project), [project])
@@ -22,9 +22,9 @@ function LoadReport({ data, project }: { data: string; project: string }) {
   }, [document, results])
   if (error) return <p role="alert">The saved chart could not be loaded: {error}</p>
   if (!rendered) return <p role="status">Loading saved chart…</p>
-  return <ReportView title={document.project.label} data={results} rendered={rendered} />
+  return <ReportView title={document.project.label} data={results} rendered={rendered} context={context} />
 }
-function ReportView({ title, data, rendered }: { title: string; data: ReportData; rendered: Rendered }) {
+function ReportView({ title, data, rendered, context }: { title: string; data: ReportData; rendered: Rendered; context: 'report' | 'evaluation' }) {
   const [model, setModel] = useState('all')
   const models = [...new Set(rendered.rows.map(row => row.model))]
   const rows = useMemo(() => rendered.rows.filter(row => model === 'all' || row.model === model), [rendered, model])
@@ -33,12 +33,12 @@ function ReportView({ title, data, rendered }: { title: string; data: ReportData
   const passed = rows.filter(row => row.passed).length
   return <section className="report-card" aria-label="Report results">
     <div className="report-eyebrow">SAVED EVALUATION · {new Date(data.generatedAt).toLocaleDateString()}</div>
-    <h1>{title}</h1><p>Imported results from <strong>{data.job}</strong>. This report does not run an evaluation.</p>
+    <h1>{title}</h1><p>{context === 'evaluation' ? <>Combined results from every completed harness and model run in this evaluation.</> : <>Imported results from <strong>{data.job}</strong>. This report does not run an evaluation.</>}</p>
     <p className="report-muted">{rendered.presentation ? 'Presentation' : 'Analysis view'}: {rendered.label}{rendered.filters.some(f => f.values.length) ? ' · Saved filters applied' : ''}</p>
     <div className="report-stats"><div><strong>{rows.length}</strong><span>Trials shown</span></div><div><strong>{passed} / {rows.length}</strong><span>Completed</span></div><div><strong>{new Set(rows.map(r => r.task)).size}</strong><span>Tasks</span></div></div>
     <label>Model <select aria-label="Model" value={model} onChange={event => setModel(event.target.value)}><option value="all">All models in this view</option>{models.map(m => <option key={m}>{m}</option>)}</select></label>
     {model !== 'all' && <p className="report-muted">Temporary filter for this visit. The saved chart is unchanged.</p>}
-    <p className="report-muted">Rates describe these imported trials only. A small setup check is not a full benchmark score.</p>
+    <p className="report-muted">Rates describe these trials only. A small setup check is not a full benchmark score.</p>
     {!rows.length && <p>No trials match this view. Change the filters in Studio.</p>}
     {error && <p role="alert">Chart unavailable. Trial results are shown below.</p>}
     <div className="report-chart" data-theme={rendered.state.theme} ref={host} />

@@ -4,7 +4,8 @@ Open [Heval reports](https://temporary-rushing-violet-xu17m97.vercel.app/reports
 
 ## User walkthrough
 
-1. **Open Your reports and sign in.** The homepage’s **Import your results** button leads here. Sign-in returns to the workspace.
+1. **Open Report library and sign in.** Use this import path for results created
+   outside Heval's connected evaluation flow. Sign-in returns to the workspace.
 2. **Choose Harbor JSON.** Import a normalized `schemaVersion: 1` export containing `rows`. An invalid file produces an explanation before anything is saved.
 3. **Review and name it.** Check trial, model, and task counts. Expand **Review exact saved data** to inspect the complete sanitized payload. Edit the title.
 4. **Save private report.** Heval saves the snapshot online and opens its report page. The badge says **Public link off**. Reloading preserves the report; **Your saved reports** lets you find it later.
@@ -30,7 +31,9 @@ Hosted saving supports the built-in chart controls and up to 20 views and 20 pre
 
 Backend tests cover publication boundaries, stale writes, roles, invitation expiry/revocation, removal, legacy reports, immutable evidence, and custom-spec rejection. The original browser recording below predates team editing. A full cloud browser smoke test of invitation → editor save → owner publish is still needed before merging this feature branch.
 
-The next planned work is running Harbor on separate machines from the browser, with a machine/worker connection flow similar to t3code. That execution layer is not part of this branch.
+The connected evaluation flow now runs Harbor on a paired machine and creates
+its reports automatically. Manual import remains useful for direct Harbor jobs
+and historical exports.
 
 ## Recording and smoke evidence
 
@@ -56,7 +59,11 @@ Production was separately checked for public routing and the WorkOS sign-in redi
 - Normalized Harbor JSON only: 1–500 trials, at most 750,000 bytes, up to 100 reports per account. Raw job folders, raw Harbor `result.json`, and Studio project/bundle files are not accepted.
 - Generate an export from a Heval checkout with `bun run report path/to/harbor-job`. Upload the resulting `results/harbor/<job>.json`. The published CLI can inspect results locally; this release does not add CLI upload or a CLI JSON-export command.
 - The server independently validates every import. It stores an allowlist of trial labels, outcomes, timings, usage, cost, and selected provenance fields. Configuration, local source paths, error text, logs, and unknown fields are discarded. Labels can still contain sensitive text, so review them before sharing.
-- Imported evaluation data remains immutable. Chart drafts, saved views, presentation settings, and report titles can be edited in hosted Studio. Deleting reports, uploading existing Studio bundles, and cloud evaluation execution remain future work. No model calls or Docker compute are required to import, edit, or view results.
+- Imported evaluation data remains immutable. Chart drafts, saved views,
+  presentation settings, and report titles can be edited in hosted Studio.
+  Deleting reports and uploading existing Studio bundles remain future work. No
+  model calls or Docker compute are required to import, edit, or view results;
+  connected evaluations execute on the paired machine.
 - Sharing tokens live in the URL fragment, so they are not sent to Vercel as request paths or referrers. Every data read checks the active token in Convex; there is no public storage-file URL that can outlive revocation.
 
 ## Deployment
@@ -78,7 +85,7 @@ Without a Convex URL, `/reports` shows a storage-not-connected message instead o
 ## Reproduce the smoke test
 
 ```sh
-bun run test:reports
+bun run test:backend
 bunx convex deployment create smoke-reports --type preview --expiration 'in 1 day'
 bunx convex deployment token create heval-report-smoke \
   --deployment preview/smoke-reports --save-env /tmp/heval-smoke.env
@@ -141,7 +148,7 @@ The walkthrough uses the published `@mattferoz/heval@0.1.0` commands. Local
 viewing does not upload results; cloud imports require normalized JSON. The
 connected-runner preview still requires a source build and repository access.
 `bun run test:onboarding` exercises the real AuthKit/provider/HTTP-client flow
-with isolated service responses; `bun run test:reports` validates actual Convex
+with isolated service responses; `bun run test:backend` validates actual Convex
 ownership and persistence logic. Browser fixtures are excluded from builds.
 
 ## Presentation editing on static hosting

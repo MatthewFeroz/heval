@@ -6,6 +6,7 @@ import { identity } from './reportAccess'
 import { profileValidator } from './runnerValidators'
 import { RUNNER_LEASE_MS, RUNNER_ONLINE_MS, validateProfiles, terminalStates } from '../src/runners/protocol'
 import { parseReport } from '../src/reports/format'
+import { materializeExperimentReport } from './experimentReports'
 
 const secret = (value: string) => { if (!/^[a-f0-9]{64}$/.test(value)) throw new ConvexError('Invalid connection credential.'); return value }
 async function digest(value: string) { return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(secret(value)))), b => b.toString(16).padStart(2, '0')).join('') }
@@ -94,15 +95,27 @@ export const moveQueued = mutation({ args: { id: v.id('runnerRuns'), runner: v.i
 } })
 export const cancel = mutation({ args: { id: v.id('runnerRuns') }, handler: async (ctx, { id }) => {
   const run = await ownerRun(ctx, id)
-  if (run.status === 'queued') await ctx.db.patch(id, { status: 'cancelled', finishedAt: Date.now(), phase: 'Cancelled before execution' })
+  if (run.status === 'queued') {
+    await ctx.db.patch(id, { status: 'cancelled', finishedAt: Date.now(), phase: 'Cancelled before execution' })
+    if (run.experiment) await materializeExperimentReport(ctx, run.experiment)
+  }
   else if (run.status === 'running') await ctx.db.patch(id, { status: 'cancelling', phase: 'Waiting for the machine to stop and clean up' })
 } })
 export const revoke = mutation({ args: { id: v.id('runners') }, handler: async (ctx, { id }) => {
   const runner = await ownerRunner(ctx, id)
   await ctx.db.patch(id, { revoked: true, ready: false, health: 'Connection revoked' })
+  const experiments = new Set<Id<'experiments'>>()
   const queued = await ctx.db.query('runnerRuns').withIndex('by_runner_status', q => q.eq('runner', id).eq('status', 'queued')).take(10)
-  for (const run of queued) await ctx.db.patch(run._id, { status: 'cancelled', phase: 'Machine connection revoked', finishedAt: Date.now() })
-  if (runner.activeRun) await ctx.db.patch(runner.activeRun, { status: 'interrupted', phase: 'Connection revoked; check the physical machine', message: 'Remote access is revoked. Stop or inspect any remaining containers on the machine; revocation cannot guarantee physical shutdown.', finishedAt: Date.now() })
+  for (const run of queued) {
+    await ctx.db.patch(run._id, { status: 'cancelled', phase: 'Machine connection revoked', finishedAt: Date.now() })
+    if (run.experiment) experiments.add(run.experiment)
+  }
+  if (runner.activeRun) {
+    const active = await ctx.db.get(runner.activeRun)
+    await ctx.db.patch(runner.activeRun, { status: 'interrupted', phase: 'Connection revoked; check the physical machine', message: 'Remote access is revoked. Stop or inspect any remaining containers on the machine; revocation cannot guarantee physical shutdown.', finishedAt: Date.now() })
+    if (active?.experiment) experiments.add(active.experiment)
+  }
+  for (const experiment of experiments) await materializeExperimentReport(ctx, experiment)
 } })
 
 /** Outbound polling is also the heartbeat. A durable claim is never reassigned on timeout. */
@@ -123,6 +136,7 @@ export const poll = mutation({ args: { credential: v.string(), session: v.string
   if (!next) return null
   if (!args.profiles.some(p => p.id === next.profile.id && p.digest === next.profile.digest)) {
     await ctx.db.patch(next._id, { status: 'failed', phase: 'Approved profile changed before execution', finishedAt: Date.now() })
+    if (next.experiment) await materializeExperimentReport(ctx, next.experiment)
     return null
   }
   await ctx.db.patch(next._id, { status: 'running', claimId: args.claimId, startedAt: Date.now(), phase: 'Preparing Harbor on the connected machine' })
@@ -160,5 +174,6 @@ export const finish = mutation({ args: { ...claimArgs, status: v.union(v.literal
   if (status === 'completed' && !report) throw new ConvexError('A completed evaluation must include its results.')
   await ctx.db.patch(run._id, { status, report, finishedAt: Date.now(), phase: status === 'completed' ? 'Report saved privately' : status === 'cancelled' ? 'Cancelled on the machine' : 'Execution needs attention', message: args.message })
   if (runner.activeRun === run._id) await ctx.db.patch(runner._id, { activeRun: undefined })
+  if (run.experiment) await materializeExperimentReport(ctx, run.experiment)
   return { report: report ?? null }
 } })

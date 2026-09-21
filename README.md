@@ -11,6 +11,8 @@ It captures terminal trajectories, grades the resulting workspace with executabl
 
 ## Features
 
+- One hosted evaluation flow: configure, run on a connected machine, inspect,
+  edit, and publish without moving the experiment between products
 - Hosted report import, private cloud storage, anonymous share links, and revocation
 - Four synchronized coding-agent lanes with pinned harness and model metadata
 - Replay controls with time, token, cost, and pass/fail displays
@@ -20,7 +22,27 @@ It captures terminal trajectories, grades the resulting workspace with executabl
 - Responsive desktop and mobile interfaces
 - Playwright coverage for primary interactions
 
-## Current Evaluation
+## Product flow
+
+1. Open `/evaluations` and choose a connected runner, task set, harnesses, and
+   models.
+2. Heval queues the approved matrix. The outbound runner executes Harbor and
+   Docker on your machine; browser refreshes and closed tabs do not stop it.
+3. The experiment page tracks every harness/model run and keeps each child
+   report available for diagnosis.
+4. When the experiment reaches a terminal state, Heval combines all reportable
+   trials into one private experiment report on that same page.
+5. Inspect individual trials, edit the combined chart in Studio, and publish or
+   revoke a public link from the experiment.
+
+`/machines` is runner setup and operational history. `/reports` is the library
+for saved experiments and imported data. Studio is the editor behind an
+evaluation, not a separate way to run one.
+
+See [the website workflow](docs/evaluation-wizard.md) and [connected runner
+setup](docs/connected-runners.md).
+
+## Legacy fixture snapshot
 
 The first task, `concurrent-cache-v1`, asks each agent to repair a race condition in an asynchronous TypeScript cache without changing its public API. The same fixture and executable grader are used for every harness.
 
@@ -37,22 +59,22 @@ See [`results/concurrent-cache-v1-current.json`](results/concurrent-cache-v1-cur
 
 ## Quick Start
 
-### Hosted reports
+### Hosted evaluations
 
-Open [Your reports](https://temporary-rushing-violet-xu17m97.vercel.app/reports), sign in, and import a normalized Harbor JSON export. Review it, save privately, then create or revoke a share link. No local server is needed to view a shared report.
+Open **Evaluations**, sign in, and connect the Linux machine or VM that will run
+Harbor and Docker. After that one-time setup, create the evaluation in the
+browser, follow it through completion, inspect the combined report, and publish
+it from the experiment page.
+
+See [installation, workflow, and limits](docs/connected-runners.md). The
+published 0.1.0 CLI remains a local viewer; build the preview tarball for runner
+commands.
+
+### Hosted reports and imports
+
+Open the [Report library](https://temporary-rushing-violet-xu17m97.vercel.app/reports), sign in, and import a normalized Harbor JSON export. Review it, save privately, then create or revoke a share link. No local server is needed to view a shared report.
 
 See the [user walkthrough and recording](docs/hosted-reports.md) for the complete flow, supported files, limits, and deployment setup.
-
-### Connected Harbor runners (preview)
-
-The `main` branch connects the browser workspace to
-a Linux machine or cloud VM using an outbound runner. Queue a setup check,
-monitor it from another browser, and open the automatically saved report.
-The preview includes content-pinned local profiles, durable claims, cancellation,
-and daemon-restart recovery. It does not provision VMs or migrate live containers.
-
-See [installation, workflow, and limits](docs/connected-runners.md). The published
-0.1.0 CLI remains a local viewer; build the preview tarball for runner commands.
 
 ### Installable local results viewer
 
@@ -98,8 +120,8 @@ The consolidated repository supports three entry points:
 
 | Target | Build | Capabilities |
 | --- | --- | --- |
-| Vercel + Convex | `bun scripts/vercel-build.ts` (configured in `vercel.json`) | Persistent private reports and revocable sharing, published results, Studio, browser exports; no cloud runner |
-| Bun application | `bun run build`, then `bun run serve` | Workbench, authenticated run history, provider connections and optional server exports |
+| Vercel + Convex | `bun scripts/vercel-build.ts` (configured in `vercel.json`) | Evaluation orchestration, connected runners, private reports, Studio, and revocable sharing; execution stays on the connected machine |
+| Bun application | `bun run build`, then `bun run serve` | Legacy fixture workbench plus local export services |
 | Invited hosted Bun deployment | `bun run build:public` | Uses only the explicitly published catalog; requires persistent storage and the configuration in [deployment.md](docs/deployment.md) |
 
 The npm CLI remains a separate Node-only results viewer. The hosted report
@@ -108,7 +130,11 @@ for its storage, access rules, and deployment instructions.
 
 ## Authentication
 
-The public showcase works without configuration. WorkOS AuthKit sign-in gates the hosted Studio page and real evaluation controls. Studio waits for session verification before loading either editor, preserves the requested URL through sign-in, and stays closed if authentication is unconfigured. The Bun server verifies every runner access token against WorkOS's JWKS. The CLI's local results viewer remains account-free.
+The public showcase works without configuration. WorkOS AuthKit sign-in gates
+the hosted evaluation workspace. The application preserves requested workspace
+URLs through sign-in and stays closed if authentication is unconfigured. The
+legacy Bun server verifies every fixture-runner access token against WorkOS's
+JWKS. The CLI's local results viewer remains account-free.
 
 1. In the WorkOS Dashboard, copy your environment's client ID into both `VITE_WORKOS_CLIENT_ID` and `WORKOS_CLIENT_ID` in `.env.local` (start from `.env.example`). The client ID is public; no WorkOS API key is used by this integration.
 2. Add `http://localhost:5173` as an allowed web origin and sign-in callback redirect URI.
@@ -118,7 +144,7 @@ The public showcase works without configuration. WorkOS AuthKit sign-in gates th
 
 Without a custom Authentication API domain, Heval enables AuthKit's browser-persisted staging session so sign-in survives navigation and reloads on Vercel. A same-site custom Authentication API domain uses HttpOnly-cookie sessions instead. See [WorkOS's session configuration](https://github.com/workos/authkit-react#authkitprovider-). Homepage and `/login` sign-ins open Studio; report/chart deep links keep their destination. Cloud reports belong to the signed-in account; use **Save private report** and **Save draft** to persist data and edits.
 
-Signed-in accounts with no getting-started progress see a skippable CLI walkthrough before their workspace opens. It covers the published demo, prerequisites, Harbor execution, and saving results. Convex stores progress per account, including skips and completion; **CLI guide** in Studio reopens it. See the [flow plan](docs/plans/first-login-cli-guide.md). Validate with `bun run test:onboarding`, `bun run test:reports`, and the onboarding Playwright tests.
+Signed-in accounts with no getting-started progress see a skippable CLI walkthrough before their workspace opens. It covers the published demo, prerequisites, Harbor execution, and saving results. Convex stores progress per account, including skips and completion; **CLI guide** in Studio reopens it. See the [flow plan](docs/plans/first-login-cli-guide.md). Validate with `bun run test:onboarding`, `bun run test:backend`, and the onboarding Playwright tests.
 
 Set `HEVAL_ENABLE_RUNNER=1` only where real harness execution should be allowed. Browser evaluators connect their own key in **Provider settings**. Saved keys are encrypted server-side; workers receive temporary proxy tokens. Never use a `VITE_` prefix for secrets. See [provider connections](docs/provider-connections.md).
 
@@ -132,6 +158,8 @@ Set `HEVAL_ENABLE_RUNNER=1` only where real harness execution should be allowed.
 | `bun run start` | Build, then start the Bun server |
 | `bun run lint` | Run ESLint |
 | `bun run test:e2e` | Run desktop and mobile Playwright tests |
+| `bun run test:backend` | Run Convex backend and domain tests |
+| `bun run test:evaluations:e2e` | Run one no-model evaluation through local Convex, the live daemon, Harbor, and Docker |
 | `bun run test:deployments` | Build and browser-test the Vercel showcase and public Bun app (leaves `dist` as the public build) |
 | `bun run report <job-dir>` | Normalize a Harbor job into `results/harbor/` and build its static report |
 | `bun run poster <job.json>` | Export one Merge-branded social PNG per headline graph |
@@ -142,7 +170,11 @@ Install Playwright's browser once before running end-to-end tests locally:
 bunx playwright install chromium
 ```
 
-## Running Real Evaluations
+## Running the legacy fixture workbench
+
+The instructions below configure the older, fixed-task Bun runner. They do not
+power `/evaluations`; the primary hosted workflow uses a connected Harbor runner
+and is documented in [connected runners](docs/connected-runners.md).
 
 To run evaluations on a separate Linux PC while keeping the app on your Mac, follow the [Linux worker setup](docs/linux-worker.md). It includes Ubuntu, Docker, private networking and SSH commands.
 
@@ -200,19 +232,25 @@ New to the codebase? [`docs/how-it-works.md`](docs/how-it-works.md) walks throug
 the two pages, the job pipeline, and which controls live in the UI versus the code.
 
 ```text
-React + Vite replay UI
-          |
-          v
-Bun API + WebSockets
-          |
-          v
-Disposable harness workspace
-          |
-          v
-Executable fixture grader
+Browser /evaluations
+        |
+        v
+Convex queue and experiment state
+        ^
+        | outbound polling
+        v
+Heval CLI on a connected Linux machine
+        |
+        v
+Harbor + Docker + coding harness
+        |
+        v
+Sanitized child reports -> combined experiment report -> Studio/share
 ```
 
-The planned production boundary uses Harbor for portable evaluation execution, a replaceable sandbox provider, and object storage for trajectories and artifacts. See [`docs/architecture.md`](docs/architecture.md).
+The connected runner is the implemented hosted boundary: credentials, raw logs,
+and Docker remain on the machine; Convex stores orchestration state and sanitized
+reports. See [`docs/architecture.md`](docs/architecture.md).
 
 Harbor is now pinned and installed rather than planned. [`harbor/toolchain.json`](harbor/toolchain.json)
 records the runner, sandbox, and harness versions; [`harbor/jobs/`](harbor/jobs/) holds job
@@ -222,9 +260,10 @@ configurations. Validate one without spending anything:
 harbor run -c harbor/jobs/terminal-bench-codex-vs-claude.yaml --print-config
 ```
 
-The Bun control plane in [`server/`](server/) predates this and duplicates much of what Harbor owns
-(workspace isolation, harness configuration, grading, trial accounting). It remains the path the
-published `concurrent-cache-v1` snapshots were produced with.
+The Bun control plane in [`server/`](server/) predates this and duplicates much
+of what Harbor owns (workspace isolation, harness configuration, grading, trial
+accounting). It remains a compatibility path for the published
+`concurrent-cache-v1` snapshots, not the primary product flow.
 
 ### Reading a job: report and chart studio
 

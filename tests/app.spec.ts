@@ -79,7 +79,7 @@ test('shows the GitHub link in the simplified navigation', async ({ page }) => {
 
 test('shows the product entry point and measured evaluation preview', async ({ page }) => {
   await expect(page.locator('.nav .brand')).toHaveText('heval')
-  await expect(page.locator('.hero-harness')).toHaveCount(8)
+  await expect(page.locator('.hero-harness')).toHaveCount(9)
   await expect(page.locator('.hero-harnesses').getByRole('link')).toHaveCount(0)
   await expect(page.locator('.hero-harnesses').getByRole('img', { name: 'Deep Agents' })).toBeVisible()
   await expect(page.locator('.hero-harnesses').getByRole('img', { name: 'Antigravity' })).toBeVisible()
@@ -91,8 +91,8 @@ test('shows the product entry point and measured evaluation preview', async ({ p
   await expect(page.locator('.hero-harnesses').getByRole('img', { name: /Hermes|Goose|OpenHands|Gemini CLI/ })).toHaveCount(0)
   await expect(page.locator('main > section').nth(1)).toHaveAttribute('id', 'compare')
   await expect(page.locator('main > section').nth(2)).toHaveClass(/studio-showcase/)
-  const start = page.getByRole('link', { name: 'Import your results', exact: true })
-  await expect(start).toHaveAttribute('href', '/reports')
+  const start = page.getByRole('link', { name: 'Create an evaluation', exact: true })
+  await expect(start).toHaveAttribute('href', '/evaluations')
   const github = page.getByRole('link', { name: 'Explore the code on GitHub' })
   await expect(github).toHaveAttribute('href', 'https://github.com/MatthewFeroz/heval')
   const startBox = await start.boundingBox()
@@ -117,8 +117,8 @@ test('shows the product entry point and measured evaluation preview', async ({ p
   expect(demo!.x).toBeCloseTo((viewport.width - previewWidth) / 2, 0)
   expect(demo!.y).toBeLessThan(viewport.height - 100)
   await start.click()
-  await expect(page).toHaveURL(/\/reports$/)
-  await expect(page.getByRole('heading', { name: /Your evaluations, ready to share|Saved reports are coming online/ })).toBeVisible()
+  await expect(page).toHaveURL(/\/evaluations$/)
+  await expect(page.getByRole('heading', { name: /Create an evaluation|Evaluations are coming online/ })).toBeVisible()
 })
 
 test('signup failure does not claim the email was saved', async ({ page }) => {

@@ -1,6 +1,6 @@
 import { useId, useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react'
 import { createPortal } from 'react-dom'
-import { ArrowUpRight, BookOpen, ChevronDown, FolderOpen, LayoutDashboard, LogIn, LogOut, Monitor } from 'lucide-react'
+import { ArrowUpRight, BookOpen, ChevronDown, FolderOpen, FlaskConical, LayoutDashboard, LogIn, LogOut, Monitor } from 'lucide-react'
 import type { AppAuth } from '../auth'
 import { guideHref } from '../onboarding/model'
 import './account.css'
@@ -23,7 +23,7 @@ function SignIn({ auth }: { auth: AppAuth }) {
   </div>
 }
 
-function SignedInAccount({ auth, showStudioLink }: { auth: AppAuth; showStudioLink: boolean }) {
+function SignedInAccount({ auth, showWorkspaceLink }: { auth: AppAuth; showWorkspaceLink: boolean }) {
   const user = auth.user!
   const name = user.firstName?.trim() || 'Account'
   const id = useId()
@@ -89,7 +89,7 @@ function SignedInAccount({ auth, showStudioLink }: { auth: AppAuth; showStudioLi
 
   const cliGuide = /^\/studio(?:\.html)?$/.test(location.pathname) ? guideHref(location.href) : '/studio?guide=cli'
   return <div className="account-controls">
-    {showStudioLink && <a className="account-studio-link" href="/studio">Open Studio<ArrowUpRight size={14} aria-hidden="true" /></a>}
+    {showWorkspaceLink && <a className="account-studio-link" href="/evaluations">Create evaluation<ArrowUpRight size={14} aria-hidden="true" /></a>}
     <button className="account-trigger" type="button" ref={trigger} aria-label={`Account menu for ${user.firstName?.trim() || user.email}`} aria-haspopup="menu" aria-expanded={open} aria-controls={open ? id : undefined}
       onClick={() => { initialFocus.current = 'first'; setOpen(!open) }}
       onKeyDown={event => {
@@ -104,9 +104,10 @@ function SignedInAccount({ auth, showStudioLink }: { auth: AppAuth; showStudioLi
       onBlur={event => { if (event.relatedTarget instanceof Node && !event.currentTarget.contains(event.relatedTarget) && !trigger.current?.contains(event.relatedTarget)) setOpen(false) }}>
       <div className="account-identity"><span>Signed in as</span><strong>{name}</strong><span className="account-email">{user.email}</span></div>
       <div id={id} role="menu" aria-label="Account">
+        <a className="account-menu-item" role="menuitem" tabIndex={-1} href="/evaluations"><FlaskConical size={16} aria-hidden="true" />Evaluations</a>
         <a className="account-menu-item" role="menuitem" tabIndex={-1} href="/studio"><LayoutDashboard size={16} aria-hidden="true" />Studio</a>
-        <a className="account-menu-item" role="menuitem" tabIndex={-1} href="/reports"><FolderOpen size={16} aria-hidden="true" />Your reports</a>
-        <a className="account-menu-item" role="menuitem" tabIndex={-1} href="/machines"><Monitor size={16} aria-hidden="true" />Machines &amp; runs</a>
+        <a className="account-menu-item" role="menuitem" tabIndex={-1} href="/reports"><FolderOpen size={16} aria-hidden="true" />Report library</a>
+        <a className="account-menu-item" role="menuitem" tabIndex={-1} href="/machines"><Monitor size={16} aria-hidden="true" />Runner setup</a>
         <a className="account-menu-item" role="menuitem" tabIndex={-1} href={cliGuide} target="_blank" rel="noreferrer" onClick={() => { setOpen(false); trigger.current?.focus() }}><BookOpen size={16} aria-hidden="true" />CLI guide<span className="account-sr-only"> (opens in a new tab)</span><ArrowUpRight size={13} aria-hidden="true" /></a>
         <div className="account-menu-divider" role="separator" />
         <button className="account-menu-item" type="button" role="menuitem" tabIndex={-1} disabled={pending} onClick={() => void signOut()}><LogOut size={16} aria-hidden="true" />{pending ? 'Signing out…' : 'Sign out'}</button>
@@ -116,9 +117,9 @@ function SignedInAccount({ auth, showStudioLink }: { auth: AppAuth; showStudioLi
   </div>
 }
 
-export function AccountControls({ auth, showStudioLink = false, showSignIn = true }: { auth: AppAuth; showStudioLink?: boolean; showSignIn?: boolean }) {
+export function AccountControls({ auth, showWorkspaceLink = false, showSignIn = true }: { auth: AppAuth; showWorkspaceLink?: boolean; showSignIn?: boolean }) {
   if (!auth.configured) return null
   if (auth.isLoading) return <div className="account-controls"><span className="account-loading" role="status">Checking account…</span></div>
-  if (auth.user) return <SignedInAccount key={auth.user.email} auth={auth} showStudioLink={showStudioLink} />
+  if (auth.user) return <SignedInAccount key={auth.user.email} auth={auth} showWorkspaceLink={showWorkspaceLink} />
   return showSignIn ? <SignIn auth={auth} /> : null
 }

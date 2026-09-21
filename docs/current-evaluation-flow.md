@@ -1,6 +1,6 @@
 # Current architecture and running an evaluation
 
-Checked against the working tree on 2026-09-17, with Harbor 0.23.0. This describes
+Checked against the working tree on 2026-09-21, with Harbor 0.23.0. This describes
 implemented code, not a guarantee that the public deployment has this revision.
 
 Heval is the workspace around an evaluation: selecting approved runs, tracking
@@ -14,9 +14,9 @@ result. Those are five separate responsibilities.
 
 | Component | Responsibility | Code |
 | --- | --- | --- |
-| React/Vite frontend | Landing/demo, machines, reports, Studio | `src/`, `vite.config.ts` |
+| React/Vite frontend | Evaluation lifecycle, runner setup, reports, Studio | `src/`, `vite.config.ts` |
 | WorkOS authentication | User sign-in and access tokens | `src/AuthBoundary.tsx`, `convex/auth.config.ts` |
-| Convex backend | Machine ownership, pairing, queue, run status, saved reports and sharing | `convex/runners.ts`, `convex/reports.ts` |
+| Convex backend | Machine ownership, experiments, queue, combined reports and sharing | `convex/experiments.ts`, `convex/runners.ts`, `convex/reports.ts` |
 | Node Heval CLI | Local results viewer and connected-machine daemon | `packages/cli/src/` |
 | Local supervisor | Runs Harbor independently of the browser/daemon, enforces deadline, handles cleanup, exports results | `packages/cli/src/runner/supervisor.ts` |
 | Harbor | Agent installation, task environments, attempts, execution and verification | External Python tool, pinned in `harbor/toolchain.json` |
@@ -30,8 +30,8 @@ Sandbox work is not the implemented connected-runner path.
 
 ```mermaid
 flowchart TD
-    U[Browser: Machines and runs] -->|Sign in| A[WorkOS]
-    U <-->|Queue and status| C[Convex workspace]
+    U[Browser: Evaluation] -->|Sign in| A[WorkOS]
+    U <-->|Configure, queue and inspect| C[Convex workspace]
     D[Heval daemon on your Linux worker] <-->|Outbound HTTPS polling| C
     D --> S[Independent local supervisor]
     S --> H[Harbor 0.23.0]
@@ -42,8 +42,9 @@ flowchart TD
     H --> V[Task verifier]
     V --> R[Raw job files on worker]
     R --> N[Heval normalizer]
-    N -->|Sanitized report through daemon| C
-    C --> W[Reports and Studio]
+    N -->|Sanitized child report through daemon| C
+    C --> E[Combined experiment report]
+    E --> W[Inspect, Studio and publish]
 ```
 
 A **task** is one problem, environment and grader. A **trial** is one attempt by
@@ -53,13 +54,16 @@ The verifier determines correctness; the model saying “done” is not a pass.
 
 ## Which page does what?
 
-- `/`: product introduction and recorded demo. In Bun deployments the older live
-  workbench can also appear; a demo animation is not a new model run.
-- `/machines` (also `/evaluations`): pair a worker, choose a locally approved
-  profile, queue/cancel runs, monitor status and open completed reports.
-- `/reports`: import normalized JSON, save private reports and manage access.
-- `/studio`: analyze results and edit chart/presentation settings. Editing a chart
-  does not run another evaluation or change its trial outcomes.
+- `/`: product introduction and recorded demo. **Create an evaluation** enters
+  the real workflow; a demo animation is not a new model run.
+- `/evaluations`: the primary lifecycle. Configure a matrix, run it on the
+  connected machine, monitor every cell, inspect the combined trials, edit the
+  presentation and publish or revoke its link.
+- `/machines`: one-time runner pairing, setup checks and low-level run history.
+- `/reports`: the saved-result library and an import path for results produced
+  outside the connected workflow.
+- `/studio`: the contextual chart/presentation editor. Editing a chart does not
+  run another evaluation or change its trial outcomes.
 - `/share`: view an explicitly shared report.
 - Local Studio: account-free analysis/export through `bun run studio:local`.
 
@@ -131,7 +135,8 @@ node packages/cli/dist/cli.js doctor
 These are the source-build equivalents of installed `heval` commands. Changing
 this checkout does not update an already published npm package or hosted site.
 
-1. Open `/machines` in the matching hosted deployment and sign in.
+1. Open `/evaluations` in the matching hosted deployment and sign in. If there
+   is no runner, follow **Connect a runner** to `/machines`.
 2. Name your Linux machine and create a pairing code.
 3. On that machine, run the displayed command (or the source-build equivalent):
    `node packages/cli/dist/cli.js runner connect --url https://YOUR.convex.cloud`.
@@ -141,7 +146,9 @@ this checkout does not update an already published npm package or hosted site.
 6. Open its saved report. This first profile uses Oracle and no model API calls.
 7. Add a model-backed profile to `~/.heval/runner/profiles.json` on the worker,
    with a reviewed job JSON and a private credential `envFile`.
-8. Select that advertised profile in the browser and click **Start evaluation**.
+8. Return to `/evaluations`, choose the task, harnesses and models, and click
+   **Start experiment**. The experiment page remains the home for run status,
+   the combined result and publishing.
 
 See [connected runners](connected-runners.md#3-approve-a-model-backed-evaluation)
 for exact profile JSON. The local profile loader only accepts `n_attempts`,

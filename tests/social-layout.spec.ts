@@ -54,6 +54,12 @@ test('long model names fit and impossible numeric labels block export', async ({
 test('publishing opens with a ready question, optional customization, and saved themes', async ({
   page,
 }) => {
+  // Exercise Studio with the same signed-in browser fixture as the rest of the
+  // editor suite. The production /studio route is intentionally auth-gated.
+  await page.route('**/studio?*', async route => {
+    const response = await route.fetch({ url: new URL('/tests/fixtures/workbench.html', route.request().url()).href })
+    await route.fulfill({ response })
+  })
   await page.route('**/api/posters/preview', async (route) => {
     const payload = route.request().postDataJSON()
     await route.fulfill({ json: posterDocuments(payload.input, payload.settings) })
@@ -62,7 +68,7 @@ test('publishing opens with a ready question, optional customization, and saved 
   await expect(page.locator('.card svg')).toBeVisible()
   await page.getByRole('tab', { name: 'Presentation', exact: true }).click()
   await expect(page.getByLabel('Question', { exact: true })).toHaveValue('completed')
-  await expect(page.getByLabel('Style', { exact: true })).toHaveValue('merge-dark')
+  await expect(page.getByLabel('Style', { exact: true })).toHaveValue('plain-light')
   await expect(page.getByLabel('Source', { exact: true })).not.toBeVisible()
   await expect(page.getByText('Layout checked. Ready to export.')).toBeVisible()
   await expect(page.getByRole('button', { name: 'Export image', exact: true })).toBeEnabled()

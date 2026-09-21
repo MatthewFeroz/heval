@@ -44,6 +44,29 @@ jobs:
           include-hidden-files: true
           if-no-files-found: error
 
+  connected_evaluation:
+    name: Connected evaluation end to end
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+      - name: Install pinned Harbor
+        run: |
+          python3 -m pip install --user uv
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          "$HOME/.local/bin/uv" tool install 'harbor==0.23.0'
+      - name: Verify Docker
+        run: |
+          docker info
+          docker compose version
+      - name: Run a no-model connected evaluation
+        run: bun run test:evaluations:e2e
+
   verify:
     runs-on: ubuntu-latest
     steps:
@@ -61,8 +84,10 @@ jobs:
         run: bun run test:server
       - name: Project and chart regression tests
         run: bun run test:unit
-      - name: Report access and storage regression tests
-        run: bun run test:reports
+      - name: Convex backend and domain tests
+        run: bun run test:backend
+      - name: Evaluation browser integration
+        run: bun run test:evaluations:ui
       - name: Docker isolation smoke test (no model calls)
         run: bun run test:docker
       - name: Install Chromium

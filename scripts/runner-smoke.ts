@@ -108,7 +108,7 @@ async function queue(index: number) {
 async function status(id: Id<'runnerRuns'>) { return (await ownerApi.query(api.runners.runs)).find(r => r.id === id)?.status }
 try {
   await page.goto(`${origin}/machines`)
-  await expect(page.getByRole('heading', { name: 'Run here. Execute on your machine.' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Connect the machine. Run from Evaluations.' })).toBeVisible()
   for (const [i, name] of ['Linux workstation', 'Cloud runner'].entries()) {
     await page.getByLabel('Machine name').fill(name)
     await page.getByRole('button', { name: 'Create pairing code' }).click()
