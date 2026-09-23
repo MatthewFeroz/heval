@@ -44,7 +44,8 @@ if (import.meta.main) {
   }
   if (inputs.some(input => resolve(input) === resolve(output))) throw new Error('Output must differ from inputs')
   const jobs = inputs.map(input => statSync(input).isDirectory()
-    ? exportJob(input)
+    // A combined report must not silently drop trials that never finished.
+    ? exportJob(input, undefined, { requireComplete: true })
     : JSON.parse(readFileSync(input, 'utf8')) as JobExport)
   const result = mergeJobs(jobs, basename(output, '.json'))
   mkdirSync(dirname(resolve(output)), { recursive: true })

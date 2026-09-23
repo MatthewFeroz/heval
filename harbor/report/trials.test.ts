@@ -45,7 +45,8 @@ describe('Harbor exports', () => {
     expect(() => exportJob(root, null)).toThrow()
     rmSync(join(dir, 'result.json'))
     writeFileSync(join(dir, 'config.json'), '{}')
-    expect(() => exportJob(root, null)).toThrow('Incomplete trial')
+    expect(exportJob(root, null).rows).toHaveLength(0)
+    expect(() => exportJob(root, null, { requireComplete: true })).toThrow('Incomplete trial')
   })
   test('combines distinct runs, retains settings and metadata, rejects double counting', () => {
     const a = exportJob(fixture().root, null)

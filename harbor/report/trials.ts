@@ -34,10 +34,13 @@ function findReward(node: unknown): number | null {
   return null
 }
 
-export function readTrial(dir: string, catalog?: Catalog | null): TrialRow | null {
+/** `requireComplete` rejects a started trial with no result instead of skipping it. */
+export type ReadOptions = { requireComplete?: boolean }
+
+export function readTrial(dir: string, catalog?: Catalog | null, opts: ReadOptions = {}): TrialRow | null {
   const cfgPath = join(dir, 'config.json'), resPath = join(dir, 'result.json')
   if (!existsSync(resPath)) {
-    if (existsSync(cfgPath)) throw new Error(`Incomplete trial: ${dir} has no result.json`)
+    if (opts.requireComplete && existsSync(cfgPath)) throw new Error(`Incomplete trial: ${dir} has no result.json`)
     return null
   }
   const cfg = existsSync(cfgPath) ? JSON.parse(readFileSync(cfgPath, 'utf8')) as Json : {}
@@ -118,18 +121,18 @@ export function readTrial(dir: string, catalog?: Catalog | null): TrialRow | nul
   }
 }
 
-export function loadTrials(jobDir: string, catalog: Catalog | null = loadCatalog()): TrialRow[] {
+export function loadTrials(jobDir: string, catalog: Catalog | null = loadCatalog(), opts: ReadOptions = {}): TrialRow[] {
   const rows: TrialRow[] = []
   for (const entry of readdirSync(jobDir, { withFileTypes: true })) {
     if (!entry.isDirectory()) continue
-    const row = readTrial(join(jobDir, entry.name), catalog)
+    const row = readTrial(join(jobDir, entry.name), catalog, opts)
     if (row) rows.push(row)
   }
   return rows.sort((a, b) => a.trial.localeCompare(b.trial))
 }
 
-export function exportJob(jobDir: string, catalog: Catalog | null = loadCatalog()): JobExport {
-  const rows = loadTrials(jobDir, catalog)
+export function exportJob(jobDir: string, catalog: Catalog | null = loadCatalog(), opts: ReadOptions = {}): JobExport {
+  const rows = loadTrials(jobDir, catalog, opts)
   const jobResult = join(jobDir, 'result.json')
   const jobId = existsSync(jobResult) ? str((JSON.parse(readFileSync(jobResult, 'utf8')) as Json).id) : null
   const agentVersions: Record<string, string[]> = {}
