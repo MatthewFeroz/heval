@@ -158,10 +158,10 @@ browser. Reports save to the workspace; raw logs remain under
 
 After each pilot passes, select a benchmark, replace the tiny setup task with the
 same pinned task set for all three profiles, increase attempts, and review new
-profile digests before launching. For a single combined comparison artifact,
-use the generated multi-agent Harbor job directly with `--env-file` and normalize
-its output. Browser-launched profiles currently produce separate reports; a
-combined cross-run report is not automatically assembled by this setup.
+profile digests before launching. Each harness/model combination in an experiment
+keeps its own run report. Once every combination has finished, Heval also builds
+one combined experiment report from the available results. You can edit it in
+Studio and publish it from the experiment page.
 
 ## Terminal-only alternative
 
