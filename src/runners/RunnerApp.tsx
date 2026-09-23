@@ -11,24 +11,25 @@ function Workspace() {
   const machines = useQuery(api.runners.list), runs = useQuery(api.runners.runs)
   const pair = useMutation(api.runners.createPairing), enqueue = useMutation(api.runners.enqueue), cancel = useMutation(api.runners.cancel), revoke = useMutation(api.runners.revoke), move = useMutation(api.runners.moveQueued)
   const [name, setName] = useState('My Linux machine'), [pairing, setPairing] = useState<{ code: string; expiresAt: number } | null>(null)
-  const [machineId, setMachineId] = useState(''), [profileId, setProfileId] = useState('')
+  const [machineId, setMachineId] = useState('')
   const [busy, setBusy] = useState(false), [error, setError] = useState(''), [status, setStatus] = useState('')
   const [now, setNow] = useState(Date.now), [revokeId, setRevokeId] = useState<string | null>(null)
   const pending = useRef<{ selection: string; requestId: string } | null>(null)
   useEffect(() => { const timer = setInterval(() => setNow(Date.now()), 5000); return () => clearInterval(timer) }, [])
   const active = machines?.filter(m => !m.revoked) ?? []
   const selected = active.find(m => m.id === machineId) ?? active[0]
-  const profile = selected?.profiles.find(p => p.id === profileId) ?? selected?.profiles.find(p => p.setupCheck) ?? selected?.profiles[0]
+  const check = selected?.profiles.find(p => p.setupCheck)
+  const options = (m: { profiles: { setupCheck: boolean }[] }) => m.profiles.filter(p => !p.setupCheck).length
   const online = (m: { lastSeen: number }) => now - m.lastSeen < RUNNER_ONLINE_MS
   async function act(run: () => Promise<unknown>, success: string) {
     setBusy(true); setError(''); setStatus('')
     try { await run(); setStatus(success) } catch (e) { setError(message(e)) } finally { setBusy(false) }
   }
   async function start() {
-    if (!selected || !profile) return
-    const selection = `${selected.id}/${profile.id}/${profile.digest}`
+    if (!selected || !check) return
+    const selection = `${selected.id}/${check.id}/${check.digest}`
     pending.current = pending.current?.selection === selection ? pending.current : { selection, requestId: token() }
-    await enqueue({ runner: selected.id, profileId: profile.id, digest: profile.digest, requestId: pending.current.requestId })
+    await enqueue({ runner: selected.id, profileId: check.id, digest: check.digest, requestId: pending.current.requestId })
     pending.current = null
   }
   return <>
@@ -44,14 +45,14 @@ function Workspace() {
         <p>Then keep the runner connected:</p><pre><code>heval runner start</code></pre><p>You can install it as a Linux service so it reconnects after reboot. Keep each machine’s runner state on that machine.</p>
       </div>}
     </section>
-    <section className="report-card" aria-label="Connected machines"><h2>Your machines</h2>{machines === undefined ? <p>Loading machines…</p> : !active.length ? <p>No connected machines yet. Create a pairing code above.</p> : <ul className="runner-machines">{active.map(m => <li key={m.id}><div><strong>{m.name}</strong><span className="report-badge" data-tone={online(m) ? m.ready ? 'success' : 'warning' : undefined}>{online(m) ? m.ready ? 'Online' : 'Needs setup' : 'Offline'}</span><p>{online(m) ? m.health : 'Waiting for this machine to reconnect. Existing work will not be restarted elsewhere.'}</p><small>{m.profiles.length} approved profiles{m.activeRun ? ' · One active evaluation' : ''}</small></div><button className="secondary" onClick={() => setRevokeId(m.id)}>Disconnect</button>
+    <section className="report-card" aria-label="Connected machines"><h2>Your machines</h2>{machines === undefined ? <p>Loading machines…</p> : !active.length ? <p>No connected machines yet. Create a pairing code above.</p> : <ul className="runner-machines">{active.map(m => <li key={m.id}><div><strong>{m.name}</strong><span className="report-badge" data-tone={online(m) ? m.ready ? 'success' : 'warning' : undefined}>{online(m) ? m.ready ? 'Online' : 'Needs setup' : 'Offline'}</span><p>{online(m) ? m.health : 'Waiting for this machine to reconnect. Existing work will not be restarted elsewhere.'}</p><small>{options(m)} evaluation {options(m) === 1 ? 'option' : 'options'}{m.activeRun ? ' · One active evaluation' : ''}</small></div><button className="secondary" onClick={() => setRevokeId(m.id)}>Disconnect</button>
       {revokeId === m.id && <div className="report-confirm"><p>Revoke this machine’s connection? Queued runs will be cancelled. Check the physical machine for running containers; revocation cannot guarantee they stop while offline.</p><button disabled={busy} onClick={() => void act(async () => { await revoke({ id: m.id }); setRevokeId(null) }, 'Machine connection revoked.')}>Revoke machine access</button><button className="secondary" onClick={() => setRevokeId(null)}>Keep connected</button></div>}
     </li>)}</ul>}</section>
-    <section className="report-card" aria-label="Start evaluation"><h2>Check your worker</h2><p>Ready to compare harnesses? <a href="/evaluations">Create a new evaluation →</a></p><p>The default setup check runs one task, one reference solution, and one attempt. It checks that your setup works. It isn’t a full benchmark score.</p>
-      <label>Run on<select aria-label="Run on" value={selected?.id ?? ''} onChange={e => { setMachineId(e.target.value); setProfileId('') }}><option value="" disabled>Connect a machine first</option>{active.map(m => <option key={m.id} value={m.id}>{m.name}{online(m) ? '' : ' · Offline'}</option>)}</select></label>
-      <label>Approved evaluation<select aria-label="Approved evaluation" value={profile?.id ?? ''} onChange={e => setProfileId(e.target.value)}><option value="" disabled>No approved profiles</option>{selected?.profiles.map(p => <option key={p.id} value={p.id}>{p.title}</option>)}</select></label>
-      {profile && <div className="runner-review"><dl><div><dt>Benchmark</dt><dd>{profile.benchmark}</dd></div><div><dt>Agent</dt><dd>{profile.agent}</dd></div><div><dt>Model</dt><dd>{profile.model}</dd></div><div><dt>Scope</dt><dd>{profile.tasks} tasks × {profile.attempts} attempts = {profile.tasks * profile.attempts} trials</dd></div><div><dt>Limit</dt><dd>One trial at a time · {profile.timeoutSeconds / 60} minutes maximum</dd></div></dl><p>{profile.setupCheck ? 'Uses the task’s reference solution. No model API calls or model charges. Compute runs on your selected machine.' : 'Uses the credentials configured on your selected machine. You fund its compute and model calls; the time limit is not a dollar spending cap.'}</p></div>}
-      <button disabled={busy || !selected || !online(selected) || !selected.ready || !profile} onClick={() => void act(start, 'Evaluation queued. You can close this tab and return from another browser.')}>{profile?.setupCheck ? 'Run setup check' : 'Start evaluation'}</button><p className="report-muted">Additional agent/model combinations are approved in the machine’s local profiles file. Browser requests can’t execute arbitrary commands on your machine.</p>
+    <section className="report-card" aria-label="Check your worker"><h2>Check your worker</h2><p>The setup check runs one bundled task with Harbor’s reference solution, in Docker on the selected machine. It makes no model calls and isn’t a benchmark score.</p>
+      <label>Run on<select aria-label="Run on" value={selected?.id ?? ''} onChange={e => setMachineId(e.target.value)}><option value="" disabled>Connect a machine first</option>{active.map(m => <option key={m.id} value={m.id}>{m.name}{online(m) ? '' : ' · Offline'}</option>)}</select></label>
+      {selected && !check && <p className="report-notice">This machine’s profiles file has no setup check. Add one on the machine, or start evaluations directly from Evaluations.</p>}
+      <button disabled={busy || !selected || !online(selected) || !selected.ready || !check} onClick={() => void act(start, 'Setup check queued. You can close this tab and return from another browser.')}>Run setup check</button>
+      <p>{selected ? `${selected.name} offers ${options(selected)} evaluation ${options(selected) === 1 ? 'option' : 'options'}. ` : ''}Choose benchmarks, harnesses and models in <a href="/evaluations">Evaluations →</a></p>
     </section>
     <section className="report-card" aria-label="Evaluation history"><h2>Your evaluations</h2><p>Work is saved to your account. Browser sessions can reconnect independently of the runner.</p>
       {runs === undefined ? <p>Loading evaluations…</p> : !runs.length ? <p>Your first setup check will appear here.</p> : <ol className="runner-runs">{runs.map(run => <li key={run.id} data-run-id={run.id}><details className="run-accordion"><summary><strong className="run-accordion-title">{run.profile.title}</strong><span className="report-badge" data-tone={run.status === 'completed' ? 'success' : run.status === 'failed' ? 'danger' : undefined}>{run.status}</span></summary><div className="run-accordion-body"><p>{machines?.find(m => m.id === run.runner)?.name ?? 'Machine'} · {run.phase}</p>{run.message && <p>{run.message}</p>}

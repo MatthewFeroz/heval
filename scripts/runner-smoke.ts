@@ -129,7 +129,7 @@ try {
   await page.screenshot({ path: resolve(evidence, '01-machines.png'), fullPage: true })
   await page.getByLabel('Run on', { exact: true }).selectOption(machineIds[0])
   await page.getByRole('button', { name: 'Run setup check' }).click()
-  await expect(page.getByRole('status')).toContainText('Evaluation queued')
+  await expect(page.getByRole('status')).toContainText('Setup check queued')
   const first = (await ownerApi.query(api.runners.runs))[0].id; runIds.push(first)
   await expect.poll(() => status(first), { timeout: 20_000 }).toBe('running')
   await chapter(page, '2 · Browser dispatches one real Harbor + Docker setup task, with no model calls')

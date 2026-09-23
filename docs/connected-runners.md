@@ -61,7 +61,7 @@ The connected runner expects Harbor and its Docker engine on the same Linux mach
 2. Name the machine and click **Create pairing code**. The page shows the exact HTTPS Convex URL for this environment.
 3. On the Linux machine, run the displayed `heval runner connect --url https://YOUR-DEPLOYMENT.convex.cloud`. Paste the one-time code when prompted. It expires after ten minutes and can pair one machine. Provider credentials are not involved in pairing.
 4. Run `heval runner start`. If Harbor isn't on PATH, use `--harbor /absolute/path/to/harbor`. Keep it running or install the service below.
-5. When the page says **Online**, select **Check this machine** and click **Run setup check**. One local task runs in Docker using Harbor's Oracle reference solution. It makes no model API calls and is not a benchmark score.
+5. When the page says **Online**, click **Run setup check**. One local task runs in Docker using Harbor's Oracle reference solution. It makes no model API calls and is not a benchmark score.
 6. Open the resulting **saved report**. Use Studio to change its chart, save the draft, and publish/share it through the existing report workflow.
 
 The daemon stores its credential, profiles, and runs under `~/.heval/runner` by default. Files containing connection state are written with mode `0600` inside a `0700` directory. Convex stores a digest of the credential. Use `--state /absolute/path` consistently when choosing another location. Pair each machine independently; do not copy `connection.json` to another host.

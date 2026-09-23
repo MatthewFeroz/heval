@@ -87,8 +87,13 @@ function Wizard({ machines, now }: { machines: Machine[]; now: number }) {
       <label>Worker<select value={machine?.id ?? ''} onChange={e=>{setWorker(e.target.value);setTask('');setAgents([]);setModels([]);setVendor('');setAttempts(1)}}><option value="" disabled>Connect a worker first</option>{machines.map(m=><option key={m.id} value={m.id}>{m.name}{now-m.lastSeen>=RUNNER_ONLINE_MS?' · Offline':''}</option>)}</select></label>
       {!machines.length && <p><a href="/machines">Connect your first worker</a> to see its available tasks and model connections.</p>}
       {machine && !ready && <p role="status">This worker is {now-machine.lastSeen>=RUNNER_ONLINE_MS?'offline':`not ready: ${machine.health}`}. Reconnect it before launching.</p>}
+      {machine && !catalog.length && <div className="evaluation-empty"><h3>No evaluations are available on {machine.name} yet</h3><p>Evaluations come from profiles on the worker, and this one has none beyond the setup check. Add model-backed profiles on the machine:</p>
+        <ol><li>Connect Merge Gateway. The key stays on the worker.<pre><code>heval provider connect merge</code></pre></li>
+          <li>Choose an exact model ID from the catalog.<pre><code>heval provider status merge</code></pre></li>
+          <li>Create one profile per harness for that model. No model calls are made yet.<pre><code>heval runner setup --model MODEL_ID --harnesses codex,claude-code,pi</code></pre></li></ol>
+        <p>The running runner picks up new profiles on its next check-in; you don’t need to restart it. For custom task sets, follow the <a href="https://github.com/MatthewFeroz/heval/blob/main/docs/three-agent-worker.md">worker setup guide</a>. Older workers need the updated CLI.</p></div>}
+      {!!catalog.length && <>
       <fieldset><legend>Task set</legend><div className="evaluation-choices">{taskSets.map(p=><label className="evaluation-choice" key={p.taskSet}><input type="radio" name="task-set" checked={taskSet===p.taskSet} onChange={()=>{setTask(p.taskSet!);setAgents([]);setModels([]);setVendor('');setAttempts(1)}}/><span><strong>{p.benchmark}</strong><small>{p.tasks} {p.tasks===1?'task':'tasks'} · Same snapshot for every combination</small></span></label>)}</div></fieldset>
-      {machine && !catalog.length && <p className="report-notice">This worker has no evaluation options yet. Run its setup check in <a href="/machines">Machines</a>, then configure task sets and a model connection using the <a href="https://github.com/MatthewFeroz/heval/blob/main/docs/three-agent-worker.md">worker setup guide</a>. Older workers need the updated CLI.</p>}
       <p className="report-muted">Task sets are installed on the worker. Credentials stay there; the browser only sees available options.</p>
 
       <p>Select one or more harnesses. Each runs independently against the same tasks.</p>
@@ -104,6 +109,7 @@ function Wizard({ machines, now }: { machines: Machine[]; now: number }) {
       {(attempts<1 || attempts>maxAttempts) && models.length>0 && <p role="alert">Choose between 1 and {maxAttempts} attempts for this selection.</p>}
       {matrix.length>10 && <p role="alert">Choose at most 10 harness/model combinations.</p>}
       {trials>60 && <p role="alert">Reduce the selection to 60 trials or fewer.</p>}
+      </>}
     </div><aside className="evaluation-run-summary" aria-label="Run summary"><h3>Run summary</h3>
       <label>Experiment name<input maxLength={120} placeholder="Name this experiment" value={title} onChange={e=>setTitle(e.target.value)}/></label>
       <p>{machine?.name} · {review[0]?.benchmark} · {selectedVendor}</p>

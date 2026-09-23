@@ -145,7 +145,7 @@ model-provider authentication.
 
 ## 4. Run the no-inference setup check
 
-In Machines, select **Check this machine**, then **Run setup check**. Harbor runs
+In Machines, choose this worker under **Run on**, then click **Run setup check**. Harbor runs
 the Oracle reference solution in Docker and uploads a saved report. No model API
 calls are made. Image downloads and remote VM usage can still consume resources.
 
@@ -250,9 +250,10 @@ node packages/cli/dist/cli.js runner start \
   --profiles "$HOME/.heval/deepseek-three-profiles/profiles.json"
 ```
 
-In the browser, select this worker and launch **DeepSeek V4.1 Flash / codex** under
-Approved evaluation. This starts paid model calls. Inspect the result before
-launching **claude-code**, then **pi**. They all use the same DeepSeek model;
+In `/evaluations`, select this worker, check only the **Codex CLI** harness and the
+DeepSeek V4.1 Flash model, and click **Start experiment**. This starts paid model
+calls. Inspect the result before starting new experiments for **Claude Code**, then
+**Pi Agent**. They all use the same DeepSeek model;
 Codex uses Responses, Claude Code uses Messages, and Pi uses Chat Completions.
 
 **Checkpoint for each:** the task passes grading, logs show actual tool use, and

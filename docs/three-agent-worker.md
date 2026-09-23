@@ -147,15 +147,12 @@ node packages/cli/dist/cli.js runner start \
   --profiles "$HOME/.heval/deepseek-three-profiles/profiles.json"
 ```
 
-In `/machines`, select the worker. Under **Approved evaluation**, choose:
-
-- DeepSeek V4.1 Flash / codex
-- DeepSeek V4.1 Flash / claude-code
-- DeepSeek V4.1 Flash / pi
-
-Start each evaluation. One runs at a time on this worker; additional jobs queue.
-Switching means selecting a profile for a NEW run, not changing the agent halfway
-through an active task. Keep the worker and proxy running; you can close the
+In `/evaluations`, select the worker and the task set, then check the harnesses
+(Codex CLI, Claude Code, Pi Agent) and the DeepSeek V4.1 Flash model. The run
+summary lists each harness/model combination before you click **Start experiment**.
+Combinations run one at a time on this worker; additional work queues. Switching
+means starting a NEW experiment, not changing the agent halfway through an active
+task. Keep the worker and proxy running; you can close the
 browser. Reports save to the workspace; raw logs remain under
 `~/.heval/runner/runs/<run-id>/jobs/evaluation`.
 

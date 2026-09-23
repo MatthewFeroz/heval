@@ -142,7 +142,7 @@ this checkout does not update an already published npm package or hosted site.
    `node packages/cli/dist/cli.js runner connect --url https://YOUR.convex.cloud`.
    Paste the code when prompted.
 4. Run `node packages/cli/dist/cli.js runner start` and keep it running.
-5. Wait for **Online**, select **Check this machine**, and click **Run setup check**.
+5. Wait for **Online**, choose the machine under **Run on**, and click **Run setup check**.
 6. Open its saved report. This first profile uses Oracle and no model API calls.
 7. Add a model-backed profile to `~/.heval/runner/profiles.json` on the worker,
    with a reviewed job JSON and a private credential `envFile`.
