@@ -11,6 +11,23 @@
 
 @import '../tokens.css';
 
+/* Custom Merge presentation specs use the same licensed faces as social exports. */
+@font-face {
+  font-family: 'FH Oscar Pro';
+  src: url('../../harbor/report/assets/FHOscarPro-Medium.otf') format('opentype');
+  font-style: normal;
+  font-weight: 400 500;
+  font-display: block;
+}
+
+@font-face {
+  font-family: 'FH Oscar Pro';
+  src: url('../../harbor/report/assets/FHOscarPro-SemiBold.otf') format('opentype');
+  font-style: normal;
+  font-weight: 600 700;
+  font-display: block;
+}
+
 * { box-sizing: border-box; }
 
 html, body { margin: 0; min-height: 100vh; background: var(--bg); color: var(--white); }
@@ -293,6 +310,8 @@ input::placeholder { color: var(--faint); }
 .presentation-canvas[data-format='square'] { max-width: 860px; margin-inline: auto; aspect-ratio: 1; display: grid; place-items: center; }
 .presentation-canvas[data-format='portrait'] { max-width: 560px; margin-inline: auto; aspect-ratio: 9 / 16; display: grid; place-items: center; }
 .presentation-canvas[data-format='landscape'] { aspect-ratio: 16 / 9; display: grid; place-items: center; }
+.presentation-canvas > div { min-width: 0; width: 100%; }
+.presentation-canvas .vega-embed > svg { max-width: 100%; height: auto; }
 
 /* -- motion export -------------------------------------------------------- */
 

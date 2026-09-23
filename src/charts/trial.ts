@@ -101,6 +101,8 @@ export type JobExport = {
   /** Harness -> version actually observed across trials (from `agent_info`). */
   agentVersions: Record<string, string[]>
   rows: TrialRow[]
+  /** Original export metadata, including manifests, for a combined export. */
+  sources?: Omit<JobExport, 'rows'>[]
 }
 
 export type JobIndexEntry = {

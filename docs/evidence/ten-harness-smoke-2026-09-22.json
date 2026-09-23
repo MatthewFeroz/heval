@@ -1,0 +1,737 @@
+[
+  {
+    "job": "ten-smoke-antigravity-cli-2026-09-22",
+    "result_path": "/Users/mattferoz/heval-smoke-worker/jobs/ten-smoke-antigravity-cli-2026-09-22/protocol-smoke__X8LFerp/result.json",
+    "agent_info": {
+      "name": "antigravity-cli",
+      "version": "1.2.8",
+      "model_info": {
+        "name": "deepseek-v4.1-flash",
+        "provider": "deepseek"
+      }
+    },
+    "agent_execution": {
+      "started_at": "2026-09-22T05:48:11.923079Z",
+      "finished_at": "2026-09-22T05:48:11.923168Z"
+    },
+    "verifier_result": null,
+    "exception_type": "ValueError",
+    "generation_requests": []
+  },
+  {
+    "job": "ten-smoke-claude-code-2026-09-22",
+    "result_path": "/Users/mattferoz/heval-smoke-worker/jobs/ten-smoke-claude-code-2026-09-22/protocol-smoke__qSqnJn3/result.json",
+    "agent_info": {
+      "name": "claude-code",
+      "version": "2.1.270",
+      "model_info": {
+        "name": "deepseek-v4.1-flash",
+        "provider": "anthropic"
+      }
+    },
+    "agent_execution": {
+      "started_at": "2026-09-22T05:37:38.856897Z",
+      "finished_at": "2026-09-22T05:37:46.977660Z"
+    },
+    "verifier_result": {
+      "rewards": {
+        "reward": 1.0
+      }
+    },
+    "exception_type": null,
+    "generation_requests": [
+      {
+        "ts": "2026-09-22T05:37:40.682Z",
+        "path": "/v1/anthropic/v1/messages",
+        "status": 200,
+        "ms": 1335,
+        "model": "deepseek/deepseek-v4.1-flash",
+        "pinned": "particle",
+        "served": "particle"
+      },
+      {
+        "ts": "2026-09-22T05:37:41.987Z",
+        "path": "/v1/anthropic/v1/messages",
+        "status": 200,
+        "ms": 1040,
+        "model": "deepseek/deepseek-v4.1-flash",
+        "pinned": "particle",
+        "served": "particle"
+      },
+      {
+        "ts": "2026-09-22T05:37:43.782Z",
+        "path": "/v1/anthropic/v1/messages",
+        "status": 200,
+        "ms": 926,
+        "model": "deepseek/deepseek-v4.1-flash",
+        "pinned": "particle",
+        "served": "particle"
+      },
+      {
+        "ts": "2026-09-22T05:37:45.159Z",
+        "path": "/v1/anthropic/v1/messages",
+        "status": 200,
+        "ms": 730,
+        "model": "deepseek/deepseek-v4.1-flash",
+        "pinned": "particle",
+        "served": "particle"
+      },
+      {
+        "ts": "2026-09-22T05:37:46.785Z",
+        "path": "/v1/anthropic/v1/messages",
+        "status": 200,
+        "ms": 1078,
+        "model": "deepseek/deepseek-v4.1-flash",
+        "pinned": "particle",
+        "served": "particle"
+      }
+    ]
+  },
+  {
+    "job": "ten-smoke-codex-2026-09-22",
+    "result_path": "/Users/mattferoz/heval-smoke-worker/jobs/ten-smoke-codex-2026-09-22/protocol-smoke__ZsXVX8X/result.json",
+    "agent_info": {
+      "name": "codex",
+      "version": "0.154.0",
+      "model_info": {
+        "name": "deepseek-v4.1-flash",
+        "provider": "openai"
+      }
+    },
+    "agent_execution": {
+      "started_at": "2026-09-22T05:43:18.368007Z",
+      "finished_at": "2026-09-22T05:43:21.790621Z"
+    },
+    "verifier_result": {
+      "rewards": {
+        "reward": 1.0
+      }
+    },
+    "exception_type": null,
+    "generation_requests": [
+      {
+        "ts": "2026-09-22T05:43:20.032Z",
+        "path": "/v1/openai/responses",
+        "status": 200,
+        "ms": 1175,
+        "model": "deepseek-v4.1-flash",
+        "pinned": "particle",
+        "served": "particle"
+      },
+      {
+        "ts": "2026-09-22T05:43:21.244Z",
+        "path": "/v1/openai/responses",
+        "status": 200,
+        "ms": 833,
+        "model": "deepseek-v4.1-flash",
+        "pinned": "particle",
+        "served": "particle"
+      }
+    ]
+  },
+  {
+    "job": "ten-smoke-cursor-cli-2026-09-22",
+    "result_path": "/Users/mattferoz/heval-smoke-worker/jobs/ten-smoke-cursor-cli-2026-09-22/protocol-smoke__fvmfzkc/result.json",
+    "agent_info": {
+      "name": "cursor-cli",
+      "version": "2026.09.18-9a7762b",
+      "model_info": {
+        "name": "deepseek-v4.1-flash",
+        "provider": "deepseek"
+      }
+    },
+    "agent_execution": {
+      "started_at": "2026-09-22T05:47:59.009219Z",
+      "finished_at": "2026-09-22T05:47:59.009532Z"
+    },
+    "verifier_result": null,
+    "exception_type": "ValueError",
+    "generation_requests": []
+  },
+  {
+    "job": "ten-smoke-deep-agents-2026-09-22",
+    "result_path": "/Users/mattferoz/heval-smoke-worker/jobs/ten-smoke-deep-agents-2026-09-22/protocol-smoke__Z8dMKcX/result.json",
+    "agent_info": {
+      "name": "deep-agents",
+      "version": "0.1.70",
+      "model_info": {
+        "name": "deepseek-v4.1-flash",
+        "provider": "deepseek"
+      }
+    },
+    "agent_execution": {
+      "started_at": "2026-09-22T05:49:10.113881Z",
+      "finished_at": "2026-09-22T05:49:23.139597Z"
+    },
+    "verifier_result": {
+      "rewards": {
+        "reward": 1.0
+      }
+    },
+    "exception_type": null,
+    "generation_requests": [
+      {
+        "ts": "2026-09-22T05:49:16.698Z",
+        "path": "/v1/openai/responses",
+        "status": 200,
+        "ms": 1109,
+        "model": "deepseek/deepseek-v4.1-flash",
+        "pinned": "particle",
+        "served": "particle"
+      },
+      {
+        "ts": "2026-09-22T05:49:17.934Z",
+        "path": "/v1/openai/responses",
+        "status": 200,
+        "ms": 967,
+        "model": "deepseek/deepseek-v4.1-flash",
+        "pinned": "particle",
+        "served": "particle"
+      },
+      {
+        "ts": "2026-09-22T05:49:20.029Z",
+        "path": "/v1/openai/responses",
+        "status": 200,
+        "ms": 1809,
+        "model": "deepseek/deepseek-v4.1-flash",
+        "pinned": "particle",
+        "served": "particle"
+      },
+      {
+        "ts": "2026-09-22T05:49:22.336Z",
+        "path": "/v1/openai/responses",
+        "status": 200,
+        "ms": 958,
+        "model": "deepseek/deepseek-v4.1-flash",
+        "pinned": "particle",
+        "served": "particle"
+      }
+    ]
+  },
+  {
+    "job": "ten-smoke-deepseek-harness-2026-09-22",
+    "result_path": "/Users/mattferoz/heval-smoke-worker/jobs/ten-smoke-deepseek-harness-2026-09-22/protocol-smoke__RrhDxcE/result.json",
+    "agent_info": {
+      "name": "deepseek-harness",
+      "version": "0.1.5-rc.2",
+      "model_info": {
+        "name": "deepseek-v4.1-flash",
+        "provider": "deepseek"
+      }
+    },
+    "agent_execution": {
+      "started_at": "2026-09-22T05:48:41.660834Z",
+      "finished_at": "2026-09-22T05:48:42.137626Z"
+    },
+    "verifier_result": {
+      "rewards": {
+        "reward": 0.0
+      }
+    },
+    "exception_type": "NonZeroAgentExitCodeError",
+    "generation_requests": []
+  },
+  {
+    "job": "ten-smoke-deepseek-harness-2026-09-22-pinned-node",
+    "result_path": "/Users/mattferoz/heval-smoke-worker/jobs/ten-smoke-deepseek-harness-2026-09-22-pinned-node/protocol-smoke__ipq7t6b/result.json",
+    "agent_info": {
+      "name": "deepseek-harness",
+      "version": "0.1.5-rc.2",
+      "model_info": {
+        "name": "deepseek-v4.1-flash",
+        "provider": "deepseek"
+      }
+    },
+    "agent_execution": {
+      "started_at": "2026-09-22T15:54:31.485153Z",
+      "finished_at": "2026-09-22T15:54:32.089722Z"
+    },
+    "verifier_result": {
+      "rewards": {
+        "reward": 0.0
+      }
+    },
+    "exception_type": "NonZeroAgentExitCodeError",
+    "generation_requests": []
+  },
+  {
+    "job": "ten-smoke-deepseek-harness-2026-09-22-pinned-node-settings",
+    "result_path": "/Users/mattferoz/heval-smoke-worker/jobs/ten-smoke-deepseek-harness-2026-09-22-pinned-node-settings/protocol-smoke__P2Q4HU8/result.json",
+    "agent_info": {
+      "name": "deepseek-harness",
+      "version": "0.1.5-rc.2",
+      "model_info": {
+        "name": "deepseek-v4.1-flash",
+        "provider": "deepseek"
+      }
+    },
+    "agent_execution": {
+      "started_at": "2026-09-22T15:56:36.942781Z",
+      "finished_at": "2026-09-22T15:56:46.024620Z"
+    },
+    "verifier_result": {
+      "rewards": {
+        "reward": 1.0
+      }
+    },
+    "exception_type": null,
+    "generation_requests": [
+      {
+        "ts": "2026-09-22T15:56:38.781Z",
+        "path": "/v1/openai/chat/completions",
+        "status": 200,
+        "ms": 1269,
+        "model": "deepseek/deepseek-v4.1-flash",
+        "pinned": "particle",
+        "served": "particle"
+      },
+      {
+        "ts": "2026-09-22T15:56:41.070Z",
+        "path": "/v1/openai/chat/completions",
+        "status": 200,
+        "ms": 3553,
+        "model": "deepseek/deepseek-v4.1-flash",
+        "pinned": "particle",
+        "served": "particle"
+      },
+      {
+        "ts": "2026-09-22T15:56:42.164Z",
+        "path": "/v1/openai/chat/completions",
+        "status": 200,
+        "ms": 856,
+        "model": "deepseek/deepseek-v4.1-flash",
+        "pinned": "particle",
+        "served": "particle"
+      },
+      {
+        "ts": "2026-09-22T15:56:43.640Z",
+        "path": "/v1/openai/chat/completions",
+        "status": 200,
+        "ms": 923,
+        "model": "deepseek/deepseek-v4.1-flash",
+        "pinned": "particle",
+        "served": "particle"
+      },
+      {
+        "ts": "2026-09-22T15:56:45.677Z",
+        "path": "/v1/openai/chat/completions",
+        "status": 200,
+        "ms": 821,
+        "model": "deepseek/deepseek-v4.1-flash",
+        "pinned": "particle",
+        "served": "particle"
+      }
+    ]
+  },
+  {
+    "job": "ten-smoke-deepseek-harness-2026-09-22-retry1",
+    "result_path": "/Users/mattferoz/heval-smoke-worker/jobs/ten-smoke-deepseek-harness-2026-09-22-retry1/protocol-smoke__UZs7Whq/result.json",
+    "agent_info": {
+      "name": "deepseek-harness",
+      "version": "0.1.5-rc.2",
+      "model_info": {
+        "name": "deepseek-v4.1-flash",
+        "provider": "deepseek"
+      }
+    },
+    "agent_execution": {
+      "started_at": "2026-09-22T12:21:23.443395Z",
+      "finished_at": "2026-09-22T12:21:24.816788Z"
+    },
+    "verifier_result": {
+      "rewards": {
+        "reward": 0.0
+      }
+    },
+    "exception_type": "NonZeroAgentExitCodeError",
+    "generation_requests": [
+      {
+        "ts": "2026-09-22T12:21:24.738Z",
+        "path": "/v1/openai/chat/completions",
+        "status": 400,
+        "ms": 493,
+        "model": "deepseek/deepseek-v4.1-flash",
+        "pinned": "particle",
+        "served": null
+      }
+    ]
+  },
+  {
+    "job": "ten-smoke-deepseek-harness-2026-09-22-thinking-off",
+    "result_path": "/Users/mattferoz/heval-smoke-worker/jobs/ten-smoke-deepseek-harness-2026-09-22-thinking-off/protocol-smoke__kX8N4Wt/result.json",
+    "agent_info": {
+      "name": "deepseek-harness",
+      "version": "0.1.5-rc.2",
+      "model_info": {
+        "name": "deepseek-v4.1-flash",
+        "provider": "deepseek"
+      }
+    },
+    "agent_execution": null,
+    "verifier_result": null,
+    "exception_type": "NonZeroAgentExitCodeError",
+    "generation_requests": []
+  },
+  {
+    "job": "ten-smoke-deepseek-harness-2026-09-22-thinking-off-prebuilt",
+    "result_path": "/Users/mattferoz/heval-smoke-worker/jobs/ten-smoke-deepseek-harness-2026-09-22-thinking-off-prebuilt/protocol-smoke__fKTpGgP/result.json",
+    "agent_info": {
+      "name": "deepseek-harness",
+      "version": "0.1.5-rc.2",
+      "model_info": {
+        "name": "deepseek-v4.1-flash",
+        "provider": "deepseek"
+      }
+    },
+    "agent_execution": null,
+    "verifier_result": null,
+    "exception_type": "NonZeroAgentExitCodeError",
+    "generation_requests": []
+  },
+  {
+    "job": "ten-smoke-deepseek-harness-2026-09-22-thinking-off-retry2",
+    "result_path": "/Users/mattferoz/heval-smoke-worker/jobs/ten-smoke-deepseek-harness-2026-09-22-thinking-off-retry2/protocol-smoke__Gyyfkox/result.json",
+    "agent_info": {
+      "name": "deepseek-harness",
+      "version": "0.1.5-rc.2",
+      "model_info": {
+        "name": "deepseek-v4.1-flash",
+        "provider": "deepseek"
+      }
+    },
+    "agent_execution": null,
+    "verifier_result": null,
+    "exception_type": "NonZeroAgentExitCodeError",
+    "generation_requests": []
+  },
+  {
+    "job": "ten-smoke-factory-droid-2026-09-22",
+    "result_path": "/Users/mattferoz/heval-smoke-worker/jobs/ten-smoke-factory-droid-2026-09-22/protocol-smoke__KWyuuPs/result.json",
+    "agent_info": {
+      "name": "factory-droid",
+      "version": "0.224.1",
+      "model_info": {
+        "name": "deepseek-v4.1-flash",
+        "provider": "deepseek"
+      }
+    },
+    "agent_execution": {
+      "started_at": "2026-09-22T05:49:41.774998Z",
+      "finished_at": "2026-09-22T05:50:02.620146Z"
+    },
+    "verifier_result": {
+      "rewards": {
+        "reward": 1.0
+      }
+    },
+    "exception_type": null,
+    "generation_requests": [
+      {
+        "ts": "2026-09-22T05:49:43.615Z",
+        "path": "/v1/openai/chat/completions",
+        "status": 200,
+        "ms": 943,
+        "model": "deepseek/deepseek-v4.1-flash",
+        "pinned": "particle",
+        "served": "particle"
+      },
+      {
+        "ts": "2026-09-22T05:49:44.983Z",
+        "path": "/v1/openai/chat/completions",
+        "status": 200,
+        "ms": 1003,
+        "model": "deepseek/deepseek-v4.1-flash",
+        "pinned": "particle",
+        "served": "particle"
+      },
+      {
+        "ts": "2026-09-22T05:49:46.595Z",
+        "path": "/v1/openai/chat/completions",
+        "status": 200,
+        "ms": 1177,
+        "model": "deepseek/deepseek-v4.1-flash",
+        "pinned": "particle",
+        "served": "particle"
+      },
+      {
+        "ts": "2026-09-22T05:49:47.693Z",
+        "path": "/v1/openai/chat/completions",
+        "status": 200,
+        "ms": 891,
+        "model": "deepseek/deepseek-v4.1-flash",
+        "pinned": "particle",
+        "served": "particle"
+      },
+      {
+        "ts": "2026-09-22T05:49:49.300Z",
+        "path": "/v1/openai/chat/completions",
+        "status": 200,
+        "ms": 1116,
+        "model": "deepseek/deepseek-v4.1-flash",
+        "pinned": "particle",
+        "served": "particle"
+      },
+      {
+        "ts": "2026-09-22T05:49:55.212Z",
+        "path": "/v1/openai/chat/completions",
+        "status": 200,
+        "ms": 5315,
+        "model": "deepseek/deepseek-v4.1-flash",
+        "pinned": "particle",
+        "served": "particle"
+      },
+      {
+        "ts": "2026-09-22T05:49:56.539Z",
+        "path": "/v1/openai/chat/completions",
+        "status": 200,
+        "ms": 835,
+        "model": "deepseek/deepseek-v4.1-flash",
+        "pinned": "particle",
+        "served": "particle"
+      },
+      {
+        "ts": "2026-09-22T05:49:57.909Z",
+        "path": "/v1/openai/chat/completions",
+        "status": 200,
+        "ms": 961,
+        "model": "deepseek/deepseek-v4.1-flash",
+        "pinned": "particle",
+        "served": "particle"
+      },
+      {
+        "ts": "2026-09-22T05:49:59.602Z",
+        "path": "/v1/openai/chat/completions",
+        "status": 200,
+        "ms": 968,
+        "model": "deepseek/deepseek-v4.1-flash",
+        "pinned": "particle",
+        "served": "particle"
+      },
+      {
+        "ts": "2026-09-22T05:50:01.186Z",
+        "path": "/v1/openai/chat/completions",
+        "status": 200,
+        "ms": 891,
+        "model": "deepseek/deepseek-v4.1-flash",
+        "pinned": "particle",
+        "served": "particle"
+      }
+    ]
+  },
+  {
+    "job": "ten-smoke-grok-build-2026-09-22",
+    "result_path": "/Users/mattferoz/heval-smoke-worker/jobs/ten-smoke-grok-build-2026-09-22/protocol-smoke__ZaF7shr/result.json",
+    "agent_info": {
+      "name": "grok-build",
+      "version": "1.0.34",
+      "model_info": {
+        "name": "deepseek/deepseek-v4.1-flash",
+        "provider": "openai"
+      }
+    },
+    "agent_execution": {
+      "started_at": "2026-09-22T05:46:21.310702Z",
+      "finished_at": "2026-09-22T05:46:31.632389Z"
+    },
+    "verifier_result": {
+      "rewards": {
+        "reward": 1.0
+      }
+    },
+    "exception_type": null,
+    "generation_requests": [
+      {
+        "ts": "2026-09-22T05:46:22.196Z",
+        "path": "/v1/openai/chat/completions",
+        "status": 200,
+        "ms": 484,
+        "model": "deepseek/deepseek-v4.1-flash",
+        "pinned": "particle",
+        "served": "particle"
+      },
+      {
+        "ts": "2026-09-22T05:46:22.740Z",
+        "path": "/v1/openai/chat/completions",
+        "status": 200,
+        "ms": 1020,
+        "model": "deepseek/deepseek-v4.1-flash",
+        "pinned": "particle",
+        "served": "particle"
+      },
+      {
+        "ts": "2026-09-22T05:46:23.890Z",
+        "path": "/v1/openai/chat/completions",
+        "status": 200,
+        "ms": 898,
+        "model": "deepseek/deepseek-v4.1-flash",
+        "pinned": "particle",
+        "served": "particle"
+      },
+      {
+        "ts": "2026-09-22T05:46:25.222Z",
+        "path": "/v1/openai/chat/completions",
+        "status": 200,
+        "ms": 986,
+        "model": "deepseek/deepseek-v4.1-flash",
+        "pinned": "particle",
+        "served": "particle"
+      },
+      {
+        "ts": "2026-09-22T05:46:26.497Z",
+        "path": "/v1/openai/chat/completions",
+        "status": 200,
+        "ms": 934,
+        "model": "deepseek/deepseek-v4.1-flash",
+        "pinned": "particle",
+        "served": "particle"
+      },
+      {
+        "ts": "2026-09-22T05:46:27.786Z",
+        "path": "/v1/openai/chat/completions",
+        "status": 200,
+        "ms": 954,
+        "model": "deepseek/deepseek-v4.1-flash",
+        "pinned": "particle",
+        "served": "particle"
+      }
+    ]
+  },
+  {
+    "job": "ten-smoke-opencode-2026-09-22",
+    "result_path": "/Users/mattferoz/heval-smoke-worker/jobs/ten-smoke-opencode-2026-09-22/protocol-smoke__MYceddR/result.json",
+    "agent_info": {
+      "name": "opencode",
+      "version": "1.18.30",
+      "model_info": {
+        "name": "deepseek-v4.1-flash",
+        "provider": "deepseek"
+      }
+    },
+    "agent_execution": {
+      "started_at": "2026-09-22T05:45:54.659618Z",
+      "finished_at": "2026-09-22T05:46:04.795945Z"
+    },
+    "verifier_result": {
+      "rewards": {
+        "reward": 1.0
+      }
+    },
+    "exception_type": null,
+    "generation_requests": [
+      {
+        "ts": "2026-09-22T05:45:59.067Z",
+        "path": "/v1/openai/chat/completions",
+        "status": 200,
+        "ms": 761,
+        "model": "deepseek/deepseek-v4.1-flash",
+        "pinned": "particle",
+        "served": "particle"
+      },
+      {
+        "ts": "2026-09-22T05:45:59.435Z",
+        "path": "/v1/openai/chat/completions",
+        "status": 200,
+        "ms": 597,
+        "model": "deepseek/deepseek-v4.1-flash",
+        "pinned": "particle",
+        "served": "particle"
+      },
+      {
+        "ts": "2026-09-22T05:46:00.524Z",
+        "path": "/v1/openai/chat/completions",
+        "status": 200,
+        "ms": 828,
+        "model": "deepseek/deepseek-v4.1-flash",
+        "pinned": "particle",
+        "served": "particle"
+      },
+      {
+        "ts": "2026-09-22T05:46:02.016Z",
+        "path": "/v1/openai/chat/completions",
+        "status": 200,
+        "ms": 945,
+        "model": "deepseek/deepseek-v4.1-flash",
+        "pinned": "particle",
+        "served": "particle"
+      },
+      {
+        "ts": "2026-09-22T05:46:03.244Z",
+        "path": "/v1/openai/chat/completions",
+        "status": 200,
+        "ms": 1070,
+        "model": "deepseek/deepseek-v4.1-flash",
+        "pinned": "particle",
+        "served": "particle"
+      },
+      {
+        "ts": "2026-09-22T05:46:04.618Z",
+        "path": "/v1/openai/chat/completions",
+        "status": 200,
+        "ms": 947,
+        "model": "deepseek/deepseek-v4.1-flash",
+        "pinned": "particle",
+        "served": "particle"
+      }
+    ]
+  },
+  {
+    "job": "ten-smoke-pi-2026-09-22",
+    "result_path": "/Users/mattferoz/heval-smoke-worker/jobs/ten-smoke-pi-2026-09-22/protocol-smoke__M7DoyQM/result.json",
+    "agent_info": {
+      "name": "pi",
+      "version": "0.85.1",
+      "model_info": {
+        "name": "deepseek-v4.1-flash",
+        "provider": "deepseek"
+      }
+    },
+    "agent_execution": {
+      "started_at": "2026-09-22T05:43:44.453088Z",
+      "finished_at": "2026-09-22T05:43:50.247704Z"
+    },
+    "verifier_result": {
+      "rewards": {
+        "reward": 1.0
+      }
+    },
+    "exception_type": null,
+    "generation_requests": [
+      {
+        "ts": "2026-09-22T05:43:45.654Z",
+        "path": "/v1/openai/chat/completions",
+        "status": 200,
+        "ms": 730,
+        "model": "deepseek-v4.1-flash",
+        "pinned": "particle",
+        "served": "particle"
+      },
+      {
+        "ts": "2026-09-22T05:43:46.725Z",
+        "path": "/v1/openai/chat/completions",
+        "status": 200,
+        "ms": 680,
+        "model": "deepseek-v4.1-flash",
+        "pinned": "particle",
+        "served": "particle"
+      },
+      {
+        "ts": "2026-09-22T05:43:48.277Z",
+        "path": "/v1/openai/chat/completions",
+        "status": 200,
+        "ms": 1302,
+        "model": "deepseek-v4.1-flash",
+        "pinned": "particle",
+        "served": "particle"
+      },
+      {
+        "ts": "2026-09-22T05:43:49.822Z",
+        "path": "/v1/openai/chat/completions",
+        "status": 200,
+        "ms": 705,
+        "model": "deepseek-v4.1-flash",
+        "pinned": "particle",
+        "served": "particle"
+      }
+    ]
+  }
+]

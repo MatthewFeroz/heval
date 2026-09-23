@@ -1,0 +1,349 @@
+{
+  "schemaVersion": 1,
+  "job": "seven-harness-smoke-combined",
+  "jobId": null,
+  "generatedAt": "2026-09-22T19:57:59.521Z",
+  "source": "combined",
+  "agentVersions": {
+    "claude-code": [
+      "2.1.270"
+    ],
+    "codex": [
+      "0.154.0"
+    ],
+    "pi": [
+      "0.85.1"
+    ],
+    "opencode": [
+      "1.18.30"
+    ],
+    "grok-build": [
+      "1.0.34"
+    ],
+    "deep-agents": [
+      "0.1.70"
+    ],
+    "deepseek-harness": [
+      "0.1.5-rc.2"
+    ]
+  },
+  "rows": [
+    {
+      "trial": "protocol-smoke__qSqnJn3",
+      "trialId": "86b5acef-d0df-493c-9c97-f40d5b06f9e5",
+      "agentImportPath": null,
+      "thinking": null,
+      "reasoningEffort": null,
+      "task": "protocol-smoke",
+      "taskFull": "protocol-smoke",
+      "taskChecksum": "8649ecc726099d26020577e5d5552fb28a13b0480c9f9403ef9fef9e31099f75",
+      "agent": "claude-code",
+      "agentVersion": "2.1.270",
+      "model": "deepseek/deepseek-v4.1-flash",
+      "modelShort": "deepseek-v4.1-flash",
+      "provider": "deepseek",
+      "vendor": "particle",
+      "stack": "claude-code / deepseek-v4.1-flash",
+      "reward": 1,
+      "passed": 1,
+      "agentSeconds": 8.121,
+      "totalSeconds": 104.015,
+      "overSlow": 0,
+      "timedOut": 0,
+      "inputTokens": 77425,
+      "cacheTokens": 0,
+      "outputTokens": 549,
+      "totalTokens": 77974,
+      "costUsd": 0.40085000000000004,
+      "costSource": "reported",
+      "startedAt": "2026-09-22T05:36:09.875386Z",
+      "error": null,
+      "source": "/Users/mattferoz/heval-smoke-worker/jobs/ten-smoke-claude-code-2026-09-22",
+      "run": "57dd0fdf-b75e-4a2a-bc69-683e1b748bd7"
+    },
+    {
+      "trial": "protocol-smoke__ZsXVX8X",
+      "trialId": "c1447792-4599-42da-a20e-bbad0b6a77cc",
+      "agentImportPath": null,
+      "thinking": null,
+      "reasoningEffort": null,
+      "task": "protocol-smoke",
+      "taskFull": "protocol-smoke",
+      "taskChecksum": "8649ecc726099d26020577e5d5552fb28a13b0480c9f9403ef9fef9e31099f75",
+      "agent": "codex",
+      "agentVersion": "0.154.0",
+      "model": "deepseek/deepseek-v4.1-flash",
+      "modelShort": "deepseek-v4.1-flash",
+      "provider": "deepseek",
+      "vendor": "particle",
+      "stack": "codex / deepseek-v4.1-flash",
+      "reward": 1,
+      "passed": 1,
+      "agentSeconds": 3.422,
+      "totalSeconds": 92.391,
+      "overSlow": 0,
+      "timedOut": 0,
+      "inputTokens": 17224,
+      "cacheTokens": 8448,
+      "outputTokens": 94,
+      "totalTokens": 17318,
+      "costUsd": null,
+      "costSource": null,
+      "startedAt": "2026-09-22T05:41:55.497646Z",
+      "error": null,
+      "source": "/Users/mattferoz/heval-smoke-worker/jobs/ten-smoke-codex-2026-09-22",
+      "run": "02a88838-9e5e-4cb5-b21d-20c7596c9430"
+    },
+    {
+      "trial": "protocol-smoke__M7DoyQM",
+      "trialId": "6499ac68-c560-4740-929b-73f4a025ebd9",
+      "agentImportPath": null,
+      "thinking": null,
+      "reasoningEffort": null,
+      "task": "protocol-smoke",
+      "taskFull": "protocol-smoke",
+      "taskChecksum": "8649ecc726099d26020577e5d5552fb28a13b0480c9f9403ef9fef9e31099f75",
+      "agent": "pi",
+      "agentVersion": "0.85.1",
+      "model": "deepseek/deepseek-v4.1-flash",
+      "modelShort": "deepseek-v4.1-flash",
+      "provider": "deepseek",
+      "vendor": "particle",
+      "stack": "pi / deepseek-v4.1-flash",
+      "reward": 1,
+      "passed": 1,
+      "agentSeconds": 5.794,
+      "totalSeconds": 25.912,
+      "overSlow": 0,
+      "timedOut": 0,
+      "inputTokens": 6747,
+      "cacheTokens": 4608,
+      "outputTokens": 302,
+      "totalTokens": 7049,
+      "costUsd": null,
+      "costSource": null,
+      "startedAt": "2026-09-22T05:43:28.840291Z",
+      "error": null,
+      "source": "/Users/mattferoz/heval-smoke-worker/jobs/ten-smoke-pi-2026-09-22",
+      "run": "63260503-8ac5-4af0-a411-d28c49cdf798"
+    },
+    {
+      "trial": "protocol-smoke__MYceddR",
+      "trialId": "bfd825b3-b3ca-470b-af7d-0915739e51db",
+      "agentImportPath": null,
+      "thinking": null,
+      "reasoningEffort": null,
+      "task": "protocol-smoke",
+      "taskFull": "protocol-smoke",
+      "taskChecksum": "8649ecc726099d26020577e5d5552fb28a13b0480c9f9403ef9fef9e31099f75",
+      "agent": "opencode",
+      "agentVersion": "1.18.30",
+      "model": "deepseek/deepseek-v4.1-flash",
+      "modelShort": "deepseek-v4.1-flash",
+      "provider": "deepseek",
+      "vendor": "particle",
+      "stack": "opencode / deepseek-v4.1-flash",
+      "reward": 1,
+      "passed": 1,
+      "agentSeconds": 10.136,
+      "totalSeconds": 98.358,
+      "overSlow": 0,
+      "timedOut": 0,
+      "inputTokens": 37691,
+      "cacheTokens": 0,
+      "outputTokens": 347,
+      "totalTokens": 38038,
+      "costUsd": null,
+      "costSource": null,
+      "startedAt": "2026-09-22T05:44:31.551458Z",
+      "error": null,
+      "source": "/Users/mattferoz/heval-smoke-worker/jobs/ten-smoke-opencode-2026-09-22",
+      "run": "b899f5ac-0f0b-453b-9d53-4fd2350d09a5"
+    },
+    {
+      "trial": "protocol-smoke__ZaF7shr",
+      "trialId": "b86c416b-b252-4e4a-8ee9-73901f7233ad",
+      "agentImportPath": null,
+      "thinking": null,
+      "reasoningEffort": null,
+      "task": "protocol-smoke",
+      "taskFull": "protocol-smoke",
+      "taskChecksum": "8649ecc726099d26020577e5d5552fb28a13b0480c9f9403ef9fef9e31099f75",
+      "agent": "grok-build",
+      "agentVersion": "1.0.34",
+      "model": "openai/deepseek/deepseek-v4.1-flash",
+      "modelShort": "deepseek/deepseek-v4.1-flash",
+      "provider": "openai",
+      "vendor": "particle",
+      "stack": "grok-build / deepseek/deepseek-v4.1-flash",
+      "reward": 1,
+      "passed": 1,
+      "agentSeconds": 10.322,
+      "totalSeconds": 26.929,
+      "overSlow": 0,
+      "timedOut": 0,
+      "inputTokens": 53861,
+      "cacheTokens": 39936,
+      "outputTokens": 334,
+      "totalTokens": 54195,
+      "costUsd": null,
+      "costSource": null,
+      "startedAt": "2026-09-22T05:46:10.600974Z",
+      "error": null,
+      "source": "/Users/mattferoz/heval-smoke-worker/jobs/ten-smoke-grok-build-2026-09-22",
+      "run": "c725bd60-50a0-4084-bcdf-c5dac8188f51"
+    },
+    {
+      "trial": "protocol-smoke__Z8dMKcX",
+      "trialId": "b7cc7678-9310-4f95-a8b4-1e8cc4ce85a3",
+      "agentImportPath": "smoke_adapters:DeepAgents",
+      "thinking": null,
+      "reasoningEffort": null,
+      "task": "protocol-smoke",
+      "taskFull": "protocol-smoke",
+      "taskChecksum": "8649ecc726099d26020577e5d5552fb28a13b0480c9f9403ef9fef9e31099f75",
+      "agent": "deep-agents",
+      "agentVersion": "0.1.70",
+      "model": "deepseek/deepseek-v4.1-flash",
+      "modelShort": "deepseek-v4.1-flash",
+      "provider": "deepseek",
+      "vendor": null,
+      "stack": "deep-agents / deepseek-v4.1-flash",
+      "reward": 1,
+      "passed": 1,
+      "agentSeconds": 13.026,
+      "totalSeconds": 40.374,
+      "overSlow": 0,
+      "timedOut": 0,
+      "inputTokens": null,
+      "cacheTokens": null,
+      "outputTokens": null,
+      "totalTokens": null,
+      "costUsd": null,
+      "costSource": null,
+      "startedAt": "2026-09-22T05:48:47.067895Z",
+      "error": null,
+      "source": "/Users/mattferoz/heval-smoke-worker/jobs/ten-smoke-deep-agents-2026-09-22",
+      "run": "790eab19-666a-4a5b-94d3-e5a375ef3400"
+    },
+    {
+      "trial": "protocol-smoke__P2Q4HU8",
+      "trialId": "83c299ba-f317-4010-bc84-dfd4ab9f9fa0",
+      "agentImportPath": "smoke_adapters:DeepSeekHarness",
+      "thinking": "disabled",
+      "reasoningEffort": null,
+      "task": "protocol-smoke",
+      "taskFull": "protocol-smoke",
+      "taskChecksum": "8649ecc726099d26020577e5d5552fb28a13b0480c9f9403ef9fef9e31099f75",
+      "agent": "deepseek-harness",
+      "agentVersion": "0.1.5-rc.2",
+      "model": "deepseek/deepseek-v4.1-flash",
+      "modelShort": "deepseek-v4.1-flash",
+      "provider": "deepseek",
+      "vendor": null,
+      "stack": "deepseek-harness / deepseek-v4.1-flash",
+      "reward": 1,
+      "passed": 1,
+      "agentSeconds": 9.082,
+      "totalSeconds": 85.21,
+      "overSlow": 0,
+      "timedOut": 0,
+      "inputTokens": null,
+      "cacheTokens": null,
+      "outputTokens": null,
+      "totalTokens": null,
+      "costUsd": null,
+      "costSource": null,
+      "startedAt": "2026-09-22T15:55:25.606688Z",
+      "error": null,
+      "source": "/Users/mattferoz/heval-smoke-worker/jobs/ten-smoke-deepseek-harness-2026-09-22-pinned-node-settings",
+      "run": "0ae367dd-28d1-45a4-aaed-2b316a57cc28"
+    }
+  ],
+  "sources": [
+    {
+      "schemaVersion": 1,
+      "job": "ten-smoke-claude-code-2026-09-22",
+      "jobId": "57dd0fdf-b75e-4a2a-bc69-683e1b748bd7",
+      "generatedAt": "2026-09-22T19:57:59.513Z",
+      "source": "/Users/mattferoz/heval-smoke-worker/jobs/ten-smoke-claude-code-2026-09-22",
+      "agentVersions": {
+        "claude-code": [
+          "2.1.270"
+        ]
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "job": "ten-smoke-codex-2026-09-22",
+      "jobId": "02a88838-9e5e-4cb5-b21d-20c7596c9430",
+      "generatedAt": "2026-09-22T19:57:59.515Z",
+      "source": "/Users/mattferoz/heval-smoke-worker/jobs/ten-smoke-codex-2026-09-22",
+      "agentVersions": {
+        "codex": [
+          "0.154.0"
+        ]
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "job": "ten-smoke-pi-2026-09-22",
+      "jobId": "63260503-8ac5-4af0-a411-d28c49cdf798",
+      "generatedAt": "2026-09-22T19:57:59.516Z",
+      "source": "/Users/mattferoz/heval-smoke-worker/jobs/ten-smoke-pi-2026-09-22",
+      "agentVersions": {
+        "pi": [
+          "0.85.1"
+        ]
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "job": "ten-smoke-opencode-2026-09-22",
+      "jobId": "b899f5ac-0f0b-453b-9d53-4fd2350d09a5",
+      "generatedAt": "2026-09-22T19:57:59.518Z",
+      "source": "/Users/mattferoz/heval-smoke-worker/jobs/ten-smoke-opencode-2026-09-22",
+      "agentVersions": {
+        "opencode": [
+          "1.18.30"
+        ]
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "job": "ten-smoke-grok-build-2026-09-22",
+      "jobId": "c725bd60-50a0-4084-bcdf-c5dac8188f51",
+      "generatedAt": "2026-09-22T19:57:59.519Z",
+      "source": "/Users/mattferoz/heval-smoke-worker/jobs/ten-smoke-grok-build-2026-09-22",
+      "agentVersions": {
+        "grok-build": [
+          "1.0.34"
+        ]
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "job": "ten-smoke-deep-agents-2026-09-22",
+      "jobId": "790eab19-666a-4a5b-94d3-e5a375ef3400",
+      "generatedAt": "2026-09-22T19:57:59.520Z",
+      "source": "/Users/mattferoz/heval-smoke-worker/jobs/ten-smoke-deep-agents-2026-09-22",
+      "agentVersions": {
+        "deep-agents": [
+          "0.1.70"
+        ]
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "job": "ten-smoke-deepseek-harness-2026-09-22-pinned-node-settings",
+      "jobId": "0ae367dd-28d1-45a4-aaed-2b316a57cc28",
+      "generatedAt": "2026-09-22T19:57:59.521Z",
+      "source": "/Users/mattferoz/heval-smoke-worker/jobs/ten-smoke-deepseek-harness-2026-09-22-pinned-node-settings",
+      "agentVersions": {
+        "deepseek-harness": [
+          "0.1.5-rc.2"
+        ]
+      }
+    }
+  ]
+}
