@@ -34,28 +34,34 @@ function findReward(node: unknown): number | null {
   return null
 }
 
-export function readTrial(dir: string, catalog?: Catalog | null): TrialRow | null {
+/** `requireComplete` rejects a started trial with no result instead of skipping it. */
+export type ReadOptions = { requireComplete?: boolean }
+
+export function readTrial(dir: string, catalog?: Catalog | null, opts: ReadOptions = {}): TrialRow | null {
   const cfgPath = join(dir, 'config.json'), resPath = join(dir, 'result.json')
-  if (!existsSync(cfgPath) || !existsSync(resPath)) return null
-  const cfg = JSON.parse(readFileSync(cfgPath, 'utf8')) as Json
+  if (!existsSync(resPath)) {
+    if (opts.requireComplete && existsSync(cfgPath)) throw new Error(`Incomplete trial: ${dir} has no result.json`)
+    return null
+  }
+  const cfg = existsSync(cfgPath) ? JSON.parse(readFileSync(cfgPath, 'utf8')) as Json : {}
   const res = JSON.parse(readFileSync(resPath, 'utf8')) as Json
   // Harbor may omit default values (including the Oracle agent) from config.json.
   // result.json retains the fully resolved configuration; old exports keep the
   // explicit per-trial config as the overriding source.
   const resolvedCfg = (res.config ?? {}) as Json
   const agentCfg = { ...((resolvedCfg.agent ?? {}) as Json), ...((cfg.agent ?? {}) as Json) }
-  const agent = str(agentCfg.name)
-  if (!agent) return null
+  const info = (res.agent_info ?? {}) as Json
+  const agent = str(info.name) ?? str(agentCfg.name) ?? str(agentCfg.import_path) ?? 'unknown'
+  const kwargs = (agentCfg.kwargs ?? {}) as Json
   // Harbor records the agent's configured env per trial, so the vendor the job
   // pinned through the proxy survives as provenance rather than being asserted
   // by whoever writes up the results.
   const agentEnv = (agentCfg.env ?? {}) as Json
 
   const taskFull = str(res.task_name) ?? 'unknown'
-  const model = str(agentCfg.model_name) ?? 'unknown'
+  const model = str(agentCfg.model_name) ?? str((info.model_info as Json | undefined)?.name) ?? 'unknown'
   const modelShort = model.includes('/') ? model.split('/').slice(1).join('/') : model
   const usage = (res.agent_result ?? {}) as Json
-  const info = (res.agent_info ?? {}) as Json
   const exc = res.exception_info as Json | null
 
   const reward = findReward(res.verifier_result) ?? 0
@@ -83,6 +89,10 @@ export function readTrial(dir: string, catalog?: Catalog | null): TrialRow | nul
 
   return {
     trial: str(res.trial_name) ?? basename(dir),
+    trialId: str(res.id),
+    agentImportPath: str(agentCfg.import_path),
+    thinking: str(kwargs.thinking),
+    reasoningEffort: str(kwargs.reasoning_effort),
     task: taskFull.includes('/') ? taskFull.split('/').slice(1).join('/') : taskFull,
     taskFull,
     taskChecksum: str(res.task_checksum),
@@ -111,18 +121,18 @@ export function readTrial(dir: string, catalog?: Catalog | null): TrialRow | nul
   }
 }
 
-export function loadTrials(jobDir: string, catalog: Catalog | null = loadCatalog()): TrialRow[] {
+export function loadTrials(jobDir: string, catalog: Catalog | null = loadCatalog(), opts: ReadOptions = {}): TrialRow[] {
   const rows: TrialRow[] = []
   for (const entry of readdirSync(jobDir, { withFileTypes: true })) {
     if (!entry.isDirectory()) continue
-    const row = readTrial(join(jobDir, entry.name), catalog)
+    const row = readTrial(join(jobDir, entry.name), catalog, opts)
     if (row) rows.push(row)
   }
   return rows.sort((a, b) => a.trial.localeCompare(b.trial))
 }
 
-export function exportJob(jobDir: string, catalog: Catalog | null = loadCatalog()): JobExport {
-  const rows = loadTrials(jobDir, catalog)
+export function exportJob(jobDir: string, catalog: Catalog | null = loadCatalog(), opts: ReadOptions = {}): JobExport {
+  const rows = loadTrials(jobDir, catalog, opts)
   const jobResult = join(jobDir, 'result.json')
   const jobId = existsSync(jobResult) ? str((JSON.parse(readFileSync(jobResult, 'utf8')) as Json).id) : null
   const agentVersions: Record<string, string[]> = {}
@@ -139,6 +149,6 @@ export function exportJob(jobDir: string, catalog: Catalog | null = loadCatalog(
     generatedAt: new Date().toISOString(),
     source: resolve(jobDir),
     agentVersions,
-    rows,
+    rows: rows.map(row => ({ ...row, source: resolve(jobDir), run: jobId ?? basename(resolve(jobDir)) })),
   }
 }
