@@ -8,6 +8,7 @@ import { ProjectReportView } from '../reports/ProjectReportView'
 import { useAppAuth } from '../auth'
 import { message, token } from '../reports/helpers'
 import { RUNNER_ONLINE_MS, terminalStates } from './protocol'
+import { BENCHMARKS, benchmarkFor, type Benchmark } from './benchmarks'
 import './evaluations.css'
 
 type Machine = FunctionReturnType<typeof api.runners.list>[number]
@@ -15,6 +16,12 @@ const agentLabel = (s: string) => ({ codex: 'Codex CLI', 'claude-code': 'Claude 
 const unique = (items: string[]) => [...new Set(items)].sort()
 const toggle = (items: string[], item: string) => items.includes(item) ? items.filter(i => i !== item) : [...items, item]
 const done = (s: string) => (terminalStates as readonly string[]).includes(s)
+
+function BenchmarkCard({ benchmark }: { benchmark: Benchmark }) {
+  return <div className="evaluation-choice evaluation-benchmark" data-installed="false"><span><strong>{benchmark.title}</strong><small>{benchmark.publisher} · {benchmark.tasks} {benchmark.tasks === 1 ? 'task' : 'tasks'} <span className="report-badge" data-tone={benchmark.status === 'unsupported' ? undefined : 'warning'}>{benchmark.status === 'unsupported' ? 'Not runnable yet' : 'Not on this worker'}</span></small><small>{benchmark.summary}</small><small>{benchmark.note}</small>
+    {benchmark.install && <details><summary>Add to this worker</summary><p>Run these on the worker. Replace MODEL_ID with a model listed by <code>heval provider status merge</code>. Setup makes no model calls. The runner picks up new profiles on its next check-in; you don’t need to restart it.</p><pre><code>{benchmark.install.join('\n')}</code></pre></details>}
+    {benchmark.source && <a href={`${benchmark.source.url}/tree/${benchmark.source.commit}`} target="_blank" rel="noreferrer">Source · {benchmark.source.license} ↗</a>}</span></div>
+}
 
 function ExperimentReport({ id }: { id: Id<'reports'> }) {
   const report = useQuery(api.reports.get, { id })
@@ -87,14 +94,13 @@ function Wizard({ machines, now }: { machines: Machine[]; now: number }) {
       <label>Worker<select value={machine?.id ?? ''} onChange={e=>{setWorker(e.target.value);setTask('');setAgents([]);setModels([]);setVendor('');setAttempts(1)}}><option value="" disabled>Connect a worker first</option>{machines.map(m=><option key={m.id} value={m.id}>{m.name}{now-m.lastSeen>=RUNNER_ONLINE_MS?' · Offline':''}</option>)}</select></label>
       {!machines.length && <p><a href="/machines">Connect your first worker</a> to see its available tasks and model connections.</p>}
       {machine && !ready && <p role="status">This worker is {now-machine.lastSeen>=RUNNER_ONLINE_MS?'offline':`not ready: ${machine.health}`}. Reconnect it before launching.</p>}
-      {machine && !catalog.length && <div className="evaluation-empty"><h3>No evaluations are available on {machine.name} yet</h3><p>Evaluations come from profiles on the worker, and this one has none beyond the setup check. Add model-backed profiles on the machine:</p>
-        <ol><li>Connect Merge Gateway. The key stays on the worker.<pre><code>heval provider connect merge</code></pre></li>
-          <li>Choose an exact model ID from the catalog.<pre><code>heval provider status merge</code></pre></li>
-          <li>Create one profile per harness for that model. No model calls are made yet.<pre><code>heval runner setup --model MODEL_ID --harnesses codex,claude-code,pi</code></pre></li></ol>
-        <p>The running runner picks up new profiles on its next check-in; you don’t need to restart it. For custom task sets, follow the <a href="https://github.com/MatthewFeroz/heval/blob/main/docs/three-agent-worker.md">worker setup guide</a>. Older workers need the updated CLI.</p></div>}
+      <fieldset><legend>Benchmark</legend>
+        {machine && !catalog.length && <p className="report-notice">No benchmarks are installed on {machine.name} yet. Pick one below and run its setup commands on the worker. For your own task sets, follow the <a href="https://github.com/MatthewFeroz/heval/blob/main/docs/three-agent-worker.md">worker setup guide</a>. Older workers need the updated CLI.</p>}
+        <div className="evaluation-choices">{taskSets.map(p=>{const b=benchmarkFor(p.taskSet);return <label className="evaluation-choice evaluation-benchmark" key={p.taskSet}><input type="radio" name="task-set" checked={taskSet===p.taskSet} onChange={()=>{setTask(p.taskSet!);setAgents([]);setModels([]);setVendor('');setAttempts(1)}}/><span><strong>{b?.title ?? p.benchmark}</strong><small>{b ? `${b.publisher} · ` : ''}{p.tasks} {p.tasks===1?'task':'tasks'} <span className="report-badge" data-tone="success">Installed</span>{b?.status==='preview' && <span className="report-badge" data-tone="warning">Preview</span>}</small><small>{b ? b.summary : 'Custom task set approved on this worker.'}</small>{b && <small>{b.note}</small>}</span></label>})}
+          {BENCHMARKS.filter(b=>!taskSets.some(p=>p.taskSet===b.taskSet)).map(b=><BenchmarkCard key={b.id} benchmark={b}/>)}</div>
+      </fieldset>
+      <p className="report-muted">Benchmarks run from tasks installed on the worker, checked against pinned content. Credentials stay there; the browser only sees available options.</p>
       {!!catalog.length && <>
-      <fieldset><legend>Task set</legend><div className="evaluation-choices">{taskSets.map(p=><label className="evaluation-choice" key={p.taskSet}><input type="radio" name="task-set" checked={taskSet===p.taskSet} onChange={()=>{setTask(p.taskSet!);setAgents([]);setModels([]);setVendor('');setAttempts(1)}}/><span><strong>{p.benchmark}</strong><small>{p.tasks} {p.tasks===1?'task':'tasks'} · Same snapshot for every combination</small></span></label>)}</div></fieldset>
-      <p className="report-muted">Task sets are installed on the worker. Credentials stay there; the browser only sees available options.</p>
 
       <p>Select one or more harnesses. Each runs independently against the same tasks.</p>
       <fieldset><legend>Harnesses</legend><div className="evaluation-choices">{unique(choices.map(p=>p.agent)).map(agent=><label key={agent} className="evaluation-choice"><input type="checkbox" checked={agents.includes(agent)} onChange={()=>setAgents(toggle(agents,agent))}/><span><strong>{agentLabel(agent)}</strong><small>{unique(choices.filter(p=>p.agent===agent).map(p=>p.model)).length} configured model options</small></span></label>)}</div></fieldset>
@@ -112,7 +118,7 @@ function Wizard({ machines, now }: { machines: Machine[]; now: number }) {
       </>}
     </div><aside className="evaluation-run-summary" aria-label="Run summary"><h3>Run summary</h3>
       <label>Experiment name<input maxLength={120} placeholder="Name this experiment" value={title} onChange={e=>setTitle(e.target.value)}/></label>
-      <p>{machine?.name} · {review[0]?.benchmark} · {selectedVendor}</p>
+      <p>{machine?.name} · {benchmarkFor(taskSet)?.title ?? review[0]?.benchmark} · {selectedVendor}</p>
       {!matrix.length && <p>Select harnesses and models to preview your run.</p>}
       <div className="evaluation-table-wrap"><table><caption>Combinations to run</caption><thead><tr><th>Harness</th><th>Model</th><th>Trials</th><th>Run deadline</th></tr></thead><tbody>{review.map(p=><tr key={p.id}><td>{agentLabel(p.agent)}</td><td>{p.model}</td><td>{p.tasks} × {attempts}</td><td>{p.timeoutSeconds/60} min</td></tr>)}</tbody></table></div>
       <p><strong>{trials} trials, one at a time.</strong> Each combination produces a report in this experiment. You can close the tab and return later.</p>

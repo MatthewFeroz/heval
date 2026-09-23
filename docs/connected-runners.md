@@ -80,13 +80,32 @@ heval runner test --profile merge-codex
 The hidden key prompt validates the catalog; setup makes no model calls. The
 last command runs a real model-backed smoke test locally and uses credits.
 No pairing is needed for local testing. Once paired, these same profiles are
-available from Runner setup and the Evaluations configuration page. Use the
-same `--state` directory throughout.
+available on the Evaluations configuration page. Use the same `--state`
+directory throughout.
 See [the CLI connection guide](../packages/cli/README.md#one-merge-gateway-key-for-heval-evaluations)
 for replacement, removal, per-harness tests, and storage details. Merge profiles
 use `"provider": "merge"` instead of `envFile`; mixing the two is rejected.
 
 The browser can select only profiles advertised by its paired machine. It cannot supply shell commands, file paths, Docker settings, or model keys. This release supports **explicit local Harbor task directories**, one agent/model per profile, 1–60 total trials, one concurrent trial, no automatic Harbor retries, and a maximum two-hour job deadline. Download/prepare benchmark tasks on the machine first. Unverified catalog versions, registry globs, multi-agent sweeps, and automatic cloud provisioning aren't offered as runnable choices.
+
+### Catalog benchmarks
+
+The Evaluations page lists benchmarks from `src/runners/benchmarks.ts`. Each
+installable entry pins its tasks by content hash. A worker that advertises the
+same task-set hash shows the benchmark as installed. Otherwise, the card shows
+the commands to add it. For example, the five-task OpenThoughts-TBLite smoke set:
+
+```sh
+git clone https://github.com/open-thoughts/OpenThoughts-TBLite ~/.heval/benchmarks/openthoughts-tblite
+git -C ~/.heval/benchmarks/openthoughts-tblite checkout 5c37b41f00ce04719a4453061076ae9f46b74b7d
+heval runner setup --benchmark tblite-smoke --source ~/.heval/benchmarks/openthoughts-tblite \
+  --model YOUR_MODEL_ID --harnesses codex,claude-code,pi
+```
+
+Setup refuses tasks whose content differs from the pin. It copies them into the
+runner state and creates one profile per harness and model. Run it again with
+another `--model` to offer more models. Full TBLite (100 tasks) is listed for
+reference but exceeds this release's per-evaluation limits.
 
 Add an entry to `~/.heval/runner/profiles.json` while retaining the setup profile:
 

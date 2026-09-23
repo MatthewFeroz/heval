@@ -1,7 +1,8 @@
-import { existsSync, mkdirSync, cpSync, readFileSync } from 'node:fs'
+import { existsSync, mkdirSync, cpSync, readFileSync, renameSync, rmSync } from 'node:fs'
 import { basename, dirname, isAbsolute, join, resolve } from 'node:path'
 import { validateProfiles, type RunnerProfile } from '../../../../src/runners/protocol'
-import { hashDirectory, readJson, sha256, writeJson } from './files'
+import { BENCHMARKS, type Benchmark } from '../../../../src/runners/benchmarks'
+import { hashDirectory, randomSecret, readJson, sha256, writeJson } from './files'
 import { mergeAgent, mergePath, mergeStatus, mergeHarnesses } from '../merge'
 
 type JsonObject = Record<string, unknown>
@@ -60,8 +61,29 @@ export function loadProfiles(file: string, connectionDirectory = dirname(file)):
   return loaded
 }
 
+const copyTask = (from: string, to: string) => cpSync(from, to, { recursive: true, filter: name => !name.split('/').some(part => part === '.git' || part === '__pycache__') })
+
+/** Copy a catalog benchmark's pinned tasks into the runner state, refusing any content that differs from the pin. */
+function installBenchmark(directory: string, id: string, source: string, catalog: Benchmark[]) {
+  const benchmark = catalog.find(b => b.id === id)
+  if (!benchmark || benchmark.id === 'heval-smoke' || !benchmark.taskHashes || benchmark.status === 'unsupported') throw new Error(`Choose an installable benchmark: ${catalog.filter(b => b.taskHashes && b.status !== 'unsupported' && b.id !== 'heval-smoke').map(b => b.id).join(', ')}.`)
+  const target = join(directory, 'benchmarks', benchmark.id)
+  for (const [task, expected] of benchmark.taskHashes) {
+    const path = join(resolve(source), task)
+    if (!existsSync(join(path, 'task.toml'))) throw new Error(`${task} is missing from ${source}. Check out ${benchmark.source?.commit ?? 'the pinned commit'} first.`)
+    if (hashDirectory(path) !== expected) throw new Error(`${task} differs from the pinned ${benchmark.title} content. Check out ${benchmark.source?.commit ?? 'the pinned commit'} and try again.`)
+  }
+  if (!existsSync(target)) {
+    const staging = `${target}.${randomSecret().slice(0, 8)}.tmp`
+    mkdirSync(dirname(target), { recursive: true, mode: 0o700 })
+    try { for (const [task] of benchmark.taskHashes) copyTask(join(resolve(source), task), join(staging, task)); renameSync(staging, target) } finally { rmSync(staging, { recursive: true, force: true }) }
+  }
+  if (benchmark.taskHashes.some(([task, expected]) => hashDirectory(join(target, task)) !== expected)) throw new Error(`The installed copy in ${target} was modified. Remove it and run setup again.`)
+  return benchmark
+}
+
 /** Add explicit smoke profiles without changing existing user-approved jobs. */
-export function setupMergeProfiles(directory: string, bundledTask: string, model: string, harnesses: string[]) {
+export function setupMergeProfiles(directory: string, bundledTask: string, model: string, harnesses: string[], benchmark?: { id: string; source: string }, catalog = BENCHMARKS) {
   if (!harnesses.length || new Set(harnesses).size !== harnesses.length || harnesses.some(h => !mergeHarnesses.includes(h as typeof mergeHarnesses[number]))) throw new Error(`Choose unique harnesses from: ${mergeHarnesses.join(', ')}.`)
   const connection = mergeStatus(directory)
   if (!connection.connected || !connection.models.includes(model)) throw new Error('Connect Merge first and choose a model listed by provider status.')
@@ -69,16 +91,22 @@ export function setupMergeProfiles(directory: string, bundledTask: string, model
   const registry = readJson<{ schemaVersion: number; profiles: Descriptor[] }>(path)
   if (registry.schemaVersion !== 1 || !Array.isArray(registry.profiles)) throw new Error('Invalid existing profile registry.')
   if (registry.profiles.length + harnesses.length > 20) throw new Error('At most 20 profiles are supported.')
+  const entry = benchmark && installBenchmark(directory, benchmark.id, benchmark.source, catalog)
+  // Benchmark profiles include the model so one benchmark can offer several models per harness.
+  const idFor = (harness: string) => entry ? `${entry.id}-${harness}-${sha256(model).slice(0, 8)}` : `merge-${harness}`
   for (const harness of harnesses) {
-    if (registry.profiles.some(p => p.id === `merge-${harness}`) || existsSync(join(directory, `merge-${harness}.json`))) throw new Error(`merge-${harness} already exists; edit or remove that profile before replacing it.`)
+    if (registry.profiles.some(p => p.id === idFor(harness)) || existsSync(join(directory, `${idFor(harness)}.json`))) throw new Error(`${idFor(harness)} already exists; edit or remove that profile before replacing it.`)
   }
   for (const harness of harnesses) {
-    const id = `merge-${harness}`
-    writeJson(join(directory, `${id}.json`), { n_attempts: 1, agents: [{ name: harness, model_name: model }], tasks: [{ path: 'tasks/heval-setup' }] })
-    registry.profiles.push({ id, title: `Merge smoke: ${harness}`, benchmark: 'Heval model connection smoke test', config: `${id}.json`, provider: 'merge', timeoutSeconds: 600 })
+    const id = idFor(harness)
+    const tasks = entry ? entry.taskHashes!.map(([task]) => ({ path: `benchmarks/${entry.id}/${task}` })) : [{ path: 'tasks/heval-setup' }]
+    writeJson(join(directory, `${id}.json`), { n_attempts: 1, agents: [{ name: harness, model_name: model }], tasks })
+    registry.profiles.push(entry
+      ? { id, title: `${entry.title}: ${harness} / ${model}`, benchmark: entry.title, config: `${id}.json`, provider: 'merge', timeoutSeconds: entry.timeoutSeconds ?? 3600 }
+      : { id, title: `Merge smoke: ${harness}`, benchmark: 'Heval model connection smoke test', config: `${id}.json`, provider: 'merge', timeoutSeconds: 600 })
   }
   writeJson(path, registry)
-  return harnesses.map(h => `merge-${h}`)
+  return harnesses.map(idFor)
 }
 export function snapshotProfile(profile: LocalProfile, directory: string) {
   const tasks = profile.taskPaths.map((path, index) => {

@@ -28,6 +28,7 @@ Usage:
   heval provider status merge [--state <directory>]
   heval provider disconnect merge [--state <directory>]
   heval runner setup --model <merge-model-id> --harnesses codex,claude-code,opencode,pi
+                    [--benchmark tblite-smoke --source <checkout>]
   heval runner test --profile <profile-id> [--state <directory>] [--harbor <executable>]
   heval runner connect --url <deployment.convex.cloud> [--state <directory>]
   heval runner start [--state <directory>] [--harbor <executable>] [--profiles <file>]
@@ -63,14 +64,15 @@ function openBrowser(url: string) {
 async function main() {
   if (Number(process.versions.node.split('.')[0]) < 22) throw new Error('Heval requires Node.js 22 or newer.')
   const { values, positionals } = parseArgs({
-    options: { help: { type: 'boolean', short: 'h' }, version: { type: 'boolean', short: 'v' }, json: { type: 'boolean' }, strict: { type: 'boolean' }, port: { type: 'string' }, 'no-browser': { type: 'boolean' }, url: { type: 'string' }, state: { type: 'string' }, harbor: { type: 'string' }, profiles: { type: 'string' }, 'key-stdin': { type: 'boolean' }, model: { type: 'string' }, harnesses: { type: 'string' }, profile: { type: 'string' } },
+    options: { help: { type: 'boolean', short: 'h' }, version: { type: 'boolean', short: 'v' }, json: { type: 'boolean' }, strict: { type: 'boolean' }, port: { type: 'string' }, 'no-browser': { type: 'boolean' }, url: { type: 'string' }, state: { type: 'string' }, harbor: { type: 'string' }, profiles: { type: 'string' }, 'key-stdin': { type: 'boolean' }, model: { type: 'string' }, harnesses: { type: 'string' }, benchmark: { type: 'string' }, source: { type: 'string' }, profile: { type: 'string' } },
     allowPositionals: true,
   })
   if (values.version) { console.log(manifest.version); return }
   if (values.help || positionals[0] === 'help' || !positionals.length) { console.log(HELP); return }
   const [command, path, ...extra] = positionals
   if (values['key-stdin'] && !(command === 'provider' && path === 'connect')) throw new Error('--key-stdin applies only to provider connect.')
-  if ((values.model || values.harnesses) && !(command === 'runner' && path === 'setup')) throw new Error('--model and --harnesses apply only to runner setup.')
+  if ((values.model || values.harnesses || values.benchmark || values.source) && !(command === 'runner' && path === 'setup')) throw new Error('--model, --harnesses, --benchmark and --source apply only to runner setup.')
+  if (!values.benchmark !== !values.source) throw new Error('Use --benchmark and --source together.')
   if (values.profile && !(command === 'runner' && path === 'test')) throw new Error('--profile applies only to runner test.')
   if (command === 'provider') {
     if (extra.length !== 1 || extra[0] !== 'merge' || !['connect', 'status', 'disconnect'].includes(path) || values.url || values.harbor || values.profiles || values.port || values.strict || values['no-browser']) throw new Error('Use heval provider connect|status|disconnect merge [--state <directory>].')
@@ -88,7 +90,7 @@ async function main() {
     const directory = resolve(values.state ?? join(homedir(), '.heval/runner'))
     if (path === 'setup') {
       if (!values.model || !values.harnesses || values.profiles || values.url) throw new Error('Use runner setup --model <exact-model-id> --harnesses codex,claude-code,opencode,pi.')
-      const profiles = setupMergeProfiles(directory, join(dist, 'runner-task'), values.model, values.harnesses.split(',').map(h => h.trim()))
+      const profiles = setupMergeProfiles(directory, join(dist, 'runner-task'), values.model, values.harnesses.split(',').map(h => h.trim()), values.benchmark ? { id: values.benchmark, source: values.source! } : undefined)
       console.log(`Created profiles: ${profiles.join(', ')}. No model calls made.\nTest each with: heval runner test --profile <id> (uses model credits).`)
     } else if (path === 'test') {
       if (!values.profile || values.url) throw new Error('Use runner test --profile <profile-id>. This executes the profile using model credits.')

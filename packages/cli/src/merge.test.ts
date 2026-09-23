@@ -1,10 +1,11 @@
 import { afterEach, expect, test } from 'bun:test'
-import { mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
+import { cpSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { connectMerge, disconnectMerge, mergeAgent, mergeEnvironment, mergeHarnesses, mergePath, mergeStatus } from './merge'
 import { loadProfiles, setupMergeProfiles, snapshotProfile } from './runner/profiles'
-import { readJson, writeJson } from './runner/files'
+import { hashDirectory, readJson, sha256, writeJson } from './runner/files'
+import { BENCHMARKS, type Benchmark } from '../../../src/runners/benchmarks'
 import type { Catalog } from '../../../harbor/gateway/catalog'
 import { supervise, type Outcome } from './runner/supervisor'
 
@@ -103,4 +104,27 @@ fs.writeFileSync('jobs/evaluation/trial/result.json', JSON.stringify({task_name:
     expect(readFileSync(join(run, 'execution.json'), 'utf8')).not.toContain('process-test-key')
   }
   expect(process.listenerCount('SIGINT')).toBe(signals)
+})
+
+test('catalog task-set hashes match their pinned task hashes and the bundled smoke task', () => {
+  for (const b of BENCHMARKS.filter(b => b.taskHashes)) expect(sha256(JSON.stringify(b.taskHashes!.map(([, hash]) => hash)))).toBe(b.taskSet!)
+  expect(BENCHMARKS.find(b => b.id === 'heval-smoke')!.taskHashes![0][1]).toBe(hashDirectory(bundledTask))
+})
+
+test('benchmark setup installs pinned tasks, one profile per harness and model, and rejects drift', async () => {
+  const directory = state(), source = state()
+  await connectMerge(directory, 'key', async () => ({ ...catalog, models: [...catalog.models, { ...catalog.models[0], model: 'openai/second' }] }))
+  for (const name of ['alpha', 'beta']) cpSync(bundledTask, join(source, name), { recursive: true })
+  writeFileSync(join(source, 'beta', 'instruction.md'), 'Different task\n')
+  const hashes: [string, string][] = ['alpha', 'beta'].map(name => [name, hashDirectory(join(source, name))])
+  const fake: Benchmark[] = [{ id: 'fake-bench', title: 'Fake bench', publisher: 'Test', summary: '', note: '', tasks: 2, status: 'preview', taskHashes: hashes, taskSet: sha256(JSON.stringify(hashes.map(([, h]) => h))), timeoutSeconds: 1200 }]
+  const first = setupMergeProfiles(directory, bundledTask, model, ['codex', 'pi'], { id: 'fake-bench', source }, fake)
+  const second = setupMergeProfiles(directory, bundledTask, 'openai/second', ['codex'], { id: 'fake-bench', source }, fake)
+  const loaded = loadProfiles(join(directory, 'profiles.json')).filter(p => [...first, ...second].includes(p.public.id))
+  expect(loaded).toHaveLength(3)
+  for (const p of loaded) expect(p.public).toMatchObject({ benchmark: 'Fake bench', tasks: 2, taskSet: fake[0].taskSet, timeoutSeconds: 1200 })
+  expect(() => setupMergeProfiles(directory, bundledTask, model, ['codex'], { id: 'fake-bench', source }, fake)).toThrow('already exists')
+  writeFileSync(join(source, 'alpha', 'instruction.md'), 'Tampered\n')
+  expect(() => setupMergeProfiles(directory, bundledTask, model, ['claude-code'], { id: 'fake-bench', source }, fake)).toThrow('differs from the pinned')
+  expect(() => setupMergeProfiles(directory, bundledTask, model, ['codex'], { id: 'tblite', source })).toThrow('installable benchmark')
 })

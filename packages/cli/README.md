@@ -141,6 +141,14 @@ is shared by all profiles marked `"provider": "merge"`. No per-harness env files
 are needed. Each profile keeps its own model selection; edit its JSON to change
 that selection or its local task paths. Existing profiles are never overwritten.
 
+To add a catalog benchmark instead of the one-task smoke, pass a checkout of its
+pinned source. Setup verifies every task's content hash before copying it:
+
+```sh
+heval runner setup --benchmark tblite-smoke --source ~/.heval/benchmarks/openthoughts-tblite \
+  --model YOUR_MODEL_ID --harnesses codex,claude-code,pi
+```
+
 On Linux with Harbor and Docker installed, test the full local execution path:
 
 ```sh
