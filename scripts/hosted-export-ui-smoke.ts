@@ -7,7 +7,7 @@ import { initialReportProject } from '../src/reports/project'
 import { parseReport } from '../src/reports/format'
 import { newPresentation } from '../src/project/schema'
 import { SOCIAL_DEFAULTS } from '../src/charts/social-presets'
-import fixture from '../results/harbor/terminal-bench-comparison.json'
+import fixture from '../results/harbor/demo-evaluation.json'
 
 const data = parseReport(JSON.stringify(fixture)), id = 'test-report'
 const document = await initialReportProject(data, id, 'Hosted export smoke')
@@ -90,7 +90,7 @@ try {
   const downloaded = page.waitForEvent('download')
   await page.getByRole('button', { name: 'Download cost-per-success.png' }).click()
   assert.equal((await downloaded).suggestedFilename(), 'cost-per-success.png')
-  await page.getByLabel('Style', { exact: true }).selectOption('merge-dark')
+  await page.getByLabel('Style', { exact: true }).selectOption('plain-dark')
   await expect(page.frameLocator('iframe[title="Social chart preview 1"]').locator('[data-model-mark]').first()).toBeVisible()
   await page.getByRole('button', { name: 'Export thread ZIP online', exact: true }).click()
   await expect(page.getByLabel('Hosted exports').getByText(/Thread ZIP.*queued/)).toBeVisible()

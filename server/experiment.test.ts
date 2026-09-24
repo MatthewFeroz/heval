@@ -2,7 +2,7 @@ import { test, expect } from 'bun:test'
 import { readFileSync } from 'node:fs'
 import { createHash } from 'node:crypto'
 import { verifyExperiment } from '../harbor/experiment'
-const profile=JSON.parse(readFileSync('experiments/merge-comparison.json','utf8'))
+const profile=JSON.parse(readFileSync('experiments/demo-comparison.json','utf8'))
 const input=JSON.parse(readFileSync(profile.baseline.file,'utf8'))
 test('baseline profile matches all six model selections and 20 tasks',()=>{
  expect(verifyExperiment(input,profile)).toEqual([])

@@ -40,11 +40,6 @@ cannot infer a deployment revision from trial output. Inspect those differences
 before presenting the rows as a single comparison. Never put credentials in a
 manifest or normalized JSON supplied to the merge command.
 
-The seven-harness smoke demonstration in
-`results/harbor/seven-harness-smoke-combined.json` is seven protocol-smoke trials,
-not a Terminal-Bench Lite evaluation. Its DeepSeek Harness trial used thinking
-disabled. No evaluation is launched by either export command.
-
 Run exporter regression tests with:
 
 ```sh

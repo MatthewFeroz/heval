@@ -13,10 +13,8 @@ The current release supports Merge Gateway and Pi for browser BYOK. The task pic
 
 ## Local setup
 
-Configure WorkOS for browser sign-in and set `HEVAL_ENABLE_RUNNER=1`. The existing `.env.local` Gateway key remains usable by `bun run demo:nvidia`; browser users connect their own key in Settings. Heval does not copy an operator key into a signed-in account.
+Configure WorkOS for browser sign-in and set `HEVAL_ENABLE_RUNNER=1`. Browser users connect their own key in Settings. Heval does not copy an operator key into a signed-in account.
 
 Local startup creates `data/connection-encryption.key` with file mode 0600 unless `HEVAL_CONNECTION_ENCRYPTION_KEY` is supplied. The database is also mode 0600. Both live in the Git-ignored data directory. For production, use the explicit environment secret and separate backups described in [deployment](deployment.md).
 
 For Docker Desktop, the worker calls `http://host.docker.internal:4173/api/inference` by default. The Bun server must listen on an interface reachable from Docker, such as `HOST=0.0.0.0` on a trusted local network. `HEVAL_INFERENCE_PROXY_URL` can override the local address. Hosted mode always uses the configured HTTPS public origin. Rebuild `bun run worker:build` after updating the worker adapter.
-
-The two-model `bun run demo:nvidia --run` command starts a temporary proxy automatically, so it can run locally without WorkOS. Results remain private until explicitly staged for publication.

@@ -3,7 +3,7 @@ import { convexTest } from 'convex-test'
 import { expect, test } from 'vitest'
 import schema from './schema'
 import { api } from './_generated/api'
-import fixture from '../results/harbor/terminal-bench-comparison.json'
+import fixture from '../results/harbor/demo-evaluation.json'
 import type { Id } from './_generated/dataModel'
 import type { RunnerProfile } from '../src/runners/protocol'
 

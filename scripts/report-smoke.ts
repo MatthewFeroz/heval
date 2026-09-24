@@ -86,7 +86,7 @@ try {
   await expect(page.getByRole('heading', { name: 'Import evaluation results' })).toBeVisible()
   await page.getByLabel('Choose Harbor JSON', { exact: true }).setInputFiles({ name: 'invalid.json', mimeType: 'application/json', buffer: Buffer.from('{}') })
   await expect(page.getByRole('alert')).toContainText('normalized Harbor')
-  await page.getByLabel('Choose Harbor JSON', { exact: true }).setInputFiles(resolve(root, 'results/harbor/terminal-bench-comparison.json'))
+  await page.getByLabel('Choose Harbor JSON', { exact: true }).setInputFiles(resolve(root, 'results/harbor/demo-evaluation.json'))
   await page.getByLabel('Report title', { exact: true }).fill('Terminal Bench · team review')
   await chapter(page, '2 · Import Harbor JSON and review exactly what will be saved')
   await page.screenshot({ path: resolve(evidence, '01-import.png'), fullPage: true })

@@ -1,44 +1,4 @@
-/**
- * Chart palette - the Merge brand plugged into the dataviz method.
- *
- * Everything here was chosen by the validator, not by eye. Both modes are
- * SELECTED: the dark column is the same hues re-stepped for the dark surface,
- * validated as its own set, never a flipped copy of light.
- *
- * CATEGORICAL. Four fixed slots. The dark set uses Merge Robin, Sage, Lilac and
- * Tan without orange. Every recipe also ships labels and a table, so color is
- * never the only way to identify a series.
- *
- *   light  #ffffff surface  -> ALL CHECKS PASS
- *          worst all-pairs CVD dE 11.0 (protan), normal-vision dE 22.0
- *   dark   validated on #3a3833 -> ALL CHECKS PASS
- *          worst all-pairs CVD dE 7.3 (deutan) - the 6-8 floor band, which is
- *          legal ONLY with secondary encoding. Every recipe therefore ships a
- *          legend, direct labels (<= 4 series), and a table view; do not remove
- *          those to "clean up" a dark chart.
- *
- * SURFACE NOTE. The dark theme renders on POSTER_DESIGNER_SURFACE (#12110F),
- * the same near-black the poster exporter and the social themes use, so a chart
- * read in the report and the same chart posted as an image are one artwork.
- * Grid and ink use the shared marketing tokens, and the display keeps all marks
- * opaque so the embossed report background cannot show through them.
- *
- * The recorded dark validation below was run on #3a3833. Dropping the surface
- * raises ink and series contrast against it and leaves the all-pairs CVD
- * distances untouched, since those are pair-to-pair and not surface-relative -
- * so nothing that passed can have started failing. Re-run the validator on
- * #12110F before adding or re-stepping a dark series colour.
- *
- * A fifth categorical value is never a generated hue. `recipes.ts` refuses the
- * color channel past four values and tells the user to facet instead.
- *
- * SEQUENTIAL. One hue (Robin, OKLCH h 227), light -> dark, seven steps, its own
- * ramp per mode. Used for the per-task matrix where the job is magnitude.
- *
- * Re-validate after any change:
- *   node <dataviz>/scripts/validate_palette.js "<hex,...>" --mode light --surface "#ffffff" --pairs all
- *   node <dataviz>/scripts/validate_palette.js "<hex,...>" --mode dark  --surface "#101111" --pairs all
- */
+/** Shared chart colors for public reports and Studio. */
 
 export type ThemeMode = 'light' | 'dark'
 
@@ -58,10 +18,7 @@ export type Theme = {
   font: string
 }
 
-/**
- * Inter is Merge's data face. FH Oscar Pro remains limited to report headings
- * because its tabular numeral glyphs are circled.
- */
+/** Open font stack shared across data labels and report headings. */
 const FONT = 'Inter, system-ui, sans-serif'
 
 export const THEMES: Record<ThemeMode, Theme> = {

@@ -71,8 +71,8 @@ const result = await Bun.build({
 if (!result.success) throw new AggregateError(result.logs, 'CLI build failed')
 chmodSync(join(dist, 'cli.js'), 0o755)
 cpSync(join(pkg, 'runner-task'), join(dist, 'runner-task'), { recursive: true })
-const example = JSON.parse(readFileSync(join(root, 'results/harbor/terminal-bench-comparison.json'), 'utf8'))
-example.source = 'Bundled archived example; not a new evaluation'
+const example = JSON.parse(readFileSync(join(root, 'results/harbor/demo-evaluation.json'), 'utf8'))
+example.source = 'Synthetic demonstration data; not evaluation evidence'
 writeFileSync(join(dist, 'example.json'), JSON.stringify(example) + '\n')
 writeFileSync(join(dist, 'THIRD_PARTY_NOTICES.txt'), [...notices].sort(([a], [b]) => a.localeCompare(b)).map(([, text]) => text).join('\n\n----------------------------------------\n\n') + '\n')
 console.log('Built Node CLI and local Studio in packages/cli/dist (no runtime npm dependencies).')

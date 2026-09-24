@@ -13,7 +13,7 @@ const origin = 'https://heval-auth-test.invalid'
 const clientId = 'client_heval_session_test'
 const tokenKey = `workos:refresh-token:${clientId}`
 const email = 'session-test@example.invalid'
-const job = 'terminal-bench-comparison'
+const job = 'demo-evaluation'
 const onboarding = process.env.HEVAL_TEST_ONBOARDING === '1'
 const accountStorage = 'https://heval-onboarding-test.convex.cloud'
 let guideProgress: GuideProgress | null = null

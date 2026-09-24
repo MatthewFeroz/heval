@@ -701,7 +701,7 @@ export function Studio({ localViewer = false, hosted }: { localViewer?: boolean;
                 <label htmlFor="f-presentation-theme">Theme preset</label>
                 <select id="f-presentation-theme" value={activePresentation.theme} onChange={(event) => {
                   const theme = event.target.value as typeof activePresentation.theme
-                  updatePresentation((current) => ({ ...current, theme, social: { ...SOCIAL_DEFAULTS, ...current.social, theme: theme === 'merge-gateway' ? 'merge-dark' : theme }, graphOverrides: { ...current.graphOverrides, theme: theme === 'plain-light' ? 'light' : 'dark' }, motion: { ...current.motion, theme }, updatedAt: new Date().toISOString() }))
+                  updatePresentation((current) => ({ ...current, theme, social: { ...SOCIAL_DEFAULTS, ...current.social, theme: theme }, graphOverrides: { ...current.graphOverrides, theme: theme === 'plain-light' ? 'light' : 'dark' }, motion: { ...current.motion, theme }, updatedAt: new Date().toISOString() }))
                 }}>
                   {THEME_IDS.map((id) => <option key={id} value={id}>{MOTION_THEMES[id].label}</option>)}
                 </select>
@@ -981,7 +981,7 @@ export function Studio({ localViewer = false, hosted }: { localViewer?: boolean;
               return required.some(key => !sourceFields.some(field => field.key === key))
             }) ? 'This preset requires fields that are missing from a selected source. Select compatible data or another preset.' : undefined}
             onChange={social => updatePresentation(current => {
-              const theme = social.theme === 'plain-light' || social.theme === 'plain-dark' ? social.theme : 'merge-gateway'
+              const theme = social.theme ?? 'plain-light'
               return { ...current, social, theme, graphOverrides: { ...current.graphOverrides, theme: theme === 'plain-light' ? 'light' : 'dark' }, motion: { ...current.motion, theme }, updatedAt: new Date().toISOString() }
             })}
           />}

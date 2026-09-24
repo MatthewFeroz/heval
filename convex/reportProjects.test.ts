@@ -5,7 +5,7 @@ import { convexTest } from 'convex-test'
 import { expect, test } from 'vitest'
 import schema from './schema'
 import { api } from './_generated/api'
-import fixture from '../results/harbor/terminal-bench-comparison.json'
+import fixture from '../results/harbor/demo-evaluation.json'
 import { renderReportProject, type ReportProject } from '../src/reports/project'
 
 const modules = import.meta.glob(['./**/*.ts', './**/*.js', '!./**/*.test.ts'])
@@ -103,7 +103,7 @@ test('legacy shared reports keep their original appearance while drafts change',
 test('presentation questions and styles survive cloud save, reload and publication', async () => {
   const { owner, t, id, document } = await setup()
   const presentation = newPresentation(document.project, document.project.analysisViews[0])
-  presentation.social = { ...SOCIAL_DEFAULTS, preset: 'cost-per-success', theme: 'merge-light', models: ['glm-5.3', 'claude-sonnet-5'], source: 'Saved source' }
+  presentation.social = { ...SOCIAL_DEFAULTS, preset: 'cost-per-success', theme: 'plain-light', models: ['model-a', 'model-f'], source: 'Saved source' }
   document.project.presentations = [presentation]
   document.presentationId = presentation.id
   document.mode = 'presentation'

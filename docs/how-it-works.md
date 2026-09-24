@@ -5,7 +5,7 @@ from, and which knobs live in the UI versus the code.
 
 For the production boundary and the sandbox story, see
 [`architecture.md`](architecture.md). For the evaluation protocol, see
-[`first-eval.md`](first-eval.md).
+[the evaluation walkthrough](current-evaluation-flow.md).
 
 ## What Heval does
 
@@ -61,7 +61,7 @@ For full control outside the connected profile limits, a Harbor run produces
 raw output in `jobs/<job-name>/`. Normalize it with:
 
 ```bash
-bun run report jobs/terminal-bench-comparison
+bun run report jobs/demo-evaluation
 ```
 
 That writes three things into `results/harbor/`:
@@ -133,29 +133,11 @@ visible in the query string and the URL stays clean at defaults.
 
 ### Themes
 
-The composition used to hardcode Merge Gateway's surface, palette, licensed
-display face, lockup, and embossed background. All of that now lives in
-`src/charts/motion-themes.ts`, one object per theme.
-
-| Theme | What it is |
-| --- | --- |
-| **Merge Gateway** | The original, and the default. Merge lockup, "Gateway" wordmark, embossed background, FH Oscar Pro headline. |
-| **Plain dark** | Unbranded dark. No lockup, no emboss, no licensed face. Reach for this when the chart is not going out as Merge marketing. |
-| **Plain light** | The same, on white. |
-
-A theme carries the canvas colour, five ink colours, the two bar colours, a
-display and a body font stack, and three switches: whether to embed the
-licensed FH Oscar Pro faces, whether to draw the Merge lockup, and the opacity
-of the embossed background. The wordmark beside the lockup is a theme value too.
-
-Two things that follow from the switches, rather than being cosmetic:
-
-- **Licensed assets stay with the themes entitled to them.** FH Oscar Pro is
-  licensed to Merge, so the plain themes do not embed it, and they never read
-  the lockup or the emboss SVG. A plain composition is about 320 kB smaller as
-  a result.
-- **An unknown theme id falls back to the default** instead of failing, so a
-  stale link keeps working.
+Public presentations offer two neutral themes: **White** (`plain-light`) and
+**Black** (`plain-dark`). Their font stacks and colors live in
+`src/charts/motion-themes.ts` and `src/charts/social-themes.ts`. No corporate
+logos, licensed display fonts, or branded backgrounds are included. Unknown
+motion theme IDs fall back to the neutral default.
 
 #### Adding one
 

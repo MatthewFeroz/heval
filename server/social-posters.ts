@@ -12,20 +12,6 @@ import { acquireExport } from './export-lock'
 const root = process.env.HEVAL_RENDER_ROOT || resolve(import.meta.dirname, '..')
 const layoutScript = readFileSync(join(root, 'harbor/report/layout-check.js'), 'utf8')
 const assets = join(root, 'harbor/report/assets')
-const logo = readFileSync(join(assets, 'merge-lockup.svg'), 'utf8')
-const fonts =
-  [500, 600]
-    .map(
-      (weight, i) =>
-        '@font-face{font-family:"FH Oscar Pro";font-weight:' +
-        weight +
-        ';src:url(data:font/otf;base64,' +
-        readFileSync(
-          join(assets, ['FHOscarPro-Medium.otf', 'FHOscarPro-SemiBold.otf'][i]),
-        ).toString('base64') +
-        ')}',
-    )
-    .join('')
 const plainFonts = readFileSync(join(assets, 'inter.css'), 'utf8')
 export function posterDocuments(input: JobExport, settings: SocialSettings) {
   const chart = resolveSocial(input.rows, settings)
@@ -38,11 +24,11 @@ export function posterDocuments(input: JobExport, settings: SocialSettings) {
       },
       (_, page) =>
         '<!doctype html><html lang="en"><meta charset="utf-8"><style>' +
-        (SOCIAL_THEMES[settings.theme ?? PRESENTATION_DEFAULT_THEME].brand ? fonts + plainFonts : plainFonts) +
+        plainFonts +
         'html,body{margin:0;background:' +
         SOCIAL_THEMES[settings.theme ?? PRESENTATION_DEFAULT_THEME].surface +
         '}svg{font-feature-settings:"liga" 0,"calt" 0;display:block;width:100%;height:auto}</style>' +
-        socialSvg(chart, settings, logo, page) +
+        socialSvg(chart, settings, '', page) +
         '<script>' +
         layoutScript +
         '</script></html>',
@@ -180,7 +166,7 @@ export async function renderPosters(
     return {
       bytes: zipFiles(files),
       type: 'application/zip',
-      filename: 'merge-evaluations-thread.zip',
+      filename: 'heval-evaluation-thread.zip',
     }
   } finally {
     try {

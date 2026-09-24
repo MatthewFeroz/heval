@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict'
 import { createServer } from 'vite'
 import { chromium, expect } from '@playwright/test'
-import reportFixture from '../results/harbor/terminal-bench-comparison.json'
+import reportFixture from '../results/harbor/demo-evaluation.json'
 import { initialReportProject } from '../src/reports/project'
 import type { ReportData } from '../src/reports/format'
 const profiles=['codex','claude-code','pi'].map((agent,i)=>({id:agent,digest:String(i+1).repeat(64),title:agent,benchmark:'Protocol smoke',agent,model:'deepseek/test',vendor:'particle',taskSet:'a'.repeat(64),maxAttempts:3,tasks:1,attempts:1,timeoutSeconds:1800,setupCheck:false}))

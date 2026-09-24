@@ -155,7 +155,7 @@ export function SocialPreview({
       a.href = url
       a.download =
         response.headers.get('content-disposition')?.match(/filename="([^"]+)"/)?.[1] ??
-        'merge-evaluations.png'
+        'heval-evaluation.png'
       a.click()
       setTimeout(() => URL.revokeObjectURL(url), 1000)
     } catch (e) {

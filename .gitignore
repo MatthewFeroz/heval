@@ -35,34 +35,20 @@ results/harbor/social/**/*.mov
 results/harbor/social/**/*.webm
 results/harbor/social/**/*.gif
 
-# The built composition itself. `bun run social:build` regenerates it from the
-# job JSON, it is ~1.5MB apiece, and it inlines ~280KB of base64 FH Oscar Pro -
-# a face licensed to Merge, which must not ship from a public repo. The gsap
-# bundle beside it is copied straight out of node_modules by the same script.
+# Generated motion compositions and render assets.
 results/harbor/social/**/index.html
 results/harbor/social/**/assets/
 
-# Local chart previews and reference downloads; canonical thread ZIPs are tracked.
+# Local chart previews, downloaded reference material, and export artifacts.
 /results/reference/
-/results/harbor/posters/merge-gateway-five-models/
-/results/harbor/posters/merge-gateway-five-models-social/
-# Poster HTML is an editable, fully reproducible rendering that inlines fonts.
-# Keep the much smaller PNG examples, but do not commit generated HTML copies.
-/results/harbor/posters/**/*.html
-/results/harbor/threads/*/images/
-/results/harbor/threads/*/*.png
-/results/harbor/threads/*/studio-export.zip
-/results/harbor/threads/*/all-presets.json
-/results/harbor/threads/recreated/
-/.scratch/merge-comparison-run.yaml*
+/results/harbor/posters/
+/results/harbor/threads/
+/.scratch/
 .vercel
 
 # Persistent application state and private deployment configuration.
 /data/
 /deploy/ssh/
 /deploy/*.env
-
-# Isolated study tool downloads and machine-local evidence.
 /.tools/
-/harbor/deepseek-study/local/
 .env*

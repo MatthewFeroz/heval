@@ -44,7 +44,7 @@ void backend.exited.then(code => {
 })
 try {
   await frontend.listen()
-  console.log(`Local Studio: http://localhost:${port}/local-studio.html?job=terminal-bench-comparison&mode=presentation`)
+  console.log(`Local Studio: http://localhost:${port}/local-studio.html?job=demo-evaluation&mode=presentation`)
 } catch (error) {
   console.error(error)
   await close(1)

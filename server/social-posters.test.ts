@@ -2,11 +2,13 @@ import { test, expect } from 'bun:test'
 import { zipFiles, posterDocuments } from './social-posters'
 import { acquireExport } from './export-lock'
 import { SOCIAL_DEFAULTS } from '../src/charts/social-presets'
+import type { TrialRow } from '../src/charts/trial'
 import { readFileSync } from 'node:fs'
 test('poster preview derives the same values and paginates the matrix',()=>{
- const input=JSON.parse(readFileSync('results/harbor/terminal-bench-comparison.json','utf8'))
- const d=posterDocuments(input,{...SOCIAL_DEFAULTS,preset:'disagreement',models:['glm-5.3','glm-5.3-flash','kimi-k3','deepseek-v4-flash','deepseek-v4-pro-0813']})
- expect(d.chart.matrix.length).toBe(15)
+ const input=JSON.parse(readFileSync('results/harbor/demo-evaluation.json','utf8'))
+ input.rows=input.rows.flatMap((row:TrialRow)=>[row,{...row,trial:row.trial+'-copy',task:row.task+'-copy',taskFull:row.taskFull+'-copy'}])
+ const d=posterDocuments(input,{...SOCIAL_DEFAULTS,preset:'disagreement',models:['model-a','model-b','model-c','model-d','model-e']})
+ expect(d.chart.matrix.length).toBe(16)
  expect(d.pages.length).toBe(2)
  expect(d.pages[0]).toContain('Page 1 of 2')
  expect(d.pages[1]).toContain('Page 2 of 2')

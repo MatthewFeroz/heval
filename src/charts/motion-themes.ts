@@ -1,26 +1,7 @@
 import { PRESENTATION_DEFAULT_THEME } from './presentation-defaults'
-import { POSTER_INK, POSTER_DESIGNER_SURFACE, POSTER_METRIC_SERIES } from './poster'
-/**
- * Themes for the social composition.
- *
- * The composition used to hardcode Merge Gateway's surface, palette, licensed
- * display face, lockup, and embossed background. A theme collects all of that
- * in one object so the video can be rendered in someone else's colors, or in a
- * plain one that carries no branding at all.
- *
- * No Node imports here: the editor's picker and the server share this file.
- * Themes that need a file on disk say so with a flag (`lockup`, `pattern`) and
- * `harbor/social/completion.ts` loads the asset. That keeps licensed fonts and
- * brand marks out of any theme that should not carry them.
- *
- * ## Adding a theme
- *
- * Copy an entry, give it a new key, and change the values. Every text colour is
- * checked against `surface` by `bun run social:check`, which fails on anything
- * below WCAG AA, so verify a new theme with that before shipping it.
- */
+/** Neutral presentation themes shared by the editor and renderer. */
 
-export type ThemeId = 'merge-gateway' | 'plain-dark' | 'plain-light'
+export type ThemeId = 'plain-dark' | 'plain-light'
 
 export type MotionTheme = {
   /** Shown in the editor's picker. */
@@ -45,9 +26,7 @@ export type MotionTheme = {
   display: string
   /** Font stack for everything else. */
   body: string
-  /** Embeds the licensed FH Oscar Pro faces. Merge themes only. */
-  oscar: boolean
-  /** Draws the Merge lockup SVG before the wordmark. */
+  /** Whether a custom lockup is available. */
   lockup: boolean
   /** Text beside the lockup. Empty renders nothing. */
   wordmark: string
@@ -58,25 +37,6 @@ export type MotionTheme = {
 const INTER = "'Inter', system-ui, sans-serif"
 
 export const MOTION_THEMES: Record<ThemeId, MotionTheme> = {
-  // The original. These values match src/charts/poster.ts so the video and the
-  // static poster stay the same artwork.
-  'merge-gateway': {
-    label: 'Merge Gateway',
-    surface: POSTER_DESIGNER_SURFACE,
-    ink: POSTER_INK,
-    // The completion hue leads, because completion is the metric this
-    // composition animates. Matching the static poster's per-metric colour
-    // keeps the video and the still frame the same artwork.
-    series: [POSTER_METRIC_SERIES.completion, '#797771'],
-    display: `'FH Oscar Pro', ${INTER}`,
-    body: INTER,
-    oscar: true,
-    lockup: true,
-    wordmark: 'Gateway',
-    pattern: 0.32,
-  },
-  // Unbranded dark. No lockup, no emboss, no licensed face - the default to
-  // reach for when the chart is not going out as Merge marketing.
   'plain-dark': {
     label: 'Black',
     surface: '#141617',
@@ -90,7 +50,6 @@ export const MOTION_THEMES: Record<ThemeId, MotionTheme> = {
     series: ['#7FB2E5', '#71777B'],
     display: INTER,
     body: INTER,
-    oscar: false,
     lockup: false,
     wordmark: 'Heval',
     pattern: 0,
@@ -108,14 +67,13 @@ export const MOTION_THEMES: Record<ThemeId, MotionTheme> = {
     series: ['#2F6FA8', '#A9B0B4'],
     display: INTER,
     body: INTER,
-    oscar: false,
     lockup: false,
     wordmark: 'Heval',
     pattern: 0,
   },
 }
 
-export const THEME_IDS: ThemeId[] = ['plain-light', 'plain-dark', 'merge-gateway']
+export const THEME_IDS: ThemeId[] = ['plain-light', 'plain-dark']
 
 export const DEFAULT_THEME: ThemeId = PRESENTATION_DEFAULT_THEME
 

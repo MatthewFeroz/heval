@@ -4,7 +4,7 @@ import { editorReducer, saveDocument, viewDocument, type EditorHistory } from '.
 import { adaptJobExportV1, contentHash, newProject, sourceFromArtifact } from './schema'
 import { projectFields, projectRows, compatibleSources } from './accessors'
 import { motionInput, parseMotionInput } from './motion-input'
-import fixture from '../../results/harbor/terminal-bench-glm53-smoke.json'
+import fixture from '../../results/harbor/demo-small.json'
 import type { JobExport } from '../charts/trial'
 
 test('undo and redo restore chart, filters, and custom spec together; a new edit clears redo', () => {

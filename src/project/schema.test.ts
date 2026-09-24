@@ -124,7 +124,7 @@ test('social settings survive project bundles without altering legacy motion', a
   const artifact = await adaptJobExportV1(legacy)
   const project = newProject(await sourceFromArtifact(artifact, 'source.json'), artifact)
   const presentation = newPresentation(project, project.analysisViews[0])
-  presentation.social = { ...SOCIAL_DEFAULTS, preset: 'slow-timeouts', source: 'Merge Evaluations', showSubtitle: false }
+  presentation.social = { ...SOCIAL_DEFAULTS, preset: 'slow-timeouts', source: 'Example evaluation', showSubtitle: false }
   project.presentations.push(presentation)
   const restored = parseBundle(JSON.parse(JSON.stringify(await makeBundle(project, [artifact]))))
   expect(restored.project.presentations[0].social).toEqual(presentation.social)

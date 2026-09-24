@@ -65,7 +65,7 @@ export function validateReportProject(json: string, base: ReportProject): Report
     if (!Number.isSafeInteger(item.revision) || Number(item.revision) < 1) throw new Error('Invalid presentation revision.')
     return { id: text(item.id), label: text(item.label), revision: Number(item.revision), analysisViewId: selected.id, analysisSnapshot: snapshot, customSpec: null,
       snapshotPins: snapshot.sourceIds.map(() => ({ sourceId: source.id, artifactId: source.artifactId, runId: source.runId, contentHash: source.contentHash })),
-      theme: choice(item.theme, ['merge-gateway', 'plain-dark', 'plain-light']), canvas: choice(item.canvas, ['landscape', 'square', 'portrait']),
+      theme: choice(item.theme, ['plain-dark', 'plain-light']), canvas: choice(item.canvas, ['landscape', 'square', 'portrait']),
       narrative: { title: text(n.title, 500, true), kicker: text(n.kicker, 500, true), cue: text(n.cue, 500, true), note: text(n.note, 2000, true), source: text(n.source, 500, true) },
       graphOverrides: Object.fromEntries(Object.keys(overrides).filter(k => k in fullChart).map(k => [k, fullChart[k as keyof ChartState]])),
       social: socialSettings(item.social),

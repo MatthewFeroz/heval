@@ -2,74 +2,59 @@
   "schemaVersion": 1,
   "jobs": [
     {
-      "job": "terminal-bench-comparison",
-      "file": "terminal-bench-comparison.json",
-      "generatedAt": "2026-09-02T21:17:43.943Z",
+      "job": "demo-evaluation",
+      "file": "demo-evaluation.json",
+      "generatedAt": "2026-01-01T00:00:00.000Z",
       "trials": 120,
       "agents": [
         "codex"
       ],
       "models": [
-        "anthropic/claude-sonnet-5",
-        "deepseek/deepseek-v4-flash",
-        "deepseek/deepseek-v4-pro-0813",
-        "moonshot/kimi-k3",
-        "zai/glm-5.3",
-        "zai/glm-5.3-flash"
+        "demo/model-a",
+        "demo/model-b",
+        "demo/model-c",
+        "demo/model-d",
+        "demo/model-e",
+        "demo/model-f"
       ],
       "tasks": [
-        "break-filter-js-from-html",
-        "chess-best-move",
-        "cobol-modernization",
-        "configure-git-webserver",
-        "count-dataset-tokens",
-        "crack-7z-hash",
-        "custom-memory-heap-crash",
-        "db-wal-recovery",
-        "extract-elf",
-        "fix-git",
-        "hf-model-inference",
-        "kv-store-grpc",
-        "largest-eigenval",
-        "llm-inference-batching-scheduler",
-        "merge-diff-arc-agi-task",
-        "mteb-retrieve",
-        "multi-source-data-merger",
-        "pytorch-model-cli",
-        "raman-fitting",
-        "tune-mjcf"
+        "demo-task-01",
+        "demo-task-02",
+        "demo-task-03",
+        "demo-task-04",
+        "demo-task-05",
+        "demo-task-06",
+        "demo-task-07",
+        "demo-task-08",
+        "demo-task-09",
+        "demo-task-10",
+        "demo-task-11",
+        "demo-task-12",
+        "demo-task-13",
+        "demo-task-14",
+        "demo-task-15",
+        "demo-task-16",
+        "demo-task-17",
+        "demo-task-18",
+        "demo-task-19",
+        "demo-task-20"
       ]
     },
     {
-      "job": "terminal-bench-comparison-smoke",
-      "file": "terminal-bench-comparison-smoke.json",
-      "generatedAt": "2026-09-02T16:29:40.075Z",
-      "trials": 1,
-      "agents": [
-        "codex"
-      ],
-      "models": [
-        "zai/glm-5.3-flash"
-      ],
-      "tasks": [
-        "fix-git"
-      ]
-    },
-    {
-      "job": "terminal-bench-glm53-smoke",
-      "file": "terminal-bench-glm53-smoke.json",
-      "generatedAt": "2026-09-02T15:40:28.783Z",
+      "job": "demo-small",
+      "file": "demo-small.json",
+      "generatedAt": "2026-01-01T00:00:00.000Z",
       "trials": 4,
       "agents": [
         "claude-code",
         "codex"
       ],
       "models": [
-        "anthropic/claude-sonnet-4-5-20250929",
-        "zai/glm-5.3-flash"
+        "demo/model-a",
+        "demo/model-b"
       ],
       "tasks": [
-        "fix-git"
+        "demo-task-01"
       ]
     }
   ]

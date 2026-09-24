@@ -428,7 +428,7 @@ function limitations(exp: JobExport): string[] {
   const perCell = new Map<string, number>()
   for (const r of rows) perCell.set(`${r.stack}|${r.task}`, (perCell.get(`${r.stack}|${r.task}`) ?? 0) + 1)
   const minN = Math.min(...perCell.values())
-  if (minN < 3) out.push(`Smallest cell has ${plural(minN, 'trial')}; docs/first-eval.md requires three attempts per stack before a result is reported.`)
+  if (minN < 3) out.push(`Smallest cell has ${plural(minN, 'trial')}; interpret single-attempt comparisons cautiously.`)
   const tasks = new Set(rows.map((r) => r.task))
   if (tasks.size < 3) out.push(`Only ${plural(tasks.size, 'task')}; a single task cannot separate model from task effects.`)
   return out
@@ -448,39 +448,30 @@ const DOWNLOAD_ICON = '<svg width="11" height="11" viewBox="0 0 24 24" fill="non
  * validated palette surfaces, exactly as the studio does.
  */
 const TOKENS_CSS = readFileSync(new URL('../../src/tokens.css', import.meta.url), 'utf8').replace(/^@import[^\n]+\n/m, '')
-const REPORT_ASSETS = new URL('assets/', import.meta.url)
-const reportFont = (weight: number, file: string) =>
-  `@font-face{font-family:'FH Oscar Pro';font-weight:${weight};font-style:normal;src:url(data:font/otf;base64,${readFileSync(join(REPORT_ASSETS.pathname, file)).toString('base64')}) format('opentype');}`
-const REPORT_FONTS = `${reportFont(500, 'FHOscarPro-Medium.otf')}\n${reportFont(600, 'FHOscarPro-SemiBold.otf')}`
-const REPORT_BG = `data:image/svg+xml;base64,${readFileSync(join(REPORT_ASSETS.pathname, 'brand-bg.svg')).toString('base64')}`
-const REPORT_LOCKUP = readFileSync(join(REPORT_ASSETS.pathname, 'merge-lockup.svg'), 'utf8')
-
 const REPORT_CSS = `
-  ${REPORT_FONTS}
   :root {
-    --bg: #2C2A25;
-    --panel: #34322D;
-    --panel-2: #3B3934;
-    --panel-3: #45423C;
-    --line: #5A5751;
+    --bg: #171717;
+    --panel: #202020;
+    --panel-2: #262626;
+    --panel-3: #303030;
+    --line: #525252;
     --line-soft: rgba(245, 242, 238, .08);
     --line-strong: rgba(245, 242, 238, .22);
-    --muted: #D6CFC7;
-    --faint: #AAA39B;
-    --white: #F5F2EE;
-    --accent: #96BDCE;
-    --accent-ink: #2C2A25;
+    --muted: #D4D4D4;
+    --faint: #A3A3A3;
+    --white: #FAFAFA;
+    --accent: #BDBDBD;
+    --accent-ink: #171717;
     --sans: 'Inter', system-ui, sans-serif;
     --mono: 'Inter', system-ui, sans-serif;
   }
   *, *::before, *::after { box-sizing: border-box; }
   html { scroll-behavior: smooth; }
   body { margin: 0; min-height: 100vh; background: var(--bg); color: var(--white); font: 400 13px/1.55 var(--sans); letter-spacing: .005em; position: relative; }
-  body::before { content: ''; position: fixed; inset: 0; z-index: 0; background: url('${REPORT_BG}') center / cover no-repeat; opacity: .2; pointer-events: none; }
   body > * { position: relative; z-index: 1; }
   a { color: inherit; }
   h1, h2, p { margin: 0; }
-  h1, h2 { font-family: 'FH Oscar Pro', var(--sans); font-weight: 500; }
+  h1, h2 { font-family: var(--sans); font-weight: 500; }
   .eyebrow { color: var(--muted); font: 500 11px var(--sans); display: inline-flex; align-items: center; gap: 6px; }
   .num { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; }
 
@@ -514,7 +505,7 @@ const REPORT_CSS = `
     height: 56px; padding: 0 18px;
     display: flex; align-items: center; gap: 14px;
     border-bottom: 1px solid rgba(255, 255, 255, .06);
-    background: #2C2A25;
+    background: #171717;
   }
   .brand { display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 500; letter-spacing: -.01em; text-decoration: none; }
   .brand svg { width: auto; height: 21px; display: block; }
@@ -610,7 +601,7 @@ const REPORT_CSS = `
   .card-body { padding: 0; overflow-x: auto; }
 
   /* The canvas is the only region that changes with the chart theme. */
-  .canvas { position: relative; padding: 22px 24px; overflow-x: auto; background: #2C2A25; }
+  .canvas { position: relative; padding: 22px 24px; overflow-x: auto; background: #171717; }
   .canvas svg { display: block; max-width: 100%; height: auto; }
   .only-light { display: none; }
   html[data-canvas='light'] .only-light { display: block; }
@@ -681,7 +672,7 @@ async function render(exp: JobExport): Promise<string> {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#2C2A25">
+<meta name="theme-color" content="#171717">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
 <title>${esc(exp.job)} &middot; Heval report</title>
 <style>
@@ -691,7 +682,7 @@ ${REPORT_CSS}
 </head>
 <body>
 <header class="topbar">
-  <a class="brand" href="/">${REPORT_LOCKUP}<span>Gateway evaluation report</span></a>
+  <a class="brand" href="/"><span>Heval evaluation report</span></a>
   <div class="crumbs"><a href="/#reports">Reports</a><span>/</span><strong>${esc(exp.job)}</strong></div>
   <div class="actions">
     <div class="canvas-toggle" role="radiogroup" aria-label="Chart canvas">
@@ -769,7 +760,7 @@ ${REPORT_CSS}
       <span>Task digests: ${[...new Set(rows.map((r) => `${r.task} ${r.taskChecksum?.slice(0, 12) ?? '?'}`))].map((d) => `<code>${esc(d)}</code>`).join(', ')}.</span>
     </div>
     <div class="row">
-      <span>Charts are Vega-Lite recipes from <code>src/charts/recipes.ts</code>, rendered once per palette surface. The dark report uses Merge Charcoal, Robin, Sage, Lilac and Tan (see <code>src/charts/palette.ts</code>).</span>
+      <span>Charts are Vega-Lite recipes from <code>src/charts/recipes.ts</code>, rendered once per palette surface. The dark report uses the shared chart palette (see <code>src/charts/palette.ts</code>).</span>
     </div>
   </footer>
 </main>

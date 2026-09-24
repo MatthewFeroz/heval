@@ -8,7 +8,7 @@ import {
   Zap,
 } from 'lucide-react'
 import { featuredExperiment, type Runner } from './data'
-import featuredResults from '../results/harbor/terminal-bench-comparison.json'
+import featuredResults from '../results/harbor/demo-evaluation.json'
 import { publicAuth, type AppAuth } from './auth'
 import { Signup } from './Signup'
 import { STATIC_SITE } from './deployment'
@@ -115,15 +115,15 @@ function StudioShowcase() {
         <a className="text-button" href={studioUrl}>Explore this evaluation <ArrowRight size={16} /></a>
       </div>
       <div className="evaluation-card">
-        <div className="evaluation-header"><span>FEATURED EVALUATION</span><span className="dataset-badge">Published data</span></div>
-        <h3>Six models. The same task set.</h3>
-        <p>Terminal Bench Comparison · Codex harness</p>
+        <div className="evaluation-header"><span>EXAMPLE EVALUATION</span><span className="dataset-badge">Synthetic demo</span></div>
+        <h3>Six example models. The same task set.</h3>
+        <p>Invented data for exploring Heval</p>
         <dl className="evaluation-stats">
           <div><dt>Models</dt><dd>{featuredJob.models.length}</dd></div>
           <div><dt>Tasks</dt><dd>{featuredJob.tasks.length}</dd></div>
           <div><dt>Trials</dt><dd>{featuredJob.trials}</dd></div>
         </dl>
-        <div className="completion-chart" role="figure" aria-label="Completed tasks by model, measured evaluation results">
+        <div className="completion-chart" role="figure" aria-label="Completed tasks by model, synthetic demonstration">
           <div className="completion-heading"><strong>Tasks completed</strong><span>Passed / attempted</span></div>
           {completionResults.map((result) => (
             <div className="completion-row" key={result.model}>
@@ -135,9 +135,9 @@ function StudioShowcase() {
         </div>
         <div className="evaluation-actions">
           <a href={studioUrl}><BarChart3 size={17} /><span><strong>Compare completion rates</strong><small>Open the interactive chart in Studio</small></span><ArrowRight size={16} /></a>
-          <a href={`/results/harbor/${featuredJob.job}.html`}><ExternalLink size={17} /><span><strong>Read the full report</strong><small>Results, individual trials, and limitations</small></span><ArrowRight size={16} /></a>
+          <a href={`/results/harbor/${featuredJob.job}.json`}><ExternalLink size={17} /><span><strong>Download example data</strong><small>Synthetic trials for exploring Heval</small></span><ArrowRight size={16} /></a>
         </div>
-        <p className="evaluation-note">One attempt per model per task. Results describe this task set; small differences may not generalize.</p>
+        <p className="evaluation-note">Synthetic tasks, model names, and measurements. This example demonstrates the interface and is not a benchmark result.</p>
       </div>
     </section>
   )

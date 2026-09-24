@@ -22,7 +22,7 @@ function scratch() {
   temporary.push(dir)
   return dir
 }
-const examplePath = resolve(import.meta.dirname, '../../../results/harbor/terminal-bench-comparison.json')
+const examplePath = resolve(import.meta.dirname, '../../../results/harbor/demo-evaluation.json')
 
 test('doctor separates viewing from execution and never outputs credential values', async () => {
   const checks = await doctor(async command => command === 'harbor' ? 'harbor 0.23.0' : null, { OPENAI_API_KEY: 'private-test-value' })

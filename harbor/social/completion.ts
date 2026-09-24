@@ -1,15 +1,14 @@
-import { fileURLToPath } from 'node:url'
 /**
  * Build the standalone HyperFrames composition used by both the Studio player
  * and the file exporter. The data still comes from the same pure poster
  * functions as the static image, so animation cannot change the result.
  */
 
-import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { buildPanel, labelLines, PANELS, POSTER_MAX_SERIES } from '../../src/charts/poster'
 import { barLabelLines, builtInCopy, tickKey } from '../../src/charts/motion-copy'
-import { motionTheme, type MotionTheme } from '../../src/charts/motion-themes'
+import { motionTheme } from '../../src/charts/motion-themes'
 import type { JobExport } from '../../src/charts/trial'
 import { COMPLETION_DEFAULTS, motionCanvas, type CompletionOptions } from '../../src/charts/motion-options'
 
@@ -25,52 +24,11 @@ export const COMPLETION_VIDEO = {
   finalFrameAt: 7.9,
 } as const
 
-const REPORT_ASSETS = new URL('../report/assets/', import.meta.url)
-const FONT_CACHE = new URL('../report/.fontcache/', import.meta.url)
-
 const esc = (value: string) => value
   .replace(/&/g, '&amp;')
   .replace(/</g, '&lt;')
   .replace(/>/g, '&gt;')
   .replace(/"/g, '&quot;')
-
-const localFont = (name: string, weight: number, file: string) =>
-  `@font-face{font-family:'${name}';font-weight:${weight};font-style:normal;src:url(data:font/otf;base64,${readFileSync(join(fileURLToPath(REPORT_ASSETS), file)).toString('base64')}) format('opentype');}`
-
-async function inlineFonts(theme: MotionTheme): Promise<string> {
-  // FH Oscar Pro is licensed to Merge, so an unbranded theme must not ship it.
-  const oscar = theme.oscar
-    ? [
-      localFont('FH Oscar Pro', 500, 'FHOscarPro-Medium.otf'),
-      localFont('FH Oscar Pro', 600, 'FHOscarPro-SemiBold.otf'),
-    ].join('\n')
-    : ''
-  const cache = join(fileURLToPath(FONT_CACHE), 'merge-faces.css')
-  if (existsSync(cache)) return `${oscar}\n${readFileSync(cache, 'utf8')}`
-
-  try {
-    const css = await fetch('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap', {
-      headers: { 'user-agent': 'Mozilla/5.0 AppleWebKit/537.36 Chrome/140 Safari/537.36' },
-    }).then((response) => {
-      if (!response.ok) throw new Error(`HTTP ${response.status}`)
-      return response.text()
-    })
-    const urls = [...new Set([...css.matchAll(/url\((https:[^)]+\.woff2)\)/g)].map((match) => match[1]))]
-    const data = new Map<string, string>()
-    await Promise.all(urls.map(async (url) => {
-      const response = await fetch(url)
-      const bytes = Buffer.from(new Uint8Array(await response.arrayBuffer()))
-      data.set(url, `data:font/woff2;base64,${bytes.toString('base64')}`)
-    }))
-    const inlined = css.replace(/url\((https:[^)]+\.woff2)\)/g, (_match, url: string) => `url(${data.get(url) ?? url})`)
-    mkdirSync(fileURLToPath(FONT_CACHE), { recursive: true })
-    writeFileSync(cache, inlined)
-    return `${oscar}\n${inlined}`
-  } catch (error) {
-    console.warn(`Could not fetch Inter (${(error as Error).message}); using the embedded Oscar faces and system sans.`)
-    return oscar
-  }
-}
 
 export async function completionComposition(exp: JobExport, options: CompletionOptions = COMPLETION_DEFAULTS): Promise<string> {
   if (!Array.isArray(exp.rows) || !exp.rows.length) throw new Error('Heval job export has no rows')
@@ -118,12 +76,9 @@ export async function completionComposition(exp: JobExport, options: CompletionO
   // A blank slot keeps the theme's mark; an unbranded theme has none, so this
   // is also how a plain frame gets a wordmark at all.
   const wordmark = options.wordmark || theme.wordmark
-  const fonts = await inlineFonts(theme)
-  // Both are Merge marks; a theme that does not want them never loads the file.
-  const brandBg = theme.pattern > 0
-    ? `data:image/svg+xml;base64,${readFileSync(join(fileURLToPath(REPORT_ASSETS), 'brand-bg.svg')).toString('base64')}`
-    : ''
-  const lockup = theme.lockup ? readFileSync(join(fileURLToPath(REPORT_ASSETS), 'merge-lockup.svg'), 'utf8') : ''
+  const fonts = ''
+  const brandBg = ''
+  const lockup = ''
 
   // An override changes a tick's text, never where the scale puts it.
   const ticks = panel.ticks

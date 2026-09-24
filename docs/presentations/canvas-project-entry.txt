@@ -1,2 +1,0 @@
-Project name: Heval
-GitHub repository: https://github.com/MatthewFeroz/heval

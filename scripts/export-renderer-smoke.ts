@@ -3,7 +3,7 @@ import { cp, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
 import { tmpdir } from 'node:os'
 import { SOCIAL_DEFAULTS, SOCIAL_PRESETS } from '../src/charts/social-presets'
-import fixture from '../results/harbor/terminal-bench-comparison.json'
+import fixture from '../results/harbor/demo-evaluation.json'
 const root = await mkdtemp(join(tmpdir(), 'heval-renderer-smoke-'))
 try {
   const build = await Bun.build({ entrypoints: ['server/hosted-exports/renderer.ts'], target: 'node', format: 'esm' })
@@ -12,7 +12,7 @@ try {
   await cp('harbor/report/assets', join(root, 'harbor/report/assets'), { recursive: true })
   for (const file of ['render-poster.mjs', 'layout-check.js']) await cp(`harbor/report/${file}`, join(root, 'harbor/report', file))
   await symlink(resolve('node_modules'), join(root, 'node_modules'))
-  for (const theme of ['plain-light', 'plain-dark', 'merge-dark', 'merge-light'] as const) for (const collection of [false, true]) {
+  for (const theme of ['plain-light', 'plain-dark'] as const) for (const collection of [false, true]) {
     await writeFile(join(root, 'input.json'), JSON.stringify({ input: fixture, settings: { ...SOCIAL_DEFAULTS, theme, collection: Object.keys(SOCIAL_PRESETS) }, collection }))
     const child = Bun.spawn(['node', join(root, 'renderer.mjs')], { env: { ...process.env, HEVAL_RENDER_ROOT: root }, stdout: 'pipe', stderr: 'pipe' })
     const error = await new Response(child.stderr).text()
@@ -27,5 +27,5 @@ try {
       assert.ok(bytes.includes(Buffer.from('manifest.json'))); assert.ok(bytes.includes(Buffer.from('values.csv')))
     }
   }
-  console.log('PASS: bundled Node renderer produces PNGs and every question in ZIPs for white, black, and opt-in Merge themes.')
+  console.log('PASS: bundled Node renderer produces PNGs and every question in ZIPs for white and black themes.')
 } finally { await rm(root, { recursive: true, force: true }) }

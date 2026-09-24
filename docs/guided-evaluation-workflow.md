@@ -2,7 +2,7 @@
 
 Proposed product design, 2026-09-16. This document describes future behavior;
 the published 0.1.0 CLI only checks setup and opens results. It does not run
-evaluations. Builds on [the UI review](ui-and-local-runner-review.md).
+evaluations.
 
 ## Product entry and navigation
 

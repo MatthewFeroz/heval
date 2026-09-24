@@ -1,6 +1,6 @@
 # Hosted import → saved report → share → revoke
 
-Open [Heval reports](https://temporary-rushing-violet-xu17m97.vercel.app/reports). The frontend runs on Vercel; reports persist in Convex, independently of frontend deployments or the uploader’s computer.
+Open `/reports` on your Heval deployment. The frontend runs on Vercel; reports persist in Convex, independently of frontend deployments or the uploader’s computer.
 
 ## User walkthrough
 
@@ -18,7 +18,7 @@ Revocation stops future access through Heval. It cannot erase screenshots or cop
 
 ## Team editing (feature branch)
 
-The `feat/team-report-editor` branch adds this flow. These changes are not yet merged into the production site:
+Report teams use the following flow:
 
 1. Open a saved report and choose **Edit chart in Studio**. Change the chart recipe, measures, labels, filters, or presentation settings, then **Save draft**.
 2. Return through **View report** to review the saved draft. The hosted viewer renders the same chart recipe and filters as Studio. Reloading restores saved settings.
@@ -29,30 +29,11 @@ The `feat/team-report-editor` branch adds this flow. These changes are not yet m
 
 Hosted saving supports the built-in chart controls and up to 20 views and 20 presentations per report (150 KB of settings). Custom Vega specs remain a local-bundle feature. Public viewers receive the imported data as well as the published chart settings; chart filters are presentation controls, not data access restrictions.
 
-Backend tests cover publication boundaries, stale writes, roles, invitation expiry/revocation, removal, legacy reports, immutable evidence, and custom-spec rejection. The original browser recording below predates team editing. A full cloud browser smoke test of invitation → editor save → owner publish is still needed before merging this feature branch.
+Backend tests cover publication boundaries, stale writes, roles, invitation expiry/revocation, removal, legacy reports, immutable evidence, and custom-spec rejection.
 
 The connected evaluation flow now runs Harbor on a paired machine and creates
 its reports automatically. Manual import remains useful for direct Harbor jobs
 and historical exports.
-
-## Recording and smoke evidence
-
-[Watch the 26-second browser recording](media/hosted-report-flow.mp4). [Machine-readable smoke results](evidence/hosted-report-smoke.json).
-
-| Time | User action | Outcome |
-| --- | --- | --- |
-| 00:01 | Sign in | Open private workspace |
-| 00:03 | Choose export and name report | Review sanitized data before saving |
-| 00:06 | Save and reload | Report persists in cloud storage |
-| 00:10 | Create and copy link | Enable anonymous read-only access |
-| 00:13 | Open as recipient | Filter results and inspect trials |
-| 00:17 | Revoke link | Keep the saved report, disable sharing |
-| 00:19 | Reopen old link | Access is denied |
-| 00:23 | Return to workspace | Saved report remains available to owner |
-
-The recording uses the real application and database functions on a separate Convex cloud preview. WorkOS is replaced only in the test frontend with short-lived signed JWT identities, verified by that preview’s test-only public key. No production auth bypass is shipped. A second anonymous browser and another signed-in account verify access boundaries. The 15 smoke checks cover malformed imports, persistence, ownership, copy link, anonymous reading, filtering, live and fresh-visit revocation, re-sharing, mobile overflow, unauthenticated writes, and browser exceptions.
-
-Production was separately checked for public routing and the WorkOS sign-in redirect. The external WorkOS credential-entry/callback round trip was not automated. Production currently uses the existing WorkOS staging environment; switching to a production WorkOS environment is a separate account configuration change.
 
 ## First-release boundaries
 
@@ -68,7 +49,7 @@ Production was separately checked for public routing and the WorkOS sign-in redi
 
 ## Deployment
 
-The connected project is `matthew-feroz:heval`. Production uses `industrious-newt-432`; development uses `fortunate-octopus-977`. The smoke preview is separate and expires after one day.
+Use separate Convex projects or deployments for production, development, and smoke tests.
 
 Vercel’s Production environment has `VITE_WORKOS_CLIENT_ID` and a secret `CONVEX_DEPLOY_KEY`. `scripts/vercel-build.ts` deploys Convex and supplies the matching `VITE_CONVEX_URL` to the Vite build. Convex production and development each have `WORKOS_CLIENT_ID`, matching the browser’s existing WorkOS application. No WorkOS API key is required by this JWT-verification integration.
 

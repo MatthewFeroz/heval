@@ -2,8 +2,8 @@ import { fileURLToPath } from 'node:url'
 /**
  * Normalized job -> individual poster graphs, sized for a social post.
  *
- *   bun harbor/report/build-poster.ts results/harbor/terminal-bench-comparison.json
- *   bun run poster results/harbor/terminal-bench-comparison.json --open-weight
+ *   bun harbor/report/build-poster.ts results/harbor/demo-evaluation.json
+ *   bun run poster results/harbor/demo-evaluation.json --open-weight
  *
  * Writes, under results/harbor/posters/<job>/ (override with --out <dir>):
  *
@@ -62,64 +62,8 @@ const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replac
 
 // -- fonts ----------------------------------------------------------------------
 
-/**
- * Google Fonts, fetched once and inlined as base64.
- *
- * The report links the stylesheet and lets the reader's browser fetch it. A
- * poster cannot: the PNG is rasterized at build time, so a font that has not
- * arrived is a font that is silently missing from the artifact, and the fallback
- * metrics are different enough that the layout shifts rather than just looking
- * plainer. Cached on disk so a poster rebuilt offline still gets real type.
- */
-const FONT_CACHE = new URL('.fontcache/', import.meta.url)
+// Embed the bundled open font so image exports also work offline.
 const ASSETS = new URL('assets/', import.meta.url)
-const FONT_FACES = [
-  { family: 'Inter', weights: '400;500;600;700' },
-]
-
-const localFont = (name: string, weight: number, file: string) =>
-  `@font-face{font-family:'${name}';font-weight:${weight};font-style:normal;src:url(data:font/otf;base64,${readFileSync(join(fileURLToPath(ASSETS), file)).toString('base64')}) format('opentype');}`
-
-const OSCAR_FONTS = [
-  localFont('FH Oscar Pro', 500, 'FHOscarPro-Medium.otf'),
-  localFont('FH Oscar Pro', 600, 'FHOscarPro-SemiBold.otf'),
-].join('\n')
-
-async function inlineFonts(): Promise<string> {
-  const cache = join(fileURLToPath(FONT_CACHE), 'merge-faces.css')
-  if (existsSync(cache)) return `${OSCAR_FONTS}\n${readFileSync(cache, 'utf8')}`
-
-  const query = FONT_FACES.map((f) => `family=${f.family.replace(/ /g, '+')}:wght@${f.weights}`).join('&')
-  const url = `https://fonts.googleapis.com/css2?${query}&display=swap`
-  try {
-    // A modern UA is what makes Google serve woff2 rather than legacy formats.
-    const css = await fetch(url, {
-      headers: { 'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/140 Safari/537.36' },
-    }).then((r) => {
-      if (!r.ok) throw new Error(`HTTP ${r.status}`)
-      return r.text()
-    })
-    const urls = [...new Set([...css.matchAll(/url\((https:[^)]+\.woff2)\)/g)].map((m) => m[1]))]
-    const data = new Map<string, string>()
-    await Promise.all(
-      urls.map(async (u) => {
-        const buf = Buffer.from(await fetch(u).then((r) => r.arrayBuffer()))
-        data.set(u, `data:font/woff2;base64,${buf.toString('base64')}`)
-      }),
-    )
-    const inlined = css.replace(/url\((https:[^)]+\.woff2)\)/g, (_m, u: string) => `url(${data.get(u) ?? u})`)
-    mkdirSync(fileURLToPath(FONT_CACHE), { recursive: true })
-    writeFileSync(cache, inlined)
-    return `${OSCAR_FONTS}\n${inlined}`
-  } catch (e) {
-    console.warn(`! could not fetch webfonts (${(e as Error).message}); falling back to system fonts.`)
-    console.warn('  FH Oscar Pro is embedded; Inter will use the system sans-serif fallback.')
-    return OSCAR_FONTS
-  }
-}
-
-const BRAND_BG = `data:image/svg+xml;base64,${readFileSync(join(fileURLToPath(ASSETS), 'brand-bg.svg')).toString('base64')}`
-const MERGE_LOCKUP = readFileSync(join(fileURLToPath(ASSETS), 'merge-lockup.svg'), 'utf8')
 
 // -- sizes ----------------------------------------------------------------------
 
@@ -162,15 +106,6 @@ body {
   position: relative;
   overflow: hidden;
 }
-body::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  background: url('${BRAND_BG}') center / cover no-repeat;
-  opacity: 0.32;
-  pointer-events: none;
-}
 body > * { position: relative; z-index: 1; }
 .brand {
   height: ${u(2.6)};
@@ -204,7 +139,7 @@ body > * { position: relative; z-index: 1; }
 }
 .title {
   margin-top: ${u(2.7)};
-  font-family: 'FH Oscar Pro', 'Inter', system-ui, sans-serif;
+  font-family: 'Inter', system-ui, sans-serif;
   font-size: ${u(3.4)};
   font-weight: 500;
   letter-spacing: -0.03em;
@@ -225,7 +160,7 @@ body > * { position: relative; z-index: 1; }
   min-height: 0;
 }
 .panel { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
-.panel-heading { font-family: 'FH Oscar Pro', 'Inter', system-ui, sans-serif; font-size: ${u(1.65)}; font-weight: 500; letter-spacing: -0.02em; }
+.panel-heading { font-family: 'Inter', system-ui, sans-serif; font-size: ${u(1.65)}; font-weight: 500; letter-spacing: -0.02em; }
 .single .panel-heading { display: none; }
 .panel-eyebrow {
   margin-top: ${u(0.6)};
@@ -489,7 +424,7 @@ async function frameHtml(f: Frame, fonts: string): Promise<string> {
 <style>${css(fonts, f.size, s)}</style></head>
 <body class="${f.panels.length === 1 ? 'single' : 'combined'}${largeText ? ' large-text' : ''}${has('large-brand') ? ' large-brand' : ''}${has('no-brand') ? ' no-brand' : ''}${brandRight ? ' brand-right' : ''}${designer ? ' designer' : ''} ${logoSpot}">
   <header>
-    ${has('no-brand') ? '' : `<div class="brand">${MERGE_LOCKUP}<span class="brand-product">Gateway</span></div>`}
+    <div class="brand"><span class="brand-product">Heval</span></div>
     <div class="head-text">
       ${f.title ? `<h1 class="title">${esc(f.title)}</h1>` : ''}
       ${f.kicker ? `<div class="kicker">${esc(f.kicker)}</div>` : ''}
@@ -543,7 +478,7 @@ if (!LOGO_SPOTS.includes(logoSpot)) {
 }
 
 /**
- * The Merge dark look is the default, not a flag.
+ * The neutral dark look is the default, not a flag.
  *
  * These four were switches while the treatment was being chosen; it has been
  * chosen, and every poster that has actually gone out used all four. Leaving
@@ -582,7 +517,7 @@ if (!input || has('help')) {
   --small-text      revert to the compact type scale
   --large-brand     double the logo and Gateway wordmark size
   --no-brand        omit the logo and Gateway wordmark
-  --plain           drop the Merge dark treatment: charcoal canvas, winner
+  --plain           drop the neutral dark treatment: charcoal canvas, winner
                     colouring, no model logo tiles
   --brand-left      put the lockup back above the title
   --logo-spot <w>   unless --plain: ${LOGO_SPOTS.join(' | ')} (default: ${DEFAULT_LOGO_SPOT})
@@ -750,7 +685,7 @@ mkdirSync(outDir, { recursive: true })
 const singleSize = SIZES[(flag('size') as SizeName) ?? 'square'] ?? SIZES.square
 const combinedSize = SIZES[(flag('size') as SizeName) ?? 'landscape'] ?? SIZES.landscape
 
-const fonts = await inlineFonts()
+const fonts = readFileSync(new URL('inter.css', ASSETS), 'utf8')
 
 const written: string[] = []
 

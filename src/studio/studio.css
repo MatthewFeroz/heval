@@ -11,23 +11,6 @@
 
 @import '../tokens.css';
 
-/* Custom Merge presentation specs use the same licensed faces as social exports. */
-@font-face {
-  font-family: 'FH Oscar Pro';
-  src: url('../../harbor/report/assets/FHOscarPro-Medium.otf') format('opentype');
-  font-style: normal;
-  font-weight: 400 500;
-  font-display: block;
-}
-
-@font-face {
-  font-family: 'FH Oscar Pro';
-  src: url('../../harbor/report/assets/FHOscarPro-SemiBold.otf') format('opentype');
-  font-style: normal;
-  font-weight: 600 700;
-  font-display: block;
-}
-
 * { box-sizing: border-box; }
 
 html, body { margin: 0; min-height: 100vh; background: var(--bg); color: var(--white); }

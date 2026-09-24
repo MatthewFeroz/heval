@@ -1,0 +1,142 @@
+{
+  "schemaVersion": 1,
+  "id": "demo-comparison",
+  "baseline": {
+    "file": "results/harbor/demo-evaluation.json",
+    "sha256Json": "6b066084d610837beae25ed9f2048a458e360e9f31c535a247affba64b13a862"
+  },
+  "runTemplate": "",
+  "chartSettings": "harbor/report/thread-demo.json",
+  "allChartSettings": "harbor/report/thread-demo.json",
+  "benchmark": {
+    "name": "synthetic-demo",
+    "version": "1"
+  },
+  "attemptsPerTask": 1,
+  "models": [
+    {
+      "id": "demo/model-a",
+      "short": "model-a",
+      "harness": "codex",
+      "harnessVersion": "demo",
+      "vendor": "demo"
+    },
+    {
+      "id": "demo/model-b",
+      "short": "model-b",
+      "harness": "codex",
+      "harnessVersion": "demo",
+      "vendor": "demo"
+    },
+    {
+      "id": "demo/model-c",
+      "short": "model-c",
+      "harness": "codex",
+      "harnessVersion": "demo",
+      "vendor": "demo"
+    },
+    {
+      "id": "demo/model-d",
+      "short": "model-d",
+      "harness": "codex",
+      "harnessVersion": "demo",
+      "vendor": "demo"
+    },
+    {
+      "id": "demo/model-e",
+      "short": "model-e",
+      "harness": "codex",
+      "harnessVersion": "demo",
+      "vendor": "demo"
+    },
+    {
+      "id": "demo/model-f",
+      "short": "model-f",
+      "harness": "codex",
+      "harnessVersion": "demo",
+      "vendor": "demo"
+    }
+  ],
+  "tasks": [
+    {
+      "name": "demo-task-01",
+      "checksum": "b41da43baa3c1c2d0eeb784ddefc9e3a6651d01f9c7ae9186688275a34d95a36"
+    },
+    {
+      "name": "demo-task-02",
+      "checksum": "88bfe07b9ab404e3fd1b5ed6c12fe5ee5a91b946e618f9b2b13fd6171f5f89ee"
+    },
+    {
+      "name": "demo-task-03",
+      "checksum": "403ba25c8cb9958d00ec53591414e7d3f75c25081aa60949cd5239d144d6cab9"
+    },
+    {
+      "name": "demo-task-04",
+      "checksum": "9390370f16adc67921188c7ad8c525a58d14db0139ef63c569f1bd2e7e77bb0b"
+    },
+    {
+      "name": "demo-task-05",
+      "checksum": "12a847e8598938161bd22230bb40fe2d8609d497cad7e17ee3a9719e31e05337"
+    },
+    {
+      "name": "demo-task-06",
+      "checksum": "314ffcec7eb845c409a09be5429f4b1696229786f09df21b68e9623ea96a238a"
+    },
+    {
+      "name": "demo-task-07",
+      "checksum": "a32d2eb105da5b184c918a9e3fb001f83cdc55f4bf1320c082417df3c46dd501"
+    },
+    {
+      "name": "demo-task-08",
+      "checksum": "451c35880f146dee0a7ea1ed55840c8f80f306b0fe15b7ff05fbd55bf2a20c21"
+    },
+    {
+      "name": "demo-task-09",
+      "checksum": "28cb85ba079d3ac1a78b4b222fabf94d008ff43e1da4c4c6937e4a67ced4cd2b"
+    },
+    {
+      "name": "demo-task-10",
+      "checksum": "728d979ae25745c15e41de58866bb1f61d3ca5553a459d33b1a9275498cd1a25"
+    },
+    {
+      "name": "demo-task-11",
+      "checksum": "415f2f5bb2c65c3848502289b1d4183d56eaf959d3fd1e1999f2bf270c6f045f"
+    },
+    {
+      "name": "demo-task-12",
+      "checksum": "183ad0e0b957192655cdb7002bfbd35412771fc4ac5a619122ad217d0ebebe8f"
+    },
+    {
+      "name": "demo-task-13",
+      "checksum": "baa034f5feef6f36bc5767d961a58550737612c09c637e913fa99b916de9ad67"
+    },
+    {
+      "name": "demo-task-14",
+      "checksum": "61da68a05f4419d11f25f425115358074cd838252e5cb3813b2d7119755ee04e"
+    },
+    {
+      "name": "demo-task-15",
+      "checksum": "4043783443de8a6bf9624973480c0a783ea8e4eb3fb3b629e745b5854c79539b"
+    },
+    {
+      "name": "demo-task-16",
+      "checksum": "52528f5f256e6b296dc4df78af8399cbd8584fc73bca91fe0edd8e1110d88d29"
+    },
+    {
+      "name": "demo-task-17",
+      "checksum": "71365276f0cf222dd399ccd7f0aa3287026a6b17d49dd2c6a5d3f6df76e07c5a"
+    },
+    {
+      "name": "demo-task-18",
+      "checksum": "c2aa7fa1fd88b6bc1b70bc8e5e69518e7eefa931b37f6a9412831f30271581f3"
+    },
+    {
+      "name": "demo-task-19",
+      "checksum": "73218faabe379e651a26cfc79752246acc3a3f4fd235ff0049af3573b02cc051"
+    },
+    {
+      "name": "demo-task-20",
+      "checksum": "c1b9faafbf84558d76853d98b1de2e457c219970a50f866d60bc1d2a1f623af5"
+    }
+  ]
+}

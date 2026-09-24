@@ -15,9 +15,8 @@ For the published local viewer:
 npx @mattferoz/heval@latest open
 ```
 
-This opens an archived example: six models evaluated on 20 tasks. It does not
-start an evaluation or spend model credits. The example is exploratory data,
-not a general model leaderboard.
+This opens a synthetic example: six invented models across 20 tasks. It does not
+start an evaluation or spend model credits. All example measurements are invented; they are not a model leaderboard.
 
 For a permanent installation:
 
@@ -110,9 +109,9 @@ npm install -g ./.scratch/mattferoz-heval-0.1.0.tgz
 heval open
 ```
 
-The tarball includes the compiled Node CLI, prebuilt browser UI, one archived
+The tarball includes the compiled Node CLI, prebuilt browser UI, one synthetic
 example, and bundled dependency notices. It excludes credentials, raw jobs,
-Merge's licensed fonts, and generated social media assets.
+corporate branding assets, and generated social media assets.
 
 Until a project license is selected, Heval's own code is marked `UNLICENSED`;
 bundled third-party components retain their licenses in

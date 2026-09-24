@@ -4,7 +4,7 @@ import { expect, test } from 'vitest'
 import schema from './schema'
 import { api } from './_generated/api'
 import type { RunnerProfile } from '../src/runners/protocol'
-import fixture from '../results/harbor/terminal-bench-comparison.json'
+import fixture from '../results/harbor/demo-evaluation.json'
 const modules=import.meta.glob(['./**/*.ts','./**/*.js','!./**/*.test.ts'])
 const key=(n:number)=>n.toString(16).padStart(64,'0')
 const profiles:RunnerProfile[]=['codex','claude-code','pi'].map((agent,i)=>({id:agent,digest:key(i+1),title:agent,benchmark:'Smoke',agent,model:'deepseek/test',vendor:'particle',taskSet:key(99),maxAttempts:3,tasks:1,attempts:1,timeoutSeconds:600,setupCheck:false}))

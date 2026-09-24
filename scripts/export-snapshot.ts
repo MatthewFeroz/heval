@@ -4,13 +4,13 @@ import { sandboxCredentials } from '../server/hosted-exports/render'
 import { motionInput } from '../src/project/motion-input'
 import { SOCIAL_DEFAULTS } from '../src/charts/social-presets'
 import { parseReport } from '../src/reports/format'
-import fixture from '../results/harbor/terminal-bench-comparison.json'
+import fixture from '../results/harbor/demo-evaluation.json'
 
 // Run once per renderer/assets change. Dependencies install in the cloud, not on this VM.
 const built = await Bun.build({ entrypoints: ['server/hosted-exports/renderer.ts'], target: 'node', format: 'esm' })
 if (!built.success) throw new Error(built.logs.join('\n'))
 const root = '/vercel/sandbox/heval'
-const assets = ['FHOscarPro-Medium.otf', 'FHOscarPro-SemiBold.otf', 'inter.css', 'merge-lockup.svg']
+const assets = ['inter.css']
 const files = await Promise.all([
   ...assets.map(name => `harbor/report/assets/${name}`), 'harbor/report/render-poster.mjs', 'harbor/report/layout-check.js',
 ].map(async path => ({ path: `${root}/${path}`, content: await readFile(path) })))

@@ -46,7 +46,7 @@ The hosted server refuses to start with a local Docker endpoint, missing persist
 After reviewing a personally owned result:
 
 ```sh
-bun run publish:result data/nvidia-demo/<timestamp>/<job>.json
+bun run publish:result results/harbor/<job>.json
 bun run build:public
 ```
 

@@ -28,7 +28,7 @@
  *
  * Every request is logged as JSONL with the vendor the gateway reports having
  * actually served (`x-merge-vendor`), so the pin is auditable after the fact
- * rather than assumed - docs/first-eval.md requires provenance, not intent.
+ * rather than assumed - record observed routing as provenance.
  * A served vendor that disagrees with the pin is counted and reported on exit.
  */
 

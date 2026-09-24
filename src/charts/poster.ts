@@ -22,42 +22,26 @@ import type { TrialRow } from './trial'
 
 // -- palette ----------------------------------------------------------------------
 
-/** Merge marketing comparison-chart canvas. */
-export const POSTER_SURFACE = '#2C2A25'
+/** Neutral public chart styling. */
+export const POSTER_SURFACE = '#171717'
 
-/**
- * The leading bar gets Merge Robin. Every comparison bar uses the same opaque
- * neutral, so the embossed background never shows through the data marks.
- */
-export const POSTER_SERIES = ['#96BDCE', '#797771'] as const
+/** Neutral public chart styling. */
+export const POSTER_SERIES = ['#BDBDBD', '#797771'] as const
 
-/**
- * Official weekly benchmark palette. Full opacity; lilac is reserved for the
- * best result in each metric. Dark canvas/type follow marketing SHARED.md.
- * Source: https://github.com/merge-api/merge-skills/tree/main/plugin/merge-marketing/skills/weekly-model-benchmark-graphic
- * Verified against SKILL.md, tokens.css and build.py on 2026-09-08.
- */
-export const POSTER_WINNER = '#C6ADCA' // lilac-40
+/** Neutral public chart styling. */
+export const POSTER_WINNER = '#D4D4D4'
 export const POSTER_COMPARISON_SERIES = [
-  '#ABCAD8', // robin-40
-  '#96A58D', // sage-40
-  '#769399', // teal-40
-  '#C3C5B3', // khaki-40
-  '#ABAAA8', // charcoal-30
+  '#A3A3A3',
+  '#A3A3A3',
+  '#A3A3A3',
+  '#A3A3A3',
+  '#A3A3A3',
 ] as const
 
 /** Hard cap. A seventh model folds into a second poster, never a generated hue. */
 export const POSTER_MAX_SERIES = 6
 
-/**
- * The canvas for the shipped Gateway look, darker than POSTER_SURFACE.
- *
- * POSTER_SURFACE is Merge Charcoal, which is the right card colour inside a
- * report that has a page around it. A poster has no page: the canvas runs to
- * the crop, and charcoal reads as a washed-out grey rectangle on a timeline
- * that is usually already dark. This drops to near-black so the ivory type and
- * the logo tiles carry the frame.
- */
+/** Neutral public chart styling. */
 export const POSTER_DESIGNER_SURFACE = '#12110F'
 
 /**
@@ -176,9 +160,9 @@ export const PANEL_IDS = Object.keys(PANELS) as PanelId[]
  * ranking that moved when it had not.
  */
 export const POSTER_METRIC_SERIES: Record<PanelId, string> = {
-  completion: '#ABCAD8', // robin-40
-  'cost-per-success': '#C6ADCA', // lilac-40
-  'median-time': '#96A58D', // sage-40
+  completion: '#A3A3A3',
+  'cost-per-success': '#D4D4D4',
+  'median-time': '#A3A3A3',
 }
 
 /** `0.008716` -> `0.0087`, `0.3172` -> `0.32`, `12.4` -> `12`. Trailing zeros dropped. */

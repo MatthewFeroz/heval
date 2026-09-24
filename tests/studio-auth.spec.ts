@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 
-const JOB = 'terminal-bench-glm53-smoke'
+const JOB = 'demo-small'
 async function testSession(page: Page) {
   await page.route(url => /^\/studio(?:\.html)?$/.test(url.pathname), async route => {
     const response = await route.fetch({ url: new URL('/tests/fixtures/studio-auth.html', route.request().url()).href })

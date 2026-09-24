@@ -3,7 +3,7 @@ import { convexTest } from 'convex-test'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import schema from './schema'
 import { api, internal } from './_generated/api'
-import fixture from '../results/harbor/terminal-bench-comparison.json'
+import fixture from '../results/harbor/demo-evaluation.json'
 import { newPresentation } from '../src/project/schema'
 import { SOCIAL_DEFAULTS } from '../src/charts/social-presets'
 import type { ReportProject } from '../src/reports/project'
@@ -19,7 +19,7 @@ async function setup() {
   const saved = (await owner.query(api.reports.get, { id: report }))!
   const document: ReportProject = JSON.parse(saved.project)
   const p = newPresentation(document.project, document.project.analysisViews[0])
-  p.social = { ...SOCIAL_DEFAULTS, preset: 'cost-per-success', theme: 'plain-light', models: ['glm-5.3', 'kimi-k3'] }
+  p.social = { ...SOCIAL_DEFAULTS, preset: 'cost-per-success', theme: 'plain-light', models: ['model-a', 'model-c'] }
   document.project.presentations = [p]; document.presentationId = p.id; document.mode = 'presentation'
   const args = { report, expectedVersion: 0, document: JSON.stringify(document), collection: false, requestId: 'request-0000000001' }
   return { t, owner, report, document, args }
@@ -31,7 +31,7 @@ test('enqueue atomically saves settings; immutable inputs and history survive la
   expect(await owner.query(api.presentationExports.list, { report })).toHaveLength(1)
   const saved = (await owner.query(api.reports.get, { id: report }))!
   expect(saved.version).toBe(1)
-  expect(JSON.parse(saved.project).project.presentations[0].social).toMatchObject({ preset: 'cost-per-success', theme: 'plain-light', models: ['glm-5.3', 'kimi-k3'] })
+  expect(JSON.parse(saved.project).project.presentations[0].social).toMatchObject({ preset: 'cost-per-success', theme: 'plain-light', models: ['model-a', 'model-c'] })
   document.project.presentations[0].social!.preset = 'completed'
   await owner.mutation(api.reportProjects.saveDraft, { id: report, expectedVersion: 1, document: JSON.stringify(document) })
   await t.mutation(internal.presentationExports.pump, {})
@@ -104,12 +104,12 @@ test('daily limits reject extra cloud work without saving another draft', async 
   expect(await owner.query(api.presentationExports.list, { report })).toHaveLength(20)
 })
 
-test('new presentations are neutral and explicit white, black and Merge choices persist into exports', async () => {
+test('new presentations are neutral and explicit white and black choices persist into exports', async () => {
   const { t, owner, report, document, args } = await setup()
   const fresh = newPresentation(document.project, document.project.analysisViews[0])
   expect(fresh).toMatchObject({ theme: 'plain-light', graphOverrides: { theme: 'light' }, social: { theme: 'plain-light', source: 'Evaluation results' }, motion: { theme: 'plain-light' } })
   let version = 0
-  for (const theme of ['plain-dark', 'plain-light', 'merge-dark'] as const) {
+  for (const theme of ['plain-dark', 'plain-light'] as const) {
     document.project.presentations[0].social!.theme = theme
     const result = await owner.mutation(api.presentationExports.request, { ...args, expectedVersion: version++, document: JSON.stringify(document), requestId: 'persist-theme-' + theme })
     const saved = (await owner.query(api.reports.get, { id: report }))!

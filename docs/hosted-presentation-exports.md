@@ -82,30 +82,10 @@ bun run lint
 
 Backend tests exercise atomic save/enqueue, immutable inputs, access revocation, idempotency, version conflicts and crash recovery. Worker/proxy tests mock cloud SDKs and verify private storage, credential boundaries, failure cleanup and access checks. The UI smoke exercises real Studio components with simulated cloud adapters: queue, reload, settings, history and authorized download. The renderer smoke runs the **actual Node bundle and Chromium** locally to generate PNG and ZIP artifacts; the snapshot setup repeats a PNG check on Vercel. These local checks do not establish that a production deployment is configured.
 
-## Verified deployment — September 17, 2026
-
-The feature is deployed to the existing Vercel `heval` project at
-https://temporary-rushing-violet-xu17m97.vercel.app, using the existing Convex
-`industrious-newt-432` production deployment. The private Blob store is
-`heval-presentation-exports`. Snapshot: `snap_DdjQf4zNX3Xs99Hb6ugW52zS9Lnt`.
-
-Live checks passed for both PNG and ZIP: authenticated submission to Convex,
-queue claim, scheduled Node action, Sandbox rendering, private Blob upload,
-persistent history and authorized storage read. The deployed website download
-endpoint returns 401 when signed out. The full browser interaction was tested
-with simulated cloud adapters; a real WorkOS browser-session download still
-needs a signed-in user check.
-
-The opt-in `scripts/hosted-export-cloud-smoke.ts` repeats the live queue checks.
-It retains a private smoke report and its exports under the synthetic
-`heval-deployment-smoke` identity, separate from real user workspaces.
-The CLI deployment used the current working tree; GitHub main has not yet been
-updated with these changes.
-
 ## Presentation style and persistence
 
 New presentations start with **White** (`plain-light`). **Black** (`plain-dark`)
-is also unbranded; Merge themes are explicit choices. Product defaults live in
+is the alternative neutral theme. Product defaults live in
 `src/charts/presentation-defaults.ts` and apply regardless of whether data came
 from the catalog, a local import, a runner, or a saved report. New projects save
 the choice explicitly rather than relying on a changing runtime fallback.
@@ -131,14 +111,10 @@ so publishing is a separate explicit action. No new preference table is needed.
 If per-user defaults are added later, they should seed a *new* project, never
 replace the theme of a saved project.
 
-Explicit existing themes are preserved, including Merge. Missing legacy social
-settings use White and are materialized on the next save. No production documents
-are bulk-recolored. To change an older Merge presentation, select White or Black
-and save it once. Historical export files remain unchanged.
+The public renderer supports White and Black. Select a supported theme before
+saving a presentation imported from another distribution. Historical export
+files remain unchanged.
 
-The shared SVG renderer (`social-presets/4`) now uses the designer layout for
-browser previews and hosted exports. Merge opt-in adds top-right branding,
-per-metric hues and model logo tiles with an above-bar fallback for short bars.
-Neutral themes use the same geometry without Merge marks, palette or licensed
-fonts. Tests cover creation defaults, all themes/presets, reload persistence,
-export snapshots and switching styles across the social and poster controls.
+The shared SVG renderer is used by browser previews and hosted exports. Tests
+cover creation defaults, supported themes and presets, reload persistence,
+export snapshots, and switching styles across the social and poster controls.

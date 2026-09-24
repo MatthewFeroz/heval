@@ -3,27 +3,27 @@ import { resolveSocial, socialSettings, SOCIAL_DEFAULTS } from './social-presets
 import { socialSvg } from './social-render'
 import type { TrialRow } from './trial'
 import { readFileSync } from 'node:fs'
-const real = JSON.parse(readFileSync('results/harbor/terminal-bench-comparison.json', 'utf8'))
+const real = JSON.parse(readFileSync('results/harbor/demo-evaluation.json', 'utf8'))
   .rows as TrialRow[]
-const models = ['glm-5.3', 'glm-5.3-flash', 'kimi-k3', 'deepseek-v4-flash', 'deepseek-v4-pro-0813']
+const models = ['model-a', 'model-b', 'model-c', 'model-d', 'model-e']
 const options = { ...SOCIAL_DEFAULTS, models }
-test('thread presets reproduce the audited cohort and use 20 actual tasks', () => {
+test('thread presets compute known synthetic outcomes across 20 tasks', () => {
   const completed = resolveSocial(real, options)
-  expect(completed.bars.map((b) => b.value)).toEqual([14, 12, 11, 10, 9])
+  expect(completed.bars.map((b) => b.value)).toEqual([16, 14, 12, 10, 8])
   const cost = resolveSocial(real, { ...options, preset: 'total-cost' })
   expect(cost.title).toBe('Total cost across 20 tasks')
-  expect(cost.bars.find((b) => b.key === 'glm-5.3')!.value).toBeCloseTo(4.43102134)
-  expect(cost.bars.find((b) => b.key === 'glm-5.3-flash')!.value).toBeCloseTo(0.78682721)
+  expect(cost.bars.find((b) => b.key === 'model-a')!.value).toBeCloseTo(0.2)
+  expect(cost.bars.find((b) => b.key === 'model-b')!.value).toBeCloseTo(0.4)
   const perSuccess = resolveSocial(real, { ...options, preset: 'cost-per-success' })
   expect(perSuccess.bars.slice(-2).map((b) => b.key)).toEqual([
-    'glm-5.3-flash',
-    'deepseek-v4-flash',
+    'model-b',
+    'model-a',
   ])
-  expect(perSuccess.bars.at(-1)!.value).toBeCloseTo(0.03222819)
+  expect(perSuccess.bars.at(-1)!.value).toBeCloseTo(0.025)
   const slow = resolveSocial(real, { ...options, preset: 'slow-timeouts' })
-  expect(slow.bars.find((b) => b.key === 'deepseek-v4-flash')).toMatchObject({ value: 10, timeout: 4 })
+  expect(slow.bars.find((b) => b.key === 'model-d')).toMatchObject({ value: 2, timeout: 2 })
   const matrix = resolveSocial(real, { ...options, preset: 'disagreement' })
-  expect([matrix.matrix.length, matrix.allPassed, matrix.allFailed]).toEqual([15, 3, 2])
+  expect([matrix.matrix.length, matrix.allPassed, matrix.allFailed]).toEqual([8, 8, 4])
 })
 test('single-attempt cohort rejects missing tasks, duplicates and incompatible versions', () => {
   expect(() => resolveSocial(real.slice(1), options)).toThrow('one attempt')
@@ -42,9 +42,9 @@ test('single-attempt cohort rejects missing tasks, duplicates and incompatible v
   ).toThrow('mixed agent')
 })
 test('missing price is unavailable rather than zero and no passes is not free', () => {
-  const missing = real.map((r) => (r.modelShort === 'glm-5.3' ? { ...r, costUsd: null } : r))
+  const missing = real.map((r) => (r.modelShort === 'model-a' ? { ...r, costUsd: null } : r))
   expect(
-    resolveSocial(missing, { ...options, preset: 'total-cost' }).bars.find((b) => b.key === 'glm-5.3')!.value,
+    resolveSocial(missing, { ...options, preset: 'total-cost' }).bars.find((b) => b.key === 'model-a')!.value,
   ).toBeNull()
   const none = real.map((r) => ({ ...r, passed: 0 as const }))
   expect(
@@ -62,9 +62,9 @@ test('slow threshold is strict and timeouts count once', () => {
   expect(() => resolveSocial([{ ...rows[0], error: 'VerifierTimeoutError' }], settings)).toThrow('phase')
 })
 test('missing successful timing does not silently change median population', () => {
-  const rows = real.map((r) => (r.modelShort === 'glm-5.3' && r.passed ? { ...r, agentSeconds: null } : r))
+  const rows = real.map((r) => (r.modelShort === 'model-a' && r.passed ? { ...r, agentSeconds: null } : r))
   expect(
-    resolveSocial(rows, { ...options, preset: 'median-time' }).bars.find((b) => b.key === 'glm-5.3')!.value,
+    resolveSocial(rows, { ...options, preset: 'median-time' }).bars.find((b) => b.key === 'model-a')!.value,
   ).toBeNull()
 })
 test('settings reject unknown presets and preserve deliberately hidden text', () => {
@@ -80,26 +80,19 @@ test('settings reject unknown presets and preserve deliberately hidden text', ()
 })
 
 test('publishing themes round trip and reject unregistered themes', () => {
-  expect(socialSettings({...options,theme:'merge-light'}).theme).toBe('merge-light')
+  expect(socialSettings({...options,theme:'plain-light'}).theme).toBe('plain-light')
   expect(socialSettings({...options,theme:undefined}).theme).toBe('plain-light')
   expect(()=>socialSettings({...options,theme:'unknown'})).toThrow('theme')
 })
 
-test('neutral defaults never acquire Merge branding; explicit brand themes use the designer layout', () => {
+test('public publishing themes never render corporate branding', () => {
   for (const theme of ['plain-light', 'plain-dark'] as const) {
     const settings = socialSettings({ ...options, theme })
-    const svg = socialSvg(resolveSocial(real, settings), settings, '<svg><path id="merge-lockup"/></svg>')
-    expect(svg).not.toContain('merge-lockup')
+    const svg = socialSvg(resolveSocial(real, settings), settings, '<svg><path id="unwanted-brand"/></svg>')
+    expect(svg).not.toContain('unwanted-brand')
     expect(svg).not.toContain('Gateway')
-    expect(svg).not.toContain('FH Oscar Pro')
     expect(svg).not.toContain('data-model-mark')
   }
-  const settings = socialSettings({ ...options, theme: 'merge-dark', preset: 'cost-per-success' })
-  const svg = socialSvg(resolveSocial(real, settings), settings, '<svg><path id="merge-lockup"/></svg>')
-  expect(svg).toContain('x="1160"')
-  expect(svg).toContain('merge-lockup')
-  expect(svg).toContain('data-model-mark="deepseek-v4-flash"')
-  expect(svg).toContain('#C6ADCA')
   expect(socialSettings(undefined).theme).toBe('plain-light')
   expect(socialSettings(undefined).source).toBe('Evaluation results')
 })

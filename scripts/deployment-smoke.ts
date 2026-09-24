@@ -40,7 +40,7 @@ try {
   await expect(page.getByPlaceholder('you@company.com')).toHaveCount(0)
   await page.getByRole('link', { name: 'Create an evaluation', exact: true }).click()
   await expect(page.getByRole('heading', { name: 'Evaluations are coming online' })).toBeVisible()
-  await page.goto(new URL('/studio?job=terminal-bench-comparison&recipe=bar&x=modelShort&color=none&measure=passed', staticServer.url).href)
+  await page.goto(new URL('/studio?job=demo-evaluation&recipe=bar&x=modelShort&color=none&measure=passed', staticServer.url).href)
   await expect(page.getByRole('heading', { name: 'Sign in to Studio' })).toBeVisible()
   await expect(page.getByRole('status')).toContainText('Sign-in isn’t available')
   await expect(page.locator('.studio')).toHaveCount(0)
@@ -62,12 +62,12 @@ try {
   const published = JSON.parse(await readFile(join(root, 'results/public/index.json'), 'utf8'))
   assert.deepEqual(JSON.parse(await readFile(join(dist, 'results/harbor/index.json'), 'utf8')), published)
   assert.equal(await Bun.file(join(dist, 'public-build.json')).exists(), true)
-  assert.equal(await Bun.file(join(dist, 'results/harbor/terminal-bench-comparison.json')).exists(), false)
+  assert.equal(await Bun.file(join(dist, 'results/harbor/demo-evaluation.json')).exists(), false)
   assert.equal(await Bun.file(join(dist, 'tests/fixtures/workbench.html')).exists(), false)
   for (const asset of await readdir(join(dist, 'assets'))) {
     if (!asset.endsWith('.js')) continue
     const text = await readFile(join(dist, 'assets', asset), 'utf8')
-    assert.doesNotMatch(text, /terminal-bench-comparison|browser-test-token/, `${asset} contains private or test fixtures`)
+    assert.doesNotMatch(text, /demo-evaluation|browser-test-token/, `${asset} contains private or test fixtures`)
   }
   backend = Bun.spawn(['bun', 'server/index.ts'], {
     cwd: root,

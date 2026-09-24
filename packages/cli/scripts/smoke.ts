@@ -77,7 +77,7 @@ try {
   assert.equal(await page.locator('.card svg .mark-rect.role-mark path').count(), 6)
   assert.equal(await page.getByRole('note').count(), 1)
   await page.screenshot({ path: join(root, '.scratch/heval-cli.png') })
-  console.log('PASS: fresh install, CLI version/help, missing-prerequisite checks, and six-model example.')
+  console.log('PASS: fresh install, CLI version/help, missing-prerequisite checks, and six-model synthetic example.')
   let bundle: Buffer | undefined
   for (const label of ['SVG', 'PNG @2x', 'Bundle']) {
     const pending = page.waitForEvent('download')

@@ -63,7 +63,7 @@ if (import.meta.main) {
   const [
     action,
     inputPath,
-    profilePath = 'experiments/merge-comparison.json',
+    profilePath = 'experiments/demo-comparison.json',
     outDir = 'results/harbor/threads/recreated',
   ] = process.argv.slice(2)
   const profile = read(profilePath) as Profile
@@ -74,7 +74,8 @@ if (import.meta.main) {
       'Usage: bun run experiment <prepare|verify|charts|charts-all|baseline> <input-or-output-path> [profile.json] [chart-output-directory]',
     )
   if (action === 'prepare') {
-    const output = inputPath ?? '.scratch/merge-comparison-run.yaml'
+    if (!profile.runTemplate) throw new Error('This synthetic example has no executable tasks. Supply a profile with a reviewed Harbor run template.')
+    const output = inputPath ?? '.scratch/evaluation-run.yaml'
     if (existsSync(output))
       throw new Error('Refusing to overwrite ' + output + '; choose a new run config path')
     const config = Bun.YAML.parse(readFileSync(profile.runTemplate, 'utf8')) as {

@@ -6,7 +6,7 @@ import { api } from '../convex/_generated/api'
 import { newPresentation } from '../src/project/schema'
 import { SOCIAL_DEFAULTS } from '../src/charts/social-presets'
 import type { ReportProject } from '../src/reports/project'
-import fixture from '../results/harbor/terminal-bench-comparison.json'
+import fixture from '../results/harbor/demo-evaluation.json'
 const key = process.env.CONVEX_DEPLOY_KEY, url = process.env.CONVEX_URL
 if (!key || !url) throw new Error('Provide deployment credentials and CONVEX_URL explicitly.')
 const client = new ConvexHttpClient(url)
