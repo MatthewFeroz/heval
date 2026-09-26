@@ -56,7 +56,7 @@ test('server strips paths, configuration, logs and unknown row fields', async ()
 })
 test('rejects invalid/oversize imports without writing a report', async () => {
   const t = convexTest(schema, modules).withIdentity(identity)
-  for (const value of [{}, { ...fixture, rows: [] }, { ...fixture, rows: [fixture.rows[0], fixture.rows[0]] }, { ...fixture, rows: [{ ...fixture.rows[0], reward: -1 }] }, { ...fixture, rows: Array(501).fill(fixture.rows[0]) }]) {
+  for (const value of [{}, { ...fixture, rows: [] }, { ...fixture, rows: [fixture.rows[0], fixture.rows[0]] }, { ...fixture, rows: [{ ...fixture.rows[0], reward: -1 }] }]) {
     await expect(t.mutation(api.reports.save, { ...payload, json: JSON.stringify(value) })).rejects.toThrow()
   }
   await expect(t.mutation(api.reports.save, { ...payload, json: ' '.repeat(750001) })).rejects.toThrow('750 KB')
@@ -70,4 +70,11 @@ test('workspace quota is enforced and lists exclude result data', async () => {
   const list = await t.query(api.reports.list)
   expect(list).toHaveLength(100)
   expect(list[0]).not.toHaveProperty('data')
+})
+
+test('reports accept more than 500 unique trials within the document budget', async () => {
+  const t = convexTest(schema, modules).withIdentity(identity)
+  const rows = Array.from({length:600}, (_,i) => ({...fixture.rows[0],trial:`trial-${i}`}))
+  const id = await t.mutation(api.reports.save, {...payload,json:JSON.stringify({...fixture,rows})})
+  expect(JSON.parse((await t.query(api.reports.get,{id}))!.data).rows).toHaveLength(600)
 })

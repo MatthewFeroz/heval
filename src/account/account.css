@@ -27,3 +27,12 @@
   .account-controls .account-trigger { gap: 5px; padding-inline: 6px; }
   .account-name { display: none; }
 }
+.account-controls[data-appearance=workspace] .account-trigger { gap: 8px; min-height: var(--control-height, 32px); padding: 4px 7px; border-radius: 8px; border-color: #ffffff14; background: #ffffff05; font: 500 var(--type-sm, 14px/20px) var(--sans, system-ui, sans-serif); }
+.account-controls[data-appearance=workspace] .account-avatar { width: 20px; height: 20px; font-size: 12px; line-height: 16px; border-radius: 4px; }
+.account-menu[data-appearance=workspace] { border-radius: 10px; border-color: #ffffff1a; background: #151515; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; }
+.account-menu[data-appearance=workspace] { padding: 4px; font: var(--type-sm, 14px/20px) -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; }
+.account-menu[data-appearance=workspace] .account-menu-item { gap: 8px; min-height: 32px; padding: 6px 10px; }
+.account-menu[data-appearance=workspace] :is(.account-identity > span:first-child, .account-email, .account-error) { font-size: 12px; line-height: 16px; }
+.account-menu[data-appearance=workspace] .account-identity { gap: 4px; padding: 8px 10px 12px; }
+.account-menu[data-appearance=workspace] .account-menu-divider { margin: 4px; }
+@media (pointer: coarse) { .account-controls[data-appearance=workspace] .account-trigger, .account-menu[data-appearance=workspace] .account-menu-item { min-height: 44px; } }

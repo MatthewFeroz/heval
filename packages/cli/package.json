@@ -1,7 +1,7 @@
 {
   "name": "@mattferoz/heval",
-  "version": "0.2.0-preview.0",
-  "description": "Check Harbor evaluation setup and explore coding-agent results locally",
+  "version": "0.2.0",
+  "description": "Run Harbor evaluations on connected Linux workers and explore coding-agent results",
   "type": "module",
   "bin": { "heval": "dist/cli.js" },
   "files": ["dist", "scripts/check-package.mjs"],

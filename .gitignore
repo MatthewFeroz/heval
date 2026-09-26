@@ -52,3 +52,5 @@ results/harbor/social/**/assets/
 /deploy/*.env
 /.tools/
 .env*
+__pycache__/
+/.scratch/first-smoke/

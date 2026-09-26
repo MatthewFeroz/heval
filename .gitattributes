@@ -1,0 +1,3 @@
+# Bundled task hashes are protocol identities. Windows checkouts must not
+# rewrite their bytes before building the npm artifact or worker image.
+packages/cli/runner-task/** text eol=lf

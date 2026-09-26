@@ -1,5 +1,5 @@
 /** Exercise the real AuthKit SDK on a non-localhost origin. Remote WorkOS and
- * optional onboarding HTTP responses are simulated; no context/session flags bypass
+ * responses are simulated; no context/session flags bypass
  * the app. Fake tokens never reach a backend or leave this browser context. */
 import assert from 'node:assert/strict'
 import { createHash } from 'node:crypto'
@@ -7,27 +7,23 @@ import { build, preview } from 'vite'
 import { chromium, expect, type BrowserContext } from '@playwright/test'
 import { authReturnUrl, requiresBrowserSession } from '../src/auth-session'
 import viteConfig from '../vite.config'
-import type { GuideProgress } from '../src/onboarding/model'
 
 const origin = 'https://heval-auth-test.invalid'
 const clientId = 'client_heval_session_test'
 const tokenKey = `workos:refresh-token:${clientId}`
 const email = 'session-test@example.invalid'
 const job = 'demo-evaluation'
-const onboarding = process.env.HEVAL_TEST_ONBOARDING === '1'
-const accountStorage = 'https://heval-onboarding-test.convex.cloud'
-let guideProgress: GuideProgress | null = null
 assert.equal(requiresBrowserSession(undefined, 'example.vercel.app'), true)
 assert.equal(requiresBrowserSession('api.workos.com', 'example.vercel.app'), true)
 assert.equal(requiresBrowserSession('auth.example.com', 'app.example.com'), false)
 assert.equal(requiresBrowserSession('auth.example.com', 'localhost'), true)
 for (const value of [undefined, '/', '/login', '/login/', '/index.html', '//evil.invalid', 'javascript:alert(1)', 'https://evil.invalid']) {
-  assert.equal(authReturnUrl(value, origin), `${origin}/studio`)
+  assert.equal(authReturnUrl(value, origin), `${origin}/evaluations`)
 }
 
 process.env.VITE_WORKOS_CLIENT_ID = clientId
 process.env.VITE_WORKOS_API_HOSTNAME = ''
-process.env.VITE_CONVEX_URL = onboarding ? accountStorage : ''
+process.env.VITE_CONVEX_URL = ''
 process.env.VITE_HEVAL_STATIC_SITE = '1'
 await build({ ...viteConfig, configFile: false, logLevel: 'error' })
 const server = await preview({ configFile: false, preview: { host: '127.0.0.1', port: 0 } })
@@ -56,19 +52,7 @@ async function session(viewport = { width: 1440, height: 900 }) {
       const response = await route.fetch({ url: new URL(path + url.search, local).href })
       return route.fulfill({ response })
     }
-    if (onboarding && url.origin === accountStorage) {
-      const headers = { 'access-control-allow-origin': origin, 'access-control-allow-headers': 'content-type, authorization, convex-client', 'access-control-allow-methods': 'POST, OPTIONS' }
-      if (request.method() === 'OPTIONS') return route.fulfill({ status: 204, headers })
-      assert.match(request.headers().authorization, /^Bearer /)
-      const body = request.postDataJSON()
-      assert.ok(['onboarding:get', 'onboarding:save'].includes(body.path), 'Only onboarding storage is simulated')
-      if (body.path === 'onboarding:save') {
-        const next = body.args[0] as GuideProgress
-        if (guideProgress?.status !== 'completed' && (guideProgress?.status !== 'skipped' || next.status === 'completed')) guideProgress = next
-      }
-      return route.fulfill({ headers, json: { status: 'success', value: guideProgress } })
-    }
-    // Block all services except the isolated authentication/storage simulations.
+    // Block all services except the isolated authentication simulation.
     if (url.hostname !== 'api.workos.com') return route.abort()
     if (url.pathname.endsWith('/authorize')) {
       stats.authorizations++
@@ -118,45 +102,6 @@ async function session(viewport = { width: 1440, height: 900 }) {
 }
 const contexts: BrowserContext[] = []
 try {
-  if (onboarding) {
-    const flow = await session(); contexts.push(flow.context)
-    const page = await flow.context.newPage()
-    const editorRequests: string[] = []
-    page.on('request', request => { if (request.url().includes('/assets/StudioWorkspace')) editorRequests.push(request.url()) })
-    await page.goto(`${origin}/studio?job=${job}&recipe=scatter`)
-    await page.getByRole('button', { name: 'Sign in to Studio', exact: true }).click()
-    await expect(page.getByRole('heading', { name: 'Try the demo' })).toBeVisible()
-    assert.deepEqual(editorRequests, [], 'First login must show onboarding before loading the editor')
-    await page.getByRole('button', { name: 'Next', exact: true }).click()
-    await page.reload()
-    await expect(page.getByRole('heading', { name: 'Check your setup' })).toBeVisible()
-    await page.getByRole('button', { name: 'Next', exact: true }).click()
-    await page.getByRole('button', { name: 'Next', exact: true }).click()
-    await page.getByRole('button', { name: 'Open Studio', exact: true }).click()
-    await expect(page.locator('.studio')).toBeVisible()
-    await expect(page.locator('#f-recipe')).toHaveValue('scatter')
-    await page.reload()
-    await expect(page.locator('.studio')).toBeVisible()
-    const reopened = flow.context.waitForEvent('page')
-    await page.getByRole('link', { name: 'CLI guide', exact: true }).click()
-    const guide = await reopened
-    await expect(guide.getByRole('heading', { name: 'Try the demo' })).toBeVisible()
-    await guide.getByRole('button', { name: 'Skip for now' }).click()
-    await expect(guide.locator('.studio')).toBeVisible()
-    await expect(guide.locator('#f-recipe')).toHaveValue('scatter')
-    await expect(page.locator('.studio')).toBeVisible()
-    await guide.close()
-    assert.deepEqual(guideProgress, { step: 3, status: 'completed' })
-    // A different browser has no local completion flag; account storage controls it.
-    const other = await session(); contexts.push(other.context)
-    const returning = await other.context.newPage()
-    await returning.goto(`${origin}/studio`)
-    await returning.getByRole('button', { name: 'Sign in to Studio', exact: true }).click()
-    await expect(returning.locator('.studio')).toBeVisible()
-    await expect(returning.getByRole('heading', { name: 'Try the demo' })).toHaveCount(0)
-    assert.deepEqual(errors, [])
-    console.log('PASS: real AuthKit callback → first-login guide → authenticated progress storage → resume → Studio → reopen → another browser skips the completed guide.')
-  } else {
   const { context, stats } = await session(); contexts.push(context)
   const page = await context.newPage()
   const destinations: string[] = []
@@ -244,7 +189,6 @@ try {
   assert.equal(new URL(reportTab.url()).hash, '#draft')
   assert.deepEqual(errors, [])
   console.log('PASS: saved-report destination preserved; no browser exceptions. Report persistence is covered by test:backend.')
-  }
 } catch (error) {
   for (const context of contexts) for (const page of context.pages()) {
     console.error({ path: new URL(page.url()).pathname, screen: (await page.locator('body').innerText()).slice(0, 1500), errors, diagnostics })

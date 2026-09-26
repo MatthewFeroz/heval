@@ -1,0 +1,573 @@
+{
+  "fetchedAt": "2026-09-26T02:29:32.008Z",
+  "models": [
+    {
+      "model": "anthropic/claude-opus-5-5",
+      "displayName": "Opus 5.5",
+      "creator": "anthropic",
+      "vendors": [
+        {
+          "vendor": "anthropic",
+          "status": null,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 128000,
+          "inputPerMillion": 4,
+          "outputPerMillion": 20,
+          "cacheReadPerMillion": 0.2,
+          "supportsToolCalling": true,
+          "supportsReasoning": true
+        },
+        {
+          "vendor": "bedrock",
+          "status": null,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 128000,
+          "inputPerMillion": 4,
+          "outputPerMillion": 20,
+          "cacheReadPerMillion": 0.2,
+          "supportsToolCalling": true,
+          "supportsReasoning": true
+        }
+      ],
+      "notes": {
+        "anthropic": [],
+        "bedrock": []
+      },
+      "sourceUrl": "https://docs.merge.dev/merge-gateway/models/details/anthropic-claude-opus-5-5"
+    },
+    {
+      "model": "anthropic/claude-sonnet-5",
+      "displayName": "Sonnet 5",
+      "creator": "anthropic",
+      "vendors": [
+        {
+          "vendor": "anthropic",
+          "status": null,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 128000,
+          "inputPerMillion": 3,
+          "outputPerMillion": 15,
+          "cacheReadPerMillion": 0.2,
+          "supportsToolCalling": true,
+          "supportsReasoning": true
+        },
+        {
+          "vendor": "bedrock",
+          "status": null,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 128000,
+          "inputPerMillion": 2,
+          "outputPerMillion": 10,
+          "cacheReadPerMillion": 0.2,
+          "supportsToolCalling": true,
+          "supportsReasoning": true
+        }
+      ],
+      "notes": {
+        "anthropic": [],
+        "bedrock": []
+      },
+      "sourceUrl": "https://docs.merge.dev/merge-gateway/models/details/anthropic-claude-sonnet-5"
+    },
+    {
+      "model": "anthropic/claude-fable-5-1",
+      "displayName": "Fable 5.1",
+      "creator": "anthropic",
+      "vendors": [
+        {
+          "vendor": "anthropic",
+          "status": null,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 128000,
+          "inputPerMillion": 10,
+          "outputPerMillion": 50,
+          "cacheReadPerMillion": 0.25,
+          "supportsToolCalling": true,
+          "supportsReasoning": true
+        }
+      ],
+      "notes": {
+        "anthropic": []
+      },
+      "sourceUrl": "https://docs.merge.dev/merge-gateway/models/details/anthropic-claude-fable-5-1"
+    },
+    {
+      "model": "openai/gpt-6-astra",
+      "displayName": "GPT-6 Astra",
+      "creator": "openai",
+      "vendors": [
+        {
+          "vendor": "azure",
+          "status": null,
+          "contextWindow": 1100000,
+          "maxOutputTokens": 128000,
+          "inputPerMillion": 10,
+          "outputPerMillion": 50,
+          "cacheReadPerMillion": 1,
+          "supportsToolCalling": true,
+          "supportsReasoning": true
+        },
+        {
+          "vendor": "openai",
+          "status": null,
+          "contextWindow": 1100000,
+          "maxOutputTokens": 128000,
+          "inputPerMillion": 10,
+          "outputPerMillion": 50,
+          "cacheReadPerMillion": 1,
+          "supportsToolCalling": true,
+          "supportsReasoning": true
+        }
+      ],
+      "notes": {
+        "azure": [
+          "Input: Above 272K tokens: $20.00/M",
+          "Output: Above 272K tokens: $75.00/M"
+        ],
+        "openai": [
+          "Input: Above 272K tokens: $20.00/M",
+          "Output: Above 272K tokens: $75.00/M"
+        ]
+      },
+      "sourceUrl": "https://docs.merge.dev/merge-gateway/models/details/openai-gpt-6-astra"
+    },
+    {
+      "model": "openai/gpt-6-sol",
+      "displayName": "GPT-6 Sol",
+      "creator": "openai",
+      "vendors": [
+        {
+          "vendor": "azure",
+          "status": null,
+          "contextWindow": 1100000,
+          "maxOutputTokens": 128000,
+          "inputPerMillion": 2,
+          "outputPerMillion": 10,
+          "cacheReadPerMillion": 0.2,
+          "supportsToolCalling": true,
+          "supportsReasoning": true
+        },
+        {
+          "vendor": "openai",
+          "status": null,
+          "contextWindow": 1100000,
+          "maxOutputTokens": 128000,
+          "inputPerMillion": 2,
+          "outputPerMillion": 10,
+          "cacheReadPerMillion": 0.2,
+          "supportsToolCalling": true,
+          "supportsReasoning": true
+        }
+      ],
+      "notes": {
+        "azure": [
+          "Input: Above 272K tokens: $4.00/M",
+          "Output: Above 272K tokens: $15.00/M"
+        ],
+        "openai": [
+          "Input: Above 272K tokens: $4.00/M",
+          "Output: Above 272K tokens: $15.00/M"
+        ]
+      },
+      "sourceUrl": "https://docs.merge.dev/merge-gateway/models/details/openai-gpt-6-sol"
+    },
+    {
+      "model": "openai/gpt-6-luna",
+      "displayName": "GPT-6 Luna",
+      "creator": "openai",
+      "vendors": [
+        {
+          "vendor": "azure",
+          "status": null,
+          "contextWindow": 1100000,
+          "maxOutputTokens": 128000,
+          "inputPerMillion": 0.1,
+          "outputPerMillion": 0.5,
+          "cacheReadPerMillion": 0.01,
+          "supportsToolCalling": true,
+          "supportsReasoning": true
+        },
+        {
+          "vendor": "openai",
+          "status": null,
+          "contextWindow": 1100000,
+          "maxOutputTokens": 128000,
+          "inputPerMillion": 0.1,
+          "outputPerMillion": 0.5,
+          "cacheReadPerMillion": 0.01,
+          "supportsToolCalling": true,
+          "supportsReasoning": true
+        }
+      ],
+      "notes": {
+        "azure": [
+          "Input: Above 272K tokens: $0.20/M",
+          "Output: Above 272K tokens: $0.75/M"
+        ],
+        "openai": [
+          "Input: Above 272K tokens: $0.20/M",
+          "Output: Above 272K tokens: $0.75/M"
+        ]
+      },
+      "sourceUrl": "https://docs.merge.dev/merge-gateway/models/details/openai-gpt-6-luna"
+    },
+    {
+      "model": "zai/glm-5.3",
+      "displayName": "GLM-5.3",
+      "creator": "zai",
+      "vendors": [
+        {
+          "vendor": "zai",
+          "status": null,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 131000,
+          "inputPerMillion": 0.7,
+          "outputPerMillion": 2.2,
+          "cacheReadPerMillion": 0.13,
+          "supportsToolCalling": true,
+          "supportsReasoning": true
+        }
+      ],
+      "notes": {
+        "zai": []
+      },
+      "sourceUrl": "https://docs.merge.dev/merge-gateway/models/details/zai-glm-5-3"
+    },
+    {
+      "model": "zai/glm-5.3-flash",
+      "displayName": "GLM-5.3 Flash",
+      "creator": "zai",
+      "vendors": [
+        {
+          "vendor": "pareto",
+          "status": null,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 131000,
+          "inputPerMillion": 0.03,
+          "outputPerMillion": 0.1,
+          "cacheReadPerMillion": 0.006,
+          "supportsToolCalling": true,
+          "supportsReasoning": true
+        },
+        {
+          "vendor": "wafer",
+          "status": null,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 131000,
+          "inputPerMillion": 0.15,
+          "outputPerMillion": 0.5,
+          "cacheReadPerMillion": 0.03,
+          "supportsToolCalling": true,
+          "supportsReasoning": true
+        },
+        {
+          "vendor": "fireworks",
+          "status": null,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 131000,
+          "inputPerMillion": 0.15,
+          "outputPerMillion": 0.5,
+          "cacheReadPerMillion": 0.03,
+          "supportsToolCalling": true,
+          "supportsReasoning": true
+        },
+        {
+          "vendor": "modal",
+          "status": null,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 131000,
+          "inputPerMillion": 0.45,
+          "outputPerMillion": 1.5,
+          "cacheReadPerMillion": 0.09,
+          "supportsToolCalling": true,
+          "supportsReasoning": false
+        },
+        {
+          "vendor": "baseten",
+          "status": null,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 262000,
+          "inputPerMillion": 0.15,
+          "outputPerMillion": 0.5,
+          "cacheReadPerMillion": 0.03,
+          "supportsToolCalling": true,
+          "supportsReasoning": true
+        },
+        {
+          "vendor": "zai",
+          "status": null,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 131000,
+          "inputPerMillion": 0.015,
+          "outputPerMillion": 0.05,
+          "cacheReadPerMillion": 0.003,
+          "supportsToolCalling": true,
+          "supportsReasoning": true
+        },
+        {
+          "vendor": "together",
+          "status": null,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 131000,
+          "inputPerMillion": 0.15,
+          "outputPerMillion": 0.5,
+          "cacheReadPerMillion": 0.03,
+          "supportsToolCalling": true,
+          "supportsReasoning": true
+        },
+        {
+          "vendor": "particle",
+          "status": null,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 131000,
+          "inputPerMillion": 0.015,
+          "outputPerMillion": 0.05,
+          "cacheReadPerMillion": 0.003,
+          "supportsToolCalling": true,
+          "supportsReasoning": true
+        }
+      ],
+      "notes": {
+        "pareto": [],
+        "wafer": [],
+        "fireworks": [],
+        "modal": [],
+        "baseten": [],
+        "zai": [
+          "Z.AI launch promo, ends Oct 1, 2026",
+          "Input list price: $0.075/M",
+          "Output list price: $0.25/M",
+          "Cache read list price: $0.015/M"
+        ],
+        "together": [],
+        "particle": [
+          "Particle Promo, ends Oct 1, 2026",
+          "Input list price: $0.12/M",
+          "Output list price: $0.40/M",
+          "Cache read list price: $0.03/M"
+        ]
+      },
+      "sourceUrl": "https://docs.merge.dev/merge-gateway/models/details/zai-glm-5-3-flash"
+    },
+    {
+      "model": "deepseek/deepseek-v4.1-flash",
+      "displayName": "DeepSeek V4.1 Flash",
+      "creator": "deepseek",
+      "vendors": [
+        {
+          "vendor": "baseten",
+          "status": null,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 384000,
+          "inputPerMillion": 0.3,
+          "outputPerMillion": 1.2,
+          "cacheReadPerMillion": 0.03,
+          "supportsToolCalling": true,
+          "supportsReasoning": true
+        },
+        {
+          "vendor": "fireworks",
+          "status": null,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 384000,
+          "inputPerMillion": 0.22,
+          "outputPerMillion": 0.66,
+          "cacheReadPerMillion": 0.007,
+          "supportsToolCalling": true,
+          "supportsReasoning": true
+        },
+        {
+          "vendor": "deepseek",
+          "status": null,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 384000,
+          "inputPerMillion": 0.15,
+          "outputPerMillion": 0.6,
+          "cacheReadPerMillion": 0.003,
+          "supportsToolCalling": true,
+          "supportsReasoning": true
+        },
+        {
+          "vendor": "particle",
+          "status": null,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 384000,
+          "inputPerMillion": 0.1,
+          "outputPerMillion": 0.4,
+          "cacheReadPerMillion": 0.002,
+          "supportsToolCalling": true,
+          "supportsReasoning": true
+        }
+      ],
+      "notes": {
+        "baseten": [],
+        "fireworks": [],
+        "deepseek": [
+          "Input: Peak hours (01:00–04:00, 06:00–10:00 UTC): $0.30/M",
+          "Output: Peak hours (01:00–04:00, 06:00–10:00 UTC): $1.20/M"
+        ],
+        "particle": [
+          "Particle Deepseek Promo, ends Nov 1, 2026",
+          "Input: Peak hours (04:00–20:30 America/New_York): $0.20/M (list $0.30/M)",
+          "Input list price: $0.15/M",
+          "Output: Peak hours (04:00–20:30 America/New_York): $0.80/M (list $1.20/M)",
+          "Output list price: $0.60/M",
+          "Cache read list price: $0.003/M"
+        ]
+      },
+      "sourceUrl": "https://docs.merge.dev/merge-gateway/models/details/deepseek-deepseek-v4-1-flash"
+    },
+    {
+      "model": "moonshot/kimi-k3",
+      "displayName": "Kimi K3",
+      "creator": "moonshot",
+      "vendors": [
+        {
+          "vendor": "moonshot",
+          "status": null,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 1000000,
+          "inputPerMillion": 2.9,
+          "outputPerMillion": 14,
+          "cacheReadPerMillion": 0.3,
+          "supportsToolCalling": true,
+          "supportsReasoning": true
+        },
+        {
+          "vendor": "baseten",
+          "status": null,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 1000000,
+          "inputPerMillion": 3,
+          "outputPerMillion": 15,
+          "cacheReadPerMillion": 0.3,
+          "supportsToolCalling": true,
+          "supportsReasoning": true
+        },
+        {
+          "vendor": "together",
+          "status": null,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 1000000,
+          "inputPerMillion": 3,
+          "outputPerMillion": 15,
+          "cacheReadPerMillion": 0.3,
+          "supportsToolCalling": true,
+          "supportsReasoning": true
+        },
+        {
+          "vendor": "fireworks",
+          "status": null,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 262000,
+          "inputPerMillion": 3,
+          "outputPerMillion": 15,
+          "cacheReadPerMillion": 0.3,
+          "supportsToolCalling": true,
+          "supportsReasoning": false
+        },
+        {
+          "vendor": "makora",
+          "status": null,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 1000000,
+          "inputPerMillion": 3,
+          "outputPerMillion": 15,
+          "cacheReadPerMillion": 0.3,
+          "supportsToolCalling": true,
+          "supportsReasoning": true
+        },
+        {
+          "vendor": "modal",
+          "status": null,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 1000000,
+          "inputPerMillion": 3,
+          "outputPerMillion": 15,
+          "cacheReadPerMillion": 0.3,
+          "supportsToolCalling": true,
+          "supportsReasoning": true
+        },
+        {
+          "vendor": "morph",
+          "status": null,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 1000000,
+          "inputPerMillion": 2.9,
+          "outputPerMillion": 14,
+          "cacheReadPerMillion": 0.29,
+          "supportsToolCalling": true,
+          "supportsReasoning": true
+        }
+      ],
+      "notes": {
+        "moonshot": [],
+        "baseten": [],
+        "together": [],
+        "fireworks": [],
+        "makora": [],
+        "modal": [],
+        "morph": []
+      },
+      "sourceUrl": "https://docs.merge.dev/merge-gateway/models/details/moonshot-kimi-k3"
+    },
+    {
+      "model": "minimax/minimax-m3",
+      "displayName": "MiniMax M3",
+      "creator": "minimax",
+      "vendors": [
+        {
+          "vendor": "fireworks",
+          "status": null,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 524000,
+          "inputPerMillion": 0.3,
+          "outputPerMillion": 1.2,
+          "cacheReadPerMillion": 0.059,
+          "supportsToolCalling": true,
+          "supportsReasoning": true
+        },
+        {
+          "vendor": "empiriolabs",
+          "status": null,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 524000,
+          "inputPerMillion": 0.225,
+          "outputPerMillion": 0.9,
+          "cacheReadPerMillion": null,
+          "supportsToolCalling": true,
+          "supportsReasoning": true
+        },
+        {
+          "vendor": "minimax",
+          "status": null,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 128000,
+          "inputPerMillion": 0.3,
+          "outputPerMillion": 1.2,
+          "cacheReadPerMillion": null,
+          "supportsToolCalling": true,
+          "supportsReasoning": true
+        },
+        {
+          "vendor": "morph",
+          "status": null,
+          "contextWindow": 256000,
+          "maxOutputTokens": 128000,
+          "inputPerMillion": 0.3,
+          "outputPerMillion": 1.2,
+          "cacheReadPerMillion": null,
+          "supportsToolCalling": true,
+          "supportsReasoning": true
+        }
+      ],
+      "notes": {
+        "fireworks": [],
+        "empiriolabs": [],
+        "minimax": [],
+        "morph": []
+      },
+      "sourceUrl": "https://docs.merge.dev/merge-gateway/models/details/minimax-minimax-m3"
+    }
+  ]
+}

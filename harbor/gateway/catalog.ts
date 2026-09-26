@@ -19,26 +19,8 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname } from 'node:path'
 
-export type VendorRoute = {
-  vendor: string
-  status: string | null
-  contextWindow: number | null
-  maxOutputTokens: number | null
-  inputPerMillion: number | null
-  outputPerMillion: number | null
-  /** Discounted rate for prompt-cache reads, when the route offers one. */
-  cacheReadPerMillion: number | null
-  supportsToolCalling: boolean
-  supportsReasoning: boolean
-}
-
-export type CatalogModel = {
-  model: string
-  displayName: string
-  /** Slug prefix - who *made* the model, not who serves it. */
-  creator: string
-  vendors: VendorRoute[]
-}
+import type { VendorRoute, CatalogModel } from '../../src/runners/gatewayCatalog'
+export type { VendorRoute, CatalogModel } from '../../src/runners/gatewayCatalog'
 
 export type Catalog = {
   schemaVersion: 1

@@ -1,6 +1,5 @@
 import { Brand } from '../components/SiteHeader'
 import { useAppAuth, authorizedFetch } from '../auth'
-import { guideHref } from '../onboarding/model'
 import { AccountControls } from '../account/AccountControls'
 import { SOCIAL_DEFAULTS, THREAD_PRESETS } from '../charts/social-presets'
 import { STATIC_SITE } from '../deployment'
@@ -607,7 +606,7 @@ export function Studio({ localViewer = false, hosted }: { localViewer?: boolean;
         <div className="actions">
           {hosted && <><a className="btn" href={`/reports?id=${hosted.id}`}>View report</a><button className="btn primary" disabled={cloudBusy || !cloudDirty || hosted.newerVersion} onClick={() => void saveCloud()}>{cloudBusy ? 'Saving draft…' : 'Save draft'}</button></>}
           {!localViewer && <a className="btn ghost" href="/reports">Saved reports</a>}
-          {!localViewer && <a className="btn ghost" href={guideHref(location.href)} target="_blank" rel="noreferrer" title="Open CLI guide in a new tab">CLI guide</a>}
+          {!localViewer && <a className="btn ghost" href="/machines?setup=1" target="_blank" rel="noreferrer" title="Open worker setup in a new tab">Worker setup</a>}
           <input
             ref={filePicker}
             type="file"

@@ -45,6 +45,7 @@ try {
   assert.equal(manifest.bin.heval, 'dist/cli.js')
   assert.equal(manifest.dependencies, undefined)
   const assets = join(installed, 'dist/web/assets')
+  assert.ok(!readdirSync(assets).some(file => /FHOscar/i.test(file)), 'Licensed presentation fonts must not ship in the npm package')
   for (const file of readdirSync(assets).filter(file => file.endsWith('.css'))) {
     assert.doesNotMatch(readFileSync(join(assets, file), 'utf8'), /fonts\.googleapis\.com/)
   }
@@ -52,8 +53,20 @@ try {
   assert.equal(execFileSync(node, [cli, '--version'], { cwd: temporary, encoding: 'utf8' }).trim(), version)
   // npm exec is the implementation behind npx; offline ensures no registry fallback.
   assert.equal(execFileSync(npm, ['exec', '--offline', '--no', '--', 'heval', '--version'], { cwd: temporary, env: npmEnv, encoding: 'utf8' }).trim(), version)
+  if (!fromRegistry) {
+    const plan = JSON.parse(execFileSync(npm, ['exec', '--offline', '--no', '--', 'heval', 'setup', '--plan', '--json'], { cwd: temporary, env: npmEnv, encoding: 'utf8' }))
+    assert.equal(plan.schemaVersion, 1)
+    assert.equal(plan.name, 'heval-worker')
+    assert.ok(Array.isArray(plan.steps))
+  }
   assert.equal(execFileSync(npm, ['exec', '--offline', '--no', '--', name, '--version'], { cwd: temporary, env: npmEnv, encoding: 'utf8' }).trim(), version)
-  assert.match(execFileSync(node, [cli], { cwd: temporary, encoding: 'utf8' }), /Start with: heval open/)
+  const help = execFileSync(node, [cli], { cwd: temporary, encoding: 'utf8' })
+  assert.match(help, /(?:Start|View results) with: heval open/)
+  for (const command of ['runner connect', 'runner start', 'runner setup', 'runner test', 'provider connect merge']) assert.ok(help.includes(command), `Missing ${command} in installed CLI`)
+  for (const file of ['runner-supervisor.js', 'runner-task/task.toml', 'runner-task/instruction.md', 'runner-task/tests/test.sh']) assert.ok(readFileSync(join(installed, 'dist', file)).length, `Missing runner asset: ${file}`)
+  const provider = JSON.parse(execFileSync(node, [cli, 'provider', 'status', 'merge', '--state', join(temporary, 'runner-state')], { cwd: temporary, encoding: 'utf8' }))
+  assert.equal(provider.connected, false)
+  assert.deepEqual(provider.models, [])
   assert.throws(() => execFileSync(node, [cli, 'run'], { cwd: temporary, stdio: 'pipe' }), /Command failed/)
 
   // Strip Bun, Harbor, Docker, and the repository from PATH for runtime checks.
@@ -79,6 +92,10 @@ try {
   await page.screenshot({ path: join(root, '.scratch/heval-cli.png') })
   console.log('PASS: fresh install, CLI version/help, missing-prerequisite checks, and six-model synthetic example.')
   let bundle: Buffer | undefined
+  // Current builds group downloads in the file menu; older published builds
+  // still expose them directly in the toolbar.
+  const fileMenu = page.locator('.studio-file-actions')
+  if (await fileMenu.count()) await fileMenu.locator('summary').click()
   for (const label of ['SVG', 'PNG @2x', 'Bundle']) {
     const pending = page.waitForEvent('download')
     await page.getByRole('button', { name: label, exact: true }).click()
@@ -92,6 +109,7 @@ try {
       bundle = content
     }
   }
+  if (await fileMenu.count()) await fileMenu.locator('summary').press('Escape')
   console.log('PASS: SVG, PNG, and workspace bundle downloads.')
   await page.getByRole('tab', { name: 'Raw trials' }).click()
   await expect(page.locator('tbody tr')).toHaveCount(120)

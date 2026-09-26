@@ -94,8 +94,15 @@ try {
     catch { return null }
   }, 'deployed Convex runner functions')
   process.env.HEVAL_RUNNER_ALLOW_LOCAL_CONVEX = '1'
-  const paired = await connectRunner(state, url, code, join(root, 'packages/cli/dist/runner-task'))
+  const task = join(temporary, 'monitor-task')
+  await cp(join(root, 'packages/cli/dist/runner-task'), task, { recursive: true })
+  // Keep verification active across two samples so the real daemon must publish live progress.
+  const verifier = join(task, 'tests/test.sh')
+  await writeFile(verifier, (await readFile(verifier, 'utf8')).replace('\n', '\nsleep 12\n'))
+  const paired = await connectRunner(state, url, code, task)
   runner = paired.id
+  // Two independent Oracle trials exercise actual parallel execution without model calls.
+  await writeFile(join(state, 'setup.json'), JSON.stringify({ n_attempts: 1, agents: [{ name: 'oracle' }], tasks: [{ path: 'tasks/heval-setup' }, { path: 'tasks/heval-setup' }] }))
 
   daemon = Bun.spawn(['node', join(root, 'packages/cli/dist/cli.js'), 'runner', 'start', '--state', state, '--harbor', harbor], {
     cwd: root,
@@ -112,15 +119,23 @@ try {
   experiment = await ownerApi.mutation(api.experiments.create, {
     runner,
     title: 'CI connected evaluation',
+    runSettings: { concurrency: 2, retries: 0, cpus: 1, memoryMb: 256, timeoutSeconds: 300 },
     requestId: randomSecret(),
     attempts: 1,
     profiles: [{ id: profile.id, digest: profile.digest }],
   })
+  let sawRunningTrial = false
   const finished = await waitFor(async () => {
     const detail = await ownerApi!.query(api.experiments.get, { id: experiment! })
+    const monitoring = await ownerApi!.query(api.runners.monitoring, { id: detail.cells[0].id, details: true })
+    if ((monitoring?.counts.running ?? 0) >= 2) sawRunningTrial = true
     return detail.cells.every(cell => ['completed', 'failed', 'cancelled', 'interrupted'].includes(cell.status)) ? detail : null
   }, 'Harbor evaluation completion', 300_000)
   assert.equal(finished.cells.length, 1)
+  assert(sawRunningTrial, 'The installed worker did not observe two trials running concurrently.')
+  const monitoring = await ownerApi.query(api.runners.monitoring, { id: finished.cells[0].id, details: true })
+  assert.equal(monitoring?.counts.passed, 2)
+  assert(monitoring?.events.some(event => event.state === 'passed'), 'The final task event was not saved.')
   if (finished.cells[0].status !== 'completed') await printRunDiagnostics(finished.cells[0].id)
   assert.equal(finished.cells[0].status, 'completed', finished.cells[0].message ?? finished.cells[0].phase)
   assert(finished.cells[0].report, 'The completed daemon run did not save its child report.')
@@ -130,7 +145,13 @@ try {
   assert(report, 'The combined report is not readable by its owner.')
   const data = JSON.parse(report.data) as { job: string; rows: { agent: string; passed: number }[] }
   assert.equal(data.job, 'CI connected evaluation')
-  assert.deepEqual(data.rows.map(row => ({ agent: row.agent, passed: row.passed })), [{ agent: 'oracle', passed: 1 }])
+  assert.deepEqual(data.rows.map(row => ({ agent: row.agent, passed: row.passed })), [{ agent: 'oracle', passed: 1 }, { agent: 'oracle', passed: 1 }])
+  const job = JSON.parse(await readFile(join(state, 'runs', finished.cells[0].id, 'harbor.json'), 'utf8'))
+  assert.equal(job.n_concurrent_trials, 2)
+  assert.equal(job.environment.override_cpus, 1)
+  assert.equal(job.environment.override_memory_mb, 256)
+  assert.equal(job.retry.max_retries, 0)
+  assert.equal(finished.cells[0].runSettings?.timeoutSeconds, 300)
   console.log(`PASS: Convex queue -> live daemon -> Harbor ${HARBOR_VERSION}/Docker -> combined report (${finished.report}).`)
 } finally {
   if (ownerApi && experiment) await ownerApi.mutation(api.experiments.cancel, { id: experiment }).catch(() => {})

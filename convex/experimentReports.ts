@@ -1,7 +1,7 @@
 import type { MutationCtx } from './_generated/server'
 import type { Id } from './_generated/dataModel'
 import { terminalStates } from '../src/runners/protocol'
-import { parseReport, type ReportData } from '../src/reports/format'
+import { MAX_IMPORT_BYTES, parseReport, type ReportData } from '../src/reports/format'
 
 /**
  * Turn the per-combination reports produced by the runner into the single
@@ -12,7 +12,7 @@ export async function materializeExperimentReport(ctx: MutationCtx, id: Id<'expe
   const experiment = await ctx.db.get(id)
   if (!experiment || experiment.report) return experiment?.report ?? null
 
-  const runs = await ctx.db.query('runnerRuns').withIndex('by_experiment', q => q.eq('experiment', id)).take(10)
+  const runs = await ctx.db.query('runnerRuns').withIndex('by_experiment', q => q.eq('experiment', id)).collect()
   if (!runs.length || runs.some(run => !terminalStates.includes(run.status as typeof terminalStates[number]))) return null
 
   const rows: ReportData['rows'] = []
@@ -33,12 +33,15 @@ export async function materializeExperimentReport(ctx: MutationCtx, id: Id<'expe
   }
   if (!rows.length) return null
 
-  const data = parseReport(JSON.stringify({
+  const json = JSON.stringify({
     schemaVersion: 1,
     job: experiment.title,
     generatedAt: new Date(generatedAt).toISOString(),
     rows,
-  }))
+  })
+  // Keep individual results and completion durable when the combined document is too large.
+  if (new TextEncoder().encode(json).length > MAX_IMPORT_BYTES) return null
+  const data = parseReport(json)
   const report = await ctx.db.insert('reports', {
     owner: experiment.owner,
     title: experiment.title,

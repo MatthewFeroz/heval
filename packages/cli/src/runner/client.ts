@@ -1,3 +1,6 @@
+import { publicMergeCatalog } from '../merge'
+import { executionTimeoutSeconds, type MachineKind } from '../../../../src/runners/protocol'
+import { workerMachineKind } from './machine'
 import { spawn, execFile } from 'node:child_process'
 import { HARBOR_VERSION, supportedHarborVersion } from '../harbor-version'
 import { promisify } from 'node:util'
@@ -10,6 +13,7 @@ import type { Id } from '../../../../convex/_generated/dataModel'
 import { randomSecret, readJson, writeJson } from './files'
 import { initializeProfiles, loadProfiles, snapshotProfile, requestedProfile } from './profiles'
 import { processKey, supervisorAlive, type Outcome } from './supervisor'
+import type { RunMonitoring } from '../../../../src/runners/monitoring'
 
 type Connection = { url: string; credential: string; id?: string; name?: string; pendingCode?: string }
 const exec = promisify(execFile)
@@ -73,13 +77,14 @@ export async function runDaemon(options: { directory: string; harbor: string; su
   const stop = () => { stopped = true }
   options.signal?.addEventListener('abort', stop)
   process.once('SIGINT', stop); process.once('SIGTERM', stop)
-  let health = { ready: false, health: 'Checking Harbor and Docker' }, nextCheck = 0
+  let health = { ready: false, health: 'Checking Harbor and Docker' }, nextCheck = 0, machine: MachineKind | undefined
+  let lastCatalog: string | undefined
   let lastError = '', activeDirectory: string | null = null
   event(`Connected machine: ${connection.name}. Closing the browser does not stop evaluations.`)
   try {
     while (!stopped && !options.signal?.aborted) {
       try {
-        if (Date.now() >= nextCheck) { health = await checkRunner(options.harbor); nextCheck = Date.now() + 60_000 }
+        if (Date.now() >= nextCheck) { health = await checkRunner(options.harbor); machine = await workerMachineKind(directory); nextCheck = Date.now() + 60_000 }
         const registry = options.profileFile ?? join(directory, 'profiles.json')
         let profiles: ReturnType<typeof loadProfiles> = []
         let readiness = health
@@ -89,7 +94,9 @@ export async function runDaemon(options: { directory: string; harbor: string; su
         const pendingPath = join(directory, 'pending-claim.json')
         if (!existsSync(pendingPath)) writeJson(pendingPath, { claimId: randomSecret() })
         const { claimId } = readJson<{ claimId: string }>(pendingPath)
-        const active = await cloud.mutation(api.runners.poll, { credential, session, claimId, profiles: profiles.map(p => p.public), ...readiness })
+        const modelCatalog = publicMergeCatalog(directory), catalogSignature = JSON.stringify(modelCatalog)
+        const active = await cloud.mutation(api.runners.poll, { ...(catalogSignature !== lastCatalog ? { modelCatalog } : {}), credential, session, claimId, profiles: profiles.map(p => p.public), ...readiness, ...(machine ? { machine } : {}) })
+        lastCatalog = catalogSignature
         if (lastError) { event('Cloud connection restored. Reconciling saved work.'); lastError = '' }
         if (!active) { rmSync(pendingPath, { force: true }); activeDirectory = null }
         else {
@@ -109,15 +116,21 @@ export async function runDaemon(options: { directory: string; harbor: string; su
             mkdirSync(runDir, { recursive: true, mode: 0o700 })
             if (active.cancel) writeJson(join(runDir, 'outcome.json'), { status: 'cancelled' })
             else {
-              try { snapshotProfile(requestedProfile(profile, active.requestedAttempts), runDir) }
+              try { snapshotProfile(requestedProfile(profile, active.requestedAttempts, active.runSettings), runDir) }
               catch { await cloud.mutation(api.runners.finish, { ...args, status: 'failed', message: 'Task files changed or could not be copied. Review the machine profile before starting again.' }); continue }
             }
-            writeJson(executionPath, { claimId: active.claimId, harbor: options.harbor, timeoutSeconds: active.profile.timeoutSeconds, envFile: profile.envFile, mergeConnection: profile.mergeConnection })
+            writeJson(executionPath, { claimId: active.claimId, harbor: options.harbor, timeoutSeconds: executionTimeoutSeconds(profile.public, active.requestedAttempts, active.runSettings), envFile: profile.envFile, mergeConnection: profile.mergeConnection })
           }
           if (readJson<{ claimId: string }>(executionPath).claimId !== active.claimId) throw new Error('Local execution identity differs from the cloud claim. Inspect this state directory.')
           rmSync(pendingPath, { force: true })
           if (active.cancel) writeFileSync(join(runDir, 'cancel'), '', { mode: 0o600 })
           const outcomePath = join(runDir, 'outcome.json')
+          // The detached supervisor samples even while the cloud is unreachable.
+          // Upload the newest durable snapshot before finishing; errors must not block cancellation or reports.
+          try {
+            const snapshot = readJson<RunMonitoring>(join(runDir, 'monitoring.json'))
+            await cloud.mutation(api.runners.monitor, { ...args, snapshot })
+          } catch { /* Older backends/workers and transient telemetry failures are compatible. */ }
           if (existsSync(outcomePath)) {
             const outcome = readJson<Outcome>(outcomePath)
             const saved = await cloud.mutation(api.runners.finish, { ...args, ...outcome })
@@ -155,5 +168,5 @@ export async function runDaemon(options: { directory: string; harbor: string; su
 export function runnerStatus(directory: string) {
   const connection = readJson<Connection>(join(directory, 'connection.json'))
   const runs = join(directory, 'runs')
-  return { name: connection.name ?? 'Pairing pending', url: connection.url, paired: !!connection.id, runs: existsSync(runs) ? readdirSync(runs).map(id => ({ id, running: supervisorAlive(join(runs, id)), outcome: existsSync(join(runs, id, 'outcome.json')) ? readJson<Outcome>(join(runs, id, 'outcome.json')).status : null })) : [] }
+  return { id: connection.id ?? null, name: connection.name ?? 'Pairing pending', url: connection.url, paired: !!connection.id, runs: existsSync(runs) ? readdirSync(runs).map(id => ({ id, running: supervisorAlive(join(runs, id)), outcome: existsSync(join(runs, id, 'outcome.json')) ? readJson<Outcome>(join(runs, id, 'outcome.json')).status : null })) : [] }
 }

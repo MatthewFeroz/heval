@@ -19,7 +19,8 @@ export function Fixture() {
     async getAccessToken() { return session === 'member' ? 'browser-test-token' : undefined },
   }
   return <AuthContext.Provider value={auth}>
-    <aside aria-label="Test session controls">
+    {/* Above the workspace sidebar so tests can reach the controls. */}
+    <aside aria-label="Test session controls" style={{ position: 'fixed', left: 8, right: 8, bottom: 8, zIndex: 1000, display: 'flex', flexWrap: 'wrap', justifyContent: 'flex-end', gap: 8, overflowWrap: 'anywhere' }}>
       <button onClick={() => setSession('member')}>Complete test sign-in</button>
       <button onClick={() => setSession('guest')}>Expire test session</button>
       <output aria-label="Requested sign-in destination">{requested}</output>

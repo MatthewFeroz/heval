@@ -1,0 +1,78 @@
+[
+  {
+    "id": "claude-code",
+    "heroId": "claude",
+    "name": "Claude Code",
+    "logo": "claude.svg",
+    "version": "2.1.251",
+    "merge": true
+  },
+  {
+    "id": "opencode",
+    "heroId": "opencode",
+    "name": "OpenCode",
+    "logo": "opencode.svg",
+    "version": "1.18.30",
+    "merge": true
+  },
+  {
+    "id": "antigravity",
+    "heroId": "antigravity",
+    "name": "Antigravity",
+    "logo": "antigravity.png",
+    "version": "1.2.8",
+    "merge": false,
+    "reason": "Requires a verified Gemini-compatible route to this Merge model."
+  },
+  {
+    "id": "codex",
+    "heroId": "codex",
+    "name": "Codex CLI",
+    "logo": "codex.svg",
+    "version": "0.151.0",
+    "merge": true
+  },
+  {
+    "id": "grok-build",
+    "heroId": "grok",
+    "name": "Grok Build",
+    "logo": "grok.svg",
+    "version": "1.0.34",
+    "merge": true
+  },
+  {
+    "id": "pi",
+    "heroId": "pi",
+    "name": "Pi Agent",
+    "logo": "pi.svg",
+    "version": "0.84.4",
+    "merge": true
+  },
+  {
+    "id": "cursor",
+    "heroId": "cursor",
+    "name": "Cursor",
+    "logo": "cursor.svg",
+    "version": "2026.09.18-9a7762b",
+    "merge": false,
+    "reason": "Requires Cursor authentication; a direct Merge route is not verified."
+  },
+  {
+    "id": "deep-agents",
+    "heroId": "deep-agents",
+    "name": "Deep Agents",
+    "logo": "deepagents.svg",
+    "version": "0.1.70",
+    "merge": true,
+    "reason": "Native logs and grades are retained; normalized trajectory and token/cost accounting are unavailable."
+  },
+  {
+    "id": "deepseek",
+    "heroId": "deepseek",
+    "name": "DeepSeek Harness",
+    "logo": "deepseek.svg",
+    "version": "0.1.5-rc.2",
+    "merge": false,
+    "reason": "Known reasoning/streaming-tool incompatibility; evaluation is disabled."
+  }
+]

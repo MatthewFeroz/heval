@@ -42,6 +42,13 @@ await build({
   publicDir: join(root, 'public'),
   plugins: [react(), licenses, {
     name: 'heval-offline-fonts',
+    enforce: 'pre',
+    transform(code, id) {
+      if (id.replaceAll('\\', '/') !== join(root, 'src/studio/studio.css').replaceAll('\\', '/')) return
+      // The npm viewer excludes the licensed presentation fonts. Remove their
+      // declarations before Vite resolves and copies the referenced assets.
+      return code.replace(/@font-face\s*\{[^}]*FH Oscar Pro[^}]*\}/g, '')
+    },
     generateBundle(_options, bundle) {
       // Vite resolves CSS @imports internally, so remove the remote font import
       // from the final CSS. The existing font stacks include system fallbacks.
@@ -61,7 +68,7 @@ await build({
   },
 })
 const result = await Bun.build({
-  entrypoints: [join(pkg, 'src/cli.ts'), join(pkg, 'src/runner-supervisor.ts')],
+  entrypoints: [join(pkg, 'src/cli.ts'), join(pkg, 'src/runner-supervisor.ts'), join(pkg, 'src/setup-worker.ts')],
   outdir: dist,
   target: 'node',
   format: 'esm',
@@ -71,6 +78,7 @@ const result = await Bun.build({
 if (!result.success) throw new AggregateError(result.logs, 'CLI build failed')
 chmodSync(join(dist, 'cli.js'), 0o755)
 cpSync(join(pkg, 'runner-task'), join(dist, 'runner-task'), { recursive: true })
+cpSync(join(pkg, 'worker'), join(dist, 'worker'), { recursive: true, filter: path => !path.split(/[/\\]/).includes('__pycache__') && !path.endsWith('.pyc') })
 const example = JSON.parse(readFileSync(join(root, 'results/harbor/demo-evaluation.json'), 'utf8'))
 example.source = 'Synthetic demonstration data; not evaluation evidence'
 writeFileSync(join(dist, 'example.json'), JSON.stringify(example) + '\n')
