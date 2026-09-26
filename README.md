@@ -23,6 +23,13 @@ Select a worker and profile in Evaluations. Starting a model-backed evaluation
 uses that worker's compute and provider credits. Credentials remain on the worker.
 A setup check verifies execution; it is not a capability score.
 
+This checkout also includes guided first-run setup, per-run resource and
+parallelism controls, live trial monitoring, and public Merge Gateway model
+pricing. The upcoming `heval setup` command prepares a persistent Linux worker
+in Docker; see [one-command setup](docs/setup-command.md) for source-build
+instructions and release status. The [first-evaluation guide](docs/first-evaluation.md)
+covers the manual setup supported by the published CLI.
+
 ## Explore results locally
 
 ```sh
@@ -72,6 +79,11 @@ bun run cli:test
 bun run test:server
 bun run test:e2e
 ```
+
+Default CI checks the build, functional browser flows, installed CLI, and a real
+local Convex-to-worker evaluation without model calls. The manual
+[Release checks workflow](.github/workflows/release-checks.yml) covers the
+installer platform matrix and deployment variants.
 
 ## Export reports and presentations
 

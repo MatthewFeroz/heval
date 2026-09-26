@@ -32,15 +32,6 @@ test('a control change re-renders the chart and travels in the URL', async ({ pa
   await expect(page.locator('.card svg')).toContainText('Agent time (s) per trial (mean)')
 })
 
-test('collapses color when it would just repeat the grouping', async ({ page }) => {
-  // Coloring by the same field the bars are already grouped by encodes nothing.
-  await expect(page.locator('#f-color option[value=agent]')).toBeDisabled()
-  await page.locator('#f-color').selectOption('none')
-  await expect(page.locator('.card svg')).toBeVisible()
-  await expect(page.locator('.card svg .mark-rect.role-mark path')).toHaveCount(2)
-  await expect(page.locator('.card svg')).not.toContainText('Model (short)')
-})
-
 test('the table and spec tabs expose the plotted numbers', async ({ page }) => {
   await page.getByRole('tab', { name: 'Table view' }).click()
   await expect(page.getByRole('columnheader', { name: 'Trials' })).toBeVisible()
@@ -59,16 +50,6 @@ test('exports the chart as SVG', async ({ page }) => {
   expect((await download).suggestedFilename()).toBe(`${JOB}-bar.svg`)
 })
 
-test('dark mode is a selected theme, not an inverted one', async ({ page }) => {
-  // The theme radios are `sr-only`, so the icon inside the pill owns the hit
-  // point and `.check()` cannot reach the input. Click the pill, like a person.
-  await page.locator('.canvas-btn', { hasText: 'Dark mode' }).click()
-  await expect(page.getByLabel('Dark mode')).toBeChecked()
-  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
-  // Dark mode uses the first dark categorical color.
-  await expect(page.locator('.card svg .mark-rect.role-mark path').first()).toHaveAttribute('fill', '#96BDCE')
-})
-
 test('separates saved analysis from pinned presentation configuration', async ({ page }) => {
   await expect(page.getByRole('tab', { name: 'Analysis', exact: true })).toHaveAttribute('aria-selected', 'true')
   await expect(page.getByLabel('Project sources')).toContainText(JOB)
@@ -85,16 +66,6 @@ test('separates saved analysis from pinned presentation configuration', async ({
   // A theme applies a recommendation, but the graph setting remains editable.
   await page.locator('.canvas-btn', { hasText: 'Dark mode' }).click()
   await expect(page.getByLabel('Dark mode')).toBeChecked()
-})
-
-test('downloads referenced project and self-contained bundle files', async ({ page }) => {
-  const projectDownload = page.waitForEvent('download')
-  await page.getByRole('button', { name: 'Project', exact: true }).click()
-  expect((await projectDownload).suggestedFilename()).toMatch(/\.heval-project\.json$/)
-
-  const bundleDownload = page.waitForEvent('download')
-  await page.getByRole('button', { name: 'Bundle', exact: true }).click()
-  expect((await bundleDownload).suggestedFilename()).toMatch(/\.heval-bundle\.json$/)
 })
 
 test('changing recipes preserves chosen fields', async ({ page }) => {

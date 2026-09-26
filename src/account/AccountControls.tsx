@@ -1,8 +1,7 @@
 import { useId, useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react'
 import { createPortal } from 'react-dom'
-import { ArrowUpRight, BookOpen, ChevronDown, FolderOpen, FlaskConical, LayoutDashboard, LogIn, LogOut, Monitor } from 'lucide-react'
+import { ArrowUpRight, BookOpen, ChevronDown, Compass, FolderOpen, FlaskConical, LayoutDashboard, LogIn, LogOut, Monitor } from 'lucide-react'
 import type { AppAuth } from '../auth'
-import { guideHref } from '../onboarding/model'
 import './account.css'
 
 function SignIn({ auth }: { auth: AppAuth }) {
@@ -23,7 +22,7 @@ function SignIn({ auth }: { auth: AppAuth }) {
   </div>
 }
 
-function SignedInAccount({ auth, showWorkspaceLink }: { auth: AppAuth; showWorkspaceLink: boolean }) {
+function SignedInAccount({ auth, showWorkspaceLink, appearance }: { auth: AppAuth; showWorkspaceLink: boolean; appearance?: 'workspace' }) {
   const user = auth.user!
   const name = user.firstName?.trim() || 'Account'
   const id = useId()
@@ -87,8 +86,7 @@ function SignedInAccount({ auth, showWorkspaceLink }: { auth: AppAuth; showWorks
     }
   }
 
-  const cliGuide = /^\/studio(?:\.html)?$/.test(location.pathname) ? guideHref(location.href) : '/studio?guide=cli'
-  return <div className="account-controls">
+  return <div className="account-controls" data-appearance={appearance}>
     {showWorkspaceLink && <a className="account-studio-link" href="/evaluations">Create evaluation<ArrowUpRight size={14} aria-hidden="true" /></a>}
     <button className="account-trigger" type="button" ref={trigger} aria-label={`Account menu for ${user.firstName?.trim() || user.email}`} aria-haspopup="menu" aria-expanded={open} aria-controls={open ? id : undefined}
       onClick={() => { initialFocus.current = 'first'; setOpen(!open) }}
@@ -100,7 +98,7 @@ function SignedInAccount({ auth, showWorkspaceLink }: { auth: AppAuth; showWorks
       <span className="account-avatar" aria-hidden="true">{(user.firstName?.trim() || user.email).slice(0, 1).toUpperCase()}</span>
       <span className="account-name">{name}</span><ChevronDown size={14} aria-hidden="true" />
     </button>
-    {open && createPortal(<div className="account-menu" ref={panel} style={position} onKeyDown={menuKeyDown}
+    {open && createPortal(<div className="account-menu" data-appearance={appearance} ref={panel} style={position} onKeyDown={menuKeyDown}
       onBlur={event => { if (event.relatedTarget instanceof Node && !event.currentTarget.contains(event.relatedTarget) && !trigger.current?.contains(event.relatedTarget)) setOpen(false) }}>
       <div className="account-identity"><span>Signed in as</span><strong>{name}</strong><span className="account-email">{user.email}</span></div>
       <div id={id} role="menu" aria-label="Account">
@@ -108,7 +106,8 @@ function SignedInAccount({ auth, showWorkspaceLink }: { auth: AppAuth; showWorks
         <a className="account-menu-item" role="menuitem" tabIndex={-1} href="/studio"><LayoutDashboard size={16} aria-hidden="true" />Studio</a>
         <a className="account-menu-item" role="menuitem" tabIndex={-1} href="/reports"><FolderOpen size={16} aria-hidden="true" />Report library</a>
         <a className="account-menu-item" role="menuitem" tabIndex={-1} href="/machines"><Monitor size={16} aria-hidden="true" />Runner setup</a>
-        <a className="account-menu-item" role="menuitem" tabIndex={-1} href={cliGuide} target="_blank" rel="noreferrer" onClick={() => { setOpen(false); trigger.current?.focus() }}><BookOpen size={16} aria-hidden="true" />CLI guide<span className="account-sr-only"> (opens in a new tab)</span><ArrowUpRight size={13} aria-hidden="true" /></a>
+        <a className="account-menu-item" role="menuitem" tabIndex={-1} href="/machines?setup=1"><BookOpen size={16} aria-hidden="true" />Set up a computer</a>
+        <a className="account-menu-item" role="menuitem" tabIndex={-1} href="/machines?tour=first-run&step=0"><Compass size={16} aria-hidden="true" />Product tour</a>
         <div className="account-menu-divider" role="separator" />
         <button className="account-menu-item" type="button" role="menuitem" tabIndex={-1} disabled={pending} onClick={() => void signOut()}><LogOut size={16} aria-hidden="true" />{pending ? 'Signing out…' : 'Sign out'}</button>
       </div>
@@ -117,9 +116,9 @@ function SignedInAccount({ auth, showWorkspaceLink }: { auth: AppAuth; showWorks
   </div>
 }
 
-export function AccountControls({ auth, showWorkspaceLink = false, showSignIn = true }: { auth: AppAuth; showWorkspaceLink?: boolean; showSignIn?: boolean }) {
+export function AccountControls({ auth, showWorkspaceLink = false, showSignIn = true, appearance }: { auth: AppAuth; showWorkspaceLink?: boolean; showSignIn?: boolean; appearance?: 'workspace' }) {
   if (!auth.configured) return null
   if (auth.isLoading) return <div className="account-controls"><span className="account-loading" role="status">Checking account…</span></div>
-  if (auth.user) return <SignedInAccount key={auth.user.email} auth={auth} showWorkspaceLink={showWorkspaceLink} />
+  if (auth.user) return <SignedInAccount key={auth.user.email} auth={auth} showWorkspaceLink={showWorkspaceLink} appearance={appearance} />
   return showSignIn ? <SignIn auth={auth} /> : null
 }

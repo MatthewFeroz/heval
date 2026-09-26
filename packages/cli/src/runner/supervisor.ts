@@ -6,6 +6,8 @@ import { exportJob } from '../../../../harbor/report/trials'
 import { parseReport } from '../../../../src/reports/format'
 import { readJson, writeJson } from './files'
 import { mergeEnvironment } from '../merge'
+import { sampleMonitoring } from './monitoring'
+import { bundledAdapters } from './bundled-adapters'
 
 const exec = promisify(execFile)
 export type Execution = { claimId: string; harbor: string; timeoutSeconds: number; envFile?: string; mergeConnection?: string }
@@ -79,6 +81,8 @@ export async function supervise(directory: string) {
   let terminate: (() => void) | undefined
   let cancelled = false, timedOut = false, stopping = false
   const log = openSync(join(directory, 'harbor.log'), 'a', 0o600)
+  sampleMonitoring(directory)
+  const monitorTimer = setInterval(() => sampleMonitoring(directory), 5000)
   try {
     // Do not inherit the daemon's cloud credential or unrelated host credentials.
     const env = Object.fromEntries(['PATH', 'HOME', 'LANG', 'LC_ALL', 'TMPDIR', 'SSL_CERT_FILE', 'SSL_CERT_DIR', 'DOCKER_HOST', 'DOCKER_CONTEXT', 'DOCKER_CONFIG', 'DOCKER_CERT_PATH', 'DOCKER_TLS_VERIFY', 'SSH_AUTH_SOCK'].flatMap(k => process.env[k] ? [[k, process.env[k]!]] : []))
@@ -89,7 +93,7 @@ export async function supervise(directory: string) {
     }
     const args = ['run', '--config', join(directory, 'harbor.json')]
     if (input.envFile) args.push('--env-file', input.envFile)
-    child = spawn(input.harbor, args, { cwd: directory, env: { ...env, HARBOR_TELEMETRY: '0' }, detached: true, stdio: ['ignore', log, log] })
+    child = spawn(input.harbor, args, { cwd: directory, env: { ...env, PYTHONPATH: bundledAdapters(), HARBOR_TELEMETRY: '0' }, detached: true, stdio: ['ignore', log, log] })
     const pid = child.pid
     if (pid) writeJson(join(directory, 'harbor-process.json'), { pid, key: processKey(pid) })
     const stop = () => {
@@ -123,6 +127,8 @@ export async function supervise(directory: string) {
   finally {
     if (terminate) { process.removeListener('SIGTERM', terminate); process.removeListener('SIGINT', terminate) }
     if (timer) clearInterval(timer)
+    if (monitorTimer) clearInterval(monitorTimer)
+    sampleMonitoring(directory)
     if (killTimer) clearTimeout(killTimer)
     closeSync(log)
     try { await cleanupRun(directory) }

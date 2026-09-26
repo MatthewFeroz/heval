@@ -1,0 +1,68 @@
+[
+  {
+    "id": "anthropic/claude-opus-5-5",
+    "name": "Opus 5.5",
+    "group": "Claude",
+    "summary": "Flagship Claude for difficult reasoning, large code changes, and agents working across many steps."
+  },
+  {
+    "id": "anthropic/claude-sonnet-5",
+    "name": "Sonnet 5",
+    "group": "Claude",
+    "summary": "A general-purpose Claude model for coding and professional work, with adjustable reasoning effort."
+  },
+  {
+    "id": "anthropic/claude-fable-5-1",
+    "name": "Fable 5.1",
+    "group": "Claude",
+    "summary": "Claude for sustained agent workflows, refactoring, and visual development tasks."
+  },
+  {
+    "id": "openai/gpt-6-astra",
+    "name": "GPT-6 Astra",
+    "group": "OpenAI",
+    "summary": "Flagship GPT model for complex engineering, research, analysis, and document work."
+  },
+  {
+    "id": "openai/gpt-6-sol",
+    "name": "GPT-6 Sol",
+    "group": "OpenAI",
+    "summary": "A GPT model balancing demanding professional work with lower cost than Astra."
+  },
+  {
+    "id": "openai/gpt-6-luna",
+    "name": "GPT-6 Luna",
+    "group": "OpenAI",
+    "summary": "A lower-cost GPT model for fast responses, high-volume tasks, and lightweight agents."
+  },
+  {
+    "id": "zai/glm-5.3",
+    "name": "GLM-5.3",
+    "group": "Open models",
+    "summary": "Z.ai reasoning model focused on software engineering and sustained agent workflows."
+  },
+  {
+    "id": "zai/glm-5.3-flash",
+    "name": "GLM-5.3 Flash",
+    "group": "Open models",
+    "summary": "A multimodal GLM variant aimed at efficient coding and long-context agent tasks."
+  },
+  {
+    "id": "deepseek/deepseek-v4.1-flash",
+    "name": "DeepSeek V4.1 Flash",
+    "group": "Open models",
+    "summary": "DeepSeek model with native image understanding and sparse computation for coding and agent workflows."
+  },
+  {
+    "id": "moonshot/kimi-k3",
+    "name": "Kimi K3",
+    "group": "Open models",
+    "summary": "Moonshot multimodal reasoning model for complex coding, research, and long-running agents."
+  },
+  {
+    "id": "minimax/minimax-m3",
+    "name": "MiniMax M3",
+    "group": "Open models",
+    "summary": "MiniMax multimodal model accepting text, images, and video for coding and sustained agent work."
+  }
+]

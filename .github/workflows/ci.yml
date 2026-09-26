@@ -2,32 +2,25 @@ name: CI
 
 on:
   push:
+    branches: [main]
   pull_request:
+  workflow_dispatch:
+
+# A newer commit supersedes unfinished checks on the same branch/PR.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  hosted_exports:
-    name: Hosted export regression tests
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v7
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version-file: package.json
-      - run: bun install --frozen-lockfile
-      # These tests use Vitest module mocks and must not run under bun test.
-      - run: bun run test:exports
-
   cli:
+    name: cli (22)
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node: [22, 24]
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
-          node-version: ${{ matrix.node }}
+          node-version: 22
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version-file: package.json
@@ -39,7 +32,7 @@ jobs:
       - run: bun run cli:smoke
       - uses: actions/upload-artifact@v7
         with:
-          name: heval-cli-node-${{ matrix.node }}
+          name: heval-cli-node-22
           path: .scratch/mattferoz-heval-*.tgz
           include-hidden-files: true
           if-no-files-found: error
@@ -69,6 +62,7 @@ jobs:
 
   verify:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
       - uses: oven-sh/setup-bun@v2
@@ -86,13 +80,13 @@ jobs:
         run: bun run test:unit
       - name: Convex backend and domain tests
         run: bun run test:backend
+      - name: Hosted export regression tests
+        run: bun run test:exports
       - name: Install Chromium
         run: bunx playwright install --with-deps chromium
       - name: Evaluation browser integration
         run: bun run test:evaluations:ui
-      - name: Docker isolation smoke test (no model calls)
-        run: bun run test:docker
-      - name: Test
+      - name: First smoke test onboarding
+        run: bun run test:onboarding:ui
+      - name: Browser behavior
         run: bun run test:e2e
-      - name: Deployment builds and browser smoke tests
-        run: bun run test:deployments

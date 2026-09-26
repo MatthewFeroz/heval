@@ -6,7 +6,7 @@ export function requiresBrowserSession(apiHostname: string | undefined, hostname
 }
 
 export function authReturnUrl(returnTo: unknown, origin: string): string {
-  const fallback = new URL('/studio', origin).href
+  const fallback = new URL('/evaluations', origin).href
   if (typeof returnTo !== 'string') return fallback
   try {
     const target = new URL(returnTo, origin)

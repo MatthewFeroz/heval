@@ -2,7 +2,7 @@ import { afterEach, expect, test } from 'bun:test'
 import { cpSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
-import { connectMerge, disconnectMerge, mergeAgent, mergeEnvironment, mergeHarnesses, mergePath, mergeStatus } from './merge'
+import { connectMerge, disconnectMerge, mergeAgent, mergeEnvironment, mergeHarnesses, mergePath, mergeStatus, publicMergeCatalog } from './merge'
 import { loadProfiles, setupMergeProfiles, snapshotProfile } from './runner/profiles'
 import { hashDirectory, readJson, sha256, writeJson } from './runner/files'
 import { BENCHMARKS, type Benchmark } from '../../../src/runners/benchmarks'
@@ -18,12 +18,12 @@ const catalog: Catalog = { schemaVersion: 1, fetchedAt: '2026-09-20T00:00:00Z', 
 ] }
 const bundledTask = resolve(import.meta.dirname, '../runner-task')
 
-test('one validated key configures all four harnesses without secrets in profiles or snapshots', async () => {
+test('one validated key configures all supported harnesses without secrets in profiles or snapshots', async () => {
   const directory = state()
   await connectMerge(directory, 'shared-secret', async () => catalog)
   expect(statSync(mergePath(directory)).mode & 0o777).toBe(0o600)
   const ids = setupMergeProfiles(directory, bundledTask, model, [...mergeHarnesses])
-  expect(ids).toHaveLength(4)
+  expect(ids).toHaveLength(6)
   const profiles = loadProfiles(join(directory, 'profiles.json')).filter(p => p.mergeConnection)
   for (const profile of profiles) {
     expect(profile.public.model).toBe(model)
@@ -67,7 +67,7 @@ test('setup rejects unavailable models, duplicate profiles and routing overrides
   await connectMerge(directory, 'key', async () => catalog)
   expect(() => setupMergeProfiles(directory, bundledTask, 'unknown', ['codex'])).toThrow('choose a model')
   setupMergeProfiles(directory, bundledTask, model, ['codex'])
-  expect(() => setupMergeProfiles(directory, bundledTask, model, ['codex', 'pi'])).toThrow('already exists')
+  expect(setupMergeProfiles(directory, bundledTask, model, ['codex', 'pi'])).toEqual(['merge-codex', 'merge-pi'])
   const configPath = join(directory, 'merge-codex.json')
   const config = readJson<{ agents: Record<string, unknown>[] }>(configPath)
   config.agents[0].env = { OPENAI_BASE_URL: 'https://other.invalid' }
@@ -123,8 +123,35 @@ test('benchmark setup installs pinned tasks, one profile per harness and model, 
   const loaded = loadProfiles(join(directory, 'profiles.json')).filter(p => [...first, ...second].includes(p.public.id))
   expect(loaded).toHaveLength(3)
   for (const p of loaded) expect(p.public).toMatchObject({ benchmark: 'Fake bench', tasks: 2, taskSet: fake[0].taskSet, timeoutSeconds: 1200 })
-  expect(() => setupMergeProfiles(directory, bundledTask, model, ['codex'], { id: 'fake-bench', source }, fake)).toThrow('already exists')
+  expect(setupMergeProfiles(directory, bundledTask, model, ['codex'], { id: 'fake-bench', source }, fake)).toEqual([first[0]])
   writeFileSync(join(source, 'alpha', 'instruction.md'), 'Tampered\n')
   expect(() => setupMergeProfiles(directory, bundledTask, model, ['claude-code'], { id: 'fake-bench', source }, fake)).toThrow('differs from the pinned')
-  expect(() => setupMergeProfiles(directory, bundledTask, model, ['codex'], { id: 'tblite', source })).toThrow('installable benchmark')
+  expect(() => setupMergeProfiles(directory, bundledTask, model, ['codex'], { id: 'unknown', source })).toThrow('installable benchmark')
+})
+
+test('adding another smoke model preserves existing approvals and retrying does not duplicate profiles', async () => {
+  const directory = state(), second = 'zai/glm-5.3'
+  await connectMerge(directory, 'key', async () => ({ ...catalog, models: [...catalog.models, { ...catalog.models[0], model: second }] }))
+  setupMergeProfiles(directory, bundledTask, model, ['codex'])
+  const before = loadProfiles(join(directory, 'profiles.json')).find(p => p.public.id === 'merge-codex')!
+  const added = setupMergeProfiles(directory, bundledTask, second, ['codex'])
+  expect(added).toHaveLength(1)
+  expect(added[0]).not.toBe('merge-codex')
+  expect(setupMergeProfiles(directory, bundledTask, second, ['codex'])).toEqual(added)
+  const after = loadProfiles(join(directory, 'profiles.json'))
+  expect(after).toHaveLength(3)
+  expect(after.find(p => p.public.id === 'merge-codex')!.public.digest).toBe(before.public.digest)
+  expect(after.find(p => p.public.id === added[0])!.public.model).toBe(second)
+  expect(mergeStatus(directory).catalog).toHaveLength(2)
+})
+
+
+test('public Merge metadata includes only the shortlist and never the saved API key', async () => {
+  const directory = state()
+  const approved = { ...catalog.models[0], model: 'zai/glm-5.3' }
+  await connectMerge(directory, 'private-key', async () => ({ ...catalog, models: [...catalog.models, approved] }))
+  expect(publicMergeCatalog(directory)).toEqual({ fetchedAt: catalog.fetchedAt, models: [approved] })
+  expect(JSON.stringify(publicMergeCatalog(directory))).not.toContain('private-key')
+  disconnectMerge(directory)
+  expect(publicMergeCatalog(directory)).toBeNull()
 })

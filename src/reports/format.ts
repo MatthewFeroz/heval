@@ -1,7 +1,6 @@
 import type { TrialRow } from '../charts/trial'
 
 export const MAX_IMPORT_BYTES = 750_000
-export const MAX_REPORT_ROWS = 500
 export type ReportData = { schemaVersion: 1; job: string; generatedAt: string; rows: TrialRow[] }
 
 function object(value: unknown): Record<string, unknown> {
@@ -24,7 +23,7 @@ export function parseReport(text: string): ReportData {
   if (new TextEncoder().encode(text).length > MAX_IMPORT_BYTES) throw new Error('Use a JSON export smaller than 750 KB.')
   const input = object(JSON.parse(text))
   if (input.schemaVersion !== 1 || !Array.isArray(input.rows)) throw new Error('Choose a normalized Harbor export (schemaVersion 1 with rows). Raw job folders and Studio bundles must be exported as Harbor JSON first.')
-  if (!input.rows.length || input.rows.length > MAX_REPORT_ROWS) throw new Error('Import between 1 and 500 trials per report.')
+  if (!input.rows.length) throw new Error('Import at least one trial per report.')
   const seen = new Set<string>()
   const rows = input.rows.map((value, index) => {
     const raw = object(value)

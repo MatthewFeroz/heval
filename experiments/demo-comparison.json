@@ -3,7 +3,7 @@
   "id": "demo-comparison",
   "baseline": {
     "file": "results/harbor/demo-evaluation.json",
-    "sha256Json": "6b066084d610837beae25ed9f2048a458e360e9f31c535a247affba64b13a862"
+    "sha256Json": "69f66086b3ca8f04940b0f1ac8cc79b0a960d29fbf49704867aaec5e08792b6b"
   },
   "runTemplate": "",
   "chartSettings": "harbor/report/thread-demo.json",

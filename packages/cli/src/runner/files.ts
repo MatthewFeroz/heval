@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from 'node:crypto'
 import { mkdirSync, readFileSync, renameSync, writeFileSync, readdirSync, lstatSync } from 'node:fs'
-import { dirname, join } from 'node:path'
+import { dirname, join, posix } from 'node:path'
 
 export const randomSecret = () => randomBytes(32).toString('hex')
 export const sha256 = (value: string | Buffer) => createHash('sha256').update(value).digest('hex')
@@ -18,7 +18,7 @@ export function hashDirectory(path: string) {
   function walk(relative: string) {
     for (const name of readdirSync(join(path, relative)).sort()) {
       if (name === '.git' || name === '__pycache__') continue
-      const next = join(relative, name), stat = lstatSync(join(path, next))
+      const next = posix.join(relative, name), stat = lstatSync(join(path, next))
       if (stat.isSymbolicLink()) throw new Error('Approved tasks must not contain symlinks.')
       if (stat.isDirectory()) walk(next)
       else if (stat.isFile()) {

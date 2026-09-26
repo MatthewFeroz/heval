@@ -1,3 +1,5 @@
+import tblite from './tblite.json'
+
 /**
  * Benchmarks Heval knows how to install on a worker. The worker still approves and runs them;
  * the browser matches a worker's advertised task set to an entry by content hash (`taskSet`).
@@ -17,15 +19,15 @@ export type Benchmark = {
 }
 
 const TBLITE = 'https://github.com/open-thoughts/OpenThoughts-TBLite'
-const TBLITE_COMMIT = '5c37b41f00ce04719a4453061076ae9f46b74b7d'
+const TBLITE_COMMIT = tblite.commit
 
 export const BENCHMARKS: Benchmark[] = [
   {
     id: 'heval-smoke', title: 'Heval connection smoke', publisher: 'Heval', tasks: 1, status: 'available',
     summary: 'One bundled file-writing task. Confirms each harness reaches its model through Merge Gateway.',
     note: 'Checks the connection. It isn’t a capability score.',
-    taskHashes: [['heval-setup', 'c7747e4e3c38e5bc8c5b0e3b785dbe9d339044d7c9fa3cfe09ebbb3e709f6c57']],
-    taskSet: 'b7e45df73db73ded1a5c82a50909b01d5744474131f556ccce4e9d5b8e4f48a0',
+    taskHashes: [['heval-setup', '991449f7fe5ebb2ff48390673ca91ce71bee08596a836f573d586b18bac63106']],
+    taskSet: '027851e8453b8dbda1df2aa930e41fd297bbc5f8b01e41387ba7bdc16603d38d',
     install: ['heval provider connect merge', 'heval provider status merge', 'heval runner setup --model MODEL_ID --harnesses codex,claude-code,pi'],
   },
   {
@@ -41,7 +43,7 @@ export const BENCHMARKS: Benchmark[] = [
       ['cryptographic-protocol-verifier', '3e92cf149a57f408689b5ff6e06f5e6533654c9256be0a4070e95072a09d1e35'],
     ],
     taskSet: '2683c14c21a9f9b797e0a576efd7993c5d5d15f54660a761c860c750a30bc762',
-    timeoutSeconds: 7200,
+    timeoutSeconds: tblite.smokeTimeoutSeconds,
     install: [
       'heval provider connect merge',
       `git clone ${TBLITE} ~/.heval/benchmarks/openthoughts-tblite`,
@@ -50,10 +52,19 @@ export const BENCHMARKS: Benchmark[] = [
     ],
   },
   {
-    id: 'tblite', title: 'OpenThoughts-TBLite', publisher: 'OpenThoughts', tasks: 100, status: 'unsupported',
+    id: 'tblite', title: 'OpenThoughts-TBLite', publisher: 'OpenThoughts', tasks: 100, status: 'preview',
     summary: '100 Terminal-Bench tasks with difficulty calibrated against Claude Haiku 4.5. Tracks Terminal-Bench 2.0 rankings and runs faster.',
-    note: 'The full set exceeds this release’s 20-task, 60-trial limit per evaluation.',
+    note: 'Full pinned 100-task set. Installable on Linux workers; not yet validated by a full Heval evaluation.',
     source: { url: TBLITE, commit: TBLITE_COMMIT, license: 'Apache-2.0' },
+    taskHashes: tblite.taskHashes as [string, string][],
+    taskSet: tblite.taskSet,
+    timeoutSeconds: tblite.timeoutSeconds,
+    install: [
+      'heval provider connect merge',
+      `git clone ${TBLITE} ~/.heval/benchmarks/openthoughts-tblite`,
+      `git -C ~/.heval/benchmarks/openthoughts-tblite checkout ${TBLITE_COMMIT}`,
+      'heval runner setup --benchmark tblite --source ~/.heval/benchmarks/openthoughts-tblite --model MODEL_ID --harnesses codex,claude-code,pi',
+    ],
   },
 ]
 

@@ -55,6 +55,16 @@
   --warn-bg: #e0c5860d;
   --warn-line: #e0c58640;
 
+  /*
+   * Type scale: size/line-height pairs from Tailwind (T3 Code's reference).
+   * Use as `font: 500 var(--type-sm) var(--sans)`. Spacing uses the same 4px grid.
+   */
+  --type-xs: 12px/16px;
+  --type-sm: 14px/20px;
+  --type-base: 16px/24px;
+  --type-2xl: 24px/32px;
+  --control-height: 32px;
+
   --radius-control: 8px;
   --radius-card: 14px;
   --radius-pill: 999px;

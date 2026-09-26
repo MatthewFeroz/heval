@@ -1,12 +1,23 @@
+import shortlist from '../../../src/runners/model-shortlist.json'
 import { existsSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
 import { emitKeypressEvents } from 'node:readline'
 import { fetchCatalog, type Catalog } from '../../../harbor/gateway/catalog'
 import { readJson, writeJson } from './runner/files'
+import catalog from '../../../src/harness-catalog.json'
 
-export const mergeHarnesses = ['codex', 'claude-code', 'opencode', 'pi'] as const
+export const mergeHarnesses = ['codex', 'claude-code', 'opencode', 'pi', 'grok-build', 'deep-agents'] as const
 export type MergeHarness = typeof mergeHarnesses[number]
-type Connection = { key: string; models: string[]; validatedAt: string }
+export function selectMergeHarnesses(selection: string[]) {
+  const ids = selection.length === 1 && selection[0] === 'all' ? [...mergeHarnesses] : selection
+  if (!ids.length || new Set(ids).size !== ids.length) throw new Error('Choose at least one unique harness.')
+  for (const id of ids) if (!mergeHarnesses.includes(id as MergeHarness)) {
+    const entry = catalog.find(h => h.id === id)
+    throw new Error(entry?.reason ?? `Choose supported harnesses from: ${mergeHarnesses.join(', ')}.`)
+  }
+  return ids
+}
+type Connection = { key: string; models: string[]; catalog?: Catalog['models']; validatedAt: string }
 const openai = 'https://api-gateway.merge.dev/v1/openai'
 const anthropic = 'https://api-gateway.merge.dev/v1/anthropic'
 export const mergePath = (directory: string) => join(directory, 'merge.json')
@@ -17,15 +28,21 @@ export async function connectMerge(directory: string, raw: string, catalog: (key
   let result: Catalog
   try { result = await catalog(key) }
   catch { throw new Error('Merge catalog validation failed. Check your key and connection; the saved key has not changed.') }
-  const models = [...new Set(result.models.filter(m => m.vendors.some(v => v.status === 'available' && v.supportsToolCalling)).map(m => m.model))]
+  const available = result.models.map(m => ({ ...m, vendors: m.vendors.filter(v => v.status === 'available' && v.supportsToolCalling) })).filter(m => m.vendors.length)
+  const models = [...new Set(available.map(m => m.model))]
   if (!models.length) throw new Error('No available tool-calling models. The saved connection has not changed.')
-  writeJson(mergePath(directory), { key, models, validatedAt: result.fetchedAt })
+  writeJson(mergePath(directory), { key, models, catalog: available, validatedAt: result.fetchedAt })
   return mergeStatus(directory)
 }
 export function mergeStatus(directory: string) {
   if (!existsSync(mergePath(directory))) return { connected: false, models: [] as string[] }
   const saved = readJson<Connection>(mergePath(directory))
-  return { connected: true, models: saved.models, validatedAt: saved.validatedAt }
+  return { connected: true, models: saved.models, catalog: saved.catalog ?? [], validatedAt: saved.validatedAt }
+}
+export function publicMergeCatalog(directory: string) {
+  const connection = mergeStatus(directory)
+  if (!connection.connected || !connection.catalog?.length) return null
+  return { fetchedAt: connection.validatedAt!, models: connection.catalog.filter(m => shortlist.some(s => s.id === m.model)) }
 }
 export function disconnectMerge(directory: string) { rmSync(mergePath(directory), { force: true }) }
 
@@ -33,17 +50,20 @@ export function disconnectMerge(directory: string) { rmSync(mergePath(directory)
 export function mergeAgent(harness: string, model: string) {
   if (!mergeHarnesses.includes(harness as MergeHarness)) throw new Error(`Merge supports: ${mergeHarnesses.join(', ')}.`)
   if (!model || /\s/.test(model)) throw new Error('Select an exact Merge model ID.')
-  const versions = { codex: '0.151.0', 'claude-code': '2.1.251', opencode: '1.18.25', pi: '0.84.4' }
-  const kwargs: Record<string, unknown> = { version: versions[harness as MergeHarness] }
+  const kwargs: Record<string, unknown> = { version: catalog.find(h => h.id === harness)!.version }
   if (harness === 'codex') kwargs.config = {
     model_provider: 'merge-gateway',
     model_providers: { 'merge-gateway': { name: 'Merge Gateway', base_url: openai, env_key: 'OPENAI_API_KEY', wire_api: 'responses', supports_websockets: false } },
   }
   if (harness === 'pi') kwargs.model_api = 'openai-completions'
+  if (harness === 'grok-build') kwargs.grok_config = {
+    models: { default: model, session_summary: model, image_description: model, web_search: model },
+    model: { [model]: { name: model, model, base_url: openai, env_key: 'OPENAI_API_KEY', api_backend: 'chat_completions' } },
+  }
   // Harbor's passthrough adapters split the first provider prefix. Preserve
   // the complete Merge slug as the model sent on the wire.
-  const model_name = harness === 'pi' || harness === 'opencode' ? `openai/${model}` : model
-  return { name: harness, model_name, kwargs, env: harness === 'claude-code'
+  const model_name = ['pi', 'opencode', 'grok-build'].includes(harness) ? `openai/${model}` : model
+  return { name: harness, ...(harness === 'deep-agents' ? { import_path: 'heval_agents:DeepAgents' } : {}), model_name, kwargs, env: harness === 'claude-code'
     ? { ANTHROPIC_BASE_URL: anthropic }
     : { OPENAI_BASE_URL: openai } }
 }

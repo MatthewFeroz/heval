@@ -111,26 +111,35 @@ Browser tests inject sessions through files under `tests/fixtures/`, which are
 excluded from production builds; there is no query parameter or storage flag
 that bypasses authentication in the shipped app.
 
-## First-login walkthrough
+## First evaluation setup
 
-After sign-in, accounts without completed/skipped guide progress see a four-step
-CLI walkthrough before Studio, Reports, or Machines opens. It preserves the
-original destination, resumes interrupted progress, and can be skipped.
-**CLI guide** in Studio reopens it at `/studio?guide=cli`. Anonymous share links
-and the account-free local CLI viewer are unaffected.
+Runner Setup owns one progressive flow: **Set up your machine → Connect your
+computer → Connect your model provider → Run your first evaluation**. Only the
+current action is shown. Evaluations owns configuration, live progress, and all
+run history, including older individual runs. The account menu's **Set up a
+computer** entry opens `/machines?setup=1`.
 
-The `onboardingProgress` table stores the authenticated account's furthest step
-and dismissal status. Backend functions derive the owner from the verified
-identity and never accept an owner ID as input. Finishing the guide records that
-the guide was viewed, not that terminal commands executed. If account storage
-is unavailable, the user can retry or continue without saving guide progress.
+The local setup page opens Heval with its loopback capability in a URL fragment.
+Heval removes it before sign-in and asks the user to confirm the connection.
+A short-lived account pairing is returned to that local page, which connects the
+worker and guides provider configuration. Provider keys remain on the worker.
+`HEVAL_APP_URL` selects the hosted origin for a custom deployment or local test;
+it must use HTTPS, except for localhost development.
 
-The walkthrough uses the published `@mattferoz/heval@0.1.0` commands. Local
-viewing does not upload results; cloud imports require normalized JSON. The
-connected-runner preview still requires a source build and repository access.
-`bun run test:onboarding` exercises the real AuthKit/provider/HTTP-client flow
-with isolated service responses; `bun run test:backend` validates actual Convex
-ownership and persistence logic. Browser fixtures are excluded from builds.
+The final action atomically queues a free Oracle worker check and the model
+experiment. The server permits model work only after a completed check with
+passing results. Closing the browser does not interrupt this sequence. A failed
+check starts no model task; cancellation includes the check. Setup-check trials
+are excluded from the combined model report.
+
+Connection, profile, and result state determine progress. The browser remembers
+only the install acknowledgment and a temporary local handoff. Existing account
+completion preferences remain compatible. `heval setup` is still a preview and
+requires a setup-enabled CLI build until the next npm release.
+
+`bun run test:onboarding:ui` uses the real local setup server and product screens
+with simulated auth, cloud state, and worker/provider adapters. Backend tests
+exercise atomic dispatch, prerequisite failures, cancellation, and ownership.
 
 ## Presentation editing on static hosting
 

@@ -9,6 +9,12 @@ dependencies or install scripts.
 
 ## Start here
 
+The next CLI release adds `npx @mattferoz/heval@latest setup`: a resumable
+Linux worker installation with local account pairing and a masked Merge key
+form. It reuses Docker on Linux, Docker Desktop, or Windows WSL. This command
+is **not in published 0.2.0 yet**. See the [setup walkthrough](https://github.com/MatthewFeroz/heval/blob/main/docs/setup-command.md)
+for prerequisites, agent commands, persistence and upgrade behavior.
+
 For the published local viewer:
 
 ```sh
@@ -105,7 +111,7 @@ From the repository root:
 ```sh
 bun install --frozen-lockfile
 bun run cli:pack
-npm install -g ./.scratch/mattferoz-heval-0.1.0.tgz
+npm install -g ./.scratch/mattferoz-heval-0.2.0.tgz
 heval open
 ```
 
@@ -122,7 +128,23 @@ and is not bundled.
 
 ### One Merge Gateway key for Heval evaluations
 
-The source-built preview supports Codex, Claude Code, OpenCode, and Pi through
+Source builds also support a worker-local browser setup page:
+
+```sh
+heval provider setup merge
+```
+
+Paste your key into the masked field, choose **Verify and save**, then select a
+model and harnesses to prepare a connection check. The key is stored only on the
+worker; setup makes no model calls. Keep the terminal open while using the page.
+The open setup page keeps its link active. After the page closes, the server expires after 15 idle minutes; Ctrl+C closes it immediately.
+Runner setup in Heval links to this page using the URL printed by the command.
+Use `--state` for a custom runner directory, or `--no-browser --port 4174` for
+SSH forwarding. On Windows, run this command inside WSL and open the printed
+link in your Windows browser. Published builds without `provider setup` retain
+the terminal commands below.
+
+The CLI supports Codex, Claude Code, OpenCode, and Pi through
 Harbor 0.23.0. These commands do not change your standalone harness settings.
 Use the same `--state /absolute/directory` on every command when overriding
 the default `~/.heval/runner` state directory.
@@ -188,10 +210,17 @@ harness: run the relevant smoke profiles to verify your chosen combinations.
 
 This preview does not extend the separate Bun web workbench's Pi-only BYOK proxy.
 
-The `0.2.0-preview.0` source build adds `heval runner connect`, `start`, `status`,
-and `cleanup` for Linux machines with Harbor 0.23.0 and Docker. It is not yet
-published on npm. Pair through the hosted Machines page, then keep the daemon
+Version `0.2.0` adds `heval runner connect`, `start`, `status`,
+and `cleanup` for Linux machines with Harbor 0.23.0 and Docker. Install with
+`npm install -g @mattferoz/heval@0.2.0`. Pair through the hosted Machines page,
+then keep the daemon
 running to execute locally approved profiles and save results to your account.
 The default Oracle setup check uses no model API calls. See the
 [connected runner setup guide](https://github.com/MatthewFeroz/heval/blob/main/docs/connected-runners.md)
-for tarball installation, credentials, a Linux service, and recovery.
+for installation, credentials, a Linux service, and recovery.
+
+Use `--benchmark tblite` with the same pinned source checkout for all 100 tasks.
+Task/trial counts and profiles have no fixed product caps; worker-approved
+attempts and report storage limits still apply. Catalog deadlines account for
+task timeouts and scale with requested attempts. See the connected runner guide
+for the budget calculation and upgrade requirements.

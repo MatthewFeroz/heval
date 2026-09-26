@@ -1,9 +1,10 @@
 import { existsSync, mkdirSync, cpSync, readFileSync, renameSync, rmSync } from 'node:fs'
 import { basename, dirname, isAbsolute, join, resolve } from 'node:path'
-import { validateProfiles, type RunnerProfile } from '../../../../src/runners/protocol'
+import { validateProfiles, executionTimeoutSeconds, type RunSettings, type RunnerProfile } from '../../../../src/runners/protocol'
 import { BENCHMARKS, type Benchmark } from '../../../../src/runners/benchmarks'
 import { hashDirectory, randomSecret, readJson, sha256, writeJson } from './files'
-import { mergeAgent, mergePath, mergeStatus, mergeHarnesses } from '../merge'
+import { mergeAgent, mergePath, mergeStatus, selectMergeHarnesses } from '../merge'
+import { bundledAdapters } from './bundled-adapters'
 
 type JsonObject = Record<string, unknown>
 type Descriptor = { id: string; title: string; benchmark: string; config: string; timeoutSeconds: number; envFile?: string; maxAttempts?: number; provider?: 'merge' }
@@ -22,15 +23,15 @@ export function initializeProfiles(directory: string, bundledTask: string) {
 export function loadProfiles(file: string, connectionDirectory = dirname(file)): LocalProfile[] {
   if (readFileSync(file).length > 100_000) throw new Error('The profile registry must be smaller than 100 KB.')
   const registry = readJson<{ schemaVersion: number; profiles: Descriptor[] }>(file)
-  if (registry.schemaVersion !== 1 || !Array.isArray(registry.profiles) || registry.profiles.length > 20) throw new Error('Use a schemaVersion 1 profile registry with at most 20 profiles.')
+  if (registry.schemaVersion !== 1 || !Array.isArray(registry.profiles)) throw new Error('Use a schemaVersion 1 profile registry.')
   const loaded = registry.profiles.map(d => {
     const path = resolve(dirname(file), d.config)
     if (readFileSync(path).length > 100_000) throw new Error('Use a Harbor JSON config smaller than 100 KB.')
     const input = readJson<JsonObject>(path)
     for (const key of Object.keys(input)) if (!['n_attempts', 'agents', 'tasks'].includes(key)) throw new Error(`Unsupported profile config field: ${key}. This release accepts n_attempts, agents, and explicit local tasks.`)
-    if (!Array.isArray(input.agents) || input.agents.length !== 1 || !Array.isArray(input.tasks) || !input.tasks.length || input.tasks.length > 20) throw new Error('Approve one agent/model and 1–20 explicit local task directories per profile.')
+    if (!Array.isArray(input.agents) || input.agents.length !== 1 || !Array.isArray(input.tasks) || !input.tasks.length) throw new Error('Approve one agent/model and one or more explicit local task directories per profile.')
     let agent = object(input.agents[0])
-    if (!['oracle', 'codex', 'claude-code', 'opencode', 'pi', 'terminus-2'].includes(String(agent.name)) || agent.import_path) throw new Error('Use a built-in supported Harbor agent.')
+    if (!['oracle', 'codex', 'claude-code', 'opencode', 'pi', 'terminus-2', 'grok-build', ...(d.provider === 'merge' ? ['deep-agents'] : [])].includes(String(agent.name)) || agent.import_path) throw new Error('Use a built-in supported Harbor agent or the bundled Merge Deep Agents adapter.')
     for (const key of Object.keys(agent)) if (!['name', 'model_name', 'kwargs', 'env', 'override_timeout_sec', 'override_setup_timeout_sec'].includes(key)) throw new Error(`Unsupported agent field: ${key}`)
     if (agent.name !== 'oracle' && (typeof agent.model_name !== 'string' || !agent.model_name)) throw new Error('A model-backed profile needs model_name.')
     const displayModel = String(agent.model_name)
@@ -49,10 +50,13 @@ export function loadProfiles(file: string, connectionDirectory = dirname(file)):
       return path
     })
     const taskHashes = taskPaths.map(hashDirectory)
-    const config = { n_attempts: input.n_attempts ?? 1, n_concurrent_trials: 1, retry: { max_retries: 0 }, agents: [agent], tasks: taskPaths.map(path => ({ path })), environment: { type: 'docker', delete: true, cpu_enforcement_policy: 'limit', memory_enforcement_policy: 'limit' } }
-    const description = { id: d.id, title: d.title, benchmark: d.benchmark, agent: String(agent.name), model: agent.name === 'oracle' ? 'Reference solution (no model)' : displayModel, tasks: taskPaths.length, attempts: Number(config.n_attempts), timeoutSeconds: d.timeoutSeconds, setupCheck: agent.name === 'oracle', taskSet: sha256(JSON.stringify(taskHashes)), vendor: typeof object(agent.env ?? {}).HEVAL_VENDOR === 'string' ? String(object(agent.env ?? {}).HEVAL_VENDOR) : 'Provider default', maxAttempts: d.maxAttempts ?? Number(config.n_attempts) }
+    // Docker's auto policy enforces declared limits, while accepting benchmark
+    // tasks that omit a resource value. Explicit "limit" rejects those tasks.
+    const config = { n_attempts: input.n_attempts ?? 1, n_concurrent_trials: 1, retry: { max_retries: 0 }, agents: [agent], tasks: taskPaths.map(path => ({ path })), environment: { type: 'docker', delete: true, cpu_enforcement_policy: 'auto', memory_enforcement_policy: 'auto' } }
+    const description = { runSettingsVersion: 1 as const, id: d.id, title: d.title, benchmark: d.benchmark, agent: String(agent.name), model: agent.name === 'oracle' ? 'Reference solution (no model)' : displayModel, tasks: taskPaths.length, attempts: Number(config.n_attempts), timeoutSeconds: d.timeoutSeconds, setupCheck: agent.name === 'oracle', taskSet: sha256(JSON.stringify(taskHashes)), vendor: typeof object(agent.env ?? {}).HEVAL_VENDOR === 'string' ? String(object(agent.env ?? {}).HEVAL_VENDOR) : 'Provider default', maxAttempts: d.maxAttempts ?? Number(config.n_attempts) }
     // Include all executable task content and agent settings, excluding local path names.
-    const digest = sha256(JSON.stringify({ description, config: { ...config, tasks: taskHashes } }))
+    const adapter = agent.name === 'deep-agents' ? sha256(readFileSync(join(bundledAdapters(), 'heval_agents.py'), 'utf8')) : undefined
+    const digest = sha256(JSON.stringify({ description, config: { ...config, tasks: taskHashes }, ...(adapter ? { adapter } : {}) }))
     let envFile: string | undefined
     if (d.envFile) { envFile = isAbsolute(d.envFile) ? d.envFile : resolve(dirname(file), d.envFile); if (!existsSync(envFile)) throw new Error('The profile envFile does not exist on this machine.') }
     return { public: { ...description, digest }, config, taskPaths, taskHashes, envFile, ...(d.provider === 'merge' ? { mergeConnection: mergePath(connectionDirectory) } : {}) }
@@ -84,23 +88,33 @@ function installBenchmark(directory: string, id: string, source: string, catalog
 
 /** Add explicit smoke profiles without changing existing user-approved jobs. */
 export function setupMergeProfiles(directory: string, bundledTask: string, model: string, harnesses: string[], benchmark?: { id: string; source: string }, catalog = BENCHMARKS) {
-  if (!harnesses.length || new Set(harnesses).size !== harnesses.length || harnesses.some(h => !mergeHarnesses.includes(h as typeof mergeHarnesses[number]))) throw new Error(`Choose unique harnesses from: ${mergeHarnesses.join(', ')}.`)
+  harnesses = selectMergeHarnesses(harnesses)
   const connection = mergeStatus(directory)
   if (!connection.connected || !connection.models.includes(model)) throw new Error('Connect Merge first and choose a model listed by provider status.')
   const path = initializeProfiles(directory, bundledTask)
   const registry = readJson<{ schemaVersion: number; profiles: Descriptor[] }>(path)
   if (registry.schemaVersion !== 1 || !Array.isArray(registry.profiles)) throw new Error('Invalid existing profile registry.')
-  if (registry.profiles.length + harnesses.length > 20) throw new Error('At most 20 profiles are supported.')
   const entry = benchmark && installBenchmark(directory, benchmark.id, benchmark.source, catalog)
-  // Benchmark profiles include the model so one benchmark can offer several models per harness.
-  const idFor = (harness: string) => entry ? `${entry.id}-${harness}-${sha256(model).slice(0, 8)}` : `merge-${harness}`
+  // Preserve existing CLI profile names while allowing additional models per harness.
+  const idFor = (harness: string) => {
+    if (entry) return `${entry.id}-${harness}-${sha256(model).slice(0, 8)}`
+    const legacy = registry.profiles.find(p => p.id === `merge-${harness}`)
+    if (!legacy) return `merge-${harness}`
+    const config = readJson<{ agents?: { model_name?: string }[] }>(resolve(directory, legacy.config))
+    return config.agents?.[0]?.model_name === model ? legacy.id : `merge-${harness}-${sha256(model).slice(0, 8)}`
+  }
+  const tasks = entry ? entry.taskHashes!.map(([task]) => ({ path: `benchmarks/${entry.id}/${task}` })) : [{ path: 'tasks/heval-setup' }]
+  const configFor = (harness: string) => ({ n_attempts: 1, agents: [{ name: harness, model_name: model }], tasks })
   for (const harness of harnesses) {
-    if (registry.profiles.some(p => p.id === idFor(harness)) || existsSync(join(directory, `${idFor(harness)}.json`))) throw new Error(`${idFor(harness)} already exists; edit or remove that profile before replacing it.`)
+    const id = idFor(harness), existing = registry.profiles.find(p => p.id === id), config = join(directory, `${id}.json`)
+    if (existing || existsSync(config)) {
+      if (!existing || existing.provider !== 'merge' || existing.config !== `${id}.json` || !existsSync(config) || JSON.stringify(readJson(config)) !== JSON.stringify(configFor(harness))) throw new Error(`${id} already exists with different settings; review it before replacing it.`)
+    }
   }
   for (const harness of harnesses) {
     const id = idFor(harness)
-    const tasks = entry ? entry.taskHashes!.map(([task]) => ({ path: `benchmarks/${entry.id}/${task}` })) : [{ path: 'tasks/heval-setup' }]
-    writeJson(join(directory, `${id}.json`), { n_attempts: 1, agents: [{ name: harness, model_name: model }], tasks })
+    if (registry.profiles.some(p => p.id === id)) continue
+    writeJson(join(directory, `${id}.json`), configFor(harness))
     registry.profiles.push(entry
       ? { id, title: `${entry.title}: ${harness} / ${model}`, benchmark: entry.title, config: `${id}.json`, provider: 'merge', timeoutSeconds: entry.timeoutSeconds ?? 3600 }
       : { id, title: `Merge smoke: ${harness}`, benchmark: 'Heval model connection smoke test', config: `${id}.json`, provider: 'merge', timeoutSeconds: 600 })
@@ -120,8 +134,11 @@ export function snapshotProfile(profile: LocalProfile, directory: string) {
 }
 
 /** The browser may vary attempts only inside the worker's explicit approval. */
-export function requestedProfile(profile: LocalProfile, attempts?: number): LocalProfile {
-  if (attempts === undefined) return profile
-  if (!Number.isSafeInteger(attempts) || attempts < 1 || attempts > (profile.public.maxAttempts ?? profile.public.attempts) || attempts * profile.public.tasks > 60) throw new Error('Requested attempts exceed this machine’s approval.')
-  return { ...profile, config: { ...profile.config, n_attempts: attempts } }
+export function requestedProfile(profile: LocalProfile, attempts?: number, settings?: RunSettings): LocalProfile {
+  executionTimeoutSeconds(profile.public, attempts, settings)
+  return { ...profile, config: { ...profile.config, n_attempts: attempts ?? profile.public.attempts,
+    ...(settings ? { n_concurrent_trials: settings.concurrency, retry: { max_retries: settings.retries },
+      environment: { ...object(profile.config.environment),
+        ...(settings.cpus !== undefined ? { override_cpus: settings.cpus } : {}),
+        ...(settings.memoryMb !== undefined ? { override_memory_mb: settings.memoryMb } : {}) } } : {}) } }
 }

@@ -107,18 +107,20 @@ async function queue(index: number) {
 }
 async function status(id: Id<'runnerRuns'>) { return (await ownerApi.query(api.runners.runs)).find(r => r.id === id)?.status }
 try {
-  await page.goto(`${origin}/machines`)
-  await expect(page.getByRole('heading', { name: 'Connect the machine. Run from Evaluations.' })).toBeVisible()
   for (const [i, name] of ['Linux workstation', 'Cloud runner'].entries()) {
-    await page.getByLabel('Machine name').fill(name)
-    await page.getByRole('button', { name: 'Create pairing code' }).click()
+    await page.goto(`${origin}/machines?setup=new`)
+    const installed = page.getByRole('button', { name: 'Setup is open', exact: true })
+    if (await installed.isVisible()) await installed.click()
+    await page.getByRole('button', { name: 'Use a pairing code instead' }).click()
+    await page.getByLabel('Computer name').fill(name)
+    await page.getByRole('button', { name: 'Create pairing code', exact: true }).click()
     const codeField = page.getByLabel('One-time pairing code')
     await expect(codeField).toBeVisible()
-    await expect(page.getByRole('status')).toContainText('Pairing code ready')
     const code = await codeField.inputValue()
     const paired = await connectRunner(states[i], url, code, resolve(root, 'packages/cli/dist/runner-task'))
     machineIds.push(paired.id)
-    await page.reload()
+    await page.waitForURL(`${origin}/machines?setup=1&worker=${paired.id}`)
+    await page.getByRole('button', { name: 'Manage connected computers' }).click()
     await expect(page.getByRole('region', { name: 'Connected machines' }).getByText(name, { exact: true })).toBeVisible()
   }
   const firstDaemon = daemon(0); daemon(1)
@@ -127,10 +129,10 @@ try {
   expect(machines[0].profiles[0].digest).toBe(machines[1].profiles[0].digest)
   await chapter(page, '1 · Two independently paired machines; outbound connections, no forwarded ports')
   await page.screenshot({ path: resolve(evidence, '01-machines.png'), fullPage: true })
-  await page.getByLabel('Run on', { exact: true }).selectOption(machineIds[0])
-  await page.getByRole('button', { name: 'Run setup check' }).click()
-  await expect(page.getByRole('status')).toContainText('Setup check queued')
-  const first = (await ownerApi.query(api.runners.runs))[0].id; runIds.push(first)
+  // This infrastructure smoke deliberately queues only a free Oracle task.
+  // The first-evaluation UI and its model prerequisite are covered by onboarding smoke.
+  const first = await queue(0)
+  await page.goto(`${origin}/evaluations`)
   await expect.poll(() => status(first), { timeout: 20_000 }).toBe('running')
   await chapter(page, '2 · Browser dispatches one real Harbor + Docker setup task, with no model calls')
   // A second queued job moves to B while A owns the original claim.
@@ -138,11 +140,11 @@ try {
   await page.locator(`[data-run-id="${moved}"]`).getByLabel('Move queued evaluation').selectOption(machineIds[1])
   await expect.poll(() => status(moved), { timeout: 20_000 }).toBe('running')
   firstDaemon.kill('SIGKILL'); await firstDaemon.exited
-  await otherPage.goto(`${origin}/machines`)
+  await otherPage.goto(`${origin}/evaluations`)
   await expect(otherPage.locator(`[data-run-id="${first}"]`)).toBeVisible()
   await chapter(page, '3 · Queued work moves to the cloud runner; another browser sees the same active evaluation')
   await forbidden.goto(`${origin}/machines`)
-  await expect(forbidden.getByText('No connected machines yet. Create a pairing code above.')).toBeVisible()
+  await expect(forbidden.getByRole('heading', { name: 'Set up your machine', exact: true })).toBeVisible()
   await expect(otherApi.mutation(api.runners.cancel, { id: first })).rejects.toThrow('not found')
   // Let A finish locally while its daemon is dead. No claim may move or repeat.
   await expect.poll(async () => Bun.file(resolve(states[0], 'runs', first, 'outcome.json')).exists(), { timeout: 120_000 }).toBe(true)
@@ -176,13 +178,15 @@ try {
   await page.getByRole('button', { name: 'Revoke link', exact: true }).click()
   await page.getByRole('button', { name: 'Yes, revoke link', exact: true }).click()
   await expect(otherPage.getByRole('heading', { name: 'This link is unavailable' })).toBeVisible()
-  await page.goto(`${origin}/machines`)
+  await page.goto(`${origin}/evaluations`)
   const cancelled = await queue(1)
   await expect.poll(() => status(cancelled), { timeout: 20_000 }).toBe('running')
   await page.locator(`[data-run-id="${cancelled}"]`).getByRole('button', { name: 'Cancel evaluation' }).click()
   await expect.poll(() => status(cancelled), { timeout: 90_000 }).toBe('cancelled')
   await chapter(page, '7 · Stop requests wait for the machine’s cleanup acknowledgment')
   await ownerApi.mutation(api.runners.revoke, { id: machineIds[1] })
+  await page.goto(`${origin}/machines`)
+  await page.getByRole('button', { name: 'Manage connected computers' }).click()
   await expect(page.getByRole('region', { name: 'Connected machines' }).getByText('Cloud runner', { exact: true })).toHaveCount(0)
   await chapter(page, '8 · Disconnecting a runner revokes its credential; saved reports remain')
   await page.setViewportSize({ width: 390, height: 844 })

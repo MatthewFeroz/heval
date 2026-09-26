@@ -4,6 +4,12 @@ export const HARNESS: Record<string, { name: string; logo: string; color: string
   dsh: { name: 'DeepSeek Harness', logo: '/harnesses/deepseek.svg', color: '#4d6bfe' },
   codex: { name: 'Codex CLI', logo: '/harnesses/codex.svg', color: '#79b8ff' },
   opencode: { name: 'OpenCode', logo: '/harnesses/opencode.svg', color: '#b9e769' },
+  'grok-build': { name: 'Grok Build', logo: '/harnesses/grok.svg', color: '#d9d9d9' },
+  'deep-agents': { name: 'Deep Agents', logo: '/harnesses/deepagents.svg', color: '#7ec8b0' },
+  cursor: { name: 'Cursor', logo: '/harnesses/cursor.svg', color: '#b8b8b8' },
+  'cursor-cli': { name: 'Cursor', logo: '/harnesses/cursor.svg', color: '#b8b8b8' },
+  antigravity: { name: 'Antigravity', logo: '/harnesses/antigravity.png', color: '#9dbaff' },
+  'antigravity-cli': { name: 'Antigravity', logo: '/harnesses/antigravity.png', color: '#9dbaff' },
   pi: { name: 'Pi Agent', logo: '/harnesses/pi.svg', color: '#c69cff' },
   'pi-agent': { name: 'Pi Agent', logo: '/harnesses/pi.svg', color: '#c69cff' },
 }

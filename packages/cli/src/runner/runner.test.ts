@@ -1,3 +1,4 @@
+import { runTimeoutSeconds, validateProfiles } from '../../../../src/runners/protocol'
 import { afterEach, expect, test } from 'bun:test'
 import { mkdtempSync, rmSync, readFileSync, writeFileSync, statSync, symlinkSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -41,10 +42,22 @@ test('snapshot isolates execution from later edits while preserving task names',
   expect(readFileSync(instruction, 'utf8')).toBe(before)
   expect(() => snapshotProfile(profile, state())).toThrow('changed')
 })
+
+test('tasks with omitted resource values remain unchanged and use Harbor Docker auto enforcement', () => {
+  const dir = state(), target = state(), registry = initializeProfiles(dir, task)
+  const toml = join(dir, 'tasks/heval-setup/task.toml')
+  const content = readFileSync(toml, 'utf8').replace(/^cpus\s*=.*\r?\n/gm, '')
+  writeFileSync(toml, content)
+  const profile = loadProfiles(registry)[0]
+  snapshotProfile(profile, target)
+  const config = readJson<{ tasks: { path: string }[]; environment: Record<string, unknown> }>(join(target, 'harbor.json'))
+  expect(config.environment).toEqual({ type: 'docker', delete: true, cpu_enforcement_policy: 'auto', memory_enforcement_policy: 'auto' })
+  expect(readFileSync(join(config.tasks[0].path, 'task.toml'), 'utf8')).toBe(content)
+})
 test('profile approval rejects implicit datasets, multiple agents, symlinks and excess attempts', () => {
   const dir = state(), registry = initializeProfiles(dir, task)
   const original = readJson<Record<string, unknown>>(join(dir, 'setup.json'))
-  for (const change of [{ datasets: [{ name: 'latest' }] }, { agents: [{ name: 'oracle' }, { name: 'codex' }] }, { agents: [{ import_path: 'arbitrary' }] }, { n_attempts: 100 }]) {
+  for (const change of [{ datasets: [{ name: 'latest' }] }, { agents: [{ name: 'oracle' }, { name: 'codex' }] }, { agents: [{ import_path: 'arbitrary' }] }, { n_attempts: 1.5 }]) {
     writeJson(join(dir, 'setup.json'), { ...original, ...change })
     expect(() => loadProfiles(registry)).toThrow()
   }
@@ -97,4 +110,38 @@ test('browser attempts stay within worker approval and retain a stable task iden
   doc.profiles[0].maxAttempts = 2
   writeJson(registry, doc)
   expect(loadProfiles(registry)[0].public.digest).not.toBe(profile.public.digest)
+})
+
+test('100-task profiles and registries above 20 entries retain approval and scaled deadlines', () => {
+  const dir = state(), registry = initializeProfiles(dir, task)
+  const doc = readJson<{ profiles: { id: string; timeoutSeconds: number; maxAttempts?: number }[] }>(registry)
+  doc.profiles = Array.from({length:21}, (_,i) => ({...doc.profiles[0],id:`profile-${i}`,timeoutSeconds:600000,maxAttempts:3}))
+  writeJson(registry, doc)
+  writeJson(join(dir, 'setup.json'), {n_attempts:1, agents:[{name:'oracle'}], tasks:Array.from({length:100},()=>({path:'tasks/heval-setup'}))})
+  const loaded=loadProfiles(registry)
+  expect(loaded).toHaveLength(21)
+  const profile=loaded[0]
+  expect(profile.public.tasks).toBe(100)
+  expect(requestedProfile(profile,3).config.n_attempts).toBe(3)
+  expect(runTimeoutSeconds(profile.public,3)).toBe(1800000)
+  expect(runTimeoutSeconds({...profile.public,attempts:2},1)).toBe(300000)
+  for (const change of [{tasks:0},{attempts:NaN},{timeoutSeconds:Infinity},{maxAttempts:Number.MAX_SAFE_INTEGER},{timeoutSeconds:Number.MAX_SAFE_INTEGER}]) {
+    expect(()=>validateProfiles([{...profile.public,...change}])).toThrow()
+  }
+})
+
+
+test('requested parallelism and resources reach the isolated Harbor job without changing approved defaults', () => {
+ const dir=state(), target=state(), profile=loadProfiles(initializeProfiles(dir,task))[0]
+ const settings={concurrency:2,retries:1,cpus:2,memoryMb:4096,timeoutSeconds:900}
+ const configured=requestedProfile(profile,1,settings)
+ snapshotProfile(configured,target)
+ const config=readJson<Record<string,unknown>>(join(target,'harbor.json'))
+ expect(config.n_concurrent_trials).toBe(2)
+ expect(config.retry).toEqual({max_retries:1})
+ expect(config.environment).toMatchObject({override_cpus:2,override_memory_mb:4096,cpu_enforcement_policy:'auto',memory_enforcement_policy:'auto'})
+ expect(profile.config.n_concurrent_trials).toBe(1)
+ expect(profile.config.environment).not.toHaveProperty('override_memory_mb')
+ expect(()=>requestedProfile(profile,1,{concurrency:0,retries:0})).toThrow()
+ expect(()=>requestedProfile({...profile,public:{...profile.public,runSettingsVersion:undefined}},1,settings)).toThrow('Update this worker')
 })

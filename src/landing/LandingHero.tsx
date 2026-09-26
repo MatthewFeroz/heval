@@ -2,17 +2,7 @@ import { useEffect, useRef } from 'react'
 import { ArrowRight, ArrowUpRight, Play } from 'lucide-react'
 import { startHomeMotion } from './motion'
 
-const harnesses = [
-  { id: 'claude', name: 'Claude Code', logo: 'claude.svg' },
-  { id: 'opencode', name: 'OpenCode', logo: 'opencode.svg' },
-  { id: 'antigravity', name: 'Antigravity', logo: 'antigravity.png' },
-  { id: 'codex', name: 'Codex CLI', logo: 'codex.svg' },
-  { id: 'grok', name: 'Grok', logo: 'grok.svg' },
-  { id: 'pi', name: 'Pi Agent', logo: 'pi.svg' },
-  { id: 'cursor', name: 'Cursor', logo: 'cursor.svg' },
-  { id: 'deep-agents', name: 'Deep Agents', logo: 'deepagents.svg' },
-  { id: 'deepseek', name: 'DeepSeek Harness', logo: 'deepseek.svg' },
-]
+import harnesses from '../harness-catalog.json'
 
 export function LandingHero() {
   const hero = useRef<HTMLElement>(null)
@@ -27,7 +17,7 @@ export function LandingHero() {
       <div className="hero-grid" aria-hidden="true" />
       <div className="hero-harnesses" ref={field} role="group" aria-label="Coding agent harness ecosystem">
         {harnesses.map(harness => (
-          <span className={`hero-float-mark hf-${harness.id}`} key={harness.id}>
+          <span className={`hero-float-mark hf-${harness.heroId}`} key={harness.id}>
             <span className="hero-harness"><img src={`/harnesses/${harness.logo}`} alt={harness.name} width="64" height="64" /></span>
           </span>
         ))}
