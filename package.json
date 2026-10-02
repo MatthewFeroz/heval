@@ -27,6 +27,7 @@
     "test:runners:smoke": "bun scripts/runner-smoke.ts",
     "preview": "vite preview --host 0.0.0.0",
     "report": "bun harbor/report/build-report.ts",
+    "studies:refresh": "bun scripts/refresh-study-stats.ts",
     "poster": "bun harbor/report/build-poster.ts",
     "social:build": "bun harbor/social/build-completion.ts",
     "social:check": "HYPERFRAMES_NO_TELEMETRY=1 hyperframes check results/harbor/social/demo-evaluation --at 0,2.8,5.7,7.9",
