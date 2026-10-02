@@ -1,0 +1,29 @@
+{
+  "statsAsOf": "2026-09-30",
+  "studies": [
+    {
+      "id": "swe-lite-harnesses",
+      "headline": "The harness alone lifted accuracy from 61% to 75%",
+      "detail": "DeepSeek V4.1 Flash on 30 SWE-bench Lite bug fixes",
+      "published": "2026-09-30",
+      "poster": "/studies/swe-lite-harnesses.jpg",
+      "posterAlt": "Completion rate, cost per success, and median time for DeepSeek V4.1 Flash in five coding-agent harnesses",
+      "xPostId": "2105296717432135759",
+      "xUrl": "https://x.com/merge_api/status/2105296717432135759",
+      "views": 26788,
+      "likes": 292
+    },
+    {
+      "id": "open-weight-vs-sonnet",
+      "headline": "GLM 5.3 beat Claude Sonnet 5 for a tenth of the cost",
+      "detail": "20 Terminal-Bench tasks, all in Codex",
+      "published": "2026-09-15",
+      "poster": "/studies/open-weight-vs-sonnet.jpg",
+      "posterAlt": "Completion rate, cost per success, and median time for five open-weight models and Claude Sonnet 5",
+      "xPostId": "2099853277600895375",
+      "xUrl": "https://x.com/merge_api/status/2099853277600895375",
+      "views": 28616,
+      "likes": 345
+    }
+  ]
+}

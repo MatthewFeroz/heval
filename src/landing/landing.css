@@ -55,24 +55,10 @@
 /* Carry the same restrained surfaces and spacing through the product sections. */
 .landing-page .kicker { color: var(--muted); font-size: 10px; letter-spacing: .12em; }
 .landing-page .race-area { width: min(1176px, calc(100% - 64px)); margin: 0 auto; padding: 0 0 110px; }
-.landing-page .section-heading h2, .landing-page .studio-intro h2 { font-weight: 500; letter-spacing: -.04em; line-height: 1.1; }
+.landing-page .section-heading h2 { font-weight: 500; letter-spacing: -.04em; line-height: 1.1; }
 .landing-page .split-heading > p { color: var(--muted); line-height: 1.7; }
 .landing-page .real-terminal { height: 100%; }
-.landing-page .studio-showcase { padding-block: 100px; border-top: 1px solid var(--line-soft); gap: 80px; }
-.landing-page .studio-intro h2 { font-size: clamp(32px, 3.5vw, 48px); }
-.landing-page .studio-intro p { color: var(--muted); font-size: 16px; }
 .landing-page .text-button { font-size: 14px; font-weight: 500; }
-.landing-page .evaluation-card { border: 1px solid var(--line); background: linear-gradient(160deg, #ffffff05, #ffffff00), var(--panel); border-radius: 16px; padding: 30px; }
-.landing-page .evaluation-header, .landing-page .evaluation-card p, .landing-page .evaluation-stats dt, .landing-page .completion-heading > span, .landing-page .completion-row strong span, .landing-page .evaluation-actions small { color: var(--muted); }
-.landing-page .dataset-badge { color: var(--text-secondary); }
-.landing-page .evaluation-card h3 { font-size: 26px; font-weight: 500; }
-.landing-page .evaluation-stats { border-color: var(--line); }
-.landing-page .evaluation-stats dd { color: var(--white); }
-.landing-page .completion-track { background: var(--line-soft); }
-.landing-page .completion-track i { background: linear-gradient(90deg, var(--faint), var(--text-secondary)); }
-.landing-page .completion-row > span { color: var(--text-secondary); }
-.landing-page .evaluation-actions a { border-color: var(--line); background: #ffffff03; transition: background .2s, border-color .2s; }
-.landing-page .evaluation-actions a:hover { background: #ffffff07; border-color: var(--line-strong); }
 .landing-page .centered-heading p { font-size: 16px; color: var(--muted); }
 .landing-page .method-grid { gap: 16px; }
 .landing-page .method-step { border: 1px solid var(--line); border-radius: 14px; padding: 26px; background: linear-gradient(180deg, #ffffff04, transparent); }
@@ -93,7 +79,6 @@
 @media (max-width: 1180px) {
   .hf-claude, .hf-codex { --s: 80px; }
   .hf-grok, .hf-pi { --s: 68px; }
-  .landing-page .studio-showcase { gap: 40px; }
 }
 @media (max-width: 960px) {
   .landing-page .race-area { width: min(860px, calc(100% - 24px)); }
@@ -134,9 +119,6 @@
   .hero-harnesses { overflow: clip; }
   .landing-page .race-area { width: calc(100% - 24px); padding-block: 0 65px; }
   .landing-page .terminal-body { height: 300px; }
-  .landing-page .studio-showcase { padding-block: 64px; gap: 28px; }
-  .landing-page .studio-intro p { font-size: 15px; }
-  .landing-page .evaluation-card { padding: 20px; }
   .landing-page .section-pad { padding-block: 72px; }
   .landing-page .section-heading h2 { font-size: 38px; }
   .landing-page .method-grid { grid-template-columns: 1fr; gap: 12px; margin-top: 32px; }
@@ -162,4 +144,38 @@
   .hf-deepseek { --y: 79px; --s: 36px; }
   .hf-deep-agents { --x: -17vw; --s: 38px; }
   .hf-cursor { --x: 17vw; --s: 38px; }
+}
+
+/* Published studies: a scroll-snapped rail of the posters shared on X. */
+.landing-page .studies-section { padding-block: 64px 100px; border-top: 1px solid var(--line-soft); }
+.studies-head { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 20px; }
+.studies-head h2 { margin: 0; font-size: 32px; font-weight: 500; letter-spacing: -.04em; line-height: 1.1; }
+.studies-nav { display: flex; align-items: center; gap: 8px; }
+.studies-nav span { margin-right: 8px; color: var(--faint); font-size: 13px; white-space: nowrap; }
+.studies-nav button { display: grid; place-items: center; width: 34px; height: 34px; border: 1px solid var(--line-strong); border-radius: var(--radius-control); background: var(--panel); color: var(--white); cursor: pointer; transition: background .18s; }
+.studies-nav button:hover { background: var(--panel-3); }
+.studies-rail { display: grid; grid-auto-flow: column; grid-auto-columns: calc((100% - 14px) / 2.25); gap: 14px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; mask-image: linear-gradient(90deg, #000 88%, transparent); }
+.studies-rail::-webkit-scrollbar { display: none; }
+.studies-rail.at-end { mask-image: none; }
+.study-card { display: flex; flex-direction: column; overflow: hidden; scroll-snap-align: start; border: 1px solid var(--line); border-radius: var(--radius-card); background: var(--panel); color: inherit; text-decoration: none; transition: border-color .18s; }
+a.study-card:hover { border-color: var(--line-strong); }
+.study-card > img, .study-placeholder-art { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; border-bottom: 1px solid var(--line); }
+.study-body { display: flex; flex: 1; flex-direction: column; padding: 16px 18px; }
+.study-body h3, .study-body p, .study-meta span { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.study-body h3 { margin: 0; font-size: 18px; font-weight: 500; letter-spacing: -.035em; line-height: 1.3; }
+.study-body p { margin: 6px 0 0; color: var(--muted); font-size: 14px; }
+.study-meta { display: flex; justify-content: space-between; gap: 12px; margin-top: auto; padding-top: 12px; color: var(--faint); font-size: 13px; }
+.study-meta span:last-child { display: inline-flex; align-items: center; gap: 6px; }
+.study-meta strong { color: var(--text-secondary); font-weight: 500; }
+.study-x { width: 14px; height: 14px; flex: none; }
+.study-placeholder { border-style: dashed; }
+.study-placeholder h3 { color: var(--faint); }
+.study-placeholder-art { display: grid; place-items: center; background: repeating-linear-gradient(135deg, #ffffff05 0 12px, transparent 12px 24px); }
+.study-placeholder-art span { padding: 6px 14px; border: 1px dashed var(--line-strong); border-radius: var(--radius-pill); color: var(--faint); font-size: 13px; }
+@media (max-width: 800px) {
+  .studies-rail { grid-auto-columns: 86%; }
+  .studies-nav span { display: none; }
+  .study-body h3, .study-body p { white-space: normal; }
+  .studies-head h2 { font-size: 26px; }
+  .landing-page .studies-section { padding-block: 48px 64px; }
 }

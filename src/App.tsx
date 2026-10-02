@@ -1,19 +1,16 @@
 import { useRef, useState } from 'react'
 import {
-  ArrowRight,
-  BarChart3,
   Clock3,
   Coins,
-  ExternalLink,
   Zap,
 } from 'lucide-react'
 import { featuredExperiment, type Runner } from './data'
-import featuredResults from '../results/harbor/demo-evaluation.json'
 import { publicAuth, type AppAuth } from './auth'
 import { Signup } from './Signup'
 import { STATIC_SITE } from './deployment'
 import { LandingHero } from './landing/LandingHero'
 import { HarnessTui } from './landing/HarnessTui'
+import { StudiesRail } from './landing/StudiesRail'
 import { useSectionMotion } from './landing/useSectionMotion'
 import { useDemoAutoplay } from './landing/useDemoAutoplay'
 import { Brand, SiteHeader } from './components/SiteHeader'
@@ -21,18 +18,6 @@ import './landing/landing.css'
 
 const runnerEnd = (runner: Runner) => Math.max(...runner.events.map((event) => event.at))
 const maxTime = Math.max(...featuredExperiment.runners.map(runnerEnd))
-const featuredJob = {
-  job: featuredResults.job,
-  models: [...new Set(featuredResults.rows.map((row) => row.model))],
-  tasks: [...new Set(featuredResults.rows.map((row) => row.task))],
-  trials: featuredResults.rows.length,
-}
-const completionResults = featuredJob.models.map((model) => {
-  const rows = featuredResults.rows.filter((row) => row.model === model)
-  return { model: rows[0].modelShort, passed: rows.filter((row) => row.passed === 1).length, total: rows.length }
-}).sort((a, b) => b.passed / b.total - a.passed / a.total)
-const studioUrl = `/studio?job=${featuredJob.job}&recipe=bar&x=modelShort&color=none&measure=passed`
-
 const formatTokens = (tokens: number | null) => tokens === null ? 'pending' : `${(tokens / 1000).toFixed(1)}k`
 
 function RunnerLane({ runner, time, focused, onFocus, rawData, liveStatus, onLiveRun }: { runner: Runner; time: number; focused: boolean; onFocus: () => void; rawData?: string; liveStatus?: string; onLiveRun: () => void }) {
@@ -105,44 +90,6 @@ function RaceStage({ auth }: { auth: AppAuth }) {
   )
 }
 
-function StudioShowcase() {
-  return (
-    <section data-home-reveal className="studio-showcase shell" aria-labelledby="studio-heading">
-      <div className="studio-intro">
-        <span className="kicker">THE WORKSPACE</span>
-        <h2 id="studio-heading">Turn evaluation results<br />into a clear comparison.</h2>
-        <p>Open a published evaluation or bring your own export. Compare success rates, cost, and time; filter down to a task; then inspect the trials behind each chart.</p>
-        <a className="text-button" href={studioUrl}>Explore this evaluation <ArrowRight size={16} /></a>
-      </div>
-      <div className="evaluation-card">
-        <div className="evaluation-header"><span>EXAMPLE EVALUATION</span><span className="dataset-badge">Synthetic demo</span></div>
-        <h3>Six example models. The same task set.</h3>
-        <p>Invented data for exploring Heval</p>
-        <dl className="evaluation-stats">
-          <div><dt>Models</dt><dd>{featuredJob.models.length}</dd></div>
-          <div><dt>Tasks</dt><dd>{featuredJob.tasks.length}</dd></div>
-          <div><dt>Trials</dt><dd>{featuredJob.trials}</dd></div>
-        </dl>
-        <div className="completion-chart" role="figure" aria-label="Completed tasks by model, synthetic demonstration">
-          <div className="completion-heading"><strong>Tasks completed</strong><span>Passed / attempted</span></div>
-          {completionResults.map((result) => (
-            <div className="completion-row" key={result.model}>
-              <span>{result.model}</span>
-              <div className="completion-track" aria-hidden="true"><i style={{ width: `${result.passed / result.total * 100}%` }} /></div>
-              <strong>{result.passed}<span> / {result.total}</span></strong>
-            </div>
-          ))}
-        </div>
-        <div className="evaluation-actions">
-          <a href={studioUrl}><BarChart3 size={17} /><span><strong>Compare completion rates</strong><small>Open the interactive chart in Studio</small></span><ArrowRight size={16} /></a>
-          <a href={`/results/harbor/${featuredJob.job}.json`}><ExternalLink size={17} /><span><strong>Download example data</strong><small>Synthetic trials for exploring Heval</small></span><ArrowRight size={16} /></a>
-        </div>
-        <p className="evaluation-note">Synthetic tasks, model names, and measurements. This example demonstrates the interface and is not a benchmark result.</p>
-      </div>
-    </section>
-  )
-}
-
 function Methodology() {
   const steps = [
     ['01', 'Pin the stack', 'Harness, model, configuration, task image, budget, and evaluator are recorded in one manifest.'],
@@ -183,7 +130,7 @@ export default function App({ auth = publicAuth }: { auth?: AppAuth }) {
         <section data-home-reveal className="race-area" id="compare" aria-label="Interactive coding-agent replay">
           <RaceStage auth={auth} />
         </section>
-        <StudioShowcase />
+        <StudiesRail />
         <Methodology />
         {!STATIC_SITE && <Signup />}
       </main>
