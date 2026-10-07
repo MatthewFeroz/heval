@@ -2,16 +2,17 @@
 
 For the upcoming automated installation, see [one-command setup](setup-command.md).
 It installs Harbor and the worker runtime in Docker and opens a local pairing
-and provider form. That feature is not in published CLI 0.2.0; the manual
-walkthrough below remains usable with that release.
+and provider form. That feature is not in published CLI 0.2.0. This walkthrough
+now targets the source-built CLI with Harbor 0.24.0; published CLI 0.2.0 still
+requires 0.23.0.
 
 This walkthrough takes you from a fresh Linux worker to a saved evaluation in
 Heval. The first saved report uses **Oracle**, Harbor’s reference solution,
 with **no provider credentials or model calls**. You can stop after step 9.
 Steps 10–15 optionally add one model through Merge Gateway and the Codex harness.
 
-The manual installation instructions target **Ubuntu 24.04**, **Heval CLI 0.2.0**
-and **Harbor 0.23.0**.
+The manual installation instructions target **Ubuntu 24.04**, the **source-built Heval CLI**
+and **Harbor 0.24.0**.
 Other Linux distributions need different prerequisite installation commands;
 the Heval commands are the same.
 
@@ -23,8 +24,8 @@ A 2026-10-03 local walkthrough separately verified synthetic browser
 onboarding and real local Convex → Linux worker → Oracle → saved reports. Fresh-account Clerk sign-in remains a human
 acceptance step; this record does not validate a hosted deployment or npm release.
 
-The npm installation needs Node.js 22 or newer. It does **not** require Bun,
-a repository checkout, or building a package from source.
+Installing a prepared tarball needs Node.js 22 or newer. Building that tarball
+from a checkout also needs the pinned Bun version.
 
 ## What runs where
 
@@ -165,16 +166,24 @@ Install Python and the Harbor version Heval expects:
 
 ```sh
 uv python install 3.12
-uv tool install --python 3.12 'harbor==0.23.0'
+uv tool install --python 3.12 'harbor==0.24.0'
 harbor --version
 ```
 
-Harbor must report `0.23.0`. The runner checks that version explicitly.
+Harbor must report `0.24.0`. The runner checks that version explicitly.
 
-## 5. Install Heval from npm
+## 5. Install the source-built Heval tarball
+
+Build from a checkout of this repository, then install the resulting artifact
+on the worker. You can build on another machine and copy the tarball to the
+worker.
 
 ```sh
-npm install -g @mattferoz/heval@0.2.0
+git clone --branch main https://github.com/MatthewFeroz/heval.git
+cd heval
+bun install --frozen-lockfile
+bun run cli:pack
+npm install -g ./.scratch/mattferoz-heval-0.2.0.tgz
 heval --version
 heval --help
 ```
@@ -182,8 +191,8 @@ heval --help
 Expect version `0.2.0`. The help must list `runner connect`, `runner start`,
 `runner setup`, and `provider connect merge`.
 
-The same npm command upgrades an older installation. Finish active evaluations
-before replacing their CLI installation.
+Installing a newer tarball the same way upgrades an older installation. Finish
+active evaluations before replacing their CLI installation.
 
 If `heval` still reports `0.1.0`, run `command -v heval` to identify which
 installation your terminal is using. The old local viewer cannot connect a worker.

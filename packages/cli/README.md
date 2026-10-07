@@ -73,7 +73,10 @@ heval doctor --json
 heval doctor --strict
 ```
 
-Doctor checks Node, Harbor **0.23.0**, Docker daemon availability, optional Bun,
+This source-built CLI targets Harbor 0.24.0. Published CLI 0.2.0 still expects
+0.23.0; build and install this checkout before upgrading a worker.
+
+Doctor checks Node, Harbor **0.24.0**, Docker daemon availability, optional Bun,
 and known provider credential variable names. It never prints credential
 values, installs software, or calls a model. Presence of an environment variable
 does not verify account access, provider routing, or whether a particular job
@@ -90,7 +93,7 @@ social/video rendering. SVG/PNG chart downloads run in your browser.
 Use Harbor for execution, then open its output:
 
 ```sh
-uv tool install harbor==0.23.0
+uv tool install harbor==0.24.0
 harbor run -c ./your-job.yaml --print-config
 # After configuring credentials and reviewing the job:
 harbor run -c ./your-job.yaml
@@ -145,7 +148,7 @@ link in your Windows browser. Published builds without `provider setup` retain
 the terminal commands below.
 
 The CLI supports Codex, Claude Code, OpenCode, and Pi through
-Harbor 0.23.0. These commands do not change your standalone harness settings.
+Harbor 0.24.0. These commands do not change your standalone harness settings.
 Use the same `--state /absolute/directory` on every command when overriding
 the default `~/.heval/runner` state directory.
 
@@ -211,7 +214,7 @@ harness: run the relevant smoke profiles to verify your chosen combinations.
 This preview does not extend the separate Bun web workbench's Pi-only BYOK proxy.
 
 Version `0.2.0` adds `heval runner connect`, `start`, `status`,
-and `cleanup` for Linux machines with Harbor 0.23.0 and Docker. Install with
+and `cleanup` for Linux machines with Harbor 0.24.0 and Docker. Install with
 `npm install -g @mattferoz/heval@0.2.0`. Pair through the hosted Machines page,
 then keep the daemon
 running to execute locally approved profiles and save results to your account.

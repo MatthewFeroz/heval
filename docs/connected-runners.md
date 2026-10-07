@@ -23,22 +23,50 @@ Browser on laptop / another browser session
 
 Your browser doesn't need to stay open. Each machine runs a small polling daemon; a separate local supervisor owns each Harbor execution. Closing/restarting the polling daemon does not terminate that supervisor. The daemon reconnects to the same run; repeated delivery attempts save one result. A machine reboot interrupts execution; a run is never automatically repeated on another machine.
 
-The current source pin is Harbor 0.23.0. It is covered by the required
+The current source pin is Harbor 0.24.0. It is covered by the required
 connected-evaluation CI job, which runs the setup profile through a live daemon,
 Harbor and Docker and verifies the resulting combined report. Older archived
 manual smoke evidence may still record the Harbor version used when it was
 captured.
+
+This pin applies to the source-built CLI and the next release. Published CLI
+0.2.0 still requires Harbor 0.23.0. Build and install this checkout's tarball
+before upgrading an existing worker to 0.24.0.
+
+## Upgrading an existing worker to Harbor 0.24.0
+
+Finish or cancel active evaluations before replacing the worker runtime. Rebuild
+the CLI tarball, install it locally, then rerun `heval setup` for a managed
+worker. Setup refuses to replace a container built from a different artifact;
+stop and remove only the container, preserving the worker's persistent volume,
+then rerun setup with the same name. See [worker upgrades](setup-command.md).
+For a manually prepared Linux worker, install the exact supported version with
+`uv tool install --upgrade 'harbor==0.24.0'`, then check `heval doctor` before
+restarting the daemon.
+
+Harbor 0.24.0 validates built-in agent options at preflight. Review custom kwargs
+with `harbor agent schema AGENT`. It also uses each harness's own reasoning
+default when effort is omitted. Set `reasoning_effort` or `thinking` explicitly
+when comparing runs that require a fixed effort. Pi now preserves requested
+thinking on custom endpoints and exports ATIF trajectories. Separate verifier
+images take precedence over agent images, and multi-step verifier files no
+longer leak into the next agent phase. See the
+[upstream release notes](https://github.com/harbor-framework/harbor/releases/tag/v0.24.0).
+
+Keep historical artifacts unchanged. Record Harbor 0.24.0 and the resolved
+agent options with new evaluation snapshots; runs made under different runtime
+versions or reasoning settings are different treatments.
 
 New to this setup? Follow [Your first Heval evaluation](first-evaluation.md)
 for a command-by-command walkthrough from a fresh Ubuntu worker to a saved result.
 
 ## 1. Install the preview on Linux
 
-Use a dedicated Linux machine or VM you control, with Node.js 22+, Docker Engine and Compose available to your account, Python 3.12+, and Harbor **0.23.0**. The machine must have outbound HTTPS access to your Convex deployment and any image/model providers used by its tasks. The browser never receives access to the Docker socket.
+Use a dedicated Linux machine or VM you control, with Node.js 22+, Docker Engine and Compose available to your account, Python 3.12+, and Harbor **0.24.0**. The machine must have outbound HTTPS access to your Convex deployment and any image/model providers used by its tasks. The browser never receives access to the Docker socket.
 
 Docker access grants substantial control of the host. This is a personal/trusted-worker architecture, not a public sandbox for untrusted users. Approve task files and agent configuration on the worker itself. Start with one task and one attempt.
 
-Install the CLI on the Linux worker:
+Published CLI 0.2.0 uses Harbor 0.23.0. Its installation command is:
 
 ```sh
 npm install -g @mattferoz/heval@0.2.0
@@ -51,7 +79,8 @@ in the help output. Bun and a repository checkout are not required for the npm
 installation. Use the same command to upgrade an older installation, after
 active evaluations finish.
 
-Alternatively, build the CLI from source (Bun is needed only for this build):
+For Harbor 0.24.0, build the CLI from source (Bun is needed only for this
+build):
 
 ```sh
 git clone --branch main https://github.com/MatthewFeroz/heval.git
@@ -67,7 +96,7 @@ Alternatively, copy the built tarball to each machine and install it with `npm i
 With `uv` installed, install the pinned Harbor version:
 
 ```sh
-uv tool install 'harbor==0.23.0'
+uv tool install 'harbor==0.24.0'
 harbor --version
 docker info
 docker compose version
