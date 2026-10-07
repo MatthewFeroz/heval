@@ -11,6 +11,7 @@ import { homedir } from 'node:os'
 import { basename, join, resolve } from 'node:path'
 import { SLOW_TRIAL_SECONDS, type JobExport, type TrialRow } from '../../src/charts/trial'
 import { loadCatalog, priceTokens, routeFor, type Catalog } from '../gateway/catalog'
+import { countRequests, readProxyLog, readTurns, type Window } from './turns'
 
 type Json = Record<string, unknown>
 
@@ -43,8 +44,12 @@ function findReward(node: unknown): number | null {
   return null
 }
 
-/** `requireComplete` rejects missing results; `verifiedOnly` skips unfinished terminal artifacts. */
-export type ReadOptions = { requireComplete?: boolean; verifiedOnly?: boolean }
+/**
+ * `requireComplete` rejects missing results; `verifiedOnly` skips unfinished terminal artifacts.
+ * `proxyLog` is the vendor proxy's JSONL log for this job, used to count model
+ * requests per attempt; see countRequests() for when that attribution holds.
+ */
+export type ReadOptions = { requireComplete?: boolean; verifiedOnly?: boolean; proxyLog?: string }
 
 export function readTrial(dir: string, catalog?: Catalog | null, opts: ReadOptions = {}): TrialRow | null {
   const cfgPath = join(dir, 'config.json'), resPath = join(dir, 'result.json')
@@ -132,15 +137,46 @@ export function readTrial(dir: string, catalog?: Catalog | null, opts: ReadOptio
     costSource,
     startedAt: str(res.started_at),
     error,
+    ...readTurns(dir, agent, kwargs),
+    modelRequests: null,
+    modelRequestErrors: null,
+    vendorMismatches: null,
+    proxyInputTokens: null,
+    proxyCachedTokens: null,
+    proxyOutputTokens: null,
+    proxyCostUsd: null,
+    proxyCostSource: null,
   }
+}
+
+function agentWindow(dir: string, trial: string): Window | null {
+  const span = (JSON.parse(readFileSync(join(dir, 'result.json'), 'utf8')) as Json).agent_execution as Json | undefined
+  const start = Date.parse(String(span?.started_at ?? '')), end = Date.parse(String(span?.finished_at ?? ''))
+  return Number.isFinite(start) && Number.isFinite(end) ? { trial, start, end } : null
 }
 
 export function loadTrials(jobDir: string, catalog: Catalog | null = loadCatalog(), opts: ReadOptions = {}): TrialRow[] {
   const rows: TrialRow[] = []
+  const windows: Window[] = []
   for (const entry of readdirSync(jobDir, { withFileTypes: true })) {
     if (!entry.isDirectory()) continue
-    const row = readTrial(join(jobDir, entry.name), catalog, opts)
-    if (row) rows.push(row)
+    const dir = join(jobDir, entry.name)
+    const row = readTrial(dir, catalog, opts)
+    if (!row) continue
+    rows.push(row)
+    const window = agentWindow(dir, row.trial)
+    if (window) windows.push(window)
+  }
+  if (opts.proxyLog) {
+    // One job, one model and pinned vendor: the rate card prices usage the gateway left unbilled.
+    // Harnesses without a trajectory record no vendor; the proxy logs the one it pinned.
+    const log = readProxyLog(opts.proxyLog)
+    const first = rows[0]
+    const pinned = [...new Set(log.map(e => e.pinned).filter(Boolean))]
+    const vendor = first?.vendor ?? (pinned.length === 1 ? pinned[0]! : null)
+    const route = first && catalog ? routeFor(first.model, vendor, catalog) : null
+    const counts = countRequests(windows, log, route)
+    for (const row of rows) Object.assign(row, counts.get(row.trial))
   }
   return rows.sort((a, b) => a.trial.localeCompare(b.trial))
 }

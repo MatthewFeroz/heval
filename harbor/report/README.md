@@ -40,8 +40,27 @@ cannot infer a deployment revision from trial output. Inspect those differences
 before presenting the rows as a single comparison. Never put credentials in a
 manifest or normalized JSON supplied to the merge command.
 
+## Turns and turn caps
+
+Every row records the harness's own turn count (`turns`, with `turnSource`
+naming what was counted), the configured `max_turns` cap, and whether the cap
+stopped the attempt (`capHit`, null when no cap was configured). Native counts
+differ per harness: Claude Code's `num_turns`, Pi's `turn_start` events, and
+ATIF agent steps for Codex and other harnesses that write a trajectory.
+
+Pass the job's vendor-proxy log to add a harness-neutral count of model calls
+per attempt and print a per-harness turn summary:
+
+```sh
+bun run report /path/to/jobs/job-name --proxy-log /path/to/proxy.jsonl
+```
+
+Requests are attributed by each attempt's agent-execution window, so this
+requires a proxy log dedicated to the job and `n_concurrent_trials: 1`.
+Overlapping attempts get null counts instead of a guessed split.
+
 Run exporter regression tests with:
 
 ```sh
-bun test harbor/report/trials.test.ts
+bun test harbor/report/
 ```
