@@ -109,7 +109,6 @@ test('uses the latest chart and export after the chart renderer finishes loading
     await expect(page.locator('.card svg')).toContainText('Agent time (s) per trial (mean)')
 
     const pending = page.waitForEvent('download')
-    await page.locator('.studio-file-actions summary').click()
     await page.getByRole('button', { name: 'SVG', exact: true }).click()
     const download = await pending
     expect(download.suggestedFilename()).toBe(`${JOB}-scatter.svg`)
