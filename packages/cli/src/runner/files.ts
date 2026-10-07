@@ -1,5 +1,5 @@
 import { createHash, randomBytes } from 'node:crypto'
-import { mkdirSync, readFileSync, renameSync, writeFileSync, readdirSync, lstatSync } from 'node:fs'
+import { mkdirSync, readFileSync, renameSync, writeFileSync, readdirSync, lstatSync, statSync } from 'node:fs'
 import { dirname, join, posix } from 'node:path'
 
 export const randomSecret = () => randomBytes(32).toString('hex')
@@ -11,23 +11,35 @@ export function writeJson(path: string, value: unknown) {
   writeFileSync(temp, JSON.stringify(value, null, 2) + '\n', { mode: 0o600, flag: 'wx' })
   renameSync(temp, path)
 }
-/** Task directories are copied to a run before execution; hash contents, not machine paths. */
-export function hashDirectory(path: string) {
+export type TaskExecutionMetadata = { version: 1; digest: string }
+export type TaskFingerprint = { contentHash: string; executionMetadata: TaskExecutionMetadata }
+
+/** One traversal preserves content pins and separately fingerprints executable task entries. */
+export function fingerprintDirectory(path: string): TaskFingerprint {
   const hash = createHash('sha256')
+  const metadata = createHash('sha256').update('heval-task-execution-metadata-v1\0')
+  metadata.update(JSON.stringify(['directory', '', statSync(path).mode & 0o111])).update('\0')
   let bytes = 0, count = 0
   function walk(relative: string) {
     for (const name of readdirSync(join(path, relative)).sort()) {
       if (name === '.git' || name === '__pycache__') continue
       const next = posix.join(relative, name), stat = lstatSync(join(path, next))
       if (stat.isSymbolicLink()) throw new Error('Approved tasks must not contain symlinks.')
-      if (stat.isDirectory()) walk(next)
+      if (stat.isDirectory()) {
+        metadata.update(JSON.stringify(['directory', next, stat.mode & 0o111])).update('\0')
+        walk(next)
+      }
       else if (stat.isFile()) {
         bytes += stat.size; count++
         if (bytes > 20_000_000 || count > 2000) throw new Error('A runner task must contain at most 20 MB and 2000 files.')
         hash.update(next).update('\0').update(readFileSync(join(path, next))).update('\0')
+        metadata.update(JSON.stringify(['file', next, stat.mode & 0o111])).update('\0')
       } else throw new Error('Approved tasks must contain only regular files.')
     }
   }
   walk('')
-  return hash.digest('hex')
+  return { contentHash: hash.digest('hex'), executionMetadata: { version: 1, digest: metadata.digest('hex') } }
 }
+
+/** Existing benchmark pins deliberately identify file names and bytes only. */
+export function hashDirectory(path: string) { return fingerprintDirectory(path).contentHash }

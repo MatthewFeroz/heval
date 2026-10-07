@@ -74,6 +74,8 @@ jobs:
         run: bun run lint
       - name: Build
         run: bun run build
+      - name: Auth boundary contracts
+        run: bun run test:auth
       - name: Server regression tests
         run: bun run test:server
       - name: Project and chart regression tests
@@ -87,6 +89,30 @@ jobs:
       - name: Evaluation browser integration
         run: bun run test:evaluations:ui
       - name: First smoke test onboarding
-        run: bun run test:onboarding:ui
+        run: bun scripts/first-smoke-ui-smoke.ts --capture .scratch/onboarding-after
+      - name: Capture onboarding before the change
+        if: github.event_name == 'pull_request'
+        env:
+          ONBOARDING_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          git fetch --depth=1 origin "$ONBOARDING_BASE_SHA"
+          if git diff --quiet "$ONBOARDING_BASE_SHA" HEAD -- src/onboarding scripts/first-smoke-ui-smoke.ts; then
+            exit 0
+          fi
+          git worktree add --detach "$RUNNER_TEMP/heval-onboarding-before" "$ONBOARDING_BASE_SHA"
+          ln -s "$GITHUB_WORKSPACE/node_modules" "$RUNNER_TEMP/heval-onboarding-before/node_modules"
+          cd "$RUNNER_TEMP/heval-onboarding-before"
+          bun scripts/first-smoke-ui-smoke.ts --capture "$GITHUB_WORKSPACE/.scratch/onboarding-before"
+      - name: Upload onboarding review evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: onboarding-before-after
+          path: |
+            .scratch/onboarding-before
+            .scratch/onboarding-after
+          include-hidden-files: true
+          retention-days: 14
+          if-no-files-found: warn
       - name: Browser behavior
         run: bun run test:e2e

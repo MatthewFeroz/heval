@@ -67,10 +67,12 @@ export const accept = mutation({ args: { token: v.string() }, handler: async (ct
   if (report.owner === user.subject) throw new ConvexError('You already own this report. Send this invitation to your teammate.')
   const existing = await ctx.db.query('reportMembers').withIndex('by_report', q => q.eq('report', report._id).eq('user', user.subject)).unique()
   if (invite.usedBy) { if (!existing) throw new ConvexError('Your access was removed. Ask for a new invitation.'); return report._id }
-  if ((await ctx.db.query('reportMembers').withIndex('by_report', q => q.eq('report', report._id)).take(20)).length >= 20) throw new ConvexError('This report has reached its 20-member limit.')
-  if ((await ctx.db.query('reportMembers').withIndex('by_user', q => q.eq('user', user.subject)).take(100)).length >= 100) throw new ConvexError('You have reached the 100 joined-report limit.')
   if (existing) await ctx.db.patch(existing._id, { role: invite.role })
-  else await ctx.db.insert('reportMembers', { report: report._id, user: user.subject, label: (user.email || user.name || user.subject).slice(0, 256), role: invite.role })
+  else {
+    if ((await ctx.db.query('reportMembers').withIndex('by_report', q => q.eq('report', report._id)).take(20)).length >= 20) throw new ConvexError('This report has reached its 20-member limit.')
+    if ((await ctx.db.query('reportMembers').withIndex('by_user', q => q.eq('user', user.subject)).take(100)).length >= 100) throw new ConvexError('You have reached the 100 joined-report limit.')
+    await ctx.db.insert('reportMembers', { report: report._id, user: user.subject, label: (user.email || user.name || user.subject).slice(0, 256), role: invite.role })
+  }
   await ctx.db.patch(invite._id, { usedBy: user.subject })
   return report._id
 } })

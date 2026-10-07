@@ -4,8 +4,8 @@ services:
       context: ..
       dockerfile: deploy/Dockerfile
       args:
-        VITE_WORKOS_CLIENT_ID: ${WORKOS_CLIENT_ID:?Set WORKOS_CLIENT_ID}
-        VITE_WORKOS_API_HOSTNAME: ${WORKOS_API_HOSTNAME:-api.workos.com}
+        VITE_CLERK_PUBLISHABLE_KEY: ${CLERK_PUBLISHABLE_KEY:?Set CLERK_PUBLISHABLE_KEY}
+        VITE_HEVAL_AUTH_ORIGIN: ${HEVAL_PUBLIC_ORIGIN:?Set HEVAL_PUBLIC_ORIGIN}
     env_file: ${HEVAL_ENV_FILE:-production.env}
     environment:
       HOST: 0.0.0.0

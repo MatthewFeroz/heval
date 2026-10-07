@@ -33,17 +33,22 @@ they do not clone the repository, install Bun, or build the frontend.
    that worker. Harbor installs each selected harness inside its disposable
    task container when an evaluation starts. Heval does not install standalone
    harness CLIs on the worker or host.
-4. The local browser opens. Sign in to Heval's Machines page, create a pairing
-   code, and paste its deployment URL and code into the local form. Pairing
-   starts the outbound runner automatically. A previously paired worker keeps
-   its account connection.
+4. The local browser opens. Choose **Connect to Heval**, sign in, and approve
+   **Connect computer** in the hosted setup page. The browser returns to local
+   setup and pairing starts the outbound runner automatically. A previously
+   paired worker keeps its account connection. **Use a pairing code instead**
+   remains available for a manually prepared Linux worker.
 5. Paste the **model-calling Merge Gateway key** into the masked local field.
    Verification fetches the model catalog without calling a model. Choose a
    model and harnesses to prepare one-task profiles. Existing profiles are
    preserved; setup never silently changes approved evaluation settings.
-6. In Machines, select this worker and click **Run setup check**. This runs
-   Oracle without model credits and saves the report to your account. Then
-   use Evaluations to start a model evaluation, which does use provider credits.
+6. **Continue to first evaluation** returns to hosted setup. **Run my first
+   evaluation** checks the worker with Oracle first, then runs the selected
+   harness/model using provider credits. To check only the worker, before
+   connecting a provider, use **Run worker check** under **Check your worker
+   without a model** in hosted setup. Its saved report is available there and
+   under Individual evaluations. The standalone action requires the updated
+   hosted UI; installing the CLI does not update a deployed website.
 
 Setup prepares the bundled connection check, not every benchmark dataset.
 The existing explicit benchmark installation workflow still applies to TBLite.

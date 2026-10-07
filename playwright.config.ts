@@ -9,7 +9,7 @@ export default defineConfig({
     command: `bun run dev -- --port ${port} --strictPort`,
     url: `http://127.0.0.1:${port}`,
     reuseExistingServer: false,
-    env: { VITE_WORKOS_CLIENT_ID: '', VITE_CONVEX_URL: '' },
+    env: { VITE_CLERK_PUBLISHABLE_KEY: '', VITE_HEVAL_AUTH_ORIGIN: '', VITE_CONVEX_URL: '' },
   },
   use: {
     baseURL: `http://127.0.0.1:${port}`,

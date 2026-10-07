@@ -116,7 +116,7 @@ export async function supervise(directory: string) {
     else if (timedOut) outcome = { status: 'failed', message: 'The approved evaluation time limit was reached. Inspect local logs.' }
     else {
       try {
-        const raw = exportJob(join(directory, 'jobs/evaluation'), null)
+        const raw = exportJob(join(directory, 'jobs/evaluation'), null, { verifiedOnly: true })
         const expected = readJson<{ n_attempts: number; tasks: unknown[] }>(join(directory, 'harbor.json'))
         const failed = code !== 0 || raw.rows.some(r => r.error) || raw.rows.length !== expected.tasks.length * expected.n_attempts
         const json = JSON.stringify(parseReport(JSON.stringify(raw)))
@@ -131,8 +131,16 @@ export async function supervise(directory: string) {
     sampleMonitoring(directory)
     if (killTimer) clearTimeout(killTimer)
     closeSync(log)
+    // Cancellation and deadlines can leave useful verified trials. Never invent
+    // scores for unfinished tasks; export only complete verifier outcomes.
+    if (!outcome.json) {
+      try {
+        const raw = exportJob(join(directory, 'jobs/evaluation'), null, { verifiedOnly: true })
+        if (raw.rows.length) outcome.json = JSON.stringify(parseReport(JSON.stringify(raw)))
+      } catch { /* Keep the terminal outcome even when no report can be exported. */ }
+    }
     try { await cleanupRun(directory) }
-    catch { outcome = { status: 'interrupted', message: 'Container cleanup needs attention on this machine. Inspect Docker before starting more work.' }; writeJson(join(directory, 'cleanup-required.json'), true) }
+    catch { outcome = { ...outcome, status: 'interrupted', message: 'Container cleanup needs attention on this machine. Inspect Docker before starting more work.' }; writeJson(join(directory, 'cleanup-required.json'), true) }
     writeJson(join(directory, 'outcome.json'), outcome)
   }
 }

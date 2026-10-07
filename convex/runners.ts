@@ -1,15 +1,17 @@
 import { gatewayCatalogValidator } from './gatewayCatalogValidator'
 import { v, ConvexError } from 'convex/values'
-import { mutation, query } from './_generated/server'
+import { mutation, query, internalMutation } from './_generated/server'
 import type { QueryCtx, MutationCtx } from './_generated/server'
 import type { Id, Doc } from './_generated/dataModel'
 import { identity } from './reportAccess'
 import { machineKindValidator, profileValidator } from './runnerValidators'
 import { MAX_WORKERS, RUNNER_LEASE_MS, RUNNER_ONLINE_MS, validateProfiles, terminalStates } from '../src/runners/protocol'
-import { parseReport } from '../src/reports/format'
+import { parseReport, parseStoredReport } from '../src/reports/format'
 import { materializeExperimentReport } from './experimentReports'
 import { monitoringValidator } from './monitoringValidators'
 import { monitoringCounts, validateMonitoring } from '../src/runners/monitoring'
+import { summarizeRun, type RunResultSummary } from './runResults'
+import { assertReportCapacity, MAX_REPORTS, storedReportCount } from './reportCapacity'
 
 const secret = (value: string) => { if (!/^[a-f0-9]{64}$/.test(value)) throw new ConvexError('Invalid connection credential.'); return value }
 async function digest(value: string) { return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(secret(value)))), b => b.toString(16).padStart(2, '0')).join('') }
@@ -31,8 +33,8 @@ async function authenticateRunner(ctx: QueryCtx, credential: string) {
 }
 /** Revoked workers stay as history; only connected ones count toward the limit. */
 async function assertWorkerCapacity(ctx: QueryCtx, owner: string) {
-  const workers = await ctx.db.query('runners').withIndex('by_owner', q => q.eq('owner', owner)).take(200)
-  if (workers.filter(r => !r.revoked).length >= MAX_WORKERS) throw new ConvexError(`This workspace has ${MAX_WORKERS} connected workers. Disconnect one before adding another.`)
+  const workers = await ctx.db.query('runners').withIndex('by_owner_revoked', q => q.eq('owner', owner).eq('revoked', false)).take(MAX_WORKERS)
+  if (workers.length >= MAX_WORKERS) throw new ConvexError(`This workspace has ${MAX_WORKERS} connected workers. Disconnect one before adding another.`)
 }
 /** A switched-off worker finishes its current run but receives no new work. */
 function assertRunnable(machine: Doc<'runners'>) {
@@ -47,8 +49,13 @@ function publicRun(r: Doc<'runnerRuns'>) { return { id: r._id, runner: r.runner,
 
 export const list = query({ args: {}, handler: async ctx => {
   const owner = (await identity(ctx)).subject
-  // Newest first, so accumulated revoked history never hides a connected worker.
-  return (await ctx.db.query('runners').withIndex('by_owner', q => q.eq('owner', owner)).order('desc').take(50)).map(publicRunner)
+  // Fetch connected workers independently so newer revoked history cannot hide
+  // them. Keep the remaining space for recent history, newest first overall.
+  const [connected, revoked] = await Promise.all([
+    ctx.db.query('runners').withIndex('by_owner_revoked', q => q.eq('owner', owner).eq('revoked', false)).order('desc').take(50),
+    ctx.db.query('runners').withIndex('by_owner_revoked', q => q.eq('owner', owner).eq('revoked', true)).order('desc').take(50),
+  ])
+  return [...connected, ...revoked.slice(0, 50 - connected.length)].sort((a, b) => b._creationTime - a._creationTime).map(publicRunner)
 } })
 export const runs = query({ args: {}, handler: async ctx => {
   const owner = (await identity(ctx)).subject
@@ -104,7 +111,7 @@ export const enqueue = mutation({ args: { runner: v.id('runners'), profileId: v.
   if (!profile) throw new ConvexError('The machine’s evaluation profile changed. Review the latest profile before starting.')
   const history = await ctx.db.query('runnerRuns').withIndex('by_owner', q => q.eq('owner', machine.owner)).take(200)
   if (history.length >= 200) throw new ConvexError('This workspace has reached its 200-evaluation limit.')
-  if ((await ctx.db.query('reports').withIndex('by_owner', q => q.eq('owner', machine.owner)).take(100)).length >= 100) throw new ConvexError('Your report storage is full. Resolve it before running another evaluation.')
+  await assertReportCapacity(ctx, machine.owner, 1, 'Your report storage is full. Resolve it before running another evaluation.')
   return ctx.db.insert('runnerRuns', { owner: machine.owner, runner: args.runner, requestId: args.requestId, profile, status: 'queued', phase: 'Queued for this machine' })
 } })
 export const moveQueued = mutation({ args: { id: v.id('runnerRuns'), runner: v.id('runners') }, handler: async (ctx, { id, runner }) => {
@@ -175,7 +182,7 @@ export const poll = mutation({ args: { modelCatalog: v.optional(gatewayCatalogVa
       const check = await ctx.db.get(experiment.setupRun)
       if (check && !(terminalStates as readonly string[]).includes(check.status)) return null
       const data = check?.report ? await ctx.db.query('reportData').withIndex('by_report', q => q.eq('report', check.report!)).unique() : null
-      const rows = data ? parseReport(data.json).rows : []
+      const rows = data ? parseStoredReport(data.json).rows : []
       if (check?.status !== 'completed' || !rows.length || rows.some(row => row.passed !== 1)) {
         await ctx.db.patch(next._id, { status: 'failed', phase: 'Worker check did not pass', message: 'No model task was started. Reopen computer setup, resolve the worker check, and try again.', finishedAt: Date.now() })
         await materializeExperimentReport(ctx, next.experiment)
@@ -226,21 +233,40 @@ export const finish = mutation({ args: { ...claimArgs, status: v.union(v.literal
   const { runner, run } = await claimedRun(ctx, args)
   if ((terminalStates as readonly string[]).includes(run.status)) return { report: run.report ?? null }
   let report: Id<'reports'> | undefined
+  let resultSummary: RunResultSummary | undefined
   const cancelled = run.status === 'cancelling' || args.status === 'cancelled'
-  const status = cancelled ? 'cancelled' : args.status
+  const status = args.status === 'interrupted' ? 'interrupted' : cancelled ? 'cancelled' : args.status
   if (args.message && args.message.length > 300) throw new ConvexError('Use a short result summary, not raw logs.')
-  if (args.json && !cancelled) {
+  if (args.json) {
     let data
     try { data = parseReport(args.json) } catch (e) { throw new ConvexError((e as Error).message) }
     if (data.rows.length > run.profile.tasks * (run.requestedAttempts ?? run.profile.attempts)) throw new ConvexError('The result exceeds the approved trial count.')
     if (status === 'completed' && data.rows.length !== run.profile.tasks * (run.requestedAttempts ?? run.profile.attempts)) throw new ConvexError('Completed evaluations must include every approved trial.')
-    if ((await ctx.db.query('reports').withIndex('by_owner', q => q.eq('owner', run.owner)).take(100)).length >= 100) throw new ConvexError('Report storage is full. Results remain on the machine until storage is available.')
+    if (await storedReportCount(ctx, run.owner) >= MAX_REPORTS) throw new ConvexError('Report storage is full. Results remain on the machine until storage is available.')
     report = await ctx.db.insert('reports', { owner: run.owner, title: run.profile.title.slice(0, 120), trials: data.rows.length, shareToken: null })
     await ctx.db.insert('reportData', { report, json: JSON.stringify(data) })
+    resultSummary = summarizeRun(data.rows)
   }
   if (status === 'completed' && !report) throw new ConvexError('A completed evaluation must include its results.')
-  await ctx.db.patch(run._id, { status, report, finishedAt: Date.now(), phase: status === 'completed' ? 'Report saved privately' : status === 'cancelled' ? 'Cancelled on the machine' : 'Execution needs attention', message: args.message })
+  await ctx.db.patch(run._id, { status, report, resultSummary, finishedAt: Date.now(), phase: status === 'completed' ? 'Report saved privately' : status === 'cancelled' ? 'Cancelled on the machine' : 'Execution needs attention', message: args.message })
   if (runner.activeRun === run._id) await ctx.db.patch(runner._id, { activeRun: undefined })
   if (run.experiment) await materializeExperimentReport(ctx, run.experiment)
   return { report: report ?? null }
+} })
+
+/** Operator-run migration. Fixed pages read at most ten source reports. */
+export const backfillResultSummaries = internalMutation({ args: { cursor: v.union(v.string(), v.null()) }, handler: async (ctx, { cursor }) => {
+  const { page, continueCursor, isDone } = await ctx.db.query('runnerRuns').paginate({ cursor, numItems: 10 })
+  let updated = 0
+  const unavailable: { run: Id<'runnerRuns'>; reason: 'missing' | 'invalid' }[] = []
+  for (const run of page) {
+    if (!run.report || run.resultSummary) continue
+    const stored = await ctx.db.query('reportData').withIndex('by_report', q => q.eq('report', run.report!)).unique()
+    if (!stored) { unavailable.push({ run: run._id, reason: 'missing' }); continue }
+    let data
+    try { data = parseStoredReport(stored.json) } catch { unavailable.push({ run: run._id, reason: 'invalid' }); continue }
+    await ctx.db.patch(run._id, { resultSummary: summarizeRun(data.rows) })
+    updated++
+  }
+  return { cursor: isDone ? null : continueCursor, done: isDone, scanned: page.length, updated, unavailable }
 } })

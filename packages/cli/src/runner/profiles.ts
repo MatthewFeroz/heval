@@ -2,13 +2,13 @@ import { existsSync, mkdirSync, cpSync, readFileSync, renameSync, rmSync } from 
 import { basename, dirname, isAbsolute, join, resolve } from 'node:path'
 import { validateProfiles, executionTimeoutSeconds, type RunSettings, type RunnerProfile } from '../../../../src/runners/protocol'
 import { BENCHMARKS, type Benchmark } from '../../../../src/runners/benchmarks'
-import { hashDirectory, randomSecret, readJson, sha256, writeJson } from './files'
+import { fingerprintDirectory, hashDirectory, randomSecret, readJson, sha256, writeJson, type TaskExecutionMetadata, type TaskFingerprint } from './files'
 import { mergeAgent, mergePath, mergeStatus, selectMergeHarnesses } from '../merge'
 import { bundledAdapters } from './bundled-adapters'
 
 type JsonObject = Record<string, unknown>
 type Descriptor = { id: string; title: string; benchmark: string; config: string; timeoutSeconds: number; envFile?: string; maxAttempts?: number; provider?: 'merge' }
-export type LocalProfile = { public: RunnerProfile; config: JsonObject; taskPaths: string[]; taskHashes: string[]; envFile?: string; mergeConnection?: string }
+export type LocalProfile = { public: RunnerProfile; config: JsonObject; taskPaths: string[]; taskHashes: string[]; taskExecutionMetadata: TaskExecutionMetadata[]; envFile?: string; mergeConnection?: string }
 const object = (value: unknown): JsonObject => { if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('Expected a JSON object in the profile.'); return value as JsonObject }
 export function initializeProfiles(directory: string, bundledTask: string) {
   const path = join(directory, 'profiles.json')
@@ -24,6 +24,8 @@ export function loadProfiles(file: string, connectionDirectory = dirname(file)):
   if (readFileSync(file).length > 100_000) throw new Error('The profile registry must be smaller than 100 KB.')
   const registry = readJson<{ schemaVersion: number; profiles: Descriptor[] }>(file)
   if (registry.schemaVersion !== 1 || !Array.isArray(registry.profiles)) throw new Error('Use a schemaVersion 1 profile registry.')
+  // Share reads within this scan only; the next poll must recheck task contents.
+  const hashesByPath = new Map<string, TaskFingerprint>()
   const loaded = registry.profiles.map(d => {
     const path = resolve(dirname(file), d.config)
     if (readFileSync(path).length > 100_000) throw new Error('Use a Harbor JSON config smaller than 100 KB.')
@@ -49,17 +51,23 @@ export function loadProfiles(file: string, connectionDirectory = dirname(file)):
       if (!existsSync(join(path, 'task.toml')) || !existsSync(join(path, 'instruction.md'))) throw new Error('Each approved task needs task.toml and instruction.md.')
       return path
     })
-    const taskHashes = taskPaths.map(hashDirectory)
+    const fingerprints = taskPaths.map(path => {
+      let hash = hashesByPath.get(path)
+      if (hash === undefined) { hash = fingerprintDirectory(path); hashesByPath.set(path, hash) }
+      return hash
+    })
+    const taskHashes = fingerprints.map(hash => hash.contentHash)
+    const taskExecutionMetadata = fingerprints.map(hash => hash.executionMetadata)
     // Docker's auto policy enforces declared limits, while accepting benchmark
     // tasks that omit a resource value. Explicit "limit" rejects those tasks.
     const config = { n_attempts: input.n_attempts ?? 1, n_concurrent_trials: 1, retry: { max_retries: 0 }, agents: [agent], tasks: taskPaths.map(path => ({ path })), environment: { type: 'docker', delete: true, cpu_enforcement_policy: 'auto', memory_enforcement_policy: 'auto' } }
     const description = { runSettingsVersion: 1 as const, id: d.id, title: d.title, benchmark: d.benchmark, agent: String(agent.name), model: agent.name === 'oracle' ? 'Reference solution (no model)' : displayModel, tasks: taskPaths.length, attempts: Number(config.n_attempts), timeoutSeconds: d.timeoutSeconds, setupCheck: agent.name === 'oracle', taskSet: sha256(JSON.stringify(taskHashes)), vendor: typeof object(agent.env ?? {}).HEVAL_VENDOR === 'string' ? String(object(agent.env ?? {}).HEVAL_VENDOR) : 'Provider default', maxAttempts: d.maxAttempts ?? Number(config.n_attempts) }
     // Include all executable task content and agent settings, excluding local path names.
     const adapter = agent.name === 'deep-agents' ? sha256(readFileSync(join(bundledAdapters(), 'heval_agents.py'), 'utf8')) : undefined
-    const digest = sha256(JSON.stringify({ description, config: { ...config, tasks: taskHashes }, ...(adapter ? { adapter } : {}) }))
+    const digest = sha256(JSON.stringify({ description, config: { ...config, tasks: taskHashes }, taskExecutionMetadata, ...(adapter ? { adapter } : {}) }))
     let envFile: string | undefined
     if (d.envFile) { envFile = isAbsolute(d.envFile) ? d.envFile : resolve(dirname(file), d.envFile); if (!existsSync(envFile)) throw new Error('The profile envFile does not exist on this machine.') }
-    return { public: { ...description, digest }, config, taskPaths, taskHashes, envFile, ...(d.provider === 'merge' ? { mergeConnection: mergePath(connectionDirectory) } : {}) }
+    return { public: { ...description, digest }, config, taskPaths, taskHashes, taskExecutionMetadata, envFile, ...(d.provider === 'merge' ? { mergeConnection: mergePath(connectionDirectory) } : {}) }
   })
   validateProfiles(loaded.map(p => p.public))
   return loaded
@@ -126,7 +134,8 @@ export function snapshotProfile(profile: LocalProfile, directory: string) {
   const tasks = profile.taskPaths.map((path, index) => {
     const target = join(directory, 'tasks', String(index + 1), basename(path))
     cpSync(path, target, { recursive: true, filter: name => !name.split('/').some(part => part === '.git' || part === '__pycache__') })
-    if (hashDirectory(target) !== profile.taskHashes[index]) throw new Error('Task contents changed while creating the run. Review the updated profile and start again.')
+    const snapshot = fingerprintDirectory(target), expected = profile.taskExecutionMetadata[index]
+    if (snapshot.contentHash !== profile.taskHashes[index] || snapshot.executionMetadata.version !== expected.version || snapshot.executionMetadata.digest !== expected.digest) throw new Error('Task contents or execution metadata changed while creating the run. Review the updated profile and start again.')
     return { path: target }
   })
   const config = { ...profile.config, tasks, job_name: 'evaluation', jobs_dir: join(directory, 'jobs') }

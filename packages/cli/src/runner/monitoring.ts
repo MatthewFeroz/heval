@@ -14,7 +14,9 @@ export function collectMonitoring(directory: string, now = Date.now()): RunMonit
   const job = join(directory, 'jobs/evaluation')
   let entries: string[] = []
   try { entries = readdirSync(job) } catch { /* Harbor is still preparing. */ }
-  for (const id of entries.sort().slice(0, MAX_MONITOR_TRIALS + 10)) {
+  // Bound new discovery separately so later folders cannot displace observed trials.
+  const candidates = new Set([...entries.sort().slice(0, MAX_MONITOR_TRIALS + 10), ...trials.keys()])
+  for (const id of candidates) {
     if (typeof id !== 'string' || !/^[a-zA-Z0-9_-]{1,140}$/.test(id)) continue
     const dir = join(job, id)
     try {

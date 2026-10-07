@@ -4,6 +4,7 @@ import { access, identity, projectState } from './reportAccess'
 import { parseReport } from '../src/reports/format'
 import { renderReportProject, initialReportProject, validateReportProject, type ReportProject } from '../src/reports/project'
 import type { AnalysisView } from '../src/project/schema'
+import { assertReportCapacity } from './reportCapacity'
 
 export const list = query({ args: {}, handler: async ctx => {
   const user = (await identity(ctx)).subject
@@ -14,7 +15,7 @@ export const list = query({ args: {}, handler: async ctx => {
 } })
 export const save = mutation({ args: { json: v.string(), title: v.string() }, handler: async (ctx, args) => {
   const user = (await identity(ctx)).subject
-  if ((await ctx.db.query('reports').withIndex('by_owner', q => q.eq('owner', user)).take(100)).length >= 100) throw new ConvexError('Your workspace has reached its 100-report limit.')
+  await assertReportCapacity(ctx, user, 1, 'Your workspace has reached its 100-report limit.')
   let data
   try { data = parseReport(args.json) } catch (error) { throw new ConvexError(error instanceof Error ? error.message : 'Invalid export.') }
   const title = args.title.trim()
@@ -67,7 +68,7 @@ export const revoke = mutation({ args: { id: v.id('reports') }, handler: async (
 /** Import a single-source Studio project and its data atomically. */
 export const saveProject = mutation({ args: { json: v.string(), document: v.string() }, handler: async (ctx, args) => {
   const user = (await identity(ctx)).subject
-  if ((await ctx.db.query('reports').withIndex('by_owner', q => q.eq('owner', user)).take(100)).length >= 100) throw new ConvexError('Your workspace has reached its 100-report limit.')
+  await assertReportCapacity(ctx, user, 1, 'Your workspace has reached its 100-report limit.')
   const data = parseReport(args.json)
   if (new TextEncoder().encode(args.document).length > 150_000) throw new ConvexError('Project settings must be smaller than 150 KB.')
   const incoming = JSON.parse(args.document) as ReportProject

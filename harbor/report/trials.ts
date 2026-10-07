@@ -7,6 +7,7 @@
  */
 
 import { existsSync, readFileSync, readdirSync } from 'node:fs'
+import { homedir } from 'node:os'
 import { basename, join, resolve } from 'node:path'
 import { SLOW_TRIAL_SECONDS, type JobExport, type TrialRow } from '../../src/charts/trial'
 import { loadCatalog, priceTokens, routeFor, type Catalog } from '../gateway/catalog'
@@ -15,6 +16,14 @@ type Json = Record<string, unknown>
 
 const num = (v: unknown): number | null => (typeof v === 'number' && Number.isFinite(v) ? v : null)
 const str = (v: unknown): string | null => (typeof v === 'string' && v.length ? v : null)
+
+function canonicalModel(model: string, agent: Json, env: Json): string {
+  // These Harbor adapters prepend their transport provider to the full Merge
+  // model slug. The exact gateway URL proves which prefix we can remove from
+  // old configs too; custom endpoints and agents keep their configured IDs.
+  if (!agent.import_path && ['pi', 'opencode', 'grok-build'].includes(String(agent.name)) && env.OPENAI_BASE_URL === 'https://api-gateway.merge.dev/v1/openai' && /^openai\/[^/]+\/.+/.test(model)) return model.slice('openai/'.length)
+  return model
+}
 
 function seconds(span: unknown): number | null {
   if (!span || typeof span !== 'object') return null
@@ -34,8 +43,8 @@ function findReward(node: unknown): number | null {
   return null
 }
 
-/** `requireComplete` rejects a started trial with no result instead of skipping it. */
-export type ReadOptions = { requireComplete?: boolean }
+/** `requireComplete` rejects missing results; `verifiedOnly` skips unfinished terminal artifacts. */
+export type ReadOptions = { requireComplete?: boolean; verifiedOnly?: boolean }
 
 export function readTrial(dir: string, catalog?: Catalog | null, opts: ReadOptions = {}): TrialRow | null {
   const cfgPath = join(dir, 'config.json'), resPath = join(dir, 'result.json')
@@ -44,7 +53,12 @@ export function readTrial(dir: string, catalog?: Catalog | null, opts: ReadOptio
     return null
   }
   const cfg = existsSync(cfgPath) ? JSON.parse(readFileSync(cfgPath, 'utf8')) as Json : {}
-  const res = JSON.parse(readFileSync(resPath, 'utf8')) as Json
+  let res: Json
+  try { res = JSON.parse(readFileSync(resPath, 'utf8')) as Json }
+  catch (error) { if (opts.verifiedOnly) return null; throw error }
+  // Connected terminal exports contain only finished verifier outcomes. A stopped
+  // trial's absent reward (or partially written result) is not a verifier failure.
+  if (opts.verifiedOnly && (!res || typeof res !== 'object' || !str(res.finished_at) || !Number.isFinite(Date.parse(String(res.finished_at))) || res.exception_info || num(findReward(res.verifier_result)) === null)) return null
   // Harbor may omit default values (including the Oracle agent) from config.json.
   // result.json retains the fully resolved configuration; old exports keep the
   // explicit per-trial config as the overriding source.
@@ -59,7 +73,7 @@ export function readTrial(dir: string, catalog?: Catalog | null, opts: ReadOptio
   const agentEnv = (agentCfg.env ?? {}) as Json
 
   const taskFull = str(res.task_name) ?? 'unknown'
-  const model = str(agentCfg.model_name) ?? str((info.model_info as Json | undefined)?.name) ?? 'unknown'
+  const model = canonicalModel(str(agentCfg.model_name) ?? str((info.model_info as Json | undefined)?.name) ?? 'unknown', agentCfg, agentEnv)
   const modelShort = model.includes('/') ? model.split('/').slice(1).join('/') : model
   const usage = (res.agent_result ?? {}) as Json
   const exc = res.exception_info as Json | null
@@ -134,7 +148,11 @@ export function loadTrials(jobDir: string, catalog: Catalog | null = loadCatalog
 export function exportJob(jobDir: string, catalog: Catalog | null = loadCatalog(), opts: ReadOptions = {}): JobExport {
   const rows = loadTrials(jobDir, catalog, opts)
   const jobResult = join(jobDir, 'result.json')
-  const jobId = existsSync(jobResult) ? str((JSON.parse(readFileSync(jobResult, 'utf8')) as Json).id) : null
+  let jobId: string | null = null
+  if (existsSync(jobResult)) {
+    try { jobId = str((JSON.parse(readFileSync(jobResult, 'utf8')) as Json).id) }
+    catch (error) { if (!opts.verifiedOnly) throw error }
+  }
   const agentVersions: Record<string, string[]> = {}
   for (const r of rows) {
     if (!r.agentVersion) continue
@@ -142,13 +160,16 @@ export function exportJob(jobDir: string, catalog: Catalog | null = loadCatalog(
     set.add(r.agentVersion)
     agentVersions[r.agent] = [...set].sort()
   }
+  // Exports are shared, so record the job path relative to the home directory rather than naming the user.
+  const absolute = resolve(jobDir)
+  const source = absolute.startsWith(homedir()) ? `~${absolute.slice(homedir().length)}` : absolute
   return {
     schemaVersion: 1,
-    job: basename(resolve(jobDir)),
+    job: basename(absolute),
     jobId,
     generatedAt: new Date().toISOString(),
-    source: resolve(jobDir),
+    source,
     agentVersions,
-    rows: rows.map(row => ({ ...row, source: resolve(jobDir), run: jobId ?? basename(resolve(jobDir)) })),
+    rows: rows.map(row => ({ ...row, source, run: jobId ?? basename(absolute) })),
   }
 }

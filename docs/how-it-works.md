@@ -32,7 +32,7 @@ connected machines, and the older Bun fixture workbench.
 | `/studio` | Edit an evaluation's analysis and presentation |
 | `/share` | View an explicitly shared report |
 
-Hosted workspace features require WorkOS and Convex. Direct Harbor execution and
+Hosted workspace features require Clerk and Convex. Direct Harbor execution and
 local result viewing do not require a Heval account.
 
 ## The connected evaluation pipeline
@@ -192,7 +192,7 @@ it does not proxy `/api/*`, so exports do not work there.
 | Variable | Effect |
 | --- | --- |
 | `HEVAL_ENABLE_EXPORTS=1` | Loads the player and enables the export endpoint. Without it the Motion tab says exports are disabled. |
-| `HEVAL_ENABLE_RUNNER=1` | Allows real evaluation runs. Also needs WorkOS client IDs; run requests are rejected without a valid token. |
+| `HEVAL_ENABLE_RUNNER=1` | Allows real evaluation runs. Also needs Clerk client IDs; run requests are rejected without a valid token. |
 | `HEVAL_GATEWAY_API_KEY` | Merge Gateway key for runs. Keep it in `.env.local`, never committed. |
 | `HEVAL_GATEWAY_MODEL` | Pinned model. Leave it pinned so comparisons stay reproducible. |
 

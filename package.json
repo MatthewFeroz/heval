@@ -20,7 +20,7 @@
     "test:e2e": "playwright test",
     "test:auth": "bun scripts/auth-session-smoke.ts",
     "test:deployments": "bun scripts/deployment-smoke.ts",
-    "test:unit": "bun test src/project src/charts src/onboarding src/runners/modelReference.test.ts scripts/refresh-merge-public-catalog.test.ts",
+    "test:unit": "bun test src/project src/charts src/onboarding src/runners/modelReference.test.ts scripts/refresh-merge-public-catalog.test.ts harbor/report/trials.test.ts",
     "test:backend": "vitest run",
     "test:reports": "bun run test:backend",
     "test:reports:smoke": "bun scripts/report-smoke.ts",
@@ -51,12 +51,12 @@
     "test:evaluations:e2e": "bun run cli:build && bun scripts/connected-evaluation-ci.ts"
   },
   "dependencies": {
+    "@clerk/react": "^6.17.5",
     "@earendil-works/pi-coding-agent": "0.84.4",
     "@hyperframes/player": "0.8.27",
     "@vercel/blob": "2.8.0",
     "@vercel/sandbox": "3.3.0",
     "@vitejs/plugin-react": "latest",
-    "@workos-inc/authkit-react": "^0.16.2",
     "@xterm/xterm": "^6.0.0",
     "convex": "^1.45.0",
     "gsap": "3.14.2",

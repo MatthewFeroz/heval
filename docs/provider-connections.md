@@ -13,7 +13,7 @@ The current release supports Merge Gateway and Pi for browser BYOK. The task pic
 
 ## Local setup
 
-Configure WorkOS for browser sign-in and set `HEVAL_ENABLE_RUNNER=1`. Browser users connect their own key in Settings. Heval does not copy an operator key into a signed-in account.
+Configure Clerk for browser sign-in and set `HEVAL_ENABLE_RUNNER=1`. Browser users connect their own key in Settings. Heval does not copy an operator key into a signed-in account.
 
 Local startup creates `data/connection-encryption.key` with file mode 0600 unless `HEVAL_CONNECTION_ENCRYPTION_KEY` is supplied. The database is also mode 0600. Both live in the Git-ignored data directory. For production, use the explicit environment secret and separate backups described in [deployment](deployment.md).
 

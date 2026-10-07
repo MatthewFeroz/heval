@@ -84,3 +84,40 @@ test('failed sign-in stays closed and offers a retry', async ({ page }) => {
   await expect(page.locator('.studio')).toHaveCount(0)
   expect(requests).toEqual([])
 })
+
+test('uses the latest chart and export after the chart renderer finishes loading', async ({ page }) => {
+  await testSession(page)
+  let release!: () => void
+  let requested!: () => void
+  const loading = new Promise<void>(resolve => { requested = resolve })
+  const released = new Promise<void>(resolve => { release = resolve })
+  await page.route(url => url.pathname.endsWith('/vega-embed.js'), async route => {
+    requested()
+    await released
+    await route.continue()
+  })
+  try {
+    await page.goto(`/studio?job=${JOB}&authState=member&recipe=bar&x=agent&color=modelShort&measure=passed`)
+    await expect(page.getByRole('heading', { name: JOB })).toBeVisible()
+    await loading
+    await expect(page.locator('.card svg')).toHaveCount(0)
+    await page.locator('#f-recipe').selectOption('scatter')
+    await page.locator('#f-xMeasure').selectOption('agentSeconds')
+    release()
+    await expect(page.locator('.card svg .mark-symbol.role-mark path')).toHaveCount(4)
+    await expect(page.locator('.card svg .mark-rect.role-mark path')).toHaveCount(0)
+    await expect(page.locator('.card svg')).toContainText('Agent time (s) per trial (mean)')
+
+    const pending = page.waitForEvent('download')
+    await page.locator('.studio-file-actions summary').click()
+    await page.getByRole('button', { name: 'SVG', exact: true }).click()
+    const download = await pending
+    expect(download.suggestedFilename()).toBe(`${JOB}-scatter.svg`)
+    const stream = await download.createReadStream()
+    const chunks = []
+    for await (const chunk of stream!) chunks.push(chunk)
+    expect(Buffer.concat(chunks).toString()).toContain('Agent time (s) per trial (mean)')
+  } finally {
+    release()
+  }
+})

@@ -143,6 +143,46 @@ test('an account connects at most three workers; disconnected ones free a slot',
   expect((await owner.query(api.runners.list, {})).filter(m => !m.revoked)).toHaveLength(3)
 })
 
+test('newer revoked history cannot hide older connected workers', async () => {
+  const { t, owner, a, b } = await setup()
+  await t.run(async ctx => {
+    for (let i = 0; i < 75; i++) await ctx.db.insert('runners', {
+      owner: 'owner', name: `Retired worker ${i}`, credentialHash: value(1000 + i),
+      revoked: true, ready: false, health: 'Connection revoked', profiles: [], lastSeen: 0, leaseUntil: 0,
+    })
+  })
+  const workers = await owner.query(api.runners.list)
+  expect(workers).toHaveLength(50)
+  expect(workers.filter(worker => !worker.revoked).map(worker => worker.id).sort()).toEqual([a.id, b.id].sort())
+  expect(workers[0].name).toBe('Retired worker 74')
+  expect(workers.some(worker => worker.name === 'Retired worker 0')).toBe(false)
+  expect(await t.run(ctx => ctx.db.query('runners').collect())).toHaveLength(77)
+})
+
+test('older revoked history cannot bypass pairing or connection capacity', async () => {
+  const t = convexTest(schema, modules), owner = t.withIdentity({ subject: 'owner' })
+  await t.run(async ctx => {
+    for (let i = 0; i < 225; i++) await ctx.db.insert('runners', {
+      owner: 'owner', name: `Retired worker ${i}`, credentialHash: value(1000 + i),
+      revoked: true, ready: false, health: 'Connection revoked', profiles: [], lastSeen: 0, leaseUntil: 0,
+    })
+  })
+  // A pairing created while a slot is available must still respect capacity
+  // when it is redeemed after the other three workers have connected.
+  for (const n of [10, 11, 12, 13]) await owner.mutation(api.runners.createPairing, { name: `Machine ${n}`, code: value(n) })
+  const connected: { id: Id<'runners'> }[] = []
+  for (const n of [10, 11, 12]) connected.push(await t.mutation(api.runners.connect, { code: value(n), credential: value(n + 100) }))
+  await expect(owner.mutation(api.runners.createPairing, { name: 'Machine 14', code: value(14) })).rejects.toThrow('3 connected workers')
+  await expect(t.mutation(api.runners.connect, { code: value(13), credential: value(113) })).rejects.toThrow('3 connected workers')
+  await owner.mutation(api.runners.revoke, { id: connected[0].id })
+  const replacement = await t.mutation(api.runners.connect, { code: value(13), credential: value(113) })
+  const workers = await owner.query(api.runners.list)
+  expect(workers).toHaveLength(50)
+  expect(workers.filter(worker => !worker.revoked).map(worker => worker.id).sort()).toEqual([connected[1].id, connected[2].id, replacement.id].sort())
+  expect(workers.some(worker => worker.id === connected[0].id && worker.revoked)).toBe(true)
+  expect(await t.run(ctx => ctx.db.get(connected[0].id))).toMatchObject({ revoked: true })
+})
+
 test('a switched-off worker finishes nothing new: no claims, enqueues, or moves until switched on', async () => {
   const { owner, other, a, b, enqueue } = await setup()
   const queued = await enqueue()
@@ -190,4 +230,12 @@ test('worker rate cards stay owner-only, persist across ordinary polls, and clea
   await expect(t.query(api.runners.list)).rejects.toThrow('Sign in')
   await t.mutation(api.runners.poll, { ...args, modelCatalog: null })
   expect((await owner.query(api.runners.list)).find(r => r.id === a.id)?.modelCatalog).toBeNull()
+})
+
+test('a cleanup failure remains interrupted when cancellation was requested', async () => {
+  const { t, owner, a, enqueue } = await setup()
+  const id = await enqueue(); await a.poll()
+  await owner.mutation(api.runners.cancel, { id })
+  await t.mutation(api.runners.finish, { credential: a.credential, session: a.session, claimId: a.claimId, id, status: 'interrupted', message: 'Container cleanup needs attention.' })
+  expect((await owner.query(api.runners.runs))[0]).toMatchObject({ status: 'interrupted', phase: 'Execution needs attention' })
 })

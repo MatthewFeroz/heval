@@ -35,7 +35,7 @@ function ReportView({ title, data, rendered, context }: { title: string; data: R
     <div className="report-eyebrow">SAVED EVALUATION · {new Date(data.generatedAt).toLocaleDateString()}</div>
     <h1>{title}</h1><p>{context === 'evaluation' ? <>Combined results from every completed harness and model run in this evaluation.</> : <>Imported results from <strong>{data.job}</strong>. This report does not run an evaluation.</>}</p>
     <p className="report-muted">{rendered.presentation ? 'Presentation' : 'Analysis view'}: {rendered.label}{rendered.filters.some(f => f.values.length) ? ' · Saved filters applied' : ''}</p>
-    <div className="report-stats"><div><strong>{rows.length}</strong><span>Trials shown</span></div><div><strong>{passed} / {rows.length}</strong><span>Completed</span></div><div><strong>{new Set(rows.map(r => r.task)).size}</strong><span>Tasks</span></div></div>
+    <div className="report-stats"><div><strong>{rows.length}</strong><span>Trials shown</span></div><div><strong>{passed} / {rows.length}</strong><span>Passed</span></div><div><strong>{new Set(rows.map(r => r.task)).size}</strong><span>Tasks</span></div></div>
     <label>Model <select aria-label="Model" value={model} onChange={event => setModel(event.target.value)}><option value="all">All models in this view</option>{models.map(m => <option key={m}>{m}</option>)}</select></label>
     {model !== 'all' && <p className="report-muted">Temporary filter for this visit. The saved chart is unchanged.</p>}
     <p className="report-muted">Rates describe these trials only. A small setup check is not a full benchmark score.</p>
