@@ -9,6 +9,9 @@
     ],
     "module": "ESNext",
     "skipLibCheck": true,
+    "types": [
+      "bun"
+    ],
     "moduleResolution": "Bundler",
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
