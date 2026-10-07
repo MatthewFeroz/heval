@@ -1,11 +1,12 @@
 import { runTimeoutSeconds, validateProfiles } from '../../../../src/runners/protocol'
-import { afterEach, expect, test } from 'bun:test'
-import { mkdtempSync, rmSync, readFileSync, writeFileSync, statSync, symlinkSync } from 'node:fs'
+import { afterEach, expect, spyOn, test } from 'bun:test'
+import { chmodSync, cpSync, mkdirSync, mkdtempSync, rmSync, readFileSync, writeFileSync, statSync, symlinkSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { cloudUrl } from './client'
 import { initializeProfiles, loadProfiles, snapshotProfile, requestedProfile } from './profiles'
 import { readJson, writeJson } from './files'
+import * as files from './files'
 import { processKey } from './supervisor'
 import { exportJob } from '../../../../harbor/report/trials'
 
@@ -27,6 +28,73 @@ test('matching profiles are portable across machines and changes alter the conte
   writeFileSync(join(b, 'tasks/heval-setup/instruction.md'), 'Changed task')
   expect(loadProfiles(join(b, 'profiles.json'))[0].public.digest).not.toBe(one.public.digest)
   expect(JSON.stringify(one.public)).not.toContain(a)
+})
+test('executable task changes invalidate approval and stale snapshots without changing content pins', () => {
+  const dir = state(), registry = initializeProfiles(dir, task), source = join(dir, 'tasks/heval-setup')
+  const script = join(source, 'solution/solve.sh')
+  chmodSync(script, 0o644)
+  const before = loadProfiles(registry)[0], contentHash = files.hashDirectory(source)
+  chmodSync(script, 0o755)
+  const changed = loadProfiles(registry)[0]
+  expect(changed.public.digest).not.toBe(before.public.digest)
+  expect(changed.public.taskSet).toBe(before.public.taskSet)
+  expect(changed.taskHashes).toEqual(before.taskHashes)
+  expect(files.hashDirectory(source)).toBe(contentHash)
+  expect(() => snapshotProfile(before, state())).toThrow('changed')
+  const target = state()
+  snapshotProfile(changed, target)
+  const config = readJson<{ tasks: { path: string }[] }>(join(target, 'harbor.json'))
+  expect(statSync(join(config.tasks[0].path, 'solution/solve.sh')).mode & 0o111).toBe(0o111)
+})
+test('empty task directories invalidate approval and stale snapshots while content pins stay stable', () => {
+  const dir = state(), registry = initializeProfiles(dir, task), source = join(dir, 'tasks/heval-setup')
+  const before = loadProfiles(registry)[0], contentHash = files.hashDirectory(source)
+  mkdirSync(join(source, 'empty'))
+  const changed = loadProfiles(registry)[0]
+  expect(changed.public.digest).not.toBe(before.public.digest)
+  expect(changed.public.taskSet).toBe(before.public.taskSet)
+  expect(files.hashDirectory(source)).toBe(contentHash)
+  expect(() => snapshotProfile(before, state())).toThrow('changed')
+  expect(() => snapshotProfile(changed, state())).not.toThrow()
+})
+test('root directory execution changes invalidate approval and stale snapshots', () => {
+  const dir = state(), registry = initializeProfiles(dir, task), source = join(dir, 'tasks/heval-setup')
+  chmodSync(source, 0o700)
+  const before = loadProfiles(registry)[0]
+  chmodSync(source, 0o755)
+  const changed = loadProfiles(registry)[0]
+  expect(changed.public.digest).not.toBe(before.public.digest)
+  expect(changed.public.taskSet).toBe(before.public.taskSet)
+  expect(changed.taskHashes).toEqual(before.taskHashes)
+  expect(() => snapshotProfile(before, state())).toThrow('changed')
+  const target = state()
+  snapshotProfile(changed, target)
+  const config = readJson<{ tasks: { path: string }[] }>(join(target, 'harbor.json'))
+  expect(statSync(config.tasks[0].path).mode & 0o111).toBe(0o111)
+})
+test('shared tasks are hashed once per profile scan while later edits and snapshots stay verified', () => {
+  const dir = state(), registry = initializeProfiles(dir, task)
+  cpSync(join(dir, 'tasks/heval-setup'), join(dir, 'tasks/other'), { recursive: true })
+  writeFileSync(join(dir, 'tasks/other/instruction.md'), 'A different task')
+  const config = { n_attempts: 1, agents: [{ name: 'oracle' }] }
+  writeJson(join(dir, 'setup.json'), { ...config, tasks: [{ path: 'tasks/heval-setup' }, { path: 'tasks/other' }] })
+  writeJson(join(dir, 'second.json'), { ...config, tasks: [{ path: './tasks/other' }, { path: 'tasks/../tasks/heval-setup' }] })
+  const doc = readJson<{ profiles: { id: string; config: string }[] }>(registry)
+  doc.profiles.push({ ...doc.profiles[0], id: 'second', config: 'second.json' })
+  writeJson(registry, doc)
+  const before = loadProfiles(registry)
+  const hashes = spyOn(files, 'fingerprintDirectory')
+  try {
+    const scanned = loadProfiles(registry)
+    expect(hashes).toHaveBeenCalledTimes(2)
+    expect(scanned.map(p => p.public)).toEqual(before.map(p => p.public))
+    expect(scanned[0].taskHashes).toEqual([...scanned[1].taskHashes].reverse())
+    writeFileSync(join(dir, 'tasks/heval-setup/instruction.md'), 'Edited between polls')
+    const changed = loadProfiles(registry)
+    expect(hashes).toHaveBeenCalledTimes(4)
+    for (const [index, profile] of changed.entries()) expect(profile.public.digest).not.toBe(before[index].public.digest)
+    expect(() => snapshotProfile(before[0], state())).toThrow('changed')
+  } finally { hashes.mockRestore() }
 })
 test('snapshot isolates execution from later edits while preserving task names', () => {
   const dir = state(), target = state()

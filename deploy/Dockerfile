@@ -10,9 +10,9 @@ COPY package.json bun.lock ./
 RUN bun install --frozen-lockfile
 RUN bun x playwright install --with-deps chromium
 COPY . .
-ARG VITE_WORKOS_CLIENT_ID
-ARG VITE_WORKOS_API_HOSTNAME
-ENV VITE_WORKOS_CLIENT_ID=$VITE_WORKOS_CLIENT_ID VITE_WORKOS_API_HOSTNAME=$VITE_WORKOS_API_HOSTNAME
+ARG VITE_CLERK_PUBLISHABLE_KEY
+ARG VITE_HEVAL_AUTH_ORIGIN
+ENV VITE_CLERK_PUBLISHABLE_KEY=$VITE_CLERK_PUBLISHABLE_KEY VITE_HEVAL_AUTH_ORIGIN=$VITE_HEVAL_AUTH_ORIGIN
 RUN bun run build:public
 ENV HOST=0.0.0.0 PORT=4173 HEVAL_DATA_DIR=/data
 RUN mkdir /data && chown node:node /data && cp -a /root/.cache /home/node/.cache && chown -R node:node /home/node/.cache

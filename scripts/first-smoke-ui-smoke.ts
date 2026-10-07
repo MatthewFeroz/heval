@@ -12,13 +12,19 @@ import { createServer } from 'vite'
 import { chromium, expect } from '@playwright/test'
 import { startProviderSetup } from '../packages/cli/src/provider-setup'
 import { resolve } from 'node:path'
+import { parseReport } from '../src/reports/format'
+import { initialReportProject } from '../src/reports/project'
 
 const capture = process.argv.includes('--capture') ? process.argv[process.argv.indexOf('--capture') + 1] : ''
 if (process.argv.includes('--capture') && !capture) throw Error('Usage: --capture <directory>')
 process.env.VITE_CONVEX_URL = 'https://first-smoke-test.convex.cloud'
 process.env.VITE_HEVAL_STATIC_SITE = '1'
 
-const server = await createServer({ server: { host: '127.0.0.1', port: 0 }, plugins: [{
+// Synthetic reference-solution result, not measured benchmark evidence.
+const reportData = parseReport(JSON.stringify({schemaVersion:1,job:'Synthetic Oracle worker check',generatedAt:'2026-10-03T00:00:00Z',rows:[{trial:'setup-check',task:'heval-setup',taskFull:'heval-setup',agent:'oracle',model:'oracle',modelShort:'oracle',stack:'Oracle',reward:1,passed:1,timedOut:0,overSlow:0}]}))
+const reportProject = await initialReportProject(reportData,'r-check',reportData.job)
+
+const server = await createServer({ cacheDir: '.scratch/first-smoke-vite', server: { host: '127.0.0.1', port: 0 }, plugins: [{
   name: 'first-smoke-test-adapters', enforce: 'pre',
   resolveId(source) { if (source === 'convex/react') return '\0smoke-convex'; if (source === '../AuthBoundary' || source === './AuthBoundary') return '\0smoke-auth' },
   load(id) {
@@ -31,8 +37,11 @@ const load=()=>JSON.parse(localStorage.getItem('smoke-account')||'null')||{guide
 function commit(next){localStorage.setItem('smoke-account',JSON.stringify(next));window.dispatchEvent(new Event('smoke-account'))}
 window.smokeAccount={get:load,set:update=>commit(update(load()))};
 function answer(s,n,args){
+ if(n==='reportProjects:team')return {members:[],invites:[]};
+ if(n==='reports:list')return s.runs.some(r=>r.report==='r-check')?[{id:'r-check',title:'Synthetic Oracle worker check',trials:1,createdAt:0,role:'owner',shared:false}]:[];
+ if(n==='reports:get')return args.id==='r-check'?{id:'r-check',title:'Synthetic Oracle worker check',data:${JSON.stringify(JSON.stringify(reportData))},project:${JSON.stringify(JSON.stringify(reportProject))},shareToken:null,role:'owner',version:0,publishedVersion:null,updatedBy:null}:null;
  if(n==='runners:pairingStatus')return args==='skip'?undefined:s.pairedWorker||null;
- if(n==='runners:list')return s.machines;if(n==='runners:runs')return s.runs;if(n==='onboarding:get')return s.guide;if(n==='runners:monitoring')return null;
+ if(n==='runners:list')return s.loading?undefined:s.machines;if(n==='runners:runs')return s.runs;if(n==='onboarding:get')return s.guide;if(n==='runners:monitoring')return null;
  if(n==='experiments:list')return s.experiment?[{id:'e1',title:s.experiment.title,createdAt:0,report:null,runs:1,finished:s.runs.filter(r=>r.experiment&&r.status==='completed').length,failed:0}]:[];
  if(n==='experiments:get')return s.experiment&&{id:'e1',title:s.experiment.title,machine:'My computer',online:true,lastSeen:Date.now(),report:null,cells:s.runs.filter(r=>r.experiment).map(r=>({id:r.id,profile:r.profile,attempts:1,runSettings:null,status:r.status,phase:r.phase,message:r.message,report:r.report,result:null}))};
  throw Error('Unexpected query '+n)}
@@ -54,7 +63,10 @@ const page = await context.newPage(), errors: string[] = []
 page.on('pageerror', e => errors.push(e.message))
 let shot = 0
 async function stage(name: string) {
-  if (capture) await page.locator('.first-smoke').screenshot({ path: `${capture}/${String(++shot).padStart(2, '0')}-${name}.png` })
+  if (capture) {
+    await page.evaluate(() => document.fonts.ready)
+    await page.locator('.first-smoke').screenshot({ path: `${capture}/${String(++shot).padStart(2, '0')}-${name}.png` })
+  }
 }
 type Account = { guide: unknown; machines: { profiles: unknown[]; lastSeen: number }[]; runs: { id: string; status: string; phase: string; report: string | null }[] }
 const worker = (update: (account: Account) => void) => page.evaluate(`window.smokeAccount.set(a => { (${update.toString()})(a); return a })`)
@@ -73,6 +85,7 @@ const local=await startProviderSetup('',resolve('packages/cli/dist/runner-task')
 try {
   await page.goto(`${base}evaluations`)
   await expect(page.getByRole('link',{name:'Set up my computer'})).toBeVisible()
+  await expect(page.locator('.evaluation-empty')).toContainText('worker check without model credentials')
   await expect(page.locator('.first-smoke')).toHaveCount(0)
   await page.getByRole('link',{name:'Set up my computer'}).click()
   await expect(page.getByRole('heading',{name:'Set up your machine',exact:true})).toBeVisible()
@@ -103,12 +116,75 @@ try {
   await page.waitForFunction('!!window.smokeAccount')
   await worker(a=>{a.machines=[{id:'m1',name:'My computer',revoked:false,lastSeen:Date.now(),ready:true,health:'Ready',profiles:[],enabled:true,machine:'laptop',icon:null,activeRun:null} as never]})
   await expect(page.getByRole('heading',{name:'Connect your model provider',exact:true})).toBeVisible()
+  await page.getByRole('button',{name:'Reopen setup',exact:true}).click()
+  await expect(page.locator('.first-smoke-copy code')).toHaveText('npx @mattferoz/heval@latest setup --harnesses codex')
+  await expect(page.locator('code').filter({hasText:'heval provider setup merge'})).toBeVisible()
+  await expect(page.getByRole('status').filter({hasText:'Waiting for the worker check profile'})).toBeVisible()
   await stage('provider')
+  // Pairing can finish before the daemon advertises profiles or health.
+  await worker(a=>{Object.assign(a.machines[0],{ready:false,health:'Harbor is unavailable'})})
+  await expect(page.getByRole('status').filter({hasText:'Worker not ready:'})).toContainText('docker info')
+  await stage('not-ready')
+  await worker(a=>{Object.assign(a.machines[0],{ready:true,health:'Ready'})})
+  await stage('waiting-for-worker-check')
+  // A paired worker can verify Oracle and reopen its report before any model setup.
+  await page.evaluate(`window.smokeAccount.set(a=>{a.machines[0].profiles=${JSON.stringify([oracle])};return a})`)
+  await expect(page.getByRole('button',{name:'Run worker check',exact:true})).toBeEnabled()
+  await worker(a=>{Object.assign(a.machines[0],{ready:false,health:'Harbor is unavailable'})})
+  await expect(page.getByRole('button',{name:'Run worker check',exact:true})).toBeDisabled()
+  await worker(a=>{Object.assign(a.machines[0],{ready:true,health:'Ready'})})
+  await stage('provider-worker-check')
+  await worker(a=>{a.machines[0].lastSeen=0})
+  await expect(page.getByRole('button',{name:'Run worker check',exact:true})).toBeDisabled()
+  await worker(a=>{a.machines[0].lastSeen=Date.now()})
+  // Reach the action with the keyboard and submit it without pointer input.
+  await page.evaluate(()=>(document.activeElement as HTMLElement)?.blur())
+  for(let i=0;i<40;i++) {
+    await page.keyboard.press('Tab')
+    if(await page.getByRole('button',{name:'Run worker check',exact:true}).evaluate(el=>el===document.activeElement))break
+  }
+  await expect(page.getByRole('button',{name:'Run worker check',exact:true})).toBeFocused()
+  await page.keyboard.press('Enter')
+  await expect(page.getByRole('button',{name:'Worker check in progress'})).toBeDisabled()
+  assert.equal(await page.evaluate('window.smokeAccount.get().runs[0].profile.agent'),'oracle')
+  assert.equal(await page.evaluate('window.smokeAccount.get().experiment'),null)
+  await page.reload()
+  await expect(page.getByRole('button',{name:'Worker check in progress'})).toBeDisabled()
+  assert.equal(await page.evaluate('window.smokeAccount.get().runs.length'),1)
+  await worker(a=>{Object.assign(a.runs[0],{status:'completed',phase:'Report saved',report:'r-check'})})
+  await expect(page.getByRole('link',{name:'Open worker check report'})).toHaveAttribute('href','/reports?id=r-check')
+  await expect(page.getByRole('heading',{name:'Connect your model provider',exact:true})).toBeVisible()
+  await page.setViewportSize({width:390,height:844})
+  await expect(page.getByRole('link',{name:'Open worker check report'})).toBeVisible()
+  await stage('mobile-worker-check-report')
+  assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'Setup fits a narrow viewport')
+  await page.getByRole('link',{name:'Open worker check report'}).press('Enter')
+  await page.waitForURL(/reports\?id=r-check$/)
+  await expect(page.getByRole('heading',{name:'Synthetic Oracle worker check',exact:true})).toBeVisible()
+  await expect(page.getByRole('link',{name:'Edit chart in Studio'})).toHaveAttribute('href','/studio?report=r-check')
+  if(capture)await page.locator('#workspace-main').screenshot({path:`${capture}/oracle-report.png`})
+  await page.goto(`${base}evaluations`)
+  await expect(page.getByRole('region',{name:'Individual evaluations'})).toContainText('Setup check')
+  await page.getByRole('region',{name:'Individual evaluations'}).getByRole('link',{name:'Open saved report'}).click()
+  await expect(page.getByRole('heading',{name:'Synthetic Oracle worker check',exact:true})).toBeVisible()
+  await page.getByRole('link',{name:'← Your reports',exact:true}).click()
+  await page.getByRole('link',{name:/Synthetic Oracle worker check/}).click()
+  await expect(page.getByRole('heading',{name:'Synthetic Oracle worker check',exact:true})).toBeVisible()
+  await page.goto(`${base}machines?setup=1&worker=m1`)
+  await page.setViewportSize({width:1280,height:900})
   await page.evaluate(`window.smokeAccount.set(a=>{a.machines[0].profiles=${JSON.stringify([oracle,codex])};return a})`)
   await expect(page.getByRole('heading',{name:'Run your first evaluation',exact:true})).toBeVisible()
+  await page.evaluate(`window.smokeAccount.set(a=>{a.machines[0].profiles=${JSON.stringify([codex])};return a})`)
+  await expect(page.getByRole('button',{name:'Run my first evaluation'})).toBeDisabled()
+  await page.getByRole('link',{name:'Reopen provider setup'}).click()
+  await expect(page.getByRole('heading',{name:'Connect your model provider',exact:true})).toBeVisible()
+  await page.getByRole('button',{name:'Reopen setup',exact:true}).click()
+  await expect(page.locator('code').filter({hasText:'heval provider setup merge'})).toBeVisible()
+  await page.goto(`${base}machines?setup=1&worker=m1`)
+  await page.evaluate(`window.smokeAccount.set(a=>{a.machines[0].profiles=${JSON.stringify([oracle,codex])};return a})`)
   await worker(a=>{a.machines[0].lastSeen=0})
   await expect(page.getByRole('button',{name:'Run my first evaluation'})).toBeDisabled()
-  await expect(page.getByRole('status')).toContainText('offline')
+  await expect(page.getByRole('status').filter({hasText:'offline'})).toBeVisible()
   await worker(a=>{a.machines[0].lastSeen=Date.now()})
   await stage('run')
   await page.reload()
@@ -117,7 +193,7 @@ try {
   await page.waitForURL(/\?experiment=e1$/)
   assert.equal(await page.evaluate('window.smokeAccount.get().experiment.checkWorker'),true,'First run includes its durable worker prerequisite')
   await expect(page.getByRole('heading',{name:'Codex CLI first evaluation',exact:true})).toBeVisible()
-  await worker(a=>{Object.assign(a.runs[0],{status:'completed',phase:'Report saved',report:'r-smoke'})})
+  await worker(a=>{Object.assign(a.runs.find(r=>r.id==='smoke')!,{status:'completed',phase:'Report saved',report:'r-smoke'})})
   await page.goto(`${base}machines?setup=1&worker=m1`)
   await expect(page.getByRole('heading',{name:'Your first evaluation is ready'})).toBeVisible()
   await stage('complete')
@@ -139,6 +215,10 @@ try {
   await expect(page.getByRole('heading',{name:'Connect your model provider',exact:true})).toBeVisible()
   await page.reload()
   await expect(page.getByRole('heading',{name:'Connect your model provider',exact:true})).toBeVisible()
+  // Loading status explains that the workspace must finish connecting.
+  await page.evaluate(`window.smokeAccount.set(a=>({...a,loading:true}))`)
+  await expect(page.getByRole('status').filter({hasText:'Loading computers'})).toContainText('Wait for your workspace')
+  await page.evaluate(`window.smokeAccount.set(a=>({...a,loading:false}))`)
   // A different account/browser with no connected machine starts on step one.
   await page.evaluate(()=>{localStorage.clear();sessionStorage.clear()})
   await page.goto(`${base}machines`)
@@ -150,6 +230,9 @@ try {
   await expect(page.getByRole('button',{name:'Connect computer',exact:true})).toHaveCount(0)
   assert.deepEqual(errors,[])
   console.log(`PASS: four-step setup; real loopback handoff and provider form; first-run dispatch; offline, reload, new computer, completion, menu, and mobile. ${capture||''}`)
+} catch (error) {
+  console.error('Onboarding smoke failed:', { url: page.url(), errors })
+  throw error
 } finally {
   local.server.closeAllConnections();local.server.close()
   await context.close();await browser.close();await server.close()

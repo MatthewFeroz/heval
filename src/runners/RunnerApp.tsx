@@ -28,7 +28,7 @@ function Workspace({ localLink }: { localLink: string | null }) {
   return <>
     <PageHeader title={showSetup?'Set up your computer':'Your computers'}>{showSetup?'Four steps to your first result.':'Manage the computers that run your evaluations.'}</PageHeader>
     {error && <p role="alert">{error}</p>}
-    {machines===undefined?<p role="status">Loading computers…</p>:showSetup?<>
+    {machines===undefined?<p role="status">Loading computers… Wait for your workspace to connect.</p>:showSetup?<>
       <FirstSmokeTest machines={forSetup} now={now} localLink={localLink} onClose={close}/>
       {active.length>0 && <p className="setup-management-link"><button className="secondary" onClick={()=>{setClosed(true);history.replaceState(null,'','/machines')}}>Manage connected computers</button></p>}
     </>:<section className="report-card runner-connected" data-tour="machines" aria-label="Connected machines">

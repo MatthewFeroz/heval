@@ -6,14 +6,22 @@ and provider form. That feature is not in published CLI 0.2.0; the manual
 walkthrough below remains usable with that release.
 
 This walkthrough takes you from a fresh Linux worker to a saved evaluation in
-Heval. It uses **Ubuntu 24.04**, **Heval CLI 0.2.0**, **Harbor 0.23.0**, one
-model through Merge Gateway, and the Codex harness running one bundled task.
+Heval. The first saved report uses **Oracle**, Harbor’s reference solution,
+with **no provider credentials or model calls**. You can stop after step 9.
+Steps 10–15 optionally add one model through Merge Gateway and the Codex harness.
+
+The manual installation instructions target **Ubuntu 24.04**, **Heval CLI 0.2.0**
+and **Harbor 0.23.0**.
 Other Linux distributions need different prerequisite installation commands;
 the Heval commands are the same.
 
 You need access to a deployed Heval website with working sign-in and connected
 runner support. Installing this CLI does not deploy or upgrade that website.
 The worker and hosted application must have compatible connected-runner code.
+
+A 2026-10-03 local walkthrough separately verified synthetic browser
+onboarding and real local Convex → Linux worker → Oracle → saved reports. Fresh-account Clerk sign-in remains a human
+acceptance step; this record does not validate a hosted deployment or npm release.
 
 The npm installation needs Node.js 22 or newer. It does **not** require Bun,
 a repository checkout, or building a package from source.
@@ -56,7 +64,7 @@ cat /etc/os-release
 ```
 
 The installation steps below assume Ubuntu 24.04. Do not paste the `apt`
-commands into an Arch/Omarchy, Fedora, or macOS terminal.
+commands into an Arch, Fedora, or macOS terminal.
 
 Paste each command, press Enter, and wait for the terminal prompt to return.
 If a command fails, resolve its error before continuing. When `sudo` asks for
@@ -188,16 +196,20 @@ existing results or the bundled archived example.
 Open your deployed Heval website and sign in. Navigate to **Runner setup**,
 whose route is `/machines` on that website.
 
-In **Connect a machine**, enter a name such as `My first Linux worker` and
-click **Create pairing code**.
+If the four-step setup starts at **Set up your machine**, choose **Setup is
+open** after completing the installations above. In **Connect your computer**,
+choose **Use a pairing code instead**, enter a name such as
+`My first Linux worker`, and click **Create pairing code**. To add another
+computer to an existing account, choose **Add computer** first.
 
-The page displays a command resembling:
+The page displays a **Deployment URL** and **One-time pairing code**. Use its
+deployment URL in this command on the Linux worker:
 
 ```sh
 heval runner connect --url https://YOUR-DEPLOYMENT.convex.cloud
 ```
 
-Copy the **actual command from your website**. The Convex URL identifies its
+Copy the **actual deployment URL from your website**. The Convex URL identifies its
 backend; it is not the same as the website's browser address.
 
 ## 7. Pair the worker
@@ -223,22 +235,46 @@ heval runner start
 This process stays running and normally does not return to the command prompt.
 Leave this terminal open; call it **Terminal A**.
 
-Return to Runner setup in the browser. After a check-in, the worker should
-show **Online**. If it shows **Needs setup**, read its health message: the
-runner checks Harbor's version and access to Docker Engine and Compose.
+Return to Runner setup in the browser. After a check-in, setup advances to
+**Connect your model provider**. The connected-computers view shows
+**Connected** and **Ready**. If setup shows a health or offline message, resolve
+it first: the runner checks Harbor's version and Docker Engine and Compose.
 
 ## 9. Run the setup check without model calls
 
-On Runner setup, find **Check your worker**, select the worker, and click
-**Run setup check**.
+On **Connect your model provider**, find **Check your worker without a model**
+and click **Run worker check**. For an already configured computer, its
+**Model provider** link reopens this setup screen.
 
-Find the run under **Your evaluations** on that page. Wait for it to finish,
-then open its saved report. Confirm that the task passed.
+Wait for the status to finish, then choose **Open worker check report**.
+Confirm that the report contains one trial and one pass. **You now have a saved
+Oracle report; stop here if you do not want to connect a provider or spend model
+credits.** Reopening setup retains the latest check and report. You can also
+find it under **Individual evaluations** on Evaluations
+and in Report library. The Oracle check does not finish the model-evaluation
+step in the setup guide.
 
 This runs a task's reference solution through Harbor and Docker. It makes no
 model calls, although it uses worker compute and may download container images.
 It verifies the path from browser to worker and back to a saved report.
-Resolve any failure here before adding model credentials.
+Resolve any failure here before adding model credentials. This standalone check
+is saved as an individual evaluation, not a model-backed experiment; it does not
+mark the four-step model setup as complete. You do not select Oracle in the
+model/harness picker or need a model-backed profile to run it.
+
+If the worker check profile has not appeared, keep Terminal A running and wait
+for its next check-in. If it stays missing, inspect that terminal’s errors and
+check that the worker and website versions are compatible. For **Worker not
+ready**, check `harbor --version`, `docker info` and `docker compose version`.
+For **Offline**, restore the worker’s power/network and run `heval runner start`
+with the same state directory. Do not create a new pairing or delete the state
+to recover an existing worker.
+
+This standalone action requires the updated hosted UI from this source. If a
+deployment does not show it yet, that deployment still has the earlier setup
+flow. Updating the CLI alone does not add the button. The model-backed
+**Run my first evaluation** action also performs an automatic free worker check,
+but then uses model credits, so it is not a replacement for this no-model step.
 
 ## 10. Get a Merge Gateway API key
 
@@ -264,11 +300,13 @@ masked field and choose **Verify and save**. A successful connection displays
 the available models. Choose a model and Codex, then select **Prepare connection
 check**. This also completes step 12 without model calls; continue at step 13.
 
-The hosted Runner setup page includes **Connect Merge Gateway** after the worker
-check. If the local browser does not open, paste the complete setup link printed
-by the CLI into that step and click **Open local provider setup**. Never paste a
-provider key into that link field. The key is sent directly from the local page
-to the worker and verified against Merge; the hosted backend does not receive it.
+The hosted **Connect your model provider** step offers **Open local setup**
+when it has the local setup link, or **Reopen setup** to show the command.
+Run the provider setup command above in Terminal B on an already prepared Linux
+worker; keep Terminal A running. This reopens the provider form without rerunning
+the worker installer.
+The key goes directly from the local page to that worker and is verified against
+Merge; the hosted backend does not receive it.
 
 For WSL, open the printed link in your Windows browser. For a remote worker,
 use `--no-browser --port 4174`, forward the port with
@@ -340,7 +378,11 @@ Open **Evaluations**, at `/evaluations` on your Heval website.
 
 If no evaluation options appear, confirm Terminal A is running and the setup
 command used the same worker account. The browser lists the worker's advertised
-profiles; connecting an API key alone does not create one.
+profiles; connecting an API key alone does not create one. If a combination is not
+configured for the chosen serving vendor, deselect that harness/model or choose
+a vendor for which all selected combinations have worker-approved profiles.
+The **Start experiment** action stays disabled until the selection is compatible,
+the worker is connected and ready, and the experiment has a name.
 
 ## 14. Start and follow the run
 

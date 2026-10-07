@@ -21,7 +21,7 @@ export function SetupCommand() {
 
 export function FirstSmokeTest({ machines, now, localLink, onClose }: { machines: Machine[]; now: number; localLink: string | null; onClose: () => void }) {
   const runs = useQuery(api.runners.runs)
-  const pair = useMutation(api.runners.createPairing), create = useMutation(api.experiments.create), enable = useMutation(api.runners.setEnabled)
+  const pair = useMutation(api.runners.createPairing), create = useMutation(api.experiments.create), enable = useMutation(api.runners.setEnabled), enqueue = useMutation(api.runners.enqueue)
   const [installed, setInstalled] = useState(() => !!localLink || sessionStorage.getItem('heval.setup.installed') === 'yes')
   const [name, setName] = useState('My computer'), [link, setLink] = useState(localLink ?? '')
   const [busy, setBusy] = useState(false), [error, setError] = useState(''), [reopen, setReopen] = useState(false)
@@ -40,6 +40,8 @@ export function FirstSmokeTest({ machines, now, localLink, onClose }: { machines
   const validLink = localSetupUrl(link)
   const ready = machine && online && machine.ready && !switchedOff
   const ongoing = smokeRun && ['queued','running','cancelling'].includes(smokeRun.status)
+  const workerCheck = runs?.find(run => run.runner === machine?.id && run.profile.setupCheck && run.profile.digest === checkProfile?.digest)
+  const checkingWorker = workerCheck && ['queued','running','cancelling'].includes(workerCheck.status)
   async function act(action: () => Promise<unknown>) {
     setBusy(true); setError('')
     try { await action() } catch (e) { setError(message(e)) } finally { setBusy(false) }
@@ -63,12 +65,21 @@ export function FirstSmokeTest({ machines, now, localLink, onClose }: { machines
     sessionStorage.removeItem(key)
     location.assign(`/evaluations?experiment=${id}`)
   }
+  async function checkWorker() {
+    if (!machine || !checkProfile || !ready || checkingWorker) return
+    // Keep the request across a lost response or reload; enqueue deduplicates it.
+    const key = `heval.worker-check.${machine.id}.${checkProfile.digest}`
+    const requestId = sessionStorage.getItem(key) ?? token()
+    sessionStorage.setItem(key, requestId)
+    await enqueue({ runner: machine.id, profileId: checkProfile.id, digest: checkProfile.digest, requestId })
+    sessionStorage.removeItem(key)
+  }
   return <section className="first-smoke" aria-label="Computer setup" data-tour="setup">
     <ol className="setup-progress" aria-label="Setup progress">{SMOKE_STEPS.map((id,i) => <li key={id} aria-current={i===index && step ? 'step' : undefined} data-done={progress.done[id]}><span>{progress.done[id] ? <Check size={16} aria-hidden="true"/> : i+1}</span><span>{['Machine','Connection','Provider','First evaluation'][i]}</span></li>)}</ol>
     <div className="report-card setup-stage">
       <div className="setup-stage-heading">{(() => { const Icon=icons[index]; return <Icon size={24} aria-hidden="true"/> })()}<span className="report-eyebrow">{step ? `STEP ${index+1} OF 4` : 'READY'}</span></div>
       <h2>{step ? titles[index] : 'Your first evaluation is ready'}</h2>
-      {runs===undefined ? <p role="status">Checking your computer…</p> : <>
+      {runs===undefined ? <p role="status">Checking your computer… Wait for its latest setup status.</p> : <>
       {step==='install' && <>
         <p>Run this on the computer that will do the work. Setup prepares Docker and opens the next step.</p>
         <SetupCommand/>
@@ -100,8 +111,10 @@ export function FirstSmokeTest({ machines, now, localLink, onClose }: { machines
       {step==='provider' && <>
         <p>Connect Merge Gateway in the local setup page. Choose a model and keep {harness} selected.</p>
         <p className="report-muted">Your key stays on this computer.</p>
-        {validLink ? <a className="report-button primary" href={validLink}>Open local setup</a> : <button className="secondary" onClick={()=>setReopen(!reopen)}>{reopen?'Hide command':'Reopen setup'}</button>}
-        {reopen && <SetupCommand/>}
+        <div className="report-actions setup-stage-actions">
+          {validLink ? <a className="report-button primary" href={validLink}>Open local setup</a> : <button type="button" className="secondary" aria-expanded={reopen} onClick={()=>setReopen(!reopen)}>{reopen?'Hide command':'Reopen setup'}</button>}
+        </div>
+        {reopen && <><p>For a setup-managed Docker worker, rerun the same setup command to reopen its local page.</p><SetupCommand/><p>For a manually prepared Linux worker, run <code>heval provider setup merge</code> in another terminal with the same runner state directory. Keep the runner terminal open.</p><p className="report-muted">Requires a setup-enabled CLI build. With CLI 0.2.0, follow the <a href="https://github.com/MatthewFeroz/heval/blob/main/docs/first-evaluation.md">manual provider setup guide</a>.</p></>}
         <p role="status">Waiting for {machine?.name} to share its model connection…</p>
       </>}
       {step==='run' && profile && <>
@@ -109,13 +122,23 @@ export function FirstSmokeTest({ machines, now, localLink, onClose }: { machines
         <dl className="setup-review"><div><dt>Harness</dt><dd>{harness}</dd></div><div><dt>Model</dt><dd>{profile.model}</dd></div></dl>
         <p className="report-muted">The worker check is free. The evaluation uses your provider credits.</p>
         {ongoing ? <a className="report-button primary" href={`/evaluations?experiment=${smokeRun.experiment}`}>View evaluation</a> : <button className="primary" disabled={busy||!ready||!checkProfile} onClick={()=>void act(start)}>{busy?'Starting…':smokeRun?'Try first evaluation again':'Run my first evaluation'}</button>}
-        {!checkProfile && <p role="alert">Reopen setup to add the worker check before starting.</p>}
+        {!checkProfile && <p role="alert">The worker check profile is missing. <a href={`/machines?setup=1&provider=1&worker=${machine?.id}`}>Reopen provider setup</a> for recovery steps before starting.</p>}
       </>}
       {!step && <><p>Your computer and model connection are working.</p><a className="report-button primary" href={`/evaluations?experiment=${smokeRun?.experiment}`}>View results</a><button className="secondary" onClick={onClose}>Manage computers</button></>}
+      {machine && !checkProfile && step==='provider' && <p role="status">Waiting for the worker check profile. Keep <code>heval runner start</code> running on this worker with the same state directory used for pairing. If it stays unavailable, check the runner terminal for errors and confirm the CLI and website versions are compatible.</p>}
+      {machine && checkProfile && (step==='provider' || step==='run') && <section className="setup-worker-check" aria-label="Worker check without a model">
+        <h3>Check your worker without a model</h3>
+        <p>Optional: run the bundled task with Harbor's reference solution before connecting a provider. No model credentials or credits are needed.</p>
+        {workerCheck && <p role="status">{workerCheck.status}: {workerCheck.phase}{workerCheck.message ? ` · ${workerCheck.message}` : ''}</p>}
+        <div className="report-actions setup-stage-actions">
+          {workerCheck?.report && <a className="report-button secondary" href={`/reports?id=${workerCheck.report}`}>Open worker check report</a>}
+          <button type="button" className="secondary" aria-busy={!!checkingWorker} disabled={busy || !ready || !!checkingWorker} onClick={()=>void act(checkWorker)}>{checkingWorker ? 'Worker check in progress' : workerCheck ? 'Run worker check again' : 'Run worker check'}</button>
+        </div>
+      </section>}
       </>}
-      {machine && !online && <p role="status">{machine.name} is offline. Start Docker and reopen setup to reconnect.</p>}
+      {machine && !online && <p role="status">{machine.name} is offline. Keep Docker running and start <code>heval runner start</code> on this worker with the same state directory used for pairing.</p>}
       {machine && switchedOff && <div className="report-actions"><p>{machine.name} is switched off.</p><button disabled={busy} onClick={()=>void act(()=>enable({id:machine.id,enabled:true}))}>Switch on</button></div>}
-      {machine && online && !machine.ready && <p role="status">{machine.health}</p>}
+      {machine && online && !machine.ready && <p role="status">Worker not ready: {machine.health}. Check the runner terminal, <code>harbor --version</code>, <code>docker info</code>, and <code>docker compose version</code> on this worker before trying again.</p>}
       {error && <p role="alert">{error}</p>}
     </div>
   </section>

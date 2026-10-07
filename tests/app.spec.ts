@@ -21,7 +21,7 @@ test('submits an early-access signup', async ({ page }) => {
 test('keeps the showcase public while real runs require authentication', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'The open-source evaluation platform for coding agents.', exact: true })).toBeVisible()
   page.once('dialog', async (dialog) => {
-    expect(dialog.message()).toContain('WorkOS AuthKit')
+    expect(dialog.message()).toContain('Clerk sign-in')
     await dialog.dismiss()
   })
   await page.getByRole('button', { name: 'RUN REAL' }).first().click()

@@ -233,3 +233,21 @@ test('each model can use its own approved vendor while harness comparisons hold 
  await poll(inconsistent)
  await expect(owner.mutation(api.experiments.create,{...args,requestId:key(77)})).rejects.toThrow('same vendor across harnesses')
 })
+
+test('cancellation preserves verified partial results once and combines only recorded trials', async () => {
+ const {t,owner,args,poll,credential,session,claimId}=await setup()
+ const id=await owner.mutation(api.experiments.create,args)
+ const run=(await poll())!
+ await owner.mutation(api.experiments.cancel,{id})
+ expect((await owner.query(api.experiments.get,{id})).report).toBeNull()
+ const finish={credential,session,claimId,id:run.id,status:'cancelled' as const,json:JSON.stringify({...fixture,rows:[{...fixture.rows[0],reward:1,passed:1}]})}
+ const saved=await t.mutation(api.runners.finish,finish)
+ expect(saved.report).toBeTruthy()
+ expect(await t.mutation(api.runners.finish,finish)).toEqual(saved)
+ const detail=await owner.query(api.experiments.get,{id})
+ expect(detail.cells.every(c=>c.status==='cancelled')).toBe(true)
+ expect(detail.cells[0].result).toMatchObject({trials:1,passed:1})
+ const combined=await owner.query(api.reports.get,{id:detail.report!})
+ expect(JSON.parse(combined!.data).rows).toHaveLength(1)
+ expect(await owner.query(api.reports.list)).toHaveLength(2)
+})

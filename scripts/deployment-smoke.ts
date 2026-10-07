@@ -7,7 +7,7 @@ import { chromium, expect } from '@playwright/test'
 const root = resolve(import.meta.dirname, '..')
 const dist = join(root, 'dist')
 const temporary = await mkdtemp(join(tmpdir(), 'heval-deployment-'))
-const env = { ...process.env, VITE_WORKOS_CLIENT_ID: '', VITE_CONVEX_URL: '', WORKOS_CLIENT_ID: '', HEVAL_ENABLE_RUNNER: '0', HEVAL_ENABLE_EXPORTS: '0' }
+const env = { ...process.env, VITE_CLERK_PUBLISHABLE_KEY: '', VITE_CONVEX_URL: '', CLERK_JWT_ISSUER_DOMAIN: '', HEVAL_ENABLE_RUNNER: '0', HEVAL_ENABLE_EXPORTS: '0' }
 const browser = await chromium.launch()
 let staticServer: ReturnType<typeof Bun.serve> | undefined
 let backend: Bun.Subprocess<'ignore', 'pipe', 'pipe'> | undefined

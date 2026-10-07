@@ -10,10 +10,12 @@
 .setup-stage-heading { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; color: var(--muted); }
 .report-shell .setup-stage > h2 { font: 600 var(--type-2xl) var(--sans); margin: 0 0 16px; }
 .setup-stage > button, .setup-stage > .report-button { margin: 16px 8px 0 0; }
+.setup-stage-actions { margin-top: 16px; }
 .first-smoke-copy { display: flex; align-items: center; gap: 8px; min-width: 0; margin: 20px 0; }
 .first-smoke-copy code { flex: 1; min-width: 0; padding: 11px; border: 1px solid var(--line-strong); border-radius: var(--radius-control); background: var(--bg); font: var(--type-xs) var(--mono); line-height: 20px; overflow-wrap: anywhere; }
 .setup-review { display: grid; gap: 12px; margin: 20px 0; }
 .setup-review > div { display: grid; grid-template-columns: 80px minmax(0,1fr); gap: 16px; }
 .setup-review dt { color: var(--muted); }
 .setup-review dd { margin: 0; overflow-wrap: anywhere; }
+.setup-worker-check { margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--line); }
 @media(max-width:600px) { .setup-progress { gap: 8px; } .setup-progress li { flex-direction: column; align-items: flex-start; } }

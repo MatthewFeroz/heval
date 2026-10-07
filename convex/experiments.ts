@@ -5,6 +5,9 @@ import { RUNNER_ONLINE_MS, terminalStates } from '../src/runners/protocol'
 import { runSettingsValidator } from './runnerValidators'
 import { executionTimeoutSeconds } from '../src/runners/protocol'
 import { materializeExperimentReport } from './experimentReports'
+import { assertReportCapacity } from './reportCapacity'
+import { summarizeRun } from './runResults'
+import type { ReportData } from '../src/reports/format'
 
 export const create = mutation({ args: {
   runner: v.id('runners'), title: v.string(), requestId: v.string(), attempts: v.number(), runSettings: v.optional(runSettingsValidator),
@@ -41,10 +44,8 @@ export const create = mutation({ args: {
   const check = args.checkWorker ? machine.profiles.find(p => p.setupCheck && p.agent === 'oracle') : undefined
   if (args.checkWorker && !check) throw new ConvexError('Reopen setup on this computer to install its worker check.')
   const requiredRuns = profiles.length + (check ? 1 : 0)
-  const pending = history.filter(r => !terminalStates.includes(r.status as typeof terminalStates[number])).length
   if (history.length + requiredRuns > 200) throw new ConvexError('Not enough run storage. Keep at most 200 total runs.')
-  const reports = await ctx.db.query('reports').withIndex('by_owner', q => q.eq('owner', owner)).take(100)
-  if (reports.length + pending + requiredRuns + 1 > 100) throw new ConvexError('Not enough report storage for this experiment.')
+  await assertReportCapacity(ctx, owner, requiredRuns + 1, 'Not enough report storage for this experiment.')
   // Persist the prerequisite with the experiment. It continues without a browser
   // and the worker cannot claim model work until the free check has passed.
   const setupRun = check ? await ctx.db.insert('runnerRuns', { owner, runner: args.runner, requestId: `${args.requestId}:setup`, profile: check, status: 'queued', phase: 'Checking this computer before the first evaluation' }) : undefined
@@ -69,17 +70,11 @@ export const get = query({ args: { id: v.id('experiments') }, handler: async (ct
   const setup = e.setupRun ? await ctx.db.get(e.setupRun) : null
   const runs = await ctx.db.query('runnerRuns').withIndex('by_experiment', q => q.eq('experiment', id)).collect()
   const cells = await Promise.all(runs.map(async r => {
-    const data = r.report ? await ctx.db.query('reportData').withIndex('by_report', q => q.eq('report', r.report!)).unique() : null
-    const rows = data ? (JSON.parse(data.json) as { rows: { passed: number; agentSeconds: number | null; costUsd: number | null; inputTokens: number | null; outputTokens: number | null; agentVersion?: string }[] }).rows : []
-    const times = rows.flatMap(row => row.passed === 1 && typeof row.agentSeconds === 'number' ? [row.agentSeconds] : []).sort((a,b) => a-b)
-    const mid = Math.floor(times.length/2)
+    // Older records retain their metrics until the bounded summary backfill runs.
+    const data = r.report && !r.resultSummary ? await ctx.db.query('reportData').withIndex('by_report', q => q.eq('report', r.report!)).unique() : null
+    const result = r.resultSummary ?? (data ? summarizeRun((JSON.parse(data.json) as ReportData).rows) : null)
     return { id: r._id, profile: r.profile, attempts: r.requestedAttempts ?? r.profile.attempts, runSettings: r.runSettings ?? null, status: r.status, phase: r.phase, message: r.message ?? null, report: r.report ?? null,
-      result: data ? {
-        inputTokens: rows.length && rows.every(row => typeof row.inputTokens === 'number') ? rows.reduce((n,row) => n + row.inputTokens!,0) : null,
-        outputTokens: rows.length && rows.every(row => typeof row.outputTokens === 'number') ? rows.reduce((n,row) => n + row.outputTokens!,0) : null,
-        versions: [...new Set(rows.flatMap(row => row.agentVersion ? [row.agentVersion] : []))],
-        trials: rows.length, passed: rows.filter(row => row.passed === 1).length, medianSeconds: times.length ? times.length % 2 ? times[mid] : (times[mid-1]+times[mid])/2 : null,
-        reportedCost: rows.length && rows.every(row => typeof row.costUsd === 'number') ? rows.reduce((n,row) => n + row.costUsd!,0) : null } : null }
+      result }
   }))
   return { id, title: e.title, createdAt: e._creationTime, report: e.report ?? null, setup: setup ? { status: setup.status, phase: setup.phase, message: setup.message ?? null, report: setup.report ?? null } : null, machine: machine?.name ?? 'Disconnected worker', lastSeen: machine?.lastSeen ?? 0, online: !!machine && !machine.revoked && Date.now()-machine.lastSeen < RUNNER_ONLINE_MS, cells }
 } })

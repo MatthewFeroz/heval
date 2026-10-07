@@ -89,7 +89,7 @@ if (key !== 'process-test-key') process.exit(1);
 if (agent.name === 'claude-code' ? process.env.OPENAI_API_KEY : process.env.ANTHROPIC_API_KEY) process.exit(2);
 fs.mkdirSync('jobs/evaluation/trial', {recursive:true});
 fs.writeFileSync('jobs/evaluation/trial/config.json', JSON.stringify({agent}));
-fs.writeFileSync('jobs/evaluation/trial/result.json', JSON.stringify({task_name:'heval-setup', verifier_result:{rewards:{reward:1}}, agent_info:{name:agent.name, version:'test'}}));
+fs.writeFileSync('jobs/evaluation/trial/result.json', JSON.stringify({finished_at:new Date().toISOString(),task_name:'heval-setup', verifier_result:{rewards:{reward:1}}, agent_info:{name:agent.name, version:'test'}}));
 `, { mode: 0o700 })
   const signals = process.listenerCount('SIGINT')
   for (const profile of loadProfiles(join(directory, 'profiles.json')).filter(p => p.mergeConnection)) {
@@ -99,6 +99,7 @@ fs.writeFileSync('jobs/evaluation/trial/result.json', JSON.stringify({task_name:
     await supervise(run)
     const outcome = readJson<Outcome>(join(run, 'outcome.json'))
     expect(outcome.status).toBe('completed')
+    expect(JSON.parse(outcome.json!).rows).toMatchObject([{ model, modelShort: 'test-model', provider: 'anthropic', stack: `${profile.public.agent} / test-model` }])
     expect(JSON.stringify(outcome)).not.toContain('process-test-key')
     expect(readFileSync(join(run, 'harbor.json'), 'utf8')).not.toContain('process-test-key')
     expect(readFileSync(join(run, 'execution.json'), 'utf8')).not.toContain('process-test-key')

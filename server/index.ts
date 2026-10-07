@@ -10,7 +10,7 @@ import { createInferenceProxy } from './inference-proxy'
 
 const policy = deploymentPolicy(process.env)
 const runner = createConfiguredRunner()
-const authenticate = createAuthenticator(process.env.WORKOS_CLIENT_ID, process.env.WORKOS_API_HOSTNAME)
+const authenticate = createAuthenticator(process.env.CLERK_JWT_ISSUER_DOMAIN, process.env.HEVAL_PUBLIC_ORIGIN)
 const signup = createSignupStore(process.env.HEVAL_DATA_DIR || resolve(import.meta.dir, '../data'))
 const dataDirectory = process.env.HEVAL_DATA_DIR || resolve(import.meta.dir, '../data')
 const connections = createConnectionStore(dataDirectory, connectionEncryptionKey(dataDirectory, process.env.HEVAL_CONNECTION_ENCRYPTION_KEY, policy.hosted))
@@ -19,7 +19,7 @@ if (policy.hosted && !await Bun.file(resolve(import.meta.dir, '../dist/public-bu
 await runner.ready
 
 type SocketData = { runId: string; userId: string }
-const enabled = process.env.HEVAL_ENABLE_RUNNER === '1' && Boolean(process.env.WORKOS_CLIENT_ID)
+const enabled = process.env.HEVAL_ENABLE_RUNNER === '1' && Boolean(process.env.CLERK_JWT_ISSUER_DOMAIN)
 const api = createApi(runner, authenticate, enabled, exportsEnabled, policy.allowedUsers, { store: connections, proxy: inference })
 const dist = resolve(import.meta.dir, '../dist')
 

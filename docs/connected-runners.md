@@ -8,7 +8,7 @@ Heval CLI 0.2.0 includes the connected runner preview. The older npm 0.1.0 CLI d
 
 ```text
 Browser on laptop / another browser session
-                 │ WorkOS sign-in
+                 │ Clerk sign-in
                  ▼
       Hosted Heval + Convex workspace
        machines · queue · results
@@ -21,7 +21,7 @@ Browser on laptop / another browser session
        Docker          Docker
 ```
 
-Your browser doesn't need to stay open. Each machine runs a small polling daemon; a separate local supervisor owns each Harbor execution. Closing/restarting the polling daemon does not terminate that supervisor. The daemon reconnects to the same run and uploads its result once. A machine reboot interrupts execution; a run is never automatically repeated on another machine.
+Your browser doesn't need to stay open. Each machine runs a small polling daemon; a separate local supervisor owns each Harbor execution. Closing/restarting the polling daemon does not terminate that supervisor. The daemon reconnects to the same run; repeated delivery attempts save one result. A machine reboot interrupts execution; a run is never automatically repeated on another machine.
 
 The current source pin is Harbor 0.23.0. It is covered by the required
 connected-evaluation CI job, which runs the setup profile through a live daemon,
@@ -205,7 +205,30 @@ Create `one-task.json` alongside it, replacing the example model and task path w
 
 For manually configured providers, put the variables required by the Harbor agent in the local `envFile`, e.g. `OPENAI_API_KEY=...`, with restricted permissions. Never commit them. The supervisor deliberately does not inherit arbitrary credentials from the daemon's environment. Agent `kwargs`, `env`, and explicit setup/execution timeout overrides are accepted from manually configured JSON. Merge profiles generate routing and harness settings automatically and reject manual `kwargs`/`env` overrides. Supported built-in agents are Oracle, Codex, Claude Code, OpenCode, Pi, and Terminus 2; only the Oracle/Docker route has been exercised without paid credentials in the automated cloud smoke test. Model-backed combinations need your own compatibility/model-access check.
 
-Task contents and executable configuration contribute to the profile digest. Each claimed run gets a copied task snapshot; a concurrent task edit aborts before execution. A changed profile cannot silently execute under an older browser selection. Identical profile metadata/configuration and task contents on two machines give the same digest despite different absolute task paths. Base image tags and provider model aliases may still change upstream; pin those yourself for published comparisons. Harness installation dependencies are not automatically frozen by Heval.
+Task contents, executable configuration, and versioned execution metadata
+contribute to the profile digest. Execution metadata records relative file and
+directory names, entry kinds, and executable permission bits, including empty
+directories. Each claimed run gets a copied task snapshot; its contents and
+execution metadata must both match the approved profile before Harbor starts.
+A changed task cannot silently execute under an older browser selection.
+Identical configuration, contents, and execution metadata on two machines give
+the same digest despite different absolute task paths.
+
+Benchmark `taskSet` identifiers and checked-in task pins still identify file
+names and bytes only. They do not pin executable permissions or empty
+directories. The additional approval check preserves those existing content
+pins; a catalog that pins execution metadata would require a separate migration.
+Base image tags and provider model aliases may still change upstream; pin those
+yourself for published comparisons. Harness installation dependencies are not
+automatically frozen by Heval.
+
+Upgrade workers when idle. The daemon automatically advertises the new approval
+digests without rewriting local profiles. Queued work selected under an older
+digest fails visibly as an approved-profile change; review the selection and
+start again. Already claimed runs retain their copied tasks and recovery state.
+Moving queued work requires both workers to advertise the same digest, so
+upgrade both before transferring work. This change needs no backend schema or
+benchmark-pin update.
 
 Model calls use the credentials on the selected machine. Its owner pays for model usage and VM resources. Time/trial limits are **not** dollar spending caps. The default setup check uses no model credits; a cloud VM may still incur compute charges.
 
@@ -228,9 +251,9 @@ The runner checks health every minute and polls every five seconds. Plan Convex 
 
 - **Another browser/device:** sign into the same Heval account. Machine state, queued/running jobs, and saved reports come from Convex. Team report invitations do not grant machine-execution access.
 - **Move queued work:** choose a destination on that evaluation's card. It must be connected and advertise the exact profile digest. Once a machine claims the run it cannot move.
-- **Daemon crash or network interruption:** the independent supervisor continues on that machine. The outcome is kept locally until reconnection. A new daemon session may wait up to 30 seconds for the previous connection lease to expire. Claims and report uploads are idempotent.
+- **Daemon crash or network interruption:** the independent supervisor continues on that machine. The outcome is kept locally until reconnection. A new daemon session may wait up to 30 seconds for the previous connection lease to expire. Claims and report uploads are idempotent. Preserve the original state directory and pairing; re-pairing or deleting state is not a recovery step.
 - **Host reboot, supervisor crash, or missing state:** Heval marks the run interrupted and does not rerun it. A cleanup marker blocks further execution on that runner. Inspect local logs, then use `heval runner cleanup RUN_ID --state STATE_DIRECTORY` to stop any matching orphaned Harbor process and remove only Compose resources belonging to that recorded run. Removing the marker by hand can hide orphaned work; use the command after investigation.
-- **Cancel:** queued work cancels immediately. Running work shows cancellation pending until the machine acknowledges stopping and cleanup. An offline machine cannot be stopped instantaneously by the web client.
+- **Cancel:** queued work cancels immediately. Running work shows cancellation pending until the machine acknowledges stopping and cleanup. An offline machine cannot be stopped instantaneously by the web client. With the updated source-built worker and backend, cleanup failures stay interrupted and the local cleanup marker blocks new execution. Available finished verifier outcomes are saved as a partial report; unfinished tasks are not scored.
 - **Switch off:** the switch in Runner setup stops a worker from claiming new runs; its current run finishes and queued work waits. Starting, enqueuing, or moving work onto it is refused until it is switched back on.
 - **Machine icon:** the worker reports its host kind (laptop, desktop, Mac mini, Mac Studio, server, cloud VM, or Linux/WSL). `heval setup` detects it on the host because a container only sees Docker's VM; manual container recipes set `HEVAL_MACHINE_KIND`. Override it from the row's menu. See [`machine.ts`](../packages/cli/src/runner/machine.ts).
 - **Disconnect:** the credential is revoked and queued work is cancelled. A connected daemon asks its current supervisor to stop; for an offline machine, inspect/stop its physical processes yourself. Reports remain saved.
@@ -247,7 +270,11 @@ compatibility with Harbor's default-elided configs. CI also runs
 `bun run test:evaluations:e2e`: it starts an isolated local Convex backend, a
 separate live daemon process, Harbor and Docker; completes the bundled Oracle
 task without model calls; and requires both the child report and combined
-experiment report. Build the CLI before the broader manual cloud smoke:
+experiment report. It also restarts its own daemon during execution, rejects
+telemetry while retaining heartbeats/report delivery, cancels queued work without
+launching it, and checks active cancellation through offline recovery and Docker
+cleanup.
+Build the CLI before the broader manual cloud smoke:
 
 ```sh
 bun run cli:build
@@ -259,7 +286,7 @@ HEVAL_SMOKE_HARBOR=/absolute/path/to/harbor \
 
 Use an isolated preview exactly as in [the report smoke instructions](hosted-reports.md#reproduce-the-smoke-test). The test installs its own short-lived JWT issuer there, uses real Convex functions and real Harbor/Docker execution, and must never target production. It exercises two separate runner state directories/processes on **one physical Linux host**; network reachability and firewall behavior on two actual physical machines remain a deployment check. Browser videos, screenshots and JSON evidence go to `recordings/connected-runner-flow/`. Revoke the temporary deploy key afterward.
 
-The new frontend routes are `/machines` and `/evaluations`. Deployment uses the same Vercel + Convex + WorkOS configuration as saved reports. Merge/deploy matching frontend/backend revisions together. No paid cloud resources are provisioned by connecting a runner.
+The new frontend routes are `/machines` and `/evaluations`. Deployment uses the same Vercel + Convex + Clerk configuration as saved reports. Merge/deploy matching frontend/backend revisions together. No paid cloud resources are provisioned by connecting a runner.
 
 
 ## Configuring execution in Evaluations

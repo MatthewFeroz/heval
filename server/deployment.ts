@@ -5,7 +5,7 @@ export function deploymentPolicy(env: Record<string, string | undefined>) {
     const origin = new URL(env.HEVAL_PUBLIC_ORIGIN || '')
     if (origin.protocol !== 'https:' || origin.origin !== env.HEVAL_PUBLIC_ORIGIN) throw new Error('HEVAL_PUBLIC_ORIGIN must be an exact HTTPS origin')
     if (!env.HEVAL_DATA_DIR) throw new Error('Hosted mode requires HEVAL_DATA_DIR on persistent storage')
-    if (env.HEVAL_ENABLE_RUNNER === '1' && (!env.WORKOS_CLIENT_ID || !allowedUsers?.size || !env.DOCKER_HOST?.startsWith('ssh://'))) throw new Error('Hosted evaluations require WorkOS, invited user IDs, and a separate SSH Docker worker host')
+    if (env.HEVAL_ENABLE_RUNNER === '1' && (!env.CLERK_JWT_ISSUER_DOMAIN || !allowedUsers?.size || !env.DOCKER_HOST?.startsWith('ssh://'))) throw new Error('Hosted evaluations require Clerk, invited user IDs, and a separate SSH Docker worker host')
   }
   return { hosted, allowedUsers, origin: env.HEVAL_PUBLIC_ORIGIN }
 }

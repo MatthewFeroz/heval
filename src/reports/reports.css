@@ -15,11 +15,11 @@ button, input, select, textarea { font: inherit; }
 main.report-shell { flex: 1; padding-block: 32px 48px; }
 
 /* Controls */
-.report-shell :is(button, .report-button) { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: var(--control-height); padding: 5px 11px; border: 1px solid var(--line-strong); border-radius: var(--radius-control); background: var(--panel-2); color: var(--white); font: 500 var(--type-sm) var(--sans); text-align: center; text-decoration: none; cursor: pointer; transition: background .15s, border-color .15s; }
+.report-shell :is(button, .report-button) { display: inline-flex; flex-shrink: 0; align-items: center; justify-content: center; gap: 8px; vertical-align: middle; min-height: var(--control-height); padding: 5px 11px; border: 1px solid var(--line-strong); border-radius: var(--radius-control); background: var(--panel-2); color: var(--white); font: 500 var(--type-sm) var(--sans); text-align: center; text-decoration: none; cursor: pointer; transition: background .15s, border-color .15s; }
 .report-shell :is(button, .report-button):hover:not(:disabled) { background: var(--panel-3); border-color: var(--text-secondary); color: var(--white); }
 .report-shell button:disabled { opacity: .45; cursor: not-allowed; }
-.report-shell button.secondary { background: transparent; color: var(--text-secondary); border-color: var(--line-strong); }
-.report-shell button.secondary:hover:not(:disabled) { background: var(--panel-2); color: var(--white); }
+.report-shell :is(button, .report-button).secondary { background: transparent; color: var(--text-secondary); border-color: var(--line-strong); }
+.report-shell :is(button, .report-button).secondary:hover:not(:disabled) { background: var(--panel-2); color: var(--white); }
 /* Primary actions are explicit; utilities share the quieter default control. */
 .report-shell :is(button, .report-button).primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
 .report-shell :is(button, .report-button).primary:hover:not(:disabled) { background: var(--accent-hover); border-color: var(--accent-hover); color: var(--accent-ink); }

@@ -139,8 +139,8 @@ test('signup requires consent, persists normalized emails, deduplicates and thro
 })
 
 test('hosted mode rejects missing persistence, invitations and a local Docker daemon', () => {
-  const base = { HEVAL_HOSTED: '1', HEVAL_PUBLIC_ORIGIN: 'https://heval.example.com', HEVAL_DATA_DIR: '/data', HEVAL_ENABLE_RUNNER: '1', WORKOS_CLIENT_ID: 'client-test', HEVAL_ALLOWED_USER_IDS: 'alice', DOCKER_HOST: 'ssh://worker@10.0.0.2' }
+  const base = { HEVAL_HOSTED: '1', HEVAL_PUBLIC_ORIGIN: 'https://heval.example.com', HEVAL_DATA_DIR: '/data', HEVAL_ENABLE_RUNNER: '1', CLERK_JWT_ISSUER_DOMAIN: 'https://auth.example.com', HEVAL_ALLOWED_USER_IDS: 'alice', DOCKER_HOST: 'ssh://worker@10.0.0.2' }
   expect(deploymentPolicy(base).allowedUsers?.has('alice')).toBe(true)
-  for (const field of ['HEVAL_PUBLIC_ORIGIN', 'HEVAL_DATA_DIR', 'WORKOS_CLIENT_ID', 'HEVAL_ALLOWED_USER_IDS', 'DOCKER_HOST']) expect(() => deploymentPolicy({ ...base, [field]: '' })).toThrow()
+  for (const field of ['HEVAL_PUBLIC_ORIGIN', 'HEVAL_DATA_DIR', 'CLERK_JWT_ISSUER_DOMAIN', 'HEVAL_ALLOWED_USER_IDS', 'DOCKER_HOST']) expect(() => deploymentPolicy({ ...base, [field]: '' })).toThrow()
   expect(() => deploymentPolicy({ ...base, DOCKER_HOST: 'unix:///var/run/docker.sock' })).toThrow()
 })

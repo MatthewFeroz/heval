@@ -10,9 +10,19 @@ The implementation must be deployed and configured before hosted export buttons 
 2. In saved Studio, **Export PNG online** or **Export thread ZIP online** validates the draft/version, saves the exact project, and creates a queued export in one Convex transaction. It does not publish the draft.
 3. A scheduled internal mutation claims one job. A scheduled Node action starts a nonpersistent Sandbox from the pinned renderer snapshot, with outbound networking denied and no credentials inside the VM.
 4. The shared `server/social-posters.ts` renderer produces the artifact. The action reads it over the Sandbox API and uploads it to private Blob storage. The VM stops in `finally`, with a four-minute hard VM lifetime as a fallback.
-5. Export history subscribes to Convex. Its Download button calls the Vercel `/api/presentation-export` function with the current WorkOS access token. Convex checks current report membership before the function streams the private blob; responses are not cached publicly.
+5. Export history subscribes to Convex. Its Download button calls the Vercel `/api/presentation-export` function with the current Clerk access token. Convex checks current report membership before the function streams the private blob; responses are not cached publicly.
 
 Each job retains the submitted project, resolved input, settings hash, saved draft version and renderer snapshot ID. Changing the draft does not alter past exports. ZIPs include the existing renderer manifest and values CSV. Multi-page image questions return a ZIP.
+
+Owners and editors can submit exports; viewers can read export history and
+download completed artifacts. Every download requires current report membership,
+even when the job was submitted by the downloading user. A public share token
+grants no private export access. Removing either an editor or viewer blocks
+future downloads and submissions, including retries of an earlier request.
+Revoking a public report link leaves authorized private downloads available.
+Files already downloaded, and streams authorized before removal, cannot be
+recalled. Responses use `Cache-Control: private, no-store` and vary on
+`Authorization`; there is no public artifact URL.
 
 ## Configure and deploy
 
@@ -51,7 +61,7 @@ Set these **Vercel production environment variables**:
 - `BLOB_READ_WRITE_TOKEN` for the attached private store
 - `CONVEX_URL` for the same backend the frontend uses (or runtime `VITE_CONVEX_URL`)
 - `CONVEX_DEPLOY_KEY` for the existing `scripts/vercel-build.ts` integration
-- Retain the existing WorkOS and frontend configuration.
+- Retain the existing Clerk and frontend configuration.
 
 Deploy the backend and frontend together using the existing Vercel build. The build deploys Convex and supplies `VITE_CONVEX_URL` to Vite. The download function must point to that same deployment. Preview deployments should use a separate backend and storage credentials, or leave rendering unconfigured.
 
@@ -81,6 +91,18 @@ bun run lint
 ```
 
 Backend tests exercise atomic save/enqueue, immutable inputs, access revocation, idempotency, version conflicts and crash recovery. Worker/proxy tests mock cloud SDKs and verify private storage, credential boundaries, failure cleanup and access checks. The UI smoke exercises real Studio components with simulated cloud adapters: queue, reload, settings, history and authorized download. The renderer smoke runs the **actual Node bundle and Chromium** locally to generate PNG and ZIP artifacts; the snapshot setup repeats a PNG check on Vercel. These local checks do not establish that a production deployment is configured.
+
+Report authorization tests use the clearly labeled synthetic fixture described
+in [private report access validation](hosted-reports.md#private-report-access-validation).
+The download regression connects the actual Convex membership query in
+`convex-test` to the real `/api/presentation-export` handler, with only the HTTP
+client transport and Blob SDK mocked. It verifies successful viewer/editor
+downloads followed by denial after removal, with no storage read on denial,
+and confirms that an active public link does not restore private download access.
+Backend tests also verify that saving an export leaves trial data and the
+published revision unchanged. No cloud renderer or hosted deployment is
+contacted by these checks. Real Clerk sessions, hosted rendering and storage
+configuration remain separate acceptance checks.
 
 ## Presentation style and persistence
 

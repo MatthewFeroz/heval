@@ -3,8 +3,10 @@ import { defineSchema, defineTable } from 'convex/server'
 import { v } from 'convex/values'
 import { machineKindValidator, profileValidator, runStatusValidator, runSettingsValidator } from './runnerValidators'
 import { monitoringValidator } from './monitoringValidators'
+import { runResultValidator } from './runResults'
 
 export default defineSchema({
+  authAccountLinks: defineTable({ issuer: v.string(), subject: v.string(), owner: v.string() }).index('by_identity', ['issuer', 'subject']).index('by_owner', ['owner']),
   runnerMonitoring: defineTable({ run: v.id('runnerRuns'), receivedAt: v.number(), snapshot: monitoringValidator }).index('by_run', ['run']),
   presentationExports: defineTable({
     report: v.id('reports'), owner: v.string(), requestId: v.string(), version: v.number(),
@@ -19,9 +21,9 @@ export default defineSchema({
   runnerPairings: defineTable({ owner: v.string(), name: v.string(), codeHash: v.string(), expiresAt: v.number(), runner: v.optional(v.id('runners')) }).index('by_hash', ['codeHash']).index('by_owner', ['owner']),
   runners: defineTable({ modelCatalog: v.optional(gatewayCatalogValidator), owner: v.string(), name: v.string(), credentialHash: v.string(), revoked: v.boolean(), lastSeen: v.number(), ready: v.boolean(), health: v.string(), profiles: v.array(profileValidator), session: v.optional(v.string()), leaseUntil: v.number(), activeRun: v.optional(v.id('runnerRuns')),
     // Absent means on; `machine` is reported by the worker, `icon` is the owner's override.
-    enabled: v.optional(v.boolean()), machine: v.optional(machineKindValidator), icon: v.optional(machineKindValidator) }).index('by_owner', ['owner']).index('by_credential', ['credentialHash']),
+    enabled: v.optional(v.boolean()), machine: v.optional(machineKindValidator), icon: v.optional(machineKindValidator) }).index('by_owner', ['owner']).index('by_owner_revoked', ['owner', 'revoked']).index('by_credential', ['credentialHash']),
   experiments: defineTable({ setupRun: v.optional(v.id('runnerRuns')), owner: v.string(), title: v.string(), runner: v.id('runners'), requestId: v.string(), selection: v.string(), attempts: v.number(), taskSet: v.string(), report: v.optional(v.id('reports')) }).index('by_owner', ['owner']).index('by_request', ['owner', 'requestId']),
-  runnerRuns: defineTable({ experiment: v.optional(v.id('experiments')), requestedAttempts: v.optional(v.number()), runSettings: v.optional(runSettingsValidator), owner: v.string(), runner: v.id('runners'), requestId: v.string(), profile: profileValidator, status: runStatusValidator, claimId: v.optional(v.string()), startedAt: v.optional(v.number()), finishedAt: v.optional(v.number()), report: v.optional(v.id('reports')), phase: v.string(), message: v.optional(v.string()) }).index('by_owner', ['owner']).index('by_request', ['owner', 'requestId']).index('by_runner_status', ['runner', 'status']).index('by_experiment', ['experiment']),
+  runnerRuns: defineTable({ experiment: v.optional(v.id('experiments')), requestedAttempts: v.optional(v.number()), runSettings: v.optional(runSettingsValidator), owner: v.string(), runner: v.id('runners'), requestId: v.string(), profile: profileValidator, status: runStatusValidator, claimId: v.optional(v.string()), startedAt: v.optional(v.number()), finishedAt: v.optional(v.number()), report: v.optional(v.id('reports')), resultSummary: v.optional(runResultValidator), phase: v.string(), message: v.optional(v.string()) }).index('by_owner', ['owner']).index('by_request', ['owner', 'requestId']).index('by_runner_status', ['runner', 'status']).index('by_experiment', ['experiment']),
   reports: defineTable({
     owner: v.string(), title: v.string(), trials: v.number(),
     shareToken: v.union(v.string(), v.null()),

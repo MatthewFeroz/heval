@@ -5,7 +5,7 @@ For the implemented paths and exact user steps, see
 The hosted connected-runner path is:
 
 ```text
-React/Vite workspace on Vercel + WorkOS sign-in
+React/Vite workspace on Vercel + Clerk sign-in
                     ↕
 Convex: machines, queue, status, private/shared reports
                     ↕ outbound HTTPS
@@ -24,7 +24,7 @@ options, not the current connected-runner backend.
 
 ## Connected-runner preview
 
-The implemented hosted path now uses Vercel + WorkOS + Convex for the web
+The implemented hosted path now uses Vercel + Clerk + Convex for the web
 workspace, owned-machine registry, queue and sanitized reports. A Linux daemon
 polls outbound, while an independent local supervisor launches pinned Harbor
 in Docker. Durable claims prevent automatic duplicate runs across reconnects;

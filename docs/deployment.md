@@ -12,7 +12,7 @@ This deployment supports invited evaluators and public result viewing. It is not
 4. Allow SSH from the web VM's private IP. Do not publish the Docker TCP port.
 5. Add a dedicated web-to-worker SSH public key to that user's authorized keys. Record and verify the worker's SSH host key.
 
-The worker image pins the harness installers. Rebuild it when the fixture or launch adapter changes. Agent workspaces never receive a host directory mount, SSH key, Docker socket, or WorkOS credential.
+The worker image pins the harness installers. Rebuild it when the fixture or launch adapter changes. Agent workspaces never receive a host directory mount, SSH key, Docker socket, or Clerk credential.
 
 ## Prepare the web VM
 
@@ -25,9 +25,9 @@ cp deploy/production.env.example deploy/production.env
 mkdir -p deploy/ssh
 ```
 
-Edit `deploy/production.env` with your domain, exact HTTPS origin, WorkOS client ID, invited WorkOS **user IDs**, approved models, connection encryption key and the worker's private SSH address. Store the dedicated private key at `deploy/ssh/id_ed25519` and verified host keys at `deploy/ssh/known_hosts`. The web container runs as UID 1000; give that UID ownership of the SSH directory, use mode 700 for the directory and 600 for the private key. These files and `production.env` are ignored by Git and excluded from the build context.
+Edit `deploy/production.env` with your domain, exact HTTPS origin, Clerk publishable key and JWT issuer, invited Clerk **user IDs**, approved models, connection encryption key and the worker's private SSH address. Store the dedicated private key at `deploy/ssh/id_ed25519` and verified host keys at `deploy/ssh/known_hosts`. The web container runs as UID 1000; give that UID ownership of the SSH directory, use mode 700 for the directory and 600 for the private key. These files and `production.env` are ignored by Git and excluded from the build context.
 
-In WorkOS, register the exact HTTPS origin as the allowed web origin and root callback URI, and `<origin>/login` as the sign-in URL. The client ID goes into the browser build; the connection encryption key stays in the running server's environment. Each evaluator connects their own Gateway account in Provider settings. Sign-in returns to the selected private Studio comparison.
+Configure the stable HTTPS workspace origin in Clerk, and set its sign-in URL to `<origin>/login`. Create the `convex` JWT template as described in [Clerk setup](clerk-auth.md). The publishable key goes into the browser build; the connection encryption key stays in the running server's environment. Each evaluator connects their own Gateway account in Provider settings. Sign-in returns to the selected private Studio comparison.
 
 ```sh
 docker compose --env-file deploy/production.env -f deploy/compose.yaml build

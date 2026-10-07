@@ -21,6 +21,11 @@ function number(value: unknown, name: string, optional = false): number | null {
 /** Both the browser preview and the database write use this allowlist. Never persist raw config, paths, logs, or custom fields. */
 export function parseReport(text: string): ReportData {
   if (new TextEncoder().encode(text).length > MAX_IMPORT_BYTES) throw new Error('Use a JSON export smaller than 750 KB.')
+  return parseStoredReport(text)
+}
+
+/** Validate an already-persisted report. Normalization may exceed the upload byte cap. */
+export function parseStoredReport(text: string): ReportData {
   const input = object(JSON.parse(text))
   if (input.schemaVersion !== 1 || !Array.isArray(input.rows)) throw new Error('Choose a normalized Harbor export (schemaVersion 1 with rows). Raw job folders and Studio bundles must be exported as Harbor JSON first.')
   if (!input.rows.length) throw new Error('Import at least one trial per report.')

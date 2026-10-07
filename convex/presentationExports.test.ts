@@ -3,7 +3,7 @@ import { convexTest } from 'convex-test'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import schema from './schema'
 import { api, internal } from './_generated/api'
-import fixture from '../results/harbor/demo-evaluation.json'
+import fixture from '../tests/fixtures/report-sharing.json'
 import { newPresentation } from '../src/project/schema'
 import { SOCIAL_DEFAULTS } from '../src/charts/social-presets'
 import type { ReportProject } from '../src/reports/project'
@@ -15,23 +15,29 @@ beforeEach(() => {
 afterEach(() => { vi.useRealTimers(); vi.unstubAllEnvs() })
 async function setup() {
   const t = convexTest(schema, modules), owner = t.withIdentity({ subject: 'owner' })
-  const report = await owner.mutation(api.reports.save, { json: JSON.stringify(fixture), title: 'Presentation' })
+  const report = await owner.mutation(api.reports.save, { json: JSON.stringify(fixture), title: 'SYNTHETIC export check' })
   const saved = (await owner.query(api.reports.get, { id: report }))!
   const document: ReportProject = JSON.parse(saved.project)
   const p = newPresentation(document.project, document.project.analysisViews[0])
-  p.social = { ...SOCIAL_DEFAULTS, preset: 'cost-per-success', theme: 'plain-light', models: ['model-a', 'model-c'] }
+  p.social = { ...SOCIAL_DEFAULTS, preset: 'cost-per-success', theme: 'plain-light', models: ['synthetic-model-a', 'synthetic-model-b'] }
   document.project.presentations = [p]; document.presentationId = p.id; document.mode = 'presentation'
   const args = { report, expectedVersion: 0, document: JSON.stringify(document), collection: false, requestId: 'request-0000000001' }
   return { t, owner, report, document, args }
 }
 test('enqueue atomically saves settings; immutable inputs and history survive later edits; requests are idempotent', async () => {
   const { t, owner, report, document, args } = await setup()
+  const original = (await owner.query(api.reports.get, { id: report }))!
+  const token = 'b'.repeat(64)
+  await owner.mutation(api.reports.share, { id: report, token })
+  const published = await t.query(api.reports.shared, { token })
   const result = await owner.mutation(api.presentationExports.request, args)
   expect(await owner.mutation(api.presentationExports.request, args)).toEqual(result)
   expect(await owner.query(api.presentationExports.list, { report })).toHaveLength(1)
   const saved = (await owner.query(api.reports.get, { id: report }))!
   expect(saved.version).toBe(1)
-  expect(JSON.parse(saved.project).project.presentations[0].social).toMatchObject({ preset: 'cost-per-success', theme: 'plain-light', models: ['model-a', 'model-c'] })
+  expect(saved.data).toBe(original.data)
+  expect(await t.query(api.reports.shared, { token })).toEqual(published)
+  expect(JSON.parse(saved.project).project.presentations[0].social).toMatchObject({ preset: 'cost-per-success', theme: 'plain-light', models: ['synthetic-model-a', 'synthetic-model-b'] })
   document.project.presentations[0].social!.preset = 'completed'
   await owner.mutation(api.reportProjects.saveDraft, { id: report, expectedVersion: 1, document: JSON.stringify(document) })
   await t.mutation(internal.presentationExports.pump, {})
@@ -42,7 +48,7 @@ test('enqueue atomically saves settings; immutable inputs and history survive la
   expect(await owner.query(api.presentationExports.artifact, { job: result.job })).toMatchObject({ pathname: 'private/file.png' })
   expect((await owner.query(api.presentationExports.list, { report }))[0]).toMatchObject({ status: 'complete', version: 1 })
 })
-test('permissions apply to queue, history and downloads, including revoked membership', async () => {
+test.each(['viewer', 'editor'] as const)('%s export access follows current membership, including retrying their own request after removal', async role => {
   const { t, owner, report, args } = await setup()
   const stranger = t.withIdentity({ subject: 'stranger' })
   await expect(stranger.mutation(api.presentationExports.request, args)).rejects.toThrow('not found')
@@ -53,14 +59,35 @@ test('permissions apply to queue, history and downloads, including revoked membe
   await t.mutation(internal.presentationExports.pump, {})
   await t.mutation(internal.presentationExports.finish, { job: result.job, artifact: { pathname: 'private/file.png', filename: 'file.png', contentType: 'image/png', bytes: 42 } })
   await expect(stranger.query(api.presentationExports.artifact, { job: result.job })).rejects.toThrow('not found')
+  await expect(t.query(api.presentationExports.artifact, { job: result.job })).rejects.toThrow('Sign in')
   const token = 'a'.repeat(64)
-  await owner.mutation(api.reportProjects.invite, { id: report, token, role: 'viewer' })
+  await owner.mutation(api.reportProjects.invite, { id: report, token, role })
   await stranger.mutation(api.reportProjects.accept, { token })
-  await expect(stranger.mutation(api.presentationExports.request, { ...args, expectedVersion: 1 })).rejects.toThrow('permission')
+  const memberArgs = { ...args, expectedVersion: 1, requestId: 'member-export-request-01' }
+  let downloadableJob = result.job
+  if (role === 'viewer') await expect(stranger.mutation(api.presentationExports.request, memberArgs)).rejects.toThrow('permission')
+  else {
+    const queued = await stranger.mutation(api.presentationExports.request, memberArgs)
+    expect(await stranger.mutation(api.presentationExports.request, memberArgs)).toEqual(queued)
+    expect((await owner.query(api.reports.get, { id: report }))!.version).toBe(2)
+    await t.mutation(internal.presentationExports.pump, {})
+    await t.mutation(internal.presentationExports.finish, { job: queued.job, artifact: { pathname: 'private/member.png', filename: 'member.png', contentType: 'image/png', bytes: 42 } })
+    downloadableJob = queued.job
+  }
   expect(await stranger.query(api.presentationExports.artifact, { job: result.job })).toMatchObject({ filename: 'file.png' })
+  expect(await stranger.query(api.presentationExports.artifact, { job: downloadableJob })).not.toBeNull()
+  expect(await stranger.query(api.presentationExports.list, { report })).not.toHaveLength(0)
+  await owner.mutation(api.reports.share, { id: report, token: 'b'.repeat(64) })
+  expect(await t.query(api.reports.shared, { token: 'b'.repeat(64) })).not.toBeNull()
+  await expect(t.query(api.presentationExports.artifact, { job: result.job })).rejects.toThrow('Sign in')
+  await expect(t.mutation(api.presentationExports.request, args)).rejects.toThrow('Sign in')
   const team = await owner.query(api.reportProjects.team, { id: report })
   await owner.mutation(api.reportProjects.removeMember, { member: team.members[0].id })
   await expect(stranger.query(api.presentationExports.artifact, { job: result.job })).rejects.toThrow('not found')
+  await expect(stranger.query(api.presentationExports.artifact, { job: downloadableJob })).rejects.toThrow('not found')
+  await expect(stranger.query(api.presentationExports.list, { report })).rejects.toThrow('not found')
+  await expect(stranger.mutation(api.presentationExports.request, memberArgs)).rejects.toThrow('not found')
+  expect(await owner.query(api.presentationExports.artifact, { job: result.job })).toMatchObject({ filename: 'file.png' })
 })
 test('queue has one renderer; watchdog frees crashed jobs and ignores late completion', async () => {
   const { t, owner, args } = await setup()

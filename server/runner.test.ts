@@ -135,13 +135,13 @@ test('Docker policy isolates agents and uses a networkless credential-free grade
   expect(grade.join(' ')).toContain('/candidate,readonly')
 })
 
-test('verified tokens require the expected issuer, client, expiry, and user subject', async () => {
+test('verified tokens require the expected issuer, audience, authorized origin, expiry, and user subject', async () => {
   const { privateKey, publicKey } = await generateKeyPair('RS256')
   const keys = createLocalJWKSet({ keys: [await exportJWK(publicKey)] })
-  const auth = createAuthenticator('client-test', 'api.workos.com', keys)
-  const base = { client_id: 'client-test', sub: 'alice', iss: 'https://api.workos.com', exp: Math.floor(Date.now() / 1000) + 60 }
+  const auth = createAuthenticator('https://auth.example.com', 'https://heval.example.com', keys)
+  const base = { aud: 'convex', azp: 'https://heval.example.com', sub: 'alice', iss: 'https://auth.example.com', exp: Math.floor(Date.now() / 1000) + 60 }
   const token = (payload: object) => new SignJWT({ ...payload }).setProtectedHeader({ alg: 'RS256' }).sign(privateKey)
-  for (const change of [{ sub: '' }, { sub: undefined }, { exp: undefined }, { exp: 1 }, { client_id: 'other' }, { iss: 'https://other' }]) {
+  for (const change of [{ sub: '' }, { sub: undefined }, { exp: undefined }, { exp: 1 }, { aud: 'other' }, { azp: 'https://other.example.com' }, { iss: 'https://other' }]) {
     expect(await auth(new Request('http://localhost', { headers: { authorization: `Bearer ${await token({ ...base, ...change })}` } }))).toBeNull()
   }
   const valid = await token(base)

@@ -40,6 +40,18 @@ test('single-attempt cohort rejects missing tasks, duplicates and incompatible v
       options,
     ),
   ).toThrow('mixed agent')
+  expect(() => resolveSocial(real, { ...options, models: [...models, 'missing-model'] })).toThrow('no trials')
+  expect(() => resolveSocial(real.map((r, i) => i === 0 ? { ...r, task: 'unknown' } : r), options)).toThrow('identities')
+  expect(() => resolveSocial([{ ...real[0], modelShort: 'unknown' }], { ...options, models: ['unknown'] })).toThrow('identities')
+})
+test('shuffled trials keep disagreement tasks sorted and values in the selected model order', () => {
+  const original = resolveSocial(real, { ...options, preset: 'disagreement' })
+  const reversedModels = [...models].reverse()
+  const shuffled = resolveSocial([...real].reverse(), { ...options, models: reversedModels, preset: 'disagreement' })
+  expect(shuffled.bars.map(bar => bar.key)).toEqual(reversedModels)
+  expect(shuffled.matrix).toEqual(original.matrix.map(({ task, values }) => ({ task, values: [...values].reverse() })))
+  expect(shuffled.matrix.map(row => row.task)).toEqual(shuffled.matrix.map(row => row.task).sort())
+  expect([shuffled.tasks, shuffled.allPassed, shuffled.allFailed]).toEqual([20, 8, 4])
 })
 test('missing price is unavailable rather than zero and no passes is not free', () => {
   const missing = real.map((r) => (r.modelShort === 'model-a' ? { ...r, costUsd: null } : r))

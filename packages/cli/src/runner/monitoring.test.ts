@@ -64,6 +64,31 @@ test('ignores symlinked trial directories and bounds the replay window', () => {
   } finally { rmSync(root, { recursive: true, force: true }) }
 })
 
+test('observed trials still finish after new folders push them beyond the discovery window', () => {
+  const root = mkdtempSync(join(tmpdir(), 'heval-monitor-displaced-'))
+  try {
+    const job = join(root, 'jobs/evaluation'), tracked = join(job, 'z-trial')
+    mkdirSync(tracked, { recursive: true })
+    writeFileSync(join(tracked, 'config.json'), '{}')
+    const first = collectMonitoring(root)
+    expect(first.trials).toMatchObject([{ id: 'z-trial', state: 'running' }])
+    for (let i = 0; i < 1011; i++) {
+      const dir = join(job, `a-${i}`)
+      mkdirSync(dir)
+      writeFileSync(join(dir, 'config.json'), '{}')
+    }
+    writeFileSync(join(tracked, 'result.json'), JSON.stringify({ finished_at: new Date().toISOString(), verifier_result: { rewards: { reward: 1 } } }))
+    const final = collectMonitoring(root)
+    expect(final.trials).toHaveLength(1000)
+    expect(final.trials.find(t => t.id === 'z-trial')).toMatchObject({ state: 'passed', startedAt: first.trials[0].startedAt })
+    expect(final.events.some(e => e.trial === 'z-trial' && e.state === 'passed')).toBe(true)
+    expect(final.sequence).toBe(first.sequence + 1)
+    expect(final.events).toHaveLength(200)
+    expect(() => validateMonitoring(final, 1012)).not.toThrow()
+    expect(collectMonitoring(root).events).toEqual(final.events)
+  } finally { rmSync(root, { recursive: true, force: true }) }
+})
+
 
 test('a retried execution error updates to running and success in the same Harbor trial directory', () => {
  const root=mkdtempSync(join(tmpdir(),'heval-monitor-retry-'))

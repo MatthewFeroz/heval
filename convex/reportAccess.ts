@@ -6,7 +6,8 @@ import { initialReportProject, type ReportProject } from '../src/reports/project
 export async function identity(ctx: QueryCtx) {
   const user = await ctx.auth.getUserIdentity()
   if (!user) throw new ConvexError('Sign in to manage your reports.')
-  return user
+  const linked = await ctx.db.query('authAccountLinks').withIndex('by_identity', q => q.eq('issuer', user.issuer).eq('subject', user.subject)).unique()
+  return linked ? { ...user, subject: linked.owner } : user
 }
 export async function access(ctx: QueryCtx, id: Id<'reports'>) {
   const user = await identity(ctx), report = await ctx.db.get(id)

@@ -21,7 +21,19 @@ window, not a complete audit log. Up to 1,000 observed trials are supported.
 “Worker offline” means its heartbeat stopped. “Monitoring delayed” means the worker
 is connected but telemetry is stale. Neither means the harness has stopped. Task
 timers freeze at the last sample when offline, delayed, or finished. A cancelled
-task with no result stays unfinished rather than being counted as a failure.
+task with no finished verifier outcome stays unfinished rather than being counted
+as a failure. With the updated source-built worker and backend, saved partial
+reports include only recorded finished verifier outcomes;
+their trial count can be smaller than the approved total. Execution errors and
+unfinished tasks remain distinguishable in the last monitoring snapshot.
+
+Restart the daemon with the same worker state and pairing after a network or daemon
+failure. The supervisor keeps sampling locally; the daemon sends its newest durable
+snapshot on reconnection. A failed telemetry request can leave the displayed counts
+behind even after a final report arrives. Inspect the report for recorded results.
+Cancellation remains pending while the worker is offline and becomes cancelled only
+after acknowledgment; a cleanup failure stays interrupted and needs local recovery.
+See [connected-runner recovery](connected-runners.md#sessions-moves-and-failures).
 
 ## Maintainer notes
 

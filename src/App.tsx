@@ -66,7 +66,7 @@ function RaceStage({ auth }: { auth: AppAuth }) {
   async function startLiveRun(harness: string) {
     if (!auth.user) {
       if (auth.configured) auth.signIn()
-      else window.alert('Real runs require WorkOS AuthKit to be configured.')
+      else window.alert('Real runs require Clerk sign-in to be configured.')
       return
     }
     window.location.assign(`/evaluations?harness=${encodeURIComponent(harness)}`)

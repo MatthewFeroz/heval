@@ -123,7 +123,19 @@ export function resolveSocial(rows: readonly TrialRow[], settings: SocialSetting
   if (!models.length || models.length > 6) throw new Error('Select one to six models')
   if (rows.length > 3000) throw new Error('Select at most 3000 trials for social export')
   const selected = rows.filter((r) => models.includes(r.modelShort))
-  if (models.some((m) => !selected.some((r) => r.modelShort === m)))
+  const byTask = new Map<string, Map<string, TrialRow[]>>()
+  const byModel = new Map<string, TrialRow[]>()
+  for (const row of selected) {
+    const taskModels = byTask.get(row.task) ?? new Map<string, TrialRow[]>()
+    const attempts = taskModels.get(row.modelShort) ?? []
+    attempts.push(row)
+    taskModels.set(row.modelShort, attempts)
+    byTask.set(row.task, taskModels)
+    const modelRows = byModel.get(row.modelShort) ?? []
+    modelRows.push(row)
+    byModel.set(row.modelShort, modelRows)
+  }
+  if (models.some((m) => !byModel.has(m)))
     throw new Error('A selected model has no trials')
   const cohortFields = [
     'agent',
@@ -142,14 +154,15 @@ export function resolveSocial(rows: readonly TrialRow[], settings: SocialSetting
     )
   )
     throw new Error('Task and model identities are required')
-  const tasks = [...new Set(selected.map((r) => r.task))].sort()
+  const tasks = [...byTask.keys()].sort()
   const warnings: string[] = []
   for (const task of tasks) {
-    const rs = selected.filter((r) => r.task === task)
+    const taskModels = byTask.get(task)!
+    const rs = [...taskModels.values()].flat()
     if (new Set(rs.map((r) => r.taskChecksum).filter(Boolean)).size > 1)
       throw new Error('Task version mismatch: ' + task)
     for (const m of models)
-      if (rs.filter((r) => r.modelShort === m).length !== 1)
+      if (taskModels.get(m)?.length !== 1)
         throw new Error(
           'Each model must have one attempt on each selected task. Missing or repeated task: ' +
             task,
@@ -171,7 +184,7 @@ export function resolveSocial(rows: readonly TrialRow[], settings: SocialSetting
   if (needsPass && selected.some((r) => r.passed !== 0 && r.passed !== 1))
     throw new Error('Pass outcomes are required')
   const bars = models.map((key) => {
-    const rs = selected.filter((r) => r.modelShort === key)
+    const rs = byModel.get(key)!
     let value: number | null = null
     const costsComplete = rs.every((r) => finite(r.costUsd))
     let timeout = 0
@@ -210,7 +223,7 @@ export function resolveSocial(rows: readonly TrialRow[], settings: SocialSetting
     allFailed = 0
   const matrix = tasks.flatMap((task) => {
     const values = models.map(
-      (m) => selected.find((r) => r.task === task && r.modelShort === m)!.passed,
+      (m) => byTask.get(task)!.get(m)![0].passed,
     )
     if (values.every((v) => v === 1)) {
       allPassed++

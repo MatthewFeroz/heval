@@ -1,19 +1,32 @@
 /** Real wizard/components, simulated auth and Convex transport. No model calls. */
 import assert from 'node:assert/strict'
+import { mkdir } from 'node:fs/promises'
+import { mkdtempSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import catalog from '../src/runners/merge-public-catalog.json'
 import { createServer } from 'vite'
 import { chromium, expect } from '@playwright/test'
 import reportFixture from '../results/harbor/demo-evaluation.json'
 import { initialReportProject } from '../src/reports/project'
 import type { ReportData } from '../src/reports/format'
+const capture=process.argv.includes('--capture')?process.argv[process.argv.indexOf('--capture')+1]:''
+if(process.argv.includes('--capture')&&!capture)throw Error('Usage: --capture <directory>')
+if(capture)await mkdir(capture,{recursive:true})
 const profiles=['codex','claude-code','pi'].map((agent,i)=>({id:agent,digest:String(i+1).repeat(64),title:agent,benchmark:'Heval connection smoke',agent,model:'deepseek/deepseek-v4.1-flash',vendor:'particle',taskSet:'027851e8453b8dbda1df2aa930e41fd297bbc5f8b01e41387ba7bdc16603d38d',runSettingsVersion:1,maxAttempts:3,tasks:1,attempts:1,timeoutSeconds:600000,setupCheck:false}))
 profiles.push({...profiles[0],id:'other-model',model:'zai/glm-5.3',vendor:'zai'})
 profiles.push({...profiles[0],id:'codex-baseten',vendor:'baseten'})
+const configuredModel='acme/worker-approved-model'
+profiles.push({...profiles[0],id:'codex-custom-primary',model:configuredModel,vendor:'worker-primary'})
+profiles.push({...profiles[0],id:'codex-custom-secondary',model:configuredModel,vendor:'worker-secondary'})
+profiles.push({...profiles[1],id:'claude-custom-primary',model:configuredModel,vendor:'worker-primary'})
+profiles.push({...profiles[0],id:'codex-inherited-name',model:'constructor',vendor:'worker-primary'})
 const combinedData={...reportFixture,job:'My harness comparison',rows:reportFixture.rows.slice(0,1)} as ReportData
 const combinedProject=await initialReportProject(combinedData,'combined-report','My harness comparison')
 process.env.VITE_CONVEX_URL='https://wizard-test.convex.cloud'
 process.env.VITE_HEVAL_STATIC_SITE='1'
-const server=await createServer({server:{host:'127.0.0.1',port:0},plugins:[{
+const cacheDir=mkdtempSync(join(tmpdir(),'heval-evaluation-ui-cache-'))
+const server=await createServer({cacheDir,server:{host:'127.0.0.1',port:0},plugins:[{
  name:'evaluation-test-adapters',enforce:'pre',
  resolveId(source){if(source==='convex/react')return '\0wizard-convex';if(source==='../AuthBoundary'||source==='./AuthBoundary')return '\0wizard-auth'},
  load(id){
@@ -30,22 +43,33 @@ const server=await createServer({server:{host:'127.0.0.1',port:0},plugins:[{
  if(n==='runners:runs'||n==='reports:list')return [];
  // An established account; the first-smoke checklist has its own smoke test.
  if(n==='onboarding:get')return {step:3,status:'completed'};
- if(n==='runners:list')return [machine];if(n==='experiments:list')return state.experiment?[{id:'experiment',title:state.experiment.title,runs:3,finished:0,failed:0,report:state.experiment.report}]:[];if(n==='experiments:get')return state.experiment;if(n==='reports:get')return args.id==='combined-report'?{id:'combined-report',title:'My harness comparison',data:${JSON.stringify(JSON.stringify(combinedData))},project:${JSON.stringify(JSON.stringify(combinedProject))},shareToken:null,role:'owner',version:0,publishedVersion:null,updatedBy:null}:null;throw Error('Unexpected query '+n)}
+ if(n==='runners:list')return state.loading?undefined:[{...machine,...state.machine}];if(n==='experiments:list')return state.experiment?[{id:'experiment',title:state.experiment.title,runs:3,finished:0,failed:0,report:state.experiment.report}]:[];if(n==='experiments:get')return state.experiment;if(n==='reports:get')return args.id==='combined-report'?{id:'combined-report',title:'My harness comparison',data:${JSON.stringify(JSON.stringify(combinedData))},project:${JSON.stringify(JSON.stringify(combinedProject))},shareToken:null,role:'owner',version:0,publishedVersion:null,updatedBy:null}:null;throw Error('Unexpected query '+n)}
  export function useMutation(ref){return async args=>{const n=getFunctionName(ref);if(n==='experiments:create'){cache.count++;cache.input=args;cache.experiment={id:'experiment',title:args.title,machine:'Linux worker',online:true,lastSeen:Date.now(),report:null,cells:args.profiles.map(p=>({id:p.id,profile:profiles.find(x=>x.id===p.id),attempts:args.attempts,runSettings:args.runSettings,status:'queued',phase:'Queued',report:null,result:null}))};commit();return 'experiment'}if(n==='experiments:cancel'){cache.experiment.cells.forEach(c=>{if(c.status==='queued')c.status='cancelled'});cache.experiment.report='combined-report';commit();return}if(n==='runners:setEnabled'){machine.enabled=args.enabled;commit();return}if(n==='runners:setIcon'){machine.icon=args.icon;commit();return}throw Error('Unexpected mutation '+n)}}`
  }
 }]})
 await server.listen()
-const browser=await chromium.launch(),page=await browser.newPage({viewport:{width:1440,height:1000}}),errors:string[]=[]
+const browser=await chromium.launch(),context=await browser.newContext({viewport:{width:1440,height:1000}}),errors:string[]=[]
+let page=await context.newPage()
 page.on('pageerror',e=>errors.push(e.message))
+async function stage(name:string){if(capture)await page.locator('.evaluation-wizard').screenshot({path:`${capture}/${name}.png`})}
+async function account(update:Record<string,unknown>){await page.evaluate(update=>{const s=JSON.parse(localStorage.getItem('wizard-test')||'{"count":0,"experiment":null}');Object.assign(s,update);localStorage.setItem('wizard-test',JSON.stringify(s));window.dispatchEvent(new Event('monitor-test'))},update)}
 try {
- await page.goto(`${server.resolvedUrls!.local[0]}evaluations`)
+ await page.goto(`${server.resolvedUrls!.local[0]}evaluations`,{waitUntil:'networkidle'})
  await expect(page.getByRole('heading',{name:'Configure evaluation'})).toBeVisible()
+ await account({loading:true})
+ await expect(page.getByRole('status').filter({hasText:'Loading computer options'})).toContainText('Wait for your workspace')
+ await account({loading:false})
  await expect(page.getByRole('button',{name:'Start experiment',exact:true})).toBeDisabled()
  for(const name of ['Codex CLI','Claude Code','Pi Agent'])await page.getByRole('checkbox',{name:new RegExp(name)}).check()
  await expect(page.getByRole('checkbox',{name:'Opus 5.5',exact:true})).toBeDisabled()
  await page.getByRole('checkbox',{name:'GLM-5.3',exact:true}).check()
  await expect(page.getByText(/Claude Code \+ zai\/glm-5.3 is not configured/)).toBeVisible()
  await expect(page.getByRole('button',{name:'Start experiment',exact:true})).toBeDisabled()
+ await expect(page.getByText('Choose between 1 and 0 attempts for this selection.')).toHaveCount(0)
+ await expect(page.getByText('3 selected combinations · 2 not configured',{exact:true})).toBeVisible()
+ await expect(page.getByRole('status').filter({hasText:'Resolve the 2 unconfigured combinations'})).toBeVisible()
+ await expect(page.locator('.evaluation-run-summary')).not.toContainText('1 trials, up to')
+ await stage('incompatible-selection')
  await page.getByRole('checkbox',{name:'GLM-5.3',exact:true}).uncheck()
  await page.getByRole('checkbox',{name:'DeepSeek V4.1 Flash',exact:true}).check()
  await page.getByLabel('Serving vendor for DeepSeek V4.1 Flash').selectOption('baseten')
@@ -65,13 +89,36 @@ try {
  await page.getByLabel('Experiment name').fill('My harness comparison')
  await expect(page.getByText('6 trials, up to 2 at a time within each run.',{exact:true})).toBeVisible()
  await expect(page.getByRole('cell',{name:'120 min',exact:true})).toHaveCount(3)
- await page.getByRole('button',{name:'Start experiment',exact:true}).click()
+ await account({machine:{ready:false,health:'Harbor is unavailable'}})
+ await expect(page.getByRole('button',{name:'Start experiment',exact:true})).toBeDisabled()
+ await expect(page.getByRole('alert')).toContainText('Worker not ready: Harbor is unavailable')
+ await expect(page.getByRole('alert').getByRole('link',{name:'Runner setup'})).toHaveAttribute('href','/machines?setup=1&worker=worker')
+ await stage('not-ready')
+ await account({machine:{ready:true,lastSeen:0}})
+ await expect(page.getByRole('button',{name:'Start experiment',exact:true})).toBeDisabled()
+ await stage('offline')
+ await account({machine:{ready:true,lastSeen:Date.now()}})
+ await page.setViewportSize({width:390,height:844})
+ await stage('mobile-compatible-selection')
+ assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'Wizard fits a narrow viewport')
+ await page.setViewportSize({width:1440,height:1000})
+ await stage('compatible-selection')
+ await page.getByLabel('Experiment name').focus()
+ await page.keyboard.press('Tab')
+ await expect(page.getByRole('button',{name:'Start experiment',exact:true})).toBeFocused()
+ await page.keyboard.press('Enter')
  await expect(page.getByRole('heading',{name:'My harness comparison',exact:true})).toBeVisible()
- await page.reload()
+ const experimentUrl=page.url()
+ await page.close()
+ page=await context.newPage()
+ page.on('pageerror',e=>errors.push(e.message))
+ await page.goto(experimentUrl)
  await expect(page.getByRole('heading',{name:'My harness comparison',exact:true})).toBeVisible()
  const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('wizard-test')!))
  assert.deepEqual(saved.input.runSettings,{concurrency:2,retries:1,cpus:2,memoryMb:4096,timeoutSeconds:7200})
  assert.equal(saved.count,1);assert.equal(saved.input.profiles.length,3);assert.equal(saved.input.attempts,2)
+ await page.clock.install()
+ await page.clock.pauseAt(new Date())
  await page.evaluate(()=>{
    const s=JSON.parse(localStorage.getItem('wizard-test')!), now=Date.now()
    s.experiment.cells[0].status='running'
@@ -84,6 +131,18 @@ try {
  await expect(page.getByRole('list',{name:'Task activity log'})).toContainText('Execution error')
  await page.evaluate(()=>{const s=JSON.parse(localStorage.getItem('wizard-test')!);s.monitoring.codex.receivedAt=0;localStorage.setItem('wizard-test',JSON.stringify(s));window.dispatchEvent(new Event('monitor-test'))})
  await expect(page.getByText('Monitoring delayed',{exact:true})).toBeVisible()
+ const runningTimer=()=>page.getByRole('row').filter({hasText:'test-fix__three'}).getByRole('cell').last()
+ await expect(runningTimer()).toHaveText('10s')
+ await page.clock.runFor(25_000)
+ await expect(runningTimer()).toHaveText('10s')
+ await page.evaluate(()=>{const s=JSON.parse(localStorage.getItem('wizard-test')!);s.experiment.lastSeen=0;localStorage.setItem('wizard-test',JSON.stringify(s));window.dispatchEvent(new Event('monitor-test'))})
+ await expect(page.getByText('Worker offline',{exact:true})).toBeVisible()
+ await page.clock.runFor(10_000)
+ await expect(runningTimer()).toHaveText('10s')
+ await page.evaluate(()=>{const s=JSON.parse(localStorage.getItem('wizard-test')!);s.experiment.lastSeen=Date.now();s.experiment.cells[0].status='cancelled';localStorage.setItem('wizard-test',JSON.stringify(s));window.dispatchEvent(new Event('monitor-test'))})
+ await expect(page.getByRole('cell',{name:'Unfinished',exact:true})).toBeVisible()
+ await page.clock.runFor(10_000)
+ await expect(runningTimer()).toHaveText('10s')
  await page.reload()
  await expect(page.getByText('2 / 200 trials finished',{exact:true})).toBeVisible()
  await page.evaluate(()=>{const s=JSON.parse(localStorage.getItem('wizard-test')!);s.experiment.cells[0]={...s.experiment.cells[0],status:'completed',report:'saved-report',result:{passed:2,trials:2,medianSeconds:5,reportedCost:null}};localStorage.setItem('wizard-test',JSON.stringify(s))})
@@ -100,9 +159,69 @@ try {
  await expect(page.getByRole('heading',{name:'Inspect, shape, and publish this evaluation.'})).toBeVisible()
  await expect(page.getByRole('button',{name:'Publish evaluation'})).toBeVisible()
  // The combined result remains available to the report editor.
- await page.goto(`${server.resolvedUrls!.local[0]}studio?report=combined-report`)
+ await page.clock.resume()
+ await page.goto(`${server.resolvedUrls!.local[0]}studio?report=combined-report`,{waitUntil:'networkidle'})
  await expect(page.getByRole('heading', { name: 'My harness comparison', exact: true })).toBeVisible()
  await expect(page.getByRole('button',{name:'Save draft',exact:true})).toBeVisible()
+ // Every approved model can be selected, even without published reference metadata.
+ await account({count:0,experiment:null,input:null,machine:{ready:true,lastSeen:Date.now(),profiles}})
+ await page.goto(`${server.resolvedUrls!.local[0]}evaluations`,{waitUntil:'networkidle'})
+ await page.getByRole('checkbox',{name:/Codex CLI/}).check()
+ await page.getByRole('checkbox',{name:/Claude Code/}).check()
+ await page.getByRole('checkbox',{name:configuredModel,exact:true}).check()
+ await page.getByLabel('Experiment name').fill('Configured model comparison')
+ await expect(page.locator('.model-inspector')).toContainText('Rates and capabilities are unavailable')
+ await account({machine:{ready:true,lastSeen:Date.now(),profiles:profiles.filter(p=>p.model!==configuredModel)}})
+ await expect(page.locator('.model-inspector')).toContainText('This model is no longer configured')
+ await expect(page.getByRole('checkbox',{name:configuredModel,exact:true})).toBeChecked()
+ await expect(page.getByRole('checkbox',{name:configuredModel,exact:true})).toBeEnabled()
+ await page.getByRole('checkbox',{name:'DeepSeek V4.1 Flash',exact:true}).check()
+ await page.getByLabel('Serving vendor for DeepSeek V4.1 Flash').selectOption('particle')
+ await expect(page.getByRole('button',{name:'Start experiment',exact:true})).toBeDisabled()
+ await page.getByRole('checkbox',{name:configuredModel,exact:true}).click()
+ await expect(page.getByRole('checkbox',{name:configuredModel,exact:true})).toHaveCount(0)
+ await expect(page.getByRole('button',{name:'Start experiment',exact:true})).toBeEnabled()
+ // Reference models also remain removable after their worker profiles disappear.
+ await account({machine:{ready:true,lastSeen:Date.now(),profiles:profiles.filter(p=>p.model!=='deepseek/deepseek-v4.1-flash')}})
+ await expect(page.getByRole('button',{name:'Start experiment',exact:true})).toBeDisabled()
+ await expect(page.getByRole('checkbox',{name:'DeepSeek V4.1 Flash',exact:true})).toBeEnabled()
+ await page.getByRole('checkbox',{name:'DeepSeek V4.1 Flash',exact:true}).uncheck()
+ await expect(page.getByRole('checkbox',{name:'DeepSeek V4.1 Flash',exact:true})).toBeDisabled()
+ await account({machine:{ready:true,lastSeen:Date.now(),profiles}})
+ await page.getByRole('checkbox',{name:configuredModel,exact:true}).check()
+ await page.getByLabel(`Serving vendor for ${configuredModel}`).selectOption('worker-secondary')
+ await expect(page.getByText(/Claude Code \+ acme\/worker-approved-model is not configured for worker-secondary/)).toBeVisible()
+ await expect(page.getByRole('button',{name:'Start experiment',exact:true})).toBeDisabled()
+ // A removed vendor remains visible until the user chooses the surviving route.
+ await account({machine:{ready:true,lastSeen:Date.now(),profiles:profiles.filter(p=>p.vendor!=='worker-secondary')}})
+ await expect(page.getByLabel(`Serving vendor for ${configuredModel}`)).toHaveValue('worker-secondary')
+ await expect(page.getByLabel(`Serving vendor for ${configuredModel}`).locator('option:checked')).toContainText('no longer configured')
+ await expect(page.getByRole('button',{name:'Start experiment',exact:true})).toBeDisabled()
+ await page.getByLabel(`Serving vendor for ${configuredModel}`).selectOption('worker-primary')
+ await expect(page.getByRole('button',{name:'Start experiment',exact:true})).toBeEnabled()
+ await account({machine:{ready:true,lastSeen:Date.now(),profiles}})
+ await page.getByLabel(`Serving vendor for ${configuredModel}`).selectOption('worker-secondary')
+ await page.getByRole('checkbox',{name:/Claude Code/}).uncheck()
+ await page.getByLabel('Experiment name').fill('Configured model comparison')
+ await expect(page.getByRole('button',{name:'Start experiment',exact:true})).toBeEnabled()
+ await page.getByRole('button',{name:'Start experiment',exact:true}).click()
+ await expect(page.getByRole('heading',{name:'Configured model comparison',exact:true})).toBeVisible()
+ const configured=await page.evaluate(()=>JSON.parse(localStorage.getItem('wizard-test')!))
+ assert.equal(configured.count,1)
+ assert.deepEqual(configured.input.profiles,[{id:'codex-custom-secondary',digest:profiles[0].digest}])
+ assert.equal(configured.experiment.cells[0].profile.model,configuredModel)
+ assert.equal(configured.experiment.cells[0].profile.vendor,'worker-secondary')
+ // Custom labels must not read inherited Object properties as vendor preferences.
+ await account({count:0,experiment:null,input:null,machine:{ready:true,lastSeen:Date.now(),profiles}})
+ await page.goto(`${server.resolvedUrls!.local[0]}evaluations`,{waitUntil:'networkidle'})
+ await page.getByRole('checkbox',{name:/Codex CLI/}).check()
+ await page.getByRole('checkbox',{name:'constructor',exact:true}).check()
+ await page.getByLabel('Experiment name').fill('Custom model label')
+ await expect(page.locator('.model-inspector')).toContainText('Run via worker-primary')
+ await expect(page.getByRole('button',{name:'Start experiment',exact:true})).toBeEnabled()
+ await page.getByRole('button',{name:'Start experiment',exact:true}).click()
+ const inherited=await page.evaluate(()=>JSON.parse(localStorage.getItem('wizard-test')!))
+ assert.deepEqual(inherited.input.profiles,[{id:'codex-inherited-name',digest:profiles[0].digest}])
  assert.deepEqual(errors,[])
  console.log('PASS: browser configures an evaluation, restores progress, inspects a run, combines terminal results, and exposes publishing.')
-}finally{await browser.close();await server.close()}
+}finally{await browser.close();await server.close();rmSync(cacheDir,{recursive:true,force:true})}
