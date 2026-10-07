@@ -33,6 +33,7 @@
     "social:check": "HYPERFRAMES_NO_TELEMETRY=1 hyperframes check results/harbor/social/demo-evaluation --at 0,2.8,5.7,7.9",
     "status": "bash harbor/status.sh",
     "test:server": "bun test server --path-ignore-patterns 'server/hosted-exports/**'",
+    "test:proxy": "bun test harbor/proxy/vendor-proxy.test.ts",
     "test:docker": "bun run worker:build && bun test --env-file=.env.docker-test server/docker.integration.test.ts",
     "worker:build": "docker build -f server/worker/Dockerfile -t heval-worker:local .",
     "thread": "bun harbor/report/build-thread.ts",

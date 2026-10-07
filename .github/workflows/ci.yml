@@ -78,6 +78,8 @@ jobs:
         run: bun run test:auth
       - name: Server regression tests
         run: bun run test:server
+      - name: Vendor proxy regression tests
+        run: bun run test:proxy
       - name: Project and chart regression tests
         run: bun run test:unit
       - name: Convex backend and domain tests

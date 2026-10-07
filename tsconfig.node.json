@@ -19,6 +19,7 @@
   "include": [
     "vite.config.ts",
     "server/**/*.ts",
+    "harbor/proxy/**/*.ts",
     "api/**/*.ts",
     "scripts/**/*.ts"
   ]
