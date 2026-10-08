@@ -9,6 +9,9 @@
     ],
     "module": "ESNext",
     "skipLibCheck": true,
+    "types": [
+      "bun"
+    ],
     "moduleResolution": "Bundler",
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
@@ -19,6 +22,7 @@
   "include": [
     "vite.config.ts",
     "server/**/*.ts",
+    "harbor/proxy/**/*.ts",
     "api/**/*.ts",
     "scripts/**/*.ts"
   ]

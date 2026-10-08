@@ -52,7 +52,7 @@ jobs:
         run: |
           python3 -m pip install --user uv
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-          "$HOME/.local/bin/uv" tool install 'harbor==0.23.0'
+          "$HOME/.local/bin/uv" tool install 'harbor==0.24.0'
       - name: Verify Docker
         run: |
           docker info
@@ -78,6 +78,8 @@ jobs:
         run: bun run test:auth
       - name: Server regression tests
         run: bun run test:server
+      - name: Vendor proxy regression tests
+        run: bun run test:proxy
       - name: Project and chart regression tests
         run: bun run test:unit
       - name: Convex backend and domain tests

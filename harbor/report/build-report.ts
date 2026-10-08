@@ -11,6 +11,9 @@
  *                themes, stat tiles, warnings, table view, provenance
  *   index.json   catalog of exported jobs the studio's job picker reads
  *
+ * --proxy-log <proxy.jsonl> adds per-attempt model request counts from the
+ * vendor proxy and prints a per-harness turn and turn-cap summary.
+ *
  * The charts are the same recipes the studio renders (src/charts/recipes.ts),
  * compiled headlessly, so an adjustment made in the editor and copied into a
  * recipe shows up here unchanged. Open any chart in the studio from the report
@@ -25,6 +28,7 @@ import { buildChart, formatValue, RECIPE_LABEL, type ChartState } from '../../sr
 import { paramsFromState } from '../../src/charts/url'
 import { DIMENSION_LABEL, MEASURE_LABEL, SLOW_TRIAL_SECONDS, type JobExport, type JobIndex, type Measure, type TrialRow } from '../../src/charts/trial'
 import { renderSvg } from './render-svg'
+import { turnSummary } from './turn-summary'
 import { exportJob } from './trials'
 
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
@@ -844,10 +848,11 @@ ${REPORT_CSS}
 // -- cli ------------------------------------------------------------------------------
 
 const args = process.argv.slice(2)
-const jobDir = args.find((a) => !a.startsWith('--'))
 const outDir = args.includes('--out') ? args[args.indexOf('--out') + 1] : 'results/harbor'
+const proxyLog = args.includes('--proxy-log') ? args[args.indexOf('--proxy-log') + 1] : undefined
+const jobDir = args.find((a, i) => !a.startsWith('--') && !['--out', '--proxy-log'].includes(args[i - 1]))
 if (!jobDir) {
-  console.error('usage: bun harbor/report/build-report.ts <job-dir|job.json> [--out results/harbor]')
+  console.error('usage: bun harbor/report/build-report.ts <job-dir|job.json> [--out results/harbor] [--proxy-log proxy.jsonl]')
   process.exit(2)
 }
 if (!existsSync(jobDir)) {
@@ -861,7 +866,7 @@ if (!existsSync(jobDir)) {
 const fromExport = jobDir.endsWith('.json')
 const exp = fromExport
   ? (JSON.parse(readFileSync(jobDir, 'utf8')) as JobExport)
-  : exportJob(jobDir)
+  : exportJob(jobDir, undefined, { proxyLog })
 if (!exp.rows.length) {
   console.error(`no readable trials in ${jobDir} - is this a finished Harbor job directory?`)
   process.exit(1)
@@ -888,6 +893,8 @@ index.jobs = [
   },
 ].sort((a, b) => b.generatedAt.localeCompare(a.generatedAt))
 if (!fromExport) writeFileSync(indexPath, JSON.stringify(index, null, 2))
+
+console.log(turnSummary(exp.rows))
 
 console.log(
   fromExport

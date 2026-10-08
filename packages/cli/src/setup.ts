@@ -7,6 +7,7 @@ import { startProviderSetup } from './provider-setup'
 import { detectMachineKind } from './runner/machine'
 import harnessCatalog from '../../../src/harness-catalog.json'
 import { selectMergeHarnesses } from './merge'
+import { HARBOR_VERSION } from './harbor-version'
 
 export type Docker = { command: string; prefix: string[]; description: string }
 type Options = { plan?: boolean; json?: boolean; yes?: boolean; noBrowser?: boolean; name?: string; distro?: string; harnesses?: string[] }
@@ -130,7 +131,7 @@ export async function setup(packageRoot: string, options: Options, openBrowser: 
   const selected = selectMergeHarnesses(options.harnesses ?? ['codex'])
   const name = workerName(options.name), volume = `${name}-data`
   const docker = await findDocker(options.distro)
-  const plan = { schemaVersion: 1, platform: process.platform, engine: docker?.description ?? null, name, volume, needsDocker: !docker, steps: ['Install the bundled Linux worker (Node, Harbor 0.23.0, Docker CLI and Compose)', 'Keep credentials and jobs in a persistent Docker volume', 'Pair your Heval account in the local browser', 'Verify a Merge key locally and prepare model profiles', 'Keep the worker running with Docker restart policy unless-stopped'], requirements: ['Node.js 22+', 'Local Linux Docker engine (4 GiB minimum; 8 GiB and 15 GiB free disk recommended)', 'Docker socket access lets the worker create sibling task containers'], recovery: 'Rerun the same command. Existing pairing, keys, profiles and jobs are preserved.', ...(docker ? {} : { next: prerequisiteHelp() }) }
+  const plan = { schemaVersion: 1, platform: process.platform, engine: docker?.description ?? null, name, volume, needsDocker: !docker, steps: [`Install the bundled Linux worker (Node, Harbor ${HARBOR_VERSION}, Docker CLI and Compose)`, 'Keep credentials and jobs in a persistent Docker volume', 'Pair your Heval account in the local browser', 'Verify a Merge key locally and prepare model profiles', 'Keep the worker running with Docker restart policy unless-stopped'], requirements: ['Node.js 22+', 'Local Linux Docker engine (4 GiB minimum; 8 GiB and 15 GiB free disk recommended)', 'Docker socket access lets the worker create sibling task containers'], recovery: 'Rerun the same command. Existing pairing, keys, profiles and jobs are preserved.', ...(docker ? {} : { next: prerequisiteHelp() }) }
   const selection = { ...plan, harnesses: harnessCatalog, selectedHarnesses: selected, harnessInstallation: 'Harbor installs selected harnesses inside task containers when evaluations start. Setup only prepares profiles and makes no model calls.' }
   if (options.plan) { console.log(options.json ? JSON.stringify(selection, null, 2) : `${JSON.stringify(selection, null, 2)}\nNo changes made.`); return }
   if (!docker) { console.log(prerequisiteHelp()); await installDocker(options.yes); return }

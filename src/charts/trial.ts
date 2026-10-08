@@ -75,6 +75,28 @@ export type TrialRow = {
   startedAt: string | null
   /** Harbor exception type when the trial errored, else null. */
   error: string | null
+  /** The harness's own turn count. Not comparable across harnesses; see `turnSource`. */
+  turns?: number | null
+  turnSource?: string | null
+  /** Configured turn cap (`max_turns`), or null when the harness ran uncapped. */
+  turnCap?: number | null
+  /** The turn cap stopped the attempt. Null when no cap was configured. */
+  capHit?: 0 | 1 | null
+  /** Model calls the vendor proxy logged during the agent step: harness-neutral. */
+  modelRequests?: number | null
+  modelRequestErrors?: number | null
+  /** Requests the gateway served from a vendor other than the pinned one. */
+  vendorMismatches?: number | null
+  /** Token totals from the gateway's own usage blocks, logged by the vendor proxy. */
+  proxyInputTokens?: number | null
+  proxyCachedTokens?: number | null
+  proxyOutputTokens?: number | null
+  /**
+   * Gateway-billed cost for the attempt: the same measure for every harness,
+   * unlike `costUsd`, which may be harness-reported at the harness's own rates.
+   */
+  proxyCostUsd?: number | null
+  proxyCostSource?: 'billed' | 'billed+catalog' | null
   /** Project source label. Added by the Studio adapter; absent in JobExport v1. */
   source?: string
   /** Immutable run label. Added by the Studio adapter. */
@@ -148,6 +170,10 @@ export const MEASURES = [
   'cacheTokens',
   'outputTokens',
   'totalTokens',
+  'turns',
+  'capHit',
+  'modelRequests',
+  'proxyCostUsd',
 ] as const
 export type CoreMeasure = (typeof MEASURES)[number]
 export type Measure = string
@@ -182,6 +208,10 @@ export const MEASURE_LABEL: Record<string, string> = {
   cacheTokens: 'Cache read tokens',
   outputTokens: 'Output tokens',
   totalTokens: 'Total tokens',
+  turns: 'Harness turns',
+  capHit: 'Turn-cap hit rate',
+  modelRequests: 'Model requests',
+  proxyCostUsd: 'Gateway cost (USD)',
 }
 
 /** Vega-Lite axis format per measure. */
@@ -198,4 +228,8 @@ export const MEASURE_FORMAT: Record<string, string> = {
   cacheTokens: '~s',
   outputTokens: '~s',
   totalTokens: '~s',
+  turns: '.0f',
+  capHit: '.0%',
+  modelRequests: '.0f',
+  proxyCostUsd: '$.3f',
 }

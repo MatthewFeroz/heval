@@ -25,7 +25,7 @@ function scratch() {
 const examplePath = resolve(import.meta.dirname, '../../../results/harbor/demo-evaluation.json')
 
 test('doctor separates viewing from execution and never outputs credential values', async () => {
-  const checks = await doctor(async command => command === 'harbor' ? 'harbor 0.23.0' : null, { OPENAI_API_KEY: 'private-test-value' })
+  const checks = await doctor(async command => command === 'harbor' ? 'harbor 0.24.0' : null, { OPENAI_API_KEY: 'private-test-value' })
   expect(checks.find(check => check.name === 'Harbor')?.ok).toBe(true)
   expect(checks.find(check => check.name === 'Docker engine')?.ok).toBe(false)
   expect(checks.find(check => check.name === 'Provider credentials')?.ok).toBe(true)
@@ -34,7 +34,7 @@ test('doctor separates viewing from execution and never outputs credential value
 })
 
 test('doctor rejects the previous pin and development builds', async () => {
-  for (const version of ['0.22.0', '0.23.0.dev20260917', '0.23.1']) {
+  for (const version of ['0.23.0', '0.24.0.dev20261007', '0.24.1']) {
     const checks = await doctor(async command => command === 'harbor' ? `harbor ${version}` : null, {})
     expect(checks.find(check => check.name === 'Harbor')?.ok).toBe(false)
   }
