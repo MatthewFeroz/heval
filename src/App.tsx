@@ -1,94 +1,13 @@
-import { useRef, useState } from 'react'
-import {
-  Clock3,
-  Coins,
-  Zap,
-} from 'lucide-react'
-import { featuredExperiment, type Runner } from './data'
+import { useRef } from 'react'
 import { publicAuth, type AppAuth } from './auth'
 import { Signup } from './Signup'
 import { STATIC_SITE } from './deployment'
 import { LandingHero } from './landing/LandingHero'
-import { HarnessTui } from './landing/HarnessTui'
+import { RunDatabase } from './landing/RunDatabase'
 import { StudiesRail } from './landing/StudiesRail'
 import { useSectionMotion } from './landing/useSectionMotion'
-import { useDemoAutoplay } from './landing/useDemoAutoplay'
 import { Brand, SiteHeader } from './components/SiteHeader'
 import './landing/landing.css'
-
-const runnerEnd = (runner: Runner) => Math.max(...runner.events.map((event) => event.at))
-const maxTime = Math.max(...featuredExperiment.runners.map(runnerEnd))
-const formatTokens = (tokens: number | null) => tokens === null ? 'pending' : `${(tokens / 1000).toFixed(1)}k`
-
-function RunnerLane({ runner, time, focused, onFocus, rawData, liveStatus, onLiveRun }: { runner: Runner; time: number; focused: boolean; onFocus: () => void; rawData?: string; liveStatus?: string; onLiveRun: () => void }) {
-  const visibleEvents = runner.events.filter((event) => event.at <= time)
-  const replayDuration = runnerEnd(runner)
-  const progress = Math.min(time / replayDuration, 1)
-  const isDone = progress === 1
-  const elapsed = Math.round(runner.duration * progress)
-
-  return (
-    <article
-      className={`runner-lane ${focused ? 'focused' : ''} ${isDone ? runner.outcome : ''}`}
-      style={{ '--runner-color': runner.color } as React.CSSProperties}
-      onClick={onFocus}
-    >
-      <div className="lane-head">
-        <div className="runner-avatar"><img src={runner.logo} alt="" /></div>
-        <div className="runner-title">
-          <strong>{runner.name}</strong>
-          <span>{runner.version} · demo</span>
-        </div>
-        <div className="lane-tools">
-          <div className="lane-stats" aria-label="Sample run metrics">
-            <span title="Cost" aria-label={`Cost: ${runner.cost === null ? 'pending' : `$${(runner.cost * progress).toFixed(2)}`}`}><Coins size={12} /> {runner.cost === null ? 'pending' : `$${(runner.cost * progress).toFixed(2)}`}</span>
-            <span className="lane-elapsed" title="Elapsed time" aria-label={`Elapsed time: ${elapsed} seconds`}><Clock3 size={12} /> {elapsed}s</span>
-            <span title="Tokens" aria-label={`Tokens: ${runner.tokens === null ? 'pending' : Math.round(runner.tokens * progress)}`}><Zap size={12} /> {runner.tokens === null ? formatTokens(null) : formatTokens(Math.round(runner.tokens * progress))}</span>
-          </div>
-          <div className={`lane-state ${isDone ? runner.outcome : time ? 'running' : 'ready'}`}>
-            <span />{liveStatus || (isDone ? runner.outcome : time ? 'running' : 'ready')}
-          </div>
-          {!STATIC_SITE && <button className="live-run-button" onClick={(event) => { event.stopPropagation(); onLiveRun() }}>{liveStatus === 'running' ? 'LIVE' : 'RUN REAL'}</button>}
-        </div>
-      </div>
-      <div className="terminal-body">
-        <HarnessTui runner={runner} visibleEvents={visibleEvents} isDone={isDone} started={time > 0} rawData={rawData} />
-      </div>
-    </article>
-  )
-}
-
-function RaceStage({ auth }: { auth: AppAuth }) {
-  const demo = useRef<HTMLDivElement>(null)
-  const time = useDemoAutoplay(demo, maxTime)
-  const [focused, setFocused] = useState<string | null>(null)
-
-  async function startLiveRun(harness: string) {
-    if (!auth.user) {
-      if (auth.configured) auth.signIn()
-      else window.alert('Real runs require Clerk sign-in to be configured.')
-      return
-    }
-    window.location.assign(`/evaluations?harness=${encodeURIComponent(harness)}`)
-  }
-
-  return (
-    <div className="replay-demo" ref={demo} role="group" aria-label="Scripted coding-agent demo">
-      <div className={`runner-grid ${focused ? 'has-focus' : ''}`}>
-        {featuredExperiment.runners.map((runner) => (
-          <RunnerLane
-            key={runner.id}
-            runner={runner}
-            time={time}
-            focused={focused === runner.id}
-            onFocus={() => setFocused((value) => value === runner.id ? null : runner.id)}
-            onLiveRun={() => startLiveRun(runner.id)}
-          />
-        ))}
-      </div>
-    </div>
-  )
-}
 
 function Methodology() {
   const steps = [
@@ -127,9 +46,7 @@ export default function App({ auth = publicAuth }: { auth?: AppAuth }) {
       <SiteHeader auth={auth} />
       <main id="top">
         <LandingHero />
-        <section data-home-reveal className="race-area" id="compare" aria-label="Interactive coding-agent replay">
-          <RaceStage auth={auth} />
-        </section>
+        <RunDatabase />
         <StudiesRail />
         <Methodology />
         {!STATIC_SITE && <Signup />}

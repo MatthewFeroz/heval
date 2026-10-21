@@ -11,9 +11,12 @@ Use a stable HTTPS workspace origin. Set `VITE_CLERK_PUBLISHABLE_KEY` in the
 frontend and `VITE_HEVAL_AUTH_ORIGIN` to that origin. Leave the latter empty for
 local development. A sign-in started on another frontend address moves the
 requested path, query, and fragment to this workspace; it does not send tokens
-back to an arbitrary worker or preview address. `/login` renders Clerk's sign-in
-and sign-up components. Reloads and the separate Studio/reports pages use the
-same Clerk session. Sign-out returns to the homepage.
+back to an arbitrary worker or preview address. On the workspace origin, sign-in
+opens Clerk's modal over the current page. Closing it leaves the page available
+and lets the user open sign-in again. Sign-in returns to the requested path,
+query and fragment. `/login` remains available for direct sign-in links.
+Reloads and the separate Studio/reports pages use the same Clerk session.
+Sign-out returns to the homepage.
 
 1. Sign in to the [Clerk dashboard](https://dashboard.clerk.com) and connect the
    CLI with `bunx clerk auth login`. Create/link a Heval application using

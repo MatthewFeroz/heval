@@ -20,7 +20,7 @@
     "test:e2e": "playwright test",
     "test:auth": "bun scripts/auth-session-smoke.ts",
     "test:deployments": "bun scripts/deployment-smoke.ts",
-    "test:unit": "bun test src/project src/charts src/onboarding src/runners/modelReference.test.ts scripts/refresh-merge-public-catalog.test.ts harbor/report/trials.test.ts",
+    "test:unit": "bun test src/project src/charts src/onboarding src/runs/database.test.ts src/runners/modelReference.test.ts scripts/refresh-merge-public-catalog.test.ts harbor/report/trials.test.ts",
     "test:backend": "vitest run",
     "test:reports": "bun run test:backend",
     "test:reports:smoke": "bun scripts/report-smoke.ts",
@@ -49,7 +49,8 @@
     "test:evaluations:ui": "bun scripts/evaluation-ui-smoke.ts",
     "test:onboarding:ui": "bun scripts/first-smoke-ui-smoke.ts",
     "demo:first-smoke": "bun scripts/first-smoke-ui-smoke.ts --capture .scratch/first-smoke",
-    "test:evaluations:e2e": "bun run cli:build && bun scripts/connected-evaluation-ci.ts"
+    "test:evaluations:e2e": "bun run cli:build && bun scripts/connected-evaluation-ci.ts",
+    "runs:build": "bun scripts/build-run-database.ts"
   },
   "dependencies": {
     "@clerk/react": "^6.17.5",

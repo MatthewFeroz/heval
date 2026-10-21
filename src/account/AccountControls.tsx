@@ -11,8 +11,7 @@ function SignIn({ auth }: { auth: AppAuth }) {
     setPending(true); setError('')
     try { await auth.signIn() } catch {
       setError('Couldn’t open sign-in. Please try again.')
-      setPending(false)
-    }
+    } finally { setPending(false) }
   }
   return <div className="account-controls">
     <button className="account-sign-in" type="button" disabled={pending} onClick={() => void signIn()}>

@@ -76,6 +76,19 @@ test('authentication errors allow retry without misrepresenting the session', as
   await expect(page.getByRole('button', { name: 'Sign in', exact: true })).toBeEnabled()
 })
 
+test('a guest can reopen sign-in after dismissing the dialog', async ({ page }) => {
+  await page.goto(fixture + '?session=guest&modal=1')
+  const signIn = page.getByRole('button', { name: 'Sign in', exact: true })
+  await signIn.click()
+  await expect(page.getByRole('dialog', { name: 'Sign in' })).toBeVisible()
+  await page.getByRole('button', { name: 'Close sign-in' }).click()
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+  await expect(signIn).toBeEnabled()
+  await signIn.click()
+  await expect(page.getByRole('dialog', { name: 'Sign in' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Account menu for Matt' })).toHaveCount(0)
+})
+
 test('the whole menu remains usable outside a scrolling toolbar', async ({ page }) => {
   await page.goto(fixture + '?overflow=1')
   await page.getByRole('button', { name: 'Account menu for Matt' }).click()
