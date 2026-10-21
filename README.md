@@ -39,9 +39,16 @@ npx @mattferoz/heval@latest open
 The npm viewer needs Node.js 22+, with no Bun, Docker, or account required for
 viewing existing data. See [the CLI guide](packages/cli/README.md).
 
-This source tree's bundled examples use invented models, tasks, and measurements.
-They demonstrate the interface and are **not benchmark evidence**. Existing npm
-versions are separate release artifacts and may contain earlier example data.
+The homepage includes an approved snapshot of 260 measured trials from two
+published studies. Browse the task-by-stack grid, compare two runs, or inspect
+cost and agent time on the interactive chart. These small studies describe
+their recorded attempts, not a general ranking. See the
+[run database notes](docs/landing-design.md) for sources and limits.
+
+The CLI's bundled examples and the separate public workbench demo use invented
+models, tasks, and measurements. They demonstrate the interface and are **not
+benchmark evidence**. Existing npm versions are separate release artifacts and
+may contain earlier example data.
 
 Open your own normalized JSON export or raw Harbor job:
 

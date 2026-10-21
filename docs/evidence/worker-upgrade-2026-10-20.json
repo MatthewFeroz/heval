@@ -1,0 +1,330 @@
+{
+  "date": "2026-10-20",
+  "sourceRevision": "dd69e2b6506110f0b41772b0cab948c236666a8b",
+  "environment": {
+    "os": "Linux x86_64",
+    "node": "22.23.3",
+    "bun": "1.4.2",
+    "docker": "29.7.2",
+    "authentication": "isolated local JWT issuer, not Clerk",
+    "backend": "isolated local Convex",
+    "compose": "5.5.0"
+  },
+  "artifacts": [
+    {
+      "file": "registry-mattferoz-heval-0.2.0.tgz",
+      "sha256": "7bcc7e827db315e7f0664c0c03727800d8449374d025c1ae3cec9323777f6a86",
+      "cliVersion": "0.2.0"
+    },
+    {
+      "file": "source-dd69e2b-mattferoz-heval-0.2.0.tgz",
+      "sha256": "a173ddf052bdda822b0a02ced37ecf338da1770bbf301bd84f23c90e0cc0ab77",
+      "cliVersion": "0.2.0"
+    }
+  ],
+  "runs": [
+    {
+      "phase": "phaseA",
+      "artifact": "registry",
+      "harbor": "0.23.0",
+      "experimentId": "j97ay647x2r31skk8x9cv434qs8gngpn",
+      "runId": "ks70map47heb0b0243frgw7e5s8gnj1n",
+      "childReportId": "kd7e380bkjza2r8xd57pmpb2kx8gnhb7",
+      "combinedReportId": "kd708k8sqcxkej5rmd5jrwdw358gmev6",
+      "status": "completed",
+      "profileDigest": "4c99a4c4fd22b059fa3f83f27800fc4d1f03c60be7f7263382b9e2b3e36659b5",
+      "taskSet": "b7e45df73db73ded1a5c82a50909b01d5744474131f556ccce4e9d5b8e4f48a0",
+      "rawVerifierReward": "1",
+      "report": {
+        "schemaVersion": 1,
+        "generatedAt": "2026-10-20T15:21:38.911Z"
+      },
+      "trial": {
+        "trial": "heval-setup:1:heval-setup__Ka5f2k9",
+        "task": "heval-setup",
+        "taskChecksum": "2efaa6327a8d24e03e0ad3c8c0824202e2f2d85cd8703885c659145616cb1dfc",
+        "agent": "oracle",
+        "agentVersion": "1.0.0",
+        "model": "unknown",
+        "passed": 1,
+        "reward": 1,
+        "error": null,
+        "agentSeconds": 8.368,
+        "totalSeconds": 22.754,
+        "inputTokens": null,
+        "outputTokens": null,
+        "costUsd": null,
+        "startedAt": "2026-10-20T15:21:15.941Z"
+      }
+    },
+    {
+      "phase": "phaseB",
+      "artifact": "source",
+      "harbor": "0.24.0",
+      "experimentId": "j97ane0xtyhcw5cwzffha9663x8gnajz",
+      "runId": "ks7agx92wevtw9stt0n6sjhwz18gn4ta",
+      "childReportId": "kd705mntkp0y4mtacy66aty4yn8gnttx",
+      "combinedReportId": "kd743cnayy9m4ydnat0drv8pyn8gm1cp",
+      "status": "completed",
+      "profileDigest": "61b3cddc411de53a76fcd2bb5019c73862dd405dcfa596713c185190995ab775",
+      "taskSet": "b7e45df73db73ded1a5c82a50909b01d5744474131f556ccce4e9d5b8e4f48a0",
+      "rawVerifierReward": "1",
+      "report": {
+        "schemaVersion": 1,
+        "generatedAt": "2026-10-20T15:25:54.342Z"
+      },
+      "trial": {
+        "trial": "heval-setup:1:heval-setup__QN6GWiZ",
+        "task": "heval-setup",
+        "taskChecksum": "2efaa6327a8d24e03e0ad3c8c0824202e2f2d85cd8703885c659145616cb1dfc",
+        "agent": "oracle",
+        "agentVersion": "1.0.0",
+        "model": "unknown",
+        "passed": 1,
+        "reward": 1,
+        "error": null,
+        "agentSeconds": 8.404,
+        "totalSeconds": 22.047,
+        "inputTokens": null,
+        "outputTokens": null,
+        "costUsd": null,
+        "startedAt": "2026-10-20T15:25:32.098Z"
+      }
+    },
+    {
+      "phase": "phaseC",
+      "artifact": "registry rollback",
+      "harbor": "0.23.0",
+      "experimentId": "j97fj2awtc5x9sbsx22veyjmqh8gmnyt",
+      "runId": "ks74dvknj2894jbzjbgtjwbjxh8gmne3",
+      "childReportId": "kd73jf45ya03gf76jxaz25sb198gmcs8",
+      "combinedReportId": "kd72qeny7zph83qz8kd6a4fg8x8gnzy6",
+      "status": "completed",
+      "profileDigest": "4c99a4c4fd22b059fa3f83f27800fc4d1f03c60be7f7263382b9e2b3e36659b5",
+      "taskSet": "b7e45df73db73ded1a5c82a50909b01d5744474131f556ccce4e9d5b8e4f48a0",
+      "rawVerifierReward": "1",
+      "report": {
+        "schemaVersion": 1,
+        "generatedAt": "2026-10-20T15:27:46.608Z"
+      },
+      "trial": {
+        "trial": "heval-setup:1:heval-setup__oBYGrwH",
+        "task": "heval-setup",
+        "taskChecksum": "2efaa6327a8d24e03e0ad3c8c0824202e2f2d85cd8703885c659145616cb1dfc",
+        "agent": "oracle",
+        "agentVersion": "1.0.0",
+        "model": "unknown",
+        "passed": 1,
+        "reward": 1,
+        "error": null,
+        "agentSeconds": 8.415,
+        "totalSeconds": 22.1,
+        "inputTokens": null,
+        "outputTokens": null,
+        "costUsd": null,
+        "startedAt": "2026-10-20T15:27:24.311Z"
+      }
+    },
+    {
+      "phase": "phaseD",
+      "artifact": "source in-place re-upgrade",
+      "harbor": "0.24.0",
+      "experimentId": "j97bsxz43wcdgy43etw8ezb3w98gmmwt",
+      "runId": "ks75xqdwpvty64zxf4akacpf7x8gnqxv",
+      "childReportId": "kd72haqqm0rrhz0d359mz13rm58gnhw7",
+      "combinedReportId": "kd7cvb3ctn8kt4kexnrwra1hn98gme9b",
+      "status": "completed",
+      "profileDigest": "61b3cddc411de53a76fcd2bb5019c73862dd405dcfa596713c185190995ab775",
+      "taskSet": "b7e45df73db73ded1a5c82a50909b01d5744474131f556ccce4e9d5b8e4f48a0",
+      "rawVerifierReward": "1",
+      "report": {
+        "schemaVersion": 1,
+        "generatedAt": "2026-10-20T15:28:57.396Z"
+      },
+      "trial": {
+        "trial": "heval-setup:1:heval-setup__DHxHqeP",
+        "task": "heval-setup",
+        "taskChecksum": "2efaa6327a8d24e03e0ad3c8c0824202e2f2d85cd8703885c659145616cb1dfc",
+        "agent": "oracle",
+        "agentVersion": "1.0.0",
+        "model": "unknown",
+        "passed": 1,
+        "reward": 1,
+        "error": null,
+        "agentSeconds": 8.455,
+        "totalSeconds": 22.469,
+        "inputTokens": null,
+        "outputTokens": null,
+        "costUsd": null,
+        "startedAt": "2026-10-20T15:28:34.726Z"
+      }
+    }
+  ],
+  "health": [
+    {
+      "case": "registry-node22-harbor0.23.0.strict",
+      "viewerReady": true,
+      "evaluationToolsReady": true,
+      "requiredChecks": [
+        {
+          "name": "Node.js",
+          "ok": true,
+          "detail": "v22.23.3",
+          "fix": "Install Node.js 22 or newer."
+        },
+        {
+          "name": "Harbor",
+          "ok": true,
+          "detail": "0.23.0",
+          "fix": "Install the supported version: uv tool install harbor==0.23.0"
+        },
+        {
+          "name": "Docker engine",
+          "ok": true,
+          "detail": "29.7.2",
+          "fix": "Install and start Docker Desktop (Linux containers) or Docker Engine."
+        }
+      ]
+    },
+    {
+      "case": "registry-node22-harbor0.24.0.strict",
+      "viewerReady": true,
+      "evaluationToolsReady": false,
+      "requiredChecks": [
+        {
+          "name": "Node.js",
+          "ok": true,
+          "detail": "v22.23.3",
+          "fix": "Install Node.js 22 or newer."
+        },
+        {
+          "name": "Harbor",
+          "ok": false,
+          "detail": "0.24.0",
+          "fix": "Install the supported version: uv tool install harbor==0.23.0"
+        },
+        {
+          "name": "Docker engine",
+          "ok": true,
+          "detail": "29.7.2",
+          "fix": "Install and start Docker Desktop (Linux containers) or Docker Engine."
+        }
+      ]
+    },
+    {
+      "case": "source-node22-harbor0.23.0.strict",
+      "viewerReady": true,
+      "evaluationToolsReady": false,
+      "requiredChecks": [
+        {
+          "name": "Node.js",
+          "ok": true,
+          "detail": "v22.23.3",
+          "fix": "Install Node.js 22 or newer."
+        },
+        {
+          "name": "Harbor",
+          "ok": false,
+          "detail": "0.23.0",
+          "fix": "Install the supported version: uv tool install harbor==0.24.0"
+        },
+        {
+          "name": "Docker engine",
+          "ok": true,
+          "detail": "29.7.2",
+          "fix": "Install and start Docker Desktop (Linux containers) or Docker Engine."
+        }
+      ]
+    },
+    {
+      "case": "source-node22-harbor0.24.0.strict",
+      "viewerReady": true,
+      "evaluationToolsReady": true,
+      "requiredChecks": [
+        {
+          "name": "Node.js",
+          "ok": true,
+          "detail": "v22.23.3",
+          "fix": "Install Node.js 22 or newer."
+        },
+        {
+          "name": "Harbor",
+          "ok": true,
+          "detail": "0.24.0",
+          "fix": "Install the supported version: uv tool install harbor==0.24.0"
+        },
+        {
+          "name": "Docker engine",
+          "ok": true,
+          "detail": "29.7.2",
+          "fix": "Install and start Docker Desktop (Linux containers) or Docker Engine."
+        }
+      ]
+    }
+  ],
+  "stateContinuity": [
+    {
+      "transition": "rollback",
+      "filesBefore": 59,
+      "filesAfter": 84,
+      "existingFilesChanged": 0,
+      "connectionUnchanged": true,
+      "profilesUnchanged": true
+    },
+    {
+      "transition": "in-place re-upgrade",
+      "filesBefore": 84,
+      "filesAfter": 110,
+      "existingFilesChanged": 0,
+      "connectionUnchanged": true,
+      "profilesUnchanged": true
+    }
+  ],
+  "checks": {
+    "cli-test": "60 pass, 0 fail",
+    "cli-smoke": [
+      "PASS: fresh install, CLI version/help, missing-prerequisite checks, and six-model synthetic example.",
+      "PASS: SVG, PNG, and workspace bundle downloads.",
+      "PASS: trial inspection and model filtering.",
+      "PASS: presentation, saved bundle reimport, and mobile width.",
+      "PASS: raw Harbor job and normalized JSON opened from paths outside the repository.",
+      "Packed @mattferoz/heval@0.2.0: all checks passed on linux, Node v22.23.3; no browser runtime errors."
+    ],
+    "cli-setup-smoke": [
+      "Installed setup passed: plan, provisioning, private UI, non-root Oracle 1/1, restart/resume, and artifact collision protection. No model calls."
+    ],
+    "node20": "Both installed artifacts reject Node 20 with: Heval requires Node.js 22 or newer.",
+    "mismatchedHarbor": "Both mismatched daemons advertise not ready with the required Harbor version; a forced create is rejected by Convex: The worker must be online and ready before starting."
+  },
+  "documentedOracle": {
+    "instructionsPresentInPublicCheckout": false,
+    "commandExit": 0,
+    "profile": {
+      "id": "heval-setup",
+      "agent": "oracle",
+      "attempts": 1,
+      "maxAttempts": 1,
+      "tasks": 1,
+      "timeoutSeconds": 300,
+      "digest": "d3057bf18f511e78b99e97a51a38d5d0a9f08a3c78bbc9f0bcdc4e3c25240966",
+      "taskSet": "027851e8453b8dbda1df2aa930e41fd297bbc5f8b01e41387ba7bdc16603d38d"
+    },
+    "trial": {
+      "trial": "heval-setup__ugYChKN",
+      "task": "heval-setup",
+      "taskChecksum": "91172c61715fb92812d4942cebd06e9658f3761f4159f35f35d1241216e6be6c",
+      "agent": "oracle",
+      "agentVersion": "1.0.0",
+      "model": "unknown",
+      "passed": 1,
+      "reward": 1,
+      "error": null,
+      "agentSeconds": 8.351,
+      "totalSeconds": 22.328,
+      "inputTokens": null,
+      "outputTokens": null,
+      "costUsd": null,
+      "startedAt": "2026-10-20T15:41:29.692Z"
+    }
+  }
+}

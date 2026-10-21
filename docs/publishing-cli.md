@@ -94,5 +94,52 @@ package to a designated GitHub Actions workflow without a long-lived npm token.
 Configure it in the npm package settings before adding an automated publisher.
 The repository CI only builds and tests; it never publishes.
 
+## Coordinated release evidence and rollback
+
+Use this checklist for a reviewed source release. Package publication, public
+source transfer and hosted deployment are separate authorized actions. Record
+the actual deployed/installed revisions; a source commit or package version
+does not establish that the worker, frontend and backend match.
+
+- [ ] Select the reviewed source revision and exact tarball; record its SHA-256,
+  Node/Bun/Harbor versions, contents and third-party notices. Preserve the
+  sanitized public fixtures and branding exclusions. Transfer selected changes
+  through a separate public checkout without private history.
+- [ ] Require the applicable default CI jobs at that revision. Default CI covers
+  functional/build checks, Node 22 installed CLI smoke and the real local
+  connected Oracle path. Require the separate manual **Release checks** before
+  CLI release or deployment/worker infrastructure changes; its Linux x64/ARM64
+  setup, Node 24, deployment builds and legacy Docker checks are additional gates.
+- [ ] Run `cli:pack`, `cli:smoke` and `cli:setup:smoke` on the exact artifact in
+  its supported Node runtime. After an authorized npm publication, separately
+  run `cli:smoke:published`; testing a local tarball does not test the registry.
+- [ ] Record compatible frontend, Convex backend, Clerk configuration and worker
+  versions. Follow [Clerk cutover/ownership instructions](clerk-auth.md) and any
+  [report-summary backfill](report-summary-migration.md). Keep additive rollback
+  compatibility until existing accounts, workers and reports are verified.
+- [ ] Upgrade an idle worker only after its active evaluations finish. Preserve
+  pairing, profiles, run state and private credential permissions. Install the
+  reviewed artifact and its matching Harbor runtime; run doctor and a no-model
+  Oracle check. Recheck changed approval digests before queued work is submitted.
+- [ ] Complete the [hosted acceptance checks](sprint-1-acceptance.md): fresh
+  sign-in, saved Oracle navigation, report roles, publication/revocation and
+  authorized export downloads. Save sanitized evidence and remaining limitations.
+- [ ] Before rollout, retain the compatible prior frontend/backend revisions and
+  CLI tarball/runtime pair, plus operator-controlled backups and migration notes.
+  Rehearse rollback on isolated state: return to that compatible pair, restart
+  the daemon with its existing state, verify ownership/profile readiness and run
+  Oracle. Confirm there is no duplicate execution. Do not downgrade an active
+  supervisor, delete pairing/state or undo data migrations blindly.
+- [ ] Link the [Oracle provenance record](reproducible-evaluation.md) and actual
+  acceptance results from the public guides/wiki. Record raw-artifact retention
+  responsibility; cloud reports and Blob presentation exports are not raw backups.
+
+Keep every unchecked item visible. This is a procedure, not evidence that a
+release, rollback or hosted acceptance was performed.
+
 References: [npm publishing](https://docs.npmjs.com/creating-and-publishing-unscoped-public-packages/),
 [trusted publishing](https://docs.npmjs.com/trusted-publishers/).
+
+The [October 20 upgrade and rollback evidence](evidence/worker-upgrade-2026-10-20.md)
+records the tested installed artifacts and compatible Harbor pairs. Hosted
+acceptance and npm publication remain separate checklist items.

@@ -6,7 +6,7 @@ import { authReturnUrl, signInUrl } from './auth-session'
 function Connected({ children }: { children: (auth: AppAuth) => ReactNode }) {
   const { isLoaded, isSignedIn, getToken } = useAuth()
   const { user, isLoaded: userLoaded } = useUser()
-  const { signOut } = useClerk()
+  const { signOut, openSignIn } = useClerk()
   const params = new URLSearchParams(location.search)
   const returnTo = authReturnUrl(params.get('returnTo'), location.origin)
   const login = location.pathname === '/login' || location.pathname === '/login/'
@@ -20,10 +20,17 @@ function Connected({ children }: { children: (auth: AppAuth) => ReactNode }) {
   const auth = useMemo<AppAuth>(() => ({
     configured: true, isLoading: !isLoaded || !userLoaded,
     user: isSignedIn && user ? { email: user.primaryEmailAddress?.emailAddress ?? '', firstName: user.firstName } : null,
-    signIn: () => location.assign(signInUrl(location.href, import.meta.env.VITE_HEVAL_AUTH_ORIGIN || location.origin)),
+    signIn: () => {
+      if (new URL(authOrigin).origin !== location.origin) {
+        location.assign(signInUrl(location.href, authOrigin))
+        return
+      }
+      const destination = authReturnUrl(location.href, location.origin)
+      openSignIn({ forceRedirectUrl: destination, signUpForceRedirectUrl: destination })
+    },
     signOut: () => { void signOut({ redirectUrl: '/' }) },
     getAccessToken: async options => await getToken({ template: 'convex', skipCache: options?.forceRefresh }) ?? undefined,
-  }), [isLoaded, userLoaded, isSignedIn, user, signOut, getToken])
+  }), [isLoaded, userLoaded, isSignedIn, user, signOut, openSignIn, getToken, authOrigin])
   if (login) {
     if (moveLogin || !isLoaded || isSignedIn) return <p>Loading your workspace…</p>
     const query = `?returnTo=${encodeURIComponent(returnTo)}`

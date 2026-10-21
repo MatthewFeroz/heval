@@ -36,7 +36,7 @@ try {
   page.on('pageerror', error => errors.push(error.message))
   await page.goto(String(staticServer.url))
   await expect(page.getByRole('heading', { name: 'The open-source evaluation platform for coding agents.' })).toBeVisible()
-  await expect(page.getByRole('button', { name: 'RUN REAL' })).toHaveCount(0)
+  await expect(page.getByRole('heading', { name: 'Every published run. Pick any two.' })).toBeVisible()
   await expect(page.getByPlaceholder('you@company.com')).toHaveCount(0)
   await page.getByRole('link', { name: 'Create an evaluation', exact: true }).click()
   await expect(page.getByRole('heading', { name: 'Evaluations are coming online' })).toBeVisible()

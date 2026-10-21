@@ -8,12 +8,14 @@ export function Fixture() {
   const params = new URLSearchParams(location.search)
   const [session, setSession] = useState(params.get('session') || 'member')
   const [signOutCount, setSignOutCount] = useState(0)
+  const [signInOpen, setSignInOpen] = useState(false)
   const user = { firstName: 'Matt', email: 'matt@example.invalid' }
   const auth: AppAuth = {
     configured: session !== 'unconfigured', isLoading: session === 'loading',
     user: ['member', 'loading'].includes(session) ? user : null,
     async signIn() {
       if (params.has('error')) throw new Error('Test login failure')
+      if (params.has('modal')) { setSignInOpen(true); return }
       setSession('member')
     },
     async signOut() {
@@ -31,6 +33,7 @@ export function Fixture() {
       </nav>
     </header>
     <main style={{ padding: 24 }}><h1>Account navigation</h1><button>Outside control</button><output aria-label="Sign-out attempts">{signOutCount}</output></main>
+    {signInOpen && <div role="dialog" aria-label="Sign in"><button onClick={() => setSignInOpen(false)}>Close sign-in</button></div>}
   </div>
 }
 createRoot(document.getElementById('root')!).render(<Fixture />)
