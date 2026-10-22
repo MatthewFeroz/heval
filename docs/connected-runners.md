@@ -23,7 +23,7 @@ Browser on laptop / another browser session
 
 Your browser doesn't need to stay open. Each machine runs a small polling daemon; a separate local supervisor owns each Harbor execution. Closing/restarting the polling daemon does not terminate that supervisor. The daemon reconnects to the same run and uploads its result once. A machine reboot interrupts execution; a run is never automatically repeated on another machine.
 
-The current source pin is Harbor 0.23.0. It is covered by the required
+The current source pin is Harbor 0.24.0. It is covered by the required
 connected-evaluation CI job, which runs the setup profile through a live daemon,
 Harbor and Docker and verifies the resulting combined report. Older archived
 manual smoke evidence may still record the Harbor version used when it was
@@ -34,7 +34,7 @@ for a command-by-command walkthrough from a fresh Ubuntu worker to a saved resul
 
 ## 1. Install the preview on Linux
 
-Use a dedicated Linux machine or VM you control, with Node.js 22+, Docker Engine and Compose available to your account, Python 3.12+, and Harbor **0.23.0**. The machine must have outbound HTTPS access to your Convex deployment and any image/model providers used by its tasks. The browser never receives access to the Docker socket.
+Use a dedicated Linux machine or VM you control, with Node.js 22+, Docker Engine and Compose available to your account, Python 3.12+, and Harbor **0.24.0**. The machine must have outbound HTTPS access to your Convex deployment and any image/model providers used by its tasks. The browser never receives access to the Docker socket.
 
 Docker access grants substantial control of the host. This is a personal/trusted-worker architecture, not a public sandbox for untrusted users. Approve task files and agent configuration on the worker itself. Start with one task and one attempt.
 
@@ -67,7 +67,7 @@ Alternatively, copy the built tarball to each machine and install it with `npm i
 With `uv` installed, install the pinned Harbor version:
 
 ```sh
-uv tool install 'harbor==0.23.0'
+uv tool install 'harbor==0.24.0'
 harbor --version
 docker info
 docker compose version

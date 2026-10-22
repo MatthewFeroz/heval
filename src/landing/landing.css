@@ -163,3 +163,10 @@
   .hf-deep-agents { --x: -17vw; --s: 38px; }
   .hf-cursor { --x: 17vw; --s: 38px; }
 }
+
+/* Tenth ecosystem mark: left edge between the upper and lower rows. */
+.hf-factory { --x: max(-620px, -43vw); --y: 290px; --s: 56px; --rot: -5deg; --depth: .7; --d: 900ms; --dur: 10.2s; --dx: 2px; --dy: -8px; --wob: -2deg; --fx: -120px; --fy: 0px; }
+.hf-factory .hero-harness { overflow: hidden; }
+.hf-factory img { width: 100%; height: 100%; }
+@media (min-width: 821px) and (max-height: 850px) { .hf-factory { --y: 250px; --s: 48px; } }
+@media (max-width: 820px) { .hf-factory { --x: 0px; --y: 24px; --s: 36px; } }

@@ -16,7 +16,7 @@ export function LandingHero() {
     <section className="hero" ref={hero} aria-labelledby="hero-title">
       <div className="hero-grid" aria-hidden="true" />
       <div className="hero-harnesses" ref={field} role="group" aria-label="Coding agent harness ecosystem">
-        {harnesses.map(harness => (
+        {harnesses.filter(harness => harness.logo).map(harness => (
           <span className={`hero-float-mark hf-${harness.heroId}`} key={harness.id}>
             <span className="hero-harness"><img src={`/harnesses/${harness.logo}`} alt={harness.name} width="64" height="64" /></span>
           </span>
@@ -24,7 +24,7 @@ export function LandingHero() {
       </div>
       <div className="hero-inner shell">
         <h1 id="hero-title"><span>The open-source</span>{' '}<span>evaluation platform</span>{' '}<span>for coding agents.</span></h1>
-        <p className="hero-copy">Compare Claude Code, Codex, OpenCode, Pi, Deep Agents, Antigravity, Cursor, Grok, and DeepSeek Harness.<br className="hero-copy-break" /> Run evaluations locally with Harbor. Inspect every trial. Share the evidence.</p>
+        <p className="hero-copy">Compare Claude Code, Codex, OpenCode, Pi, Deep Agents, Antigravity, Cursor, Factory Droid, Grok, and DeepSeek Harness.<br className="hero-copy-break" /> Run evaluations locally with Harbor. Inspect every trial. Share the evidence.</p>
         <div className="hero-actions">
           <a className="primary-button" href="/evaluations"><Play size={21} />Create an evaluation<ArrowRight size={19} /></a>
           <a className="hero-github" href="https://github.com/MatthewFeroz/heval" target="_blank" rel="noreferrer" aria-label="Explore the code on GitHub">

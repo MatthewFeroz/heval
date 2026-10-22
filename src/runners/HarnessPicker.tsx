@@ -1,5 +1,5 @@
 import harnessCatalog from '../harness-catalog.json'
-const ORDER=['codex','claude-code','opencode','pi','antigravity','grok-build','cursor']
+const ORDER=['codex','claude-code','opencode','pi','antigravity','grok-build','factory-droid','cursor']
 const rank=(id:string)=>ORDER.includes(id)?ORDER.indexOf(id):ORDER.length
 
 /** Evaluation choices contain only approved profiles; installation belongs to computer setup. */

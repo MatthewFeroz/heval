@@ -3,8 +3,8 @@
   "description": "Public runner requirements. Check the target worker before installation or evaluation.",
   "runner": {
     "name": "harbor",
-    "version": "0.23.0",
-    "install": "uv tool install harbor==0.23.0",
+    "version": "0.24.0",
+    "install": "uv tool install harbor==0.24.0",
     "upgrade": "uv tool upgrade harbor",
     "executables": [
       "harbor",

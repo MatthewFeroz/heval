@@ -3,7 +3,7 @@ import { basename, dirname, isAbsolute, join, resolve } from 'node:path'
 import { validateProfiles, executionTimeoutSeconds, type RunSettings, type RunnerProfile } from '../../../../src/runners/protocol'
 import { BENCHMARKS, type Benchmark } from '../../../../src/runners/benchmarks'
 import { hashDirectory, randomSecret, readJson, sha256, writeJson } from './files'
-import { mergeAgent, mergePath, mergeStatus, selectMergeHarnesses } from '../merge'
+import { bundledAgents, mergeAgent, mergePath, mergeStatus, selectMergeHarnesses } from '../merge'
 import { bundledAdapters } from './bundled-adapters'
 
 type JsonObject = Record<string, unknown>
@@ -31,7 +31,7 @@ export function loadProfiles(file: string, connectionDirectory = dirname(file)):
     for (const key of Object.keys(input)) if (!['n_attempts', 'agents', 'tasks'].includes(key)) throw new Error(`Unsupported profile config field: ${key}. This release accepts n_attempts, agents, and explicit local tasks.`)
     if (!Array.isArray(input.agents) || input.agents.length !== 1 || !Array.isArray(input.tasks) || !input.tasks.length) throw new Error('Approve one agent/model and one or more explicit local task directories per profile.')
     let agent = object(input.agents[0])
-    if (!['oracle', 'codex', 'claude-code', 'opencode', 'pi', 'terminus-2', 'grok-build', ...(d.provider === 'merge' ? ['deep-agents'] : [])].includes(String(agent.name)) || agent.import_path) throw new Error('Use a built-in supported Harbor agent or the bundled Merge Deep Agents adapter.')
+    if (!['oracle', 'codex', 'claude-code', 'opencode', 'pi', 'terminus-2', 'grok-build', ...(d.provider === 'merge' ? Object.keys(bundledAgents) : [])].includes(String(agent.name)) || agent.import_path) throw new Error('Use a built-in supported Harbor agent or a bundled Merge adapter.')
     for (const key of Object.keys(agent)) if (!['name', 'model_name', 'kwargs', 'env', 'override_timeout_sec', 'override_setup_timeout_sec'].includes(key)) throw new Error(`Unsupported agent field: ${key}`)
     if (agent.name !== 'oracle' && (typeof agent.model_name !== 'string' || !agent.model_name)) throw new Error('A model-backed profile needs model_name.')
     const displayModel = String(agent.model_name)
@@ -55,7 +55,7 @@ export function loadProfiles(file: string, connectionDirectory = dirname(file)):
     const config = { n_attempts: input.n_attempts ?? 1, n_concurrent_trials: 1, retry: { max_retries: 0 }, agents: [agent], tasks: taskPaths.map(path => ({ path })), environment: { type: 'docker', delete: true, cpu_enforcement_policy: 'auto', memory_enforcement_policy: 'auto' } }
     const description = { runSettingsVersion: 1 as const, id: d.id, title: d.title, benchmark: d.benchmark, agent: String(agent.name), model: agent.name === 'oracle' ? 'Reference solution (no model)' : displayModel, tasks: taskPaths.length, attempts: Number(config.n_attempts), timeoutSeconds: d.timeoutSeconds, setupCheck: agent.name === 'oracle', taskSet: sha256(JSON.stringify(taskHashes)), vendor: typeof object(agent.env ?? {}).HEVAL_VENDOR === 'string' ? String(object(agent.env ?? {}).HEVAL_VENDOR) : 'Provider default', maxAttempts: d.maxAttempts ?? Number(config.n_attempts) }
     // Include all executable task content and agent settings, excluding local path names.
-    const adapter = agent.name === 'deep-agents' ? sha256(readFileSync(join(bundledAdapters(), 'heval_agents.py'), 'utf8')) : undefined
+    const adapter = bundledAgents[String(agent.name)] ? sha256(readFileSync(join(bundledAdapters(), 'heval_agents.py'), 'utf8')) : undefined
     const digest = sha256(JSON.stringify({ description, config: { ...config, tasks: taskHashes }, ...(adapter ? { adapter } : {}) }))
     let envFile: string | undefined
     if (d.envFile) { envFile = isAbsolute(d.envFile) ? d.envFile : resolve(dirname(file), d.envFile); if (!existsSync(envFile)) throw new Error('The profile envFile does not exist on this machine.') }

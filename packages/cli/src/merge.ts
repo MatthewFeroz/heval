@@ -6,7 +6,7 @@ import { fetchCatalog, type Catalog } from '../../../harbor/gateway/catalog'
 import { readJson, writeJson } from './runner/files'
 import catalog from '../../../src/harness-catalog.json'
 
-export const mergeHarnesses = ['codex', 'claude-code', 'opencode', 'pi', 'grok-build', 'deep-agents'] as const
+export const mergeHarnesses = ['codex', 'claude-code', 'opencode', 'pi', 'grok-build', 'deep-agents', 'factory-droid'] as const
 export type MergeHarness = typeof mergeHarnesses[number]
 export function selectMergeHarnesses(selection: string[]) {
   const ids = selection.length === 1 && selection[0] === 'all' ? [...mergeHarnesses] : selection
@@ -46,6 +46,9 @@ export function publicMergeCatalog(directory: string) {
 }
 export function disconnectMerge(directory: string) { rmSync(mergePath(directory), { force: true }) }
 
+/** Heval-maintained Harbor adapters in packages/cli/worker/heval_agents.py. */
+export const bundledAgents: Record<string, string> = { 'deep-agents': 'heval_agents:DeepAgents', 'factory-droid': 'heval_agents:FactoryDroid' }
+
 /** Harbor creates each harness's settings inside its evaluation container. */
 export function mergeAgent(harness: string, model: string) {
   if (!mergeHarnesses.includes(harness as MergeHarness)) throw new Error(`Merge supports: ${mergeHarnesses.join(', ')}.`)
@@ -63,7 +66,7 @@ export function mergeAgent(harness: string, model: string) {
   // Harbor's passthrough adapters split the first provider prefix. Preserve
   // the complete Merge slug as the model sent on the wire.
   const model_name = ['pi', 'opencode', 'grok-build'].includes(harness) ? `openai/${model}` : model
-  return { name: harness, ...(harness === 'deep-agents' ? { import_path: 'heval_agents:DeepAgents' } : {}), model_name, kwargs, env: harness === 'claude-code'
+  return { name: harness, ...(bundledAgents[harness] ? { import_path: bundledAgents[harness] } : {}), model_name, kwargs, env: harness === 'claude-code'
     ? { ANTHROPIC_BASE_URL: anthropic }
     : { OPENAI_BASE_URL: openai } }
 }

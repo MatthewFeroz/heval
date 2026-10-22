@@ -33,7 +33,7 @@ Usage:
   heval provider setup merge [--port 0] [--no-browser] [--state <directory>]
   heval provider status merge [--state <directory>]
   heval provider disconnect merge [--state <directory>]
-  heval runner setup --model <merge-model-id> --harnesses codex,claude-code,opencode,pi,grok-build,deep-agents
+  heval runner setup --model <merge-model-id> --harnesses codex,claude-code,opencode,pi,grok-build,deep-agents,factory-droid
                     [--benchmark tblite-smoke|tblite --source <checkout>]
   heval runner test --profile <profile-id> [--state <directory>] [--harbor <executable>]
   heval runner connect --url <deployment.convex.cloud> [--state <directory>]
@@ -119,7 +119,7 @@ async function main() {
     if ((extra.length && path !== 'cleanup') || values.port || values.json || values.strict || values['no-browser']) throw new Error('Run heval --help for runner commands.')
     const directory = resolve(values.state ?? join(homedir(), '.heval/runner'))
     if (path === 'setup') {
-      if (!values.model || !values.harnesses || values.profiles || values.url) throw new Error('Use runner setup --model <exact-model-id> --harnesses codex,claude-code,opencode,pi,grok-build,deep-agents.')
+      if (!values.model || !values.harnesses || values.profiles || values.url) throw new Error('Use runner setup --model <exact-model-id> --harnesses codex,claude-code,opencode,pi,grok-build,deep-agents,factory-droid.')
       const profiles = setupMergeProfiles(directory, join(dist, 'runner-task'), values.model, values.harnesses.split(',').map(h => h.trim()), values.benchmark ? { id: values.benchmark, source: values.source! } : undefined)
       console.log(`Created profiles: ${profiles.join(', ')}. No model calls made.\nTest each with: heval runner test --profile <id> (uses model credits).`)
     } else if (path === 'test') {

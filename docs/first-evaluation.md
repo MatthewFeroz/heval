@@ -6,7 +6,7 @@ and provider form. That feature is not in published CLI 0.2.0; the manual
 walkthrough below remains usable with that release.
 
 This walkthrough takes you from a fresh Linux worker to a saved evaluation in
-Heval. It uses **Ubuntu 24.04**, **Heval CLI 0.2.0**, **Harbor 0.23.0**, one
+Heval. It uses **Ubuntu 24.04**, **Heval CLI 0.2.0**, **Harbor 0.24.0**, one
 model through Merge Gateway, and the Codex harness running one bundled task.
 Other Linux distributions need different prerequisite installation commands;
 the Heval commands are the same.
@@ -157,11 +157,11 @@ Install Python and the Harbor version Heval expects:
 
 ```sh
 uv python install 3.12
-uv tool install --python 3.12 'harbor==0.23.0'
+uv tool install --python 3.12 'harbor==0.24.0'
 harbor --version
 ```
 
-Harbor must report `0.23.0`. The runner checks that version explicitly.
+Harbor must report `0.24.0`. The runner checks that version explicitly.
 
 ## 5. Install Heval from npm
 

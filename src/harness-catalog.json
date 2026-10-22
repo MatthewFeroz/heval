@@ -55,7 +55,25 @@
     "logo": "cursor.svg",
     "version": "2026.09.18-9a7762b",
     "merge": false,
-    "reason": "Requires Cursor authentication; a direct Merge route is not verified."
+    "reason": "Cursor CLI sends model calls through Cursor's servers and cannot use a custom endpoint, so Merge Gateway routing is unavailable."
+  },
+  {
+    "id": "factory-droid",
+    "heroId": "factory",
+    "name": "Factory Droid",
+    "logo": "factory.svg",
+    "version": "0.247.0",
+    "merge": true,
+    "reason": "Native logs and grades are retained; normalized trajectory and token/cost accounting are unavailable."
+  },
+  {
+    "id": "devin",
+    "heroId": "devin",
+    "name": "Devin",
+    "logo": "",
+    "version": "",
+    "merge": false,
+    "reason": "Devin CLI uses Cognition-hosted models only and cannot use a custom endpoint, so Merge Gateway routing is unavailable."
   },
   {
     "id": "deep-agents",

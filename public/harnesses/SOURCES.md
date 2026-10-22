@@ -16,6 +16,8 @@ trademark rights remain with their respective owners.
 
 | Cursor | [T3 Code Cursor mark](https://github.com/pingdotgg/t3code/blob/main/apps/marketing/public/harnesses/cursor_light.svg), identifying [Cursor](https://cursor.com/) |
 
+| Factory Droid | [Official Factory site favicon](https://factory.ai/favicon.svg), identifying [Factory Droid](https://factory.ai/product/cli), retrieved on 2026-10-22 |
+
 New assets were retrieved on 2026-09-16.
 
 | DeepSeek Harness | DeepSeek company mark, reused from `harbor/report/assets/model-logos/deepseek-color.svg` (LobeHub icons); identifies [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness), not a separate official harness logo. |

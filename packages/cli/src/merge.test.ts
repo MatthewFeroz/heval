@@ -23,7 +23,7 @@ test('one validated key configures all supported harnesses without secrets in pr
   await connectMerge(directory, 'shared-secret', async () => catalog)
   expect(statSync(mergePath(directory)).mode & 0o777).toBe(0o600)
   const ids = setupMergeProfiles(directory, bundledTask, model, [...mergeHarnesses])
-  expect(ids).toHaveLength(6)
+  expect(ids).toHaveLength(7)
   const profiles = loadProfiles(join(directory, 'profiles.json')).filter(p => p.mergeConnection)
   for (const profile of profiles) {
     expect(profile.public.model).toBe(model)

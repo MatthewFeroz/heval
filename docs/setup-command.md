@@ -58,20 +58,24 @@ heval setup --harnesses all
 heval runner setup --model MODEL_ID --harnesses all
 ```
 
-`all` means all six supported Merge adapters: Codex, Claude Code, OpenCode, Pi,
-Grok Build, and Deep Agents. Selection prepares approved profiles and makes no
+`all` means all seven supported Merge adapters: Codex, Claude Code, OpenCode, Pi,
+Grok Build, Deep Agents, and Factory Droid. Selection prepares approved profiles and makes no
 model calls. Harbor installs the pinned harness in each task container when the
 user launches a run. No separate harness installation step is required.
 
-Cursor, Antigravity and DeepSeek Harness remain visible with disabled choices
-and specific blockers. Cursor needs its own account and a verified custom
-provider route; Antigravity needs a verified Gemini-compatible route; DeepSeek
+Cursor, Devin, Antigravity and DeepSeek Harness remain visible with disabled
+choices and specific blockers. Cursor CLI and Devin CLI send model calls to their
+vendors' servers and accept no custom endpoint, so Merge Gateway cannot route
+them; Antigravity needs a verified Gemini-compatible route; DeepSeek
 Harness has a known reasoning/streaming-tool incompatibility. Heval does not
 represent these as runnable just because Harbor knows a harness name.
 
 Grok uses Harbor's built-in adapter. Deep Agents uses the bundled adapter for the
 official `deepagents-code` CLI; native logs and grades are retained, while
-normalized trajectories and token/cost accounting remain unavailable. Run each
+normalized trajectories and token/cost accounting remain unavailable. Factory
+Droid uses the bundled adapter for the `droid` npm CLI with a BYOK custom model
+pointed at Merge Gateway's OpenAI Responses endpoint. It needs no Factory login,
+and the same trajectory and token/cost limits apply. Run each
 connection check before a full study.
 
 The bundled connection fixture allows 1 GiB of memory. The old 256 MiB fixture

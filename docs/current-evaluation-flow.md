@@ -4,7 +4,7 @@ Heval coordinates evaluations from the browser. A connected Linux runner execute
 Harbor and Docker on a worker controlled by the user. Provider credentials stay
 on the worker; profile metadata and normalized reports are stored online.
 
-1. Install the CLI, Harbor 0.23.0, and Docker Engine with Compose on Linux.
+1. Install the CLI, Harbor 0.24.0, and Docker Engine with Compose on Linux.
 2. Sign in to Heval, create a pairing code in Machines, and connect the worker.
 3. Keep `heval runner start` running and execute the no-model setup check.
 4. Connect a provider on the worker. Merge Gateway remains supported through
