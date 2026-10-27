@@ -1,0 +1,44 @@
+/**
+ * OpenEval brand geometry - the one place the logo lives as data.
+ *
+ * The site header, Studio, report and poster exporters, motion frames and the
+ * CLI setup page all draw the mark from here. The files in public/ are rendered
+ * from the same values.
+ */
+
+export const BRAND_NAME = 'OpenEval'
+
+/** The split O: two halves of one rounded frame, open top and bottom. */
+export type MarkCut = { left: string; right: string; stroke: number }
+
+/** Master from 24px up. Below that the small cut takes over: heavier stroke, narrower gap, so it holds at favicon size. */
+export const MARK = {
+  master: { left: 'M12.5 4H11a7 7 0 0 0-7 7v10a7 7 0 0 0 7 7h1.5', right: 'M19.5 4H21a7 7 0 0 1 7 7v10a7 7 0 0 1-7 7h-1.5', stroke: 3.25 },
+  small: { left: 'M11.5 4H11a7 7 0 0 0-7 7v10a7 7 0 0 0 7 7h.5', right: 'M20.5 4H21a7 7 0 0 1 7 7v10a7 7 0 0 1-7 7h-.5', stroke: 3.5 },
+} satisfies Record<string, MarkCut>
+
+export const markCut = (size: number): MarkCut => size < 24 ? MARK.small : MARK.master
+
+/**
+ * The split gesture moves each half outward by up to MARK_TRAVEL units. The
+ * outer strokes sit 2.375 units inside the 32-unit frame, so an animated mark
+ * draws into MOTION_VIEWBOX, which adds 4 units each side, rather than letting
+ * the strokes run past the edge and clip.
+ */
+export const MARK_TRAVEL = 3
+export const MOTION_VIEWBOX = '-4 0 40 32'
+
+/** "openeval" in DM Sans 600 at optical size 40, outlined so exports need no webfont. Lockup units: the mark fills 0-32. */
+export const WORDMARK_PATH = 'M52.6 26.94Q50.39 26.94 48.62 25.93Q46.84 24.91 45.81 23.09Q44.77 21.28 44.77 18.88Q44.77 16.49 45.82 14.67Q46.86 12.85 48.64 11.83Q50.42 10.82 52.63 10.82Q54.84 10.82 56.62 11.83Q58.39 12.85 59.43 14.67Q60.46 16.49 60.46 18.88Q60.46 21.28 59.42 23.09Q58.37 24.91 56.59 25.93Q54.81 26.94 52.6 26.94ZM52.59 23.86Q53.7 23.86 54.62 23.31Q55.53 22.76 56.1 21.66Q56.66 20.55 56.66 18.88Q56.66 17.21 56.11 16.1Q55.55 14.99 54.63 14.44Q53.72 13.9 52.64 13.9Q51.56 13.9 50.63 14.44Q49.7 14.99 49.14 16.1Q48.57 17.21 48.57 18.88Q48.57 20.55 49.14 21.66Q49.7 22.76 50.61 23.31Q51.53 23.86 52.59 23.86ZM61.43 32.77V11.2H64.55L64.79 13.97H64.91Q65.53 12.96 66.39 12.26Q67.25 11.57 68.33 11.2Q69.42 10.82 70.69 10.82Q72.88 10.82 74.5 11.87Q76.12 12.92 77.01 14.75Q77.9 16.57 77.9 18.88Q77.9 21.2 77.01 23.02Q76.12 24.84 74.46 25.89Q72.81 26.94 70.49 26.94Q68.59 26.94 67.25 26.19Q65.91 25.44 65.15 24.41V32.77ZM69.64 23.87Q71.01 23.87 72.02 23.24Q73.03 22.61 73.58 21.49Q74.14 20.38 74.14 18.9Q74.14 17.42 73.58 16.3Q73.03 15.18 72.02 14.55Q71.01 13.92 69.64 13.92Q68.29 13.92 67.26 14.55Q66.23 15.18 65.67 16.3Q65.11 17.42 65.11 18.9Q65.11 20.38 65.67 21.49Q66.23 22.61 67.26 23.24Q68.29 23.87 69.64 23.87ZM86.14 26.94Q83.82 26.94 82.04 25.94Q80.26 24.94 79.25 23.15Q78.24 21.35 78.24 18.99Q78.24 16.56 79.24 14.73Q80.23 12.9 82.01 11.86Q83.8 10.82 86.16 10.82Q88.45 10.82 90.16 11.82Q91.87 12.83 92.82 14.51Q93.77 16.2 93.77 18.3Q93.77 18.61 93.76 18.98Q93.76 19.36 93.71 19.78H80.93V17.38H90.02Q89.92 15.69 88.84 14.72Q87.76 13.75 86.15 13.75Q85 13.75 84.03 14.26Q83.05 14.77 82.48 15.81Q81.9 16.85 81.9 18.44V19.33Q81.9 20.78 82.46 21.8Q83.02 22.82 83.99 23.36Q84.96 23.9 86.11 23.9Q87.39 23.9 88.26 23.32Q89.13 22.75 89.56 21.78H93.32Q92.9 23.24 91.89 24.41Q90.89 25.58 89.44 26.26Q87.98 26.94 86.14 26.94ZM94.43 26.57V11.2H97.62L97.95 13.68H98.07Q98.84 12.34 100.12 11.58Q101.41 10.82 103.3 10.82Q105.17 10.82 106.5 11.62Q107.84 12.41 108.55 13.97Q109.25 15.53 109.25 17.84V26.57H105.55V18.19Q105.55 16.14 104.7 15.05Q103.85 13.97 102.09 13.97Q100.95 13.97 100.06 14.52Q99.17 15.08 98.66 16.11Q98.15 17.14 98.15 18.63V26.57ZM117.81 26.94Q115.49 26.94 113.71 25.94Q111.93 24.94 110.92 23.15Q109.91 21.35 109.91 18.99Q109.91 16.56 110.9 14.73Q111.9 12.9 113.68 11.86Q115.47 10.82 117.83 10.82Q120.12 10.82 121.83 11.82Q123.54 12.83 124.49 14.51Q125.44 16.2 125.44 18.3Q125.44 18.61 125.43 18.98Q125.43 19.36 125.38 19.78H112.6V17.38H121.69Q121.59 15.69 120.51 14.72Q119.43 13.75 117.82 13.75Q116.67 13.75 115.69 14.26Q114.72 14.77 114.14 15.81Q113.57 16.85 113.57 18.44V19.33Q113.57 20.78 114.13 21.8Q114.69 22.82 115.66 23.36Q116.63 23.9 117.78 23.9Q119.06 23.9 119.93 23.32Q120.8 22.75 121.23 21.78H124.99Q124.56 23.24 123.56 24.41Q122.56 25.58 121.11 26.26Q119.65 26.94 117.81 26.94ZM129.89 26.57 124.77 11.2H128.68L132.54 24.01H132.69L136.57 11.2H140.43L135.31 26.57ZM145.69 26.94Q143.86 26.94 142.66 26.31Q141.45 25.68 140.88 24.61Q140.31 23.55 140.31 22.28Q140.31 20.81 141.07 19.73Q141.82 18.65 143.31 18.06Q144.81 17.46 147.01 17.46H150.95Q150.95 16.19 150.59 15.37Q150.23 14.56 149.5 14.16Q148.78 13.76 147.69 13.76Q146.41 13.76 145.47 14.37Q144.53 14.98 144.32 16.26H140.67Q140.84 14.57 141.78 13.36Q142.71 12.15 144.24 11.49Q145.77 10.82 147.71 10.82Q149.92 10.82 151.48 11.58Q153.05 12.33 153.86 13.73Q154.67 15.14 154.67 17.12V26.57H151.59L151.2 24.1H151.08Q150.62 24.82 150.04 25.35Q149.46 25.89 148.78 26.23Q148.11 26.58 147.33 26.76Q146.54 26.94 145.69 26.94ZM146.81 24.01Q147.75 24.01 148.47 23.68Q149.19 23.34 149.7 22.76Q150.2 22.18 150.49 21.43Q150.77 20.67 150.84 19.86H147.4Q146.28 19.86 145.57 20.13Q144.87 20.4 144.55 20.88Q144.23 21.36 144.23 21.99Q144.23 22.63 144.55 23.08Q144.86 23.54 145.44 23.78Q146.03 24.01 146.81 24.01ZM155.94 26.57V4.87H159.66V26.57Z'
+export const LOCKUP_WIDTH = 162.04
+
+const paths = (cut: MarkCut) => `<path d="${cut.left}${cut.right}" fill="none" stroke="currentColor" stroke-width="${cut.stroke}" stroke-linecap="square"/>`
+
+/** Mark and wordmark as one SVG in currentColor. Height is in px; width follows. */
+export function lockupSvg(height?: number): string {
+  const size = height === undefined ? '' : ` height="${height}" width="${+(height * LOCKUP_WIDTH / 32).toFixed(2)}"`
+  return `<svg${size} viewBox="0 0 ${LOCKUP_WIDTH} 32" role="img" aria-label="${BRAND_NAME}">${paths(MARK.master)}<path d="${WORDMARK_PATH}" fill="currentColor"/></svg>`
+}
+
+/** The small cut as a data URI, for pages served without the public/ favicon. */
+export const MARK_FAVICON = `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><style>path{stroke:#111113}@media(prefers-color-scheme:dark){path{stroke:#f4f4f5}}</style><path d="${MARK.small.left}${MARK.small.right}" fill="none" stroke-width="${MARK.small.stroke}" stroke-linecap="square"/></svg>`)}`

@@ -11,8 +11,14 @@ data/
 jobs/
 deploy/ssh/
 deploy/*.env
-docs/media/
+docs/
+results/harbor/*
+# Synthetic fixtures required by the repository's TypeScript checks. The hosted
+# build copies only results/public into its output, never these source fixtures.
+!results/harbor/demo-evaluation.json
+!results/harbor/demo-small.json
+results/reference/
+harbor/report/.fontcache/
 .tools/
-harbor/deepseek-study/local/
 packages/cli/dist/
 deploy/

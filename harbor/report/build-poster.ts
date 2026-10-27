@@ -42,6 +42,7 @@ import {
   type PanelId,
 } from '../../src/charts/poster'
 import type { JobExport, TrialRow } from '../../src/charts/trial'
+import { lockupSvg } from '../../src/brand'
 
 /**
  * Direction cue for the "higher / lower is better" label, lucide `arrow-up` and
@@ -420,11 +421,11 @@ async function frameHtml(f: Frame, fonts: string): Promise<string> {
   // Bar labels get tighter as panels multiply; one knob, applied everywhere.
   const s: Scale = { unit: f.size.h / 60, panels: f.panels.length }
   return `<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><title>${esc(f.title || 'Heval model comparison')}</title>
+<html lang="en"><head><meta charset="utf-8"><title>${esc(f.title || 'OpenEval model comparison')}</title>
 <style>${css(fonts, f.size, s)}</style></head>
 <body class="${f.panels.length === 1 ? 'single' : 'combined'}${largeText ? ' large-text' : ''}${has('large-brand') ? ' large-brand' : ''}${has('no-brand') ? ' no-brand' : ''}${brandRight ? ' brand-right' : ''}${designer ? ' designer' : ''} ${logoSpot}">
   <header>
-    <div class="brand"><span class="brand-product">Heval</span></div>
+    <div class="brand">${lockupSvg()}</div>
     <div class="head-text">
       ${f.title ? `<h1 class="title">${esc(f.title)}</h1>` : ''}
       ${f.kicker ? `<div class="kicker">${esc(f.kicker)}</div>` : ''}
@@ -538,7 +539,7 @@ if (!existsSync(jsonPath)) {
 
 const exp = JSON.parse(readFileSync(jsonPath, 'utf8')) as JobExport
 if (!Array.isArray(exp.rows) || !exp.rows.length) {
-  console.error(`${jsonPath} has no rows - is it a Heval job export?`)
+  console.error(`${jsonPath} has no rows - is it a OpenEval job export?`)
   process.exit(1)
 }
 
@@ -663,7 +664,7 @@ const perCell = rows.length / (order.length * tasks)
 
 const title = has('no-title') ? '' : flag('title') ?? `${order.length} models, compared`
 const kicker = has('no-kicker') ? '' : flag('kicker') ?? `${rows.length} trials · ${tasks} tasks · ${harnesses.join(' + ')}`
-const source = has('no-source') ? '' : flag('source') ?? `source: heval · ${exp.job}`
+const source = has('no-source') ? '' : flag('source') ?? `source: openeval · ${exp.job}`
 /**
  * The line the numbers cannot carry themselves.
  *

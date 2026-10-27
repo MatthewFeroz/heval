@@ -8,10 +8,10 @@ import { RUNNER_ONLINE_MS } from './protocol'
 
 type Machine=FunctionReturnType<typeof api.runners.list>[number]
 /** Older individual runs stay accessible here; Runner Setup only manages computers. */
-export function IndividualRuns({machines,setupRuns,now}:{machines:Machine[];setupRuns:string[];now:number}){
+export function IndividualRuns({machines,setupRuns,now,runId}:{machines:Machine[];setupRuns:string[];now:number;runId?:string}){
  const runs=useQuery(api.runners.runs), cancel=useMutation(api.runners.cancel), move=useMutation(api.runners.moveQueued)
  const [error,setError]=useState(''),[busy,setBusy]=useState(false)
- const individual=runs?.filter(r=>!r.experiment&&!setupRuns.includes(r.id))??[]
+ const individual=runs?.filter(r=>runId ? r.id===runId : !r.experiment&&!setupRuns.includes(r.id))??[]
  async function act(action:()=>Promise<unknown>){setBusy(true);setError('');try{await action()}catch(e){setError(message(e))}finally{setBusy(false)}}
  if(!individual.length)return null
  return <section className="report-card" aria-label="Individual evaluations"><h2>Individual evaluations</h2>{error&&<p role="alert">{error}</p>}<ol className="runner-runs">{individual.map(run=><li key={run.id} data-run-id={run.id}>

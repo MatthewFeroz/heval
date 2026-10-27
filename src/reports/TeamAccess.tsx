@@ -24,8 +24,8 @@ export function TeamAccess({ id }: { id: Id<'reports'> }) {
     <p className="report-muted">Each invitation works for one signed-in account and expires after 7 days. Anyone holding an unused invitation can accept it, so send it directly to your teammate.</p>
     {team === undefined ? <p>Loading team…</p> : <>
       {team.invites.map(i => <div className="report-invite" key={i.id}>
-        <label>{i.role === 'editor' ? 'Editor' : 'Viewer'} invitation<input aria-label={`${i.role} invitation link`} readOnly value={`${location.origin}/reports#invite=${i.token}`} onFocus={e => e.target.select()} /></label>
-        <div className="report-actions"><button className="secondary" disabled={busy} onClick={() => void act(() => navigator.clipboard.writeText(`${location.origin}/reports#invite=${i.token}`), 'Invitation copied.')}>Copy invitation</button><button className="secondary" disabled={busy} onClick={() => void act(() => revoke({ invite: i.id }), 'Invitation revoked.')}>Revoke invitation</button><span className="report-muted">Expires {new Date(i.expiresAt).toLocaleDateString()}</span></div>
+        <label>{i.role === 'editor' ? 'Editor' : 'Viewer'} invitation<input aria-label={`${i.role} invitation link`} readOnly value={`${location.origin}/library#invite=${i.token}`} onFocus={e => e.target.select()} /></label>
+        <div className="report-actions"><button className="secondary" disabled={busy} onClick={() => void act(() => navigator.clipboard.writeText(`${location.origin}/library#invite=${i.token}`), 'Invitation copied.')}>Copy invitation</button><button className="secondary" disabled={busy} onClick={() => void act(() => revoke({ invite: i.id }), 'Invitation revoked.')}>Revoke invitation</button><span className="report-muted">Expires {new Date(i.expiresAt).toLocaleDateString()}</span></div>
       </div>)}
       <ul className="report-members">{team.members.map(m => <li key={m.id}><span>{m.label} · {m.role}</span><button className="secondary" disabled={busy} onClick={() => void act(() => remove({ member: m.id }), 'Team access removed.')}>Remove access</button></li>)}</ul>
       {!team.members.length && <p className="report-muted">No teammates have joined yet.</p>}
@@ -40,7 +40,7 @@ export function AcceptInvitation({ token }: { token: string }) {
   const [busy, setBusy] = useState(false), [error, setError] = useState('')
   async function join() {
     setBusy(true); setError('')
-    try { const id = await accept({ token }); location.assign(`/reports?id=${id}`) }
+    try { const id = await accept({ token }); location.assign(`/library?report=${id}`) }
     catch (e) { setError(message(e)); setBusy(false) }
   }
   if (invitation === undefined) return <p role="status">Checking invitation…</p>

@@ -26,7 +26,7 @@ recalled. Responses use `Cache-Control: private, no-store` and vary on
 
 ## Configure and deploy
 
-Create a Vercel access token scoped to the team owning the existing Heval project. Copy the Project ID and Team ID from Vercel settings. Create a **private Blob store**, attach it to that project, and obtain its read/write token. Obtain a deployment-scoped Convex deploy key for the intended backend.
+Create a Vercel access token scoped to the team owning the existing OpenEval project. Copy the Project ID and Team ID from Vercel settings. Create a **private Blob store**, attach it to that project, and obtain its read/write token. Obtain a deployment-scoped Convex deploy key for the intended backend.
 
 Keep credentials in the ignored `deploy/hosted-exports.env`, mode `0600`:
 

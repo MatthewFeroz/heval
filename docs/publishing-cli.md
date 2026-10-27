@@ -1,22 +1,37 @@
-# Publishing the Heval CLI
+# Publishing the OpenEval CLI
 
-The npm package `@mattferoz/heval` lives in `packages/cli`. Keep the repository root private.
+The npm package `@mattferoz/openeval` lives in `packages/cli`. Keep the repository root private.
 The executable and UI are built ahead of publication; users only need Node.js.
+It installs the `openeval` command and keeps `heval` as an alias for existing
+scripts and services. `npx @mattferoz/openeval` runs `openeval` because that bin
+matches the unscoped package name.
 
-npm rejected the unscoped name `heval` as too similar to `level`. The package
-uses the maintainer's scope; its executable is still named `heval`.
+Releases up to 0.2.0 were published as `@mattferoz/heval`, because npm rejected
+the unscoped name `heval` as too similar to `level`. npm also rejected the
+unscoped `openeval` as too similar to the existing `open-eval` package, so from
+0.3.0 the package is `@mattferoz/openeval`.
 
-The initial version `0.1.0` was published with public access under the
+After 0.3.0 is published, deprecate the old package so its installs point here:
+`npm deprecate @mattferoz/heval "Renamed to openeval. Run: npm i -g @mattferoz/openeval"`.
+
+Under the old name, the initial version `0.1.0` was published with public access under the
 `mattferoz` account. The registry tarball SHA-1 is
 `9aaa6b1dd4dd96aca14c514f925120e08677ab30`, matching the tested release artifact.
-The release currently uses `UNLICENSED` for Heval's own code.
+The release currently uses `UNLICENSED` for OpenEval's own code.
 
-Version `0.2.0` is now published with the `latest` tag. Its registry tarball
+Version `0.2.0` was published under the old name. Its registry tarball
 SHA-1 is `ff8393ee421283e3ecc21395c7c29ae8dd9e3687`, matching the tested local
 artifact. The fresh-cache registry installation and browser smoke checks passed,
 including connected-runner command and asset checks. The package includes the
 connected runner preview and full TBLite installation support; hosted frontend
 and backend changes must still be deployed separately.
+
+Version `0.3.0` was published as `@mattferoz/openeval` with the `latest` tag on
+2026-10-27. Its registry tarball SHA-1 is
+`c32f4fed03497f4bf4734fafcb6db3f8cfc08584`, matching the tested local artifact.
+The fresh-cache registry installation and browser smoke checks passed on macOS.
+It is the first release with `setup`. The Docker setup smoke and the x64, ARM64,
+Docker Desktop and WSL setup checks were not run for this release.
 
 ## Prepare a release
 
@@ -64,7 +79,7 @@ enabled. Run this in your own terminal; do not put account tokens in this repo.
 ```sh
 npm login
 npm whoami
-npm view @mattferoz/heval name version
+npm view @mattferoz/openeval name version
 ```
 
 A registry 404 means no public package was found, not a guaranteed reservation.
@@ -74,16 +89,16 @@ Nothing in `cli:build`, `cli:pack`, or `cli:smoke` publishes or reserves a name.
 Once the reviewed tarball is ready, publish that exact artifact (adjust version):
 
 ```sh
-npm publish ./.scratch/mattferoz-heval-0.2.0.tgz --access public --tag latest
-npm view @mattferoz/heval version bin
-npx @mattferoz/heval@latest --version
-npx @mattferoz/heval@latest open
+npm publish ./.scratch/mattferoz-openeval-0.3.1.tgz --access public --tag latest
+npm view @mattferoz/openeval version bin
+npx @mattferoz/openeval@latest --version
+npx @mattferoz/openeval@latest open
 ```
 
 Publishing the tested tarball avoids rebuilding between validation and upload.
-Heval's own license is a maintainer choice; the initial scaffold leaves it
+OpenEval's own license is a maintainer choice; the initial scaffold leaves it
 `UNLICENSED` until selected. Do not assume Harbor's license automatically
-licenses Heval or third-party artwork. The shipped viewer includes no Merge
+licenses OpenEval or third-party artwork. The shipped viewer includes no Merge
 font files or generated branded posters.
 
 ## Later releases

@@ -163,6 +163,7 @@ function Compare({ study, pair }: { study: RunStudy; pair: Pair }) {
         {metrics.map(([label, value, hint]) => <Metric key={label} label={label} hint={hint} a={value(a)} b={b ? value(b) : undefined} />)}
       </dl>
       <div className="runs-compare-foot">
+        <a href={`/library?new=1&goal=${study.varies === 'model' ? 'models' : 'harnesses'}&source=${encodeURIComponent(study.id)}`}>Run your own comparison <ArrowUpRight size={12} /></a>
         {[...new Map([a, b].flatMap(trial => trial ? [task(trial)] : []).filter(info => info.url).map(info => [info.id, info])).values()].map(info => (
           <a key={info.id} href={info.url!} target="_blank" rel="noreferrer">{info.repository} #{info.url!.split('/').pop()} <ArrowUpRight size={12} /></a>
         ))}

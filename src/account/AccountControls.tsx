@@ -86,7 +86,7 @@ function SignedInAccount({ auth, showWorkspaceLink, appearance }: { auth: AppAut
   }
 
   return <div className="account-controls" data-appearance={appearance}>
-    {showWorkspaceLink && <a className="account-studio-link" href="/evaluations">Create evaluation<ArrowUpRight size={14} aria-hidden="true" /></a>}
+    {showWorkspaceLink && <a className="account-studio-link" href="/library?new=1">New comparison<ArrowUpRight size={14} aria-hidden="true" /></a>}
     <button className="account-trigger" type="button" ref={trigger} aria-label={`Account menu for ${user.firstName?.trim() || user.email}`} aria-haspopup="menu" aria-expanded={open} aria-controls={open ? id : undefined}
       onClick={() => { initialFocus.current = 'first'; setOpen(!open) }}
       onKeyDown={event => {
@@ -101,12 +101,12 @@ function SignedInAccount({ auth, showWorkspaceLink, appearance }: { auth: AppAut
       onBlur={event => { if (event.relatedTarget instanceof Node && !event.currentTarget.contains(event.relatedTarget) && !trigger.current?.contains(event.relatedTarget)) setOpen(false) }}>
       <div className="account-identity"><span>Signed in as</span><strong>{name}</strong><span className="account-email">{user.email}</span></div>
       <div id={id} role="menu" aria-label="Account">
-        <a className="account-menu-item" role="menuitem" tabIndex={-1} href="/evaluations"><FlaskConical size={16} aria-hidden="true" />Evaluations</a>
-        <a className="account-menu-item" role="menuitem" tabIndex={-1} href="/studio"><LayoutDashboard size={16} aria-hidden="true" />Studio</a>
-        <a className="account-menu-item" role="menuitem" tabIndex={-1} href="/reports"><FolderOpen size={16} aria-hidden="true" />Report library</a>
-        <a className="account-menu-item" role="menuitem" tabIndex={-1} href="/machines"><Monitor size={16} aria-hidden="true" />Runner setup</a>
+        <a className="account-menu-item" role="menuitem" tabIndex={-1} href="/library?new=1"><FlaskConical size={16} aria-hidden="true" />New comparison</a>
+        <a className="account-menu-item" role="menuitem" tabIndex={-1} href="/explore"><LayoutDashboard size={16} aria-hidden="true" />Explore</a>
+        <a className="account-menu-item" role="menuitem" tabIndex={-1} href="/library"><FolderOpen size={16} aria-hidden="true" />Library</a>
+        <a className="account-menu-item" role="menuitem" tabIndex={-1} href="/settings"><Monitor size={16} aria-hidden="true" />Settings</a>
         <a className="account-menu-item" role="menuitem" tabIndex={-1} href="/machines?setup=1"><BookOpen size={16} aria-hidden="true" />Set up a computer</a>
-        <a className="account-menu-item" role="menuitem" tabIndex={-1} href="/machines?tour=first-run&step=0"><Compass size={16} aria-hidden="true" />Product tour</a>
+        <a className="account-menu-item" role="menuitem" tabIndex={-1} href="/settings?setup=1&tour=first-run&step=0"><Compass size={16} aria-hidden="true" />Product tour</a>
         <div className="account-menu-divider" role="separator" />
         <button className="account-menu-item" type="button" role="menuitem" tabIndex={-1} disabled={pending} onClick={() => void signOut()}><LogOut size={16} aria-hidden="true" />{pending ? 'Signing out…' : 'Sign out'}</button>
       </div>

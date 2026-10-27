@@ -12,7 +12,7 @@ import './onboarding.css'
 type Machine = FunctionReturnType<typeof api.runners.list>[number]
 const titles = ['Set up your machine', 'Connect your computer', 'Connect your model provider', 'Run your first evaluation']
 const icons = [Monitor, Plug, KeyRound, Play]
-const command = 'npx @mattferoz/heval@latest setup --harnesses codex'
+const command = 'npx @mattferoz/openeval@latest setup --harnesses codex'
 
 export function SetupCommand() {
   const [copied, setCopied] = useState(false), [error, setError] = useState('')
@@ -84,7 +84,6 @@ export function FirstSmokeTest({ machines, now, localLink, onClose }: { machines
         <p>Run this on the computer that will do the work. Setup prepares Docker and opens the next step.</p>
         <SetupCommand/>
         <p className="report-muted">Requires Node.js 22+. First setup downloads several GB.</p>
-        <p className="report-muted">Preview: use a <a href="https://github.com/MatthewFeroz/heval/blob/main/docs/connected-runners.md">setup-enabled CLI build</a> until the next npm release.</p>
         <button className="primary" onClick={() => {sessionStorage.setItem('heval.setup.installed','yes');setInstalled(true);setBack(false)}}>Setup is open</button>
       </>}
       {step==='connect' && <>
@@ -95,11 +94,11 @@ export function FirstSmokeTest({ machines, now, localLink, onClose }: { machines
           {pairing && now<pairing.expiresAt ? <>
             <label>Deployment URL<input readOnly value={import.meta.env.VITE_CONVEX_URL??''} onFocus={e=>e.target.select()}/></label>
             <label>One-time pairing code<input readOnly value={pairing.code} onFocus={e=>e.target.select()}/></label>
-            <p>Use these with <code>heval runner connect</code>, then run <code>heval runner start</code>. The code expires in 10 minutes.</p>
+            <p>Use these with <code>openeval runner connect</code>, then run <code>openeval runner start</code>. The code expires in 10 minutes.</p>
           </>:pairing&&<p role="status">This code expired. Create a new code.</p>}
           <button className="secondary" onClick={()=>setManual(false)}>Use local setup instead</button>
         </> : <>
-        <p>{validLink ? 'Allow this computer to run evaluations for your account.' : 'In the local setup page, choose Connect to Heval to bring this computer here.'}</p>
+        <p>{validLink ? 'Allow this computer to run evaluations for your account.' : 'In the local setup page, choose Connect to OpenEval to bring this computer here.'}</p>
         {validLink ? <><label>Computer name<input value={name} maxLength={80} onChange={e=>setName(e.target.value)}/></label><button className="primary" disabled={busy||!name.trim()} onClick={()=>void act(connect)}>Connect computer</button></> : <>
           <label>Or paste the setup link from your terminal<input type="url" value={link} onChange={e=>setLink(e.target.value)} placeholder="http://127.0.0.1:PORT/#token=…" autoComplete="off" spellCheck={false}/></label>
           {link && !validLink && <p role="alert">Use the complete 127.0.0.1 setup link, including its token.</p>}
@@ -114,7 +113,7 @@ export function FirstSmokeTest({ machines, now, localLink, onClose }: { machines
         <div className="report-actions setup-stage-actions">
           {validLink ? <a className="report-button primary" href={validLink}>Open local setup</a> : <button type="button" className="secondary" aria-expanded={reopen} onClick={()=>setReopen(!reopen)}>{reopen?'Hide command':'Reopen setup'}</button>}
         </div>
-        {reopen && <><p>For a setup-managed Docker worker, rerun the same setup command to reopen its local page.</p><SetupCommand/><p>For a manually prepared Linux worker, run <code>heval provider setup merge</code> in another terminal with the same runner state directory. Keep the runner terminal open.</p><p className="report-muted">Requires a setup-enabled CLI build. With CLI 0.2.0, follow the <a href="https://github.com/MatthewFeroz/heval/blob/main/docs/first-evaluation.md">manual provider setup guide</a>.</p></>}
+        {reopen && <><p>For a setup-managed Docker worker, rerun the same setup command to reopen its local page.</p><SetupCommand/><p>For a manually prepared Linux worker, run <code>openeval provider setup merge</code> in another terminal with the same runner state directory. Keep the runner terminal open.</p><p className="report-muted">Requires a setup-enabled CLI build. With CLI 0.2.0, follow the <a href="https://github.com/MatthewFeroz/heval/blob/main/docs/first-evaluation.md">manual provider setup guide</a>.</p></>}
         <p role="status">Waiting for {machine?.name} to share its model connection…</p>
       </>}
       {step==='run' && profile && <>
@@ -125,7 +124,7 @@ export function FirstSmokeTest({ machines, now, localLink, onClose }: { machines
         {!checkProfile && <p role="alert">The worker check profile is missing. <a href={`/machines?setup=1&provider=1&worker=${machine?.id}`}>Reopen provider setup</a> for recovery steps before starting.</p>}
       </>}
       {!step && <><p>Your computer and model connection are working.</p><a className="report-button primary" href={`/evaluations?experiment=${smokeRun?.experiment}`}>View results</a><button className="secondary" onClick={onClose}>Manage computers</button></>}
-      {machine && !checkProfile && step==='provider' && <p role="status">Waiting for the worker check profile. Keep <code>heval runner start</code> running on this worker with the same state directory used for pairing. If it stays unavailable, check the runner terminal for errors and confirm the CLI and website versions are compatible.</p>}
+      {machine && !checkProfile && step==='provider' && <p role="status">Waiting for the worker check profile. Keep <code>openeval runner start</code> running on this worker with the same state directory used for pairing. If it stays unavailable, check the runner terminal for errors and confirm the CLI and website versions are compatible.</p>}
       {machine && checkProfile && (step==='provider' || step==='run') && <section className="setup-worker-check" aria-label="Worker check without a model">
         <h3>Check your worker without a model</h3>
         <p>Optional: run the bundled task with Harbor's reference solution before connecting a provider. No model credentials or credits are needed.</p>
@@ -136,7 +135,7 @@ export function FirstSmokeTest({ machines, now, localLink, onClose }: { machines
         </div>
       </section>}
       </>}
-      {machine && !online && <p role="status">{machine.name} is offline. Keep Docker running and start <code>heval runner start</code> on this worker with the same state directory used for pairing.</p>}
+      {machine && !online && <p role="status">{machine.name} is offline. Keep Docker running and start <code>openeval runner start</code> on this worker with the same state directory used for pairing.</p>}
       {machine && switchedOff && <div className="report-actions"><p>{machine.name} is switched off.</p><button disabled={busy} onClick={()=>void act(()=>enable({id:machine.id,enabled:true}))}>Switch on</button></div>}
       {machine && online && !machine.ready && <p role="status">Worker not ready: {machine.health}. Check the runner terminal, <code>harbor --version</code>, <code>docker info</code>, and <code>docker compose version</code> on this worker before trying again.</p>}
       {error && <p role="alert">{error}</p>}

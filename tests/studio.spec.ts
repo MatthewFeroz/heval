@@ -145,7 +145,7 @@ test('custom specs reopen from bundles and stay attached to their saved view', a
   for await (const chunk of stream!) chunks.push(chunk)
   const buffer = Buffer.concat(chunks)
   expect(JSON.parse(buffer.toString()).project.analysisViews[0].customSpec).toContain('Saved custom chart')
-  await page.locator('input[type=file]').setInputFiles({ name: 'saved.heval-bundle.json', mimeType: 'application/json', buffer })
+  await page.locator('input[type=file]').setInputFiles({ name: 'saved.openeval-bundle.json', mimeType: 'application/json', buffer })
   await page.getByRole('tab', { name: 'Chart', exact: true }).click()
   await expect(page.locator('.card svg')).toContainText('Saved custom chart')
   await page.getByRole('button', { name: 'Return to controls' }).click()

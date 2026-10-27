@@ -20,7 +20,6 @@ export function executionTimeoutSeconds(profile: RunnerProfile, attempts?: numbe
   const fallback = runTimeoutSeconds(profile, attempts)
   return settings?.timeoutSeconds ?? fallback
 }
-export const PROTOCOL_VERSION = 1
 /** Paired, unrevoked workers per account. Each run executes on exactly one of them. */
 export const MAX_WORKERS = 3
 /**

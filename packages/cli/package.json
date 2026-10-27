@@ -1,9 +1,9 @@
 {
-  "name": "@mattferoz/heval",
-  "version": "0.2.0",
+  "name": "@mattferoz/openeval",
+  "version": "0.3.1",
   "description": "Run Harbor evaluations on connected Linux workers and explore coding-agent results",
   "type": "module",
-  "bin": { "heval": "dist/cli.js" },
+  "bin": { "openeval": "dist/cli.js", "heval": "dist/cli.js" },
   "files": ["dist", "scripts/check-package.mjs"],
   "engines": { "node": ">=22" },
   "license": "UNLICENSED",
@@ -14,7 +14,7 @@
   },
   "homepage": "https://github.com/MatthewFeroz/heval#readme",
   "bugs": { "url": "https://github.com/MatthewFeroz/heval/issues" },
-  "keywords": ["harbor", "evals", "coding-agents", "benchmark", "cli"],
+  "keywords": ["openeval", "harbor", "evals", "coding-agents", "benchmark", "cli"],
   "publishConfig": { "access": "public", "registry": "https://registry.npmjs.org/" },
   "scripts": {
     "prepack": "node scripts/check-package.mjs"

@@ -42,6 +42,8 @@ try {
   execFileSync(npm, ['install', fromRegistry ? '--prefer-online' : '--offline', '--ignore-scripts', '--no-audit', '--no-fund', '--package-lock=false', '--registry=https://registry.npmjs.org/', fromRegistry ? `${name}@${version}` : tarball], { cwd: temporary, env: npmEnv, stdio: 'pipe' })
   const installed = join(temporary, 'node_modules', name)
   const manifest = JSON.parse(readFileSync(join(installed, 'package.json'), 'utf8'))
+  assert.equal(manifest.bin.openeval, 'dist/cli.js')
+  // The old command stays as an alias so existing scripts and services keep working.
   assert.equal(manifest.bin.heval, 'dist/cli.js')
   assert.equal(manifest.dependencies, undefined)
   const assets = join(installed, 'dist/web/assets')
@@ -49,19 +51,19 @@ try {
   for (const file of readdirSync(assets).filter(file => file.endsWith('.css'))) {
     assert.doesNotMatch(readFileSync(join(assets, file), 'utf8'), /fonts\.googleapis\.com/)
   }
-  const cli = join(installed, manifest.bin.heval)
+  const cli = join(installed, manifest.bin.openeval)
   assert.equal(execFileSync(node, [cli, '--version'], { cwd: temporary, encoding: 'utf8' }).trim(), version)
   // npm exec is the implementation behind npx; offline ensures no registry fallback.
-  assert.equal(execFileSync(npm, ['exec', '--offline', '--no', '--', 'heval', '--version'], { cwd: temporary, env: npmEnv, encoding: 'utf8' }).trim(), version)
+  assert.equal(execFileSync(npm, ['exec', '--offline', '--no', '--', 'openeval', '--version'], { cwd: temporary, env: npmEnv, encoding: 'utf8' }).trim(), version)
   if (!fromRegistry) {
-    const plan = JSON.parse(execFileSync(npm, ['exec', '--offline', '--no', '--', 'heval', 'setup', '--plan', '--json'], { cwd: temporary, env: npmEnv, encoding: 'utf8' }))
+    const plan = JSON.parse(execFileSync(npm, ['exec', '--offline', '--no', '--', 'openeval', 'setup', '--plan', '--json'], { cwd: temporary, env: npmEnv, encoding: 'utf8' }))
     assert.equal(plan.schemaVersion, 1)
     assert.equal(plan.name, 'heval-worker')
     assert.ok(Array.isArray(plan.steps))
   }
   assert.equal(execFileSync(npm, ['exec', '--offline', '--no', '--', name, '--version'], { cwd: temporary, env: npmEnv, encoding: 'utf8' }).trim(), version)
   const help = execFileSync(node, [cli], { cwd: temporary, encoding: 'utf8' })
-  assert.match(help, /(?:Start|View results) with: heval open/)
+  assert.match(help, /(?:Start|View results) with: openeval open/)
   for (const command of ['runner connect', 'runner start', 'runner setup', 'runner test', 'provider connect merge']) assert.ok(help.includes(command), `Missing ${command} in installed CLI`)
   for (const file of ['runner-supervisor.js', 'runner-task/task.toml', 'runner-task/instruction.md', 'runner-task/tests/test.sh']) assert.ok(readFileSync(join(installed, 'dist', file)).length, `Missing runner asset: ${file}`)
   const provider = JSON.parse(execFileSync(node, [cli, 'provider', 'status', 'merge', '--state', join(temporary, 'runner-state')], { cwd: temporary, encoding: 'utf8' }))
@@ -130,7 +132,7 @@ try {
   assert.equal(await page.getByRole('tab', { name: 'Social images', exact: true }).count(), 0)
   assert.equal(await page.getByRole('tab', { name: 'Motion', exact: true }).count(), 0)
   assert.equal(await page.getByRole('link', { name: 'Static report' }).count(), 0)
-  await page.locator('input[type=file]').setInputFiles({ name: 'round-trip.heval-bundle.json', mimeType: 'application/json', buffer: bundle! })
+  await page.locator('input[type=file]').setInputFiles({ name: 'round-trip.openeval-bundle.json', mimeType: 'application/json', buffer: bundle! })
   await expect(page.getByRole('tab', { name: 'Analysis', exact: true })).toHaveAttribute('aria-selected', 'true')
   await expect(page.locator('.card svg .mark-rect.role-mark path')).toHaveCount(6)
   await page.setViewportSize({ width: 393, height: 851 })

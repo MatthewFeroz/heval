@@ -5,7 +5,7 @@ import type { FunctionReturnType } from 'convex/server'
 import { api } from '../../convex/_generated/api'
 import type { Id } from '../../convex/_generated/dataModel'
 import { WorkspaceLayout } from '../reports/WorkspaceLayout'
-import { ProjectReportView } from '../reports/ProjectReportView'
+import { ReportWorkspace } from '../reports/ReportWorkspace'
 import { useAppAuth } from '../auth'
 import { message, token } from '../reports/helpers'
 import { executionTimeoutSeconds, validateRunSettings, type RunSettings, RUNNER_ONLINE_MS, terminalStates } from './protocol'
@@ -17,44 +17,14 @@ import { ModelPicker } from './ModelPicker'
 import { IndividualRuns } from './IndividualRuns'
 import harnessCatalog from '../harness-catalog.json'
 import { HARNESS } from '../harnesses'
+import { ComparisonBuilder, ManagedComparisonStatus } from './ComparisonBuilder'
+import { ComparisonReview } from './ComparisonReview'
+import { BaselineDifference, SaveBaseline } from './ComparisonBaseline'
 
 type Machine = FunctionReturnType<typeof api.runners.list>[number]
 const agentLabel = (s: string) => HARNESS[s]?.name ?? (s === 'terminus-2' ? 'Terminus 2' : s)
 const toggle = (items: string[], item: string) => items.includes(item) ? items.filter(i => i !== item) : [...items, item]
 const done = (s: string) => (terminalStates as readonly string[]).includes(s)
-
-function ExperimentReport({ id }: { id: Id<'reports'> }) {
-  const report = useQuery(api.reports.get, { id })
-  const share = useMutation(api.reports.share), revoke = useMutation(api.reports.revoke), publish = useMutation(api.reportProjects.publish)
-  const [busy, setBusy] = useState(false), [status, setStatus] = useState(''), [error, setError] = useState('')
-  async function act(run: () => Promise<unknown>, success: string) {
-    setBusy(true); setStatus(''); setError('')
-    try { await run(); setStatus(success) } catch (e) { setError(message(e)) } finally { setBusy(false) }
-  }
-  if (report === undefined) return <p role="status">Preparing the combined evaluation report…</p>
-  if (!report) return <p role="alert">The combined report is unavailable to this account.</p>
-  const shareUrl = report.shareToken ? `${location.origin}/share#${report.shareToken}` : ''
-  return <>
-    <section className="report-card evaluation-result-actions" aria-label="Analyze evaluation">
-      <span className="report-eyebrow">RESULTS READY</span><h2>Inspect, shape, and publish this evaluation.</h2>
-      <p>Heval combined every available harness/model run into one report. The original run reports remain available above for diagnosis.</p>
-      <div className="report-actions"><a className="report-button primary" href={`/studio?report=${id}`}>Edit charts in Studio</a><a href={`/reports?id=${id}`}>Open report details</a></div>
-    </section>
-    <ProjectReportView data={report.data} project={report.project} context="evaluation" />
-    <section className="report-card evaluation-publish" id="publish" aria-label="Publish evaluation">
-      <span className="report-eyebrow">PUBLISH</span><h2>{shareUrl ? 'This evaluation has a public link.' : 'Publish when the result is ready.'}</h2>
-      <p>{shareUrl ? 'Anyone with the link can view the published version without signing in. Draft chart edits remain private until you publish them.' : 'Creating a link publishes the current report. You can revoke access later without deleting your evaluation.'}</p>
-      {shareUrl && <label>Share link<input readOnly value={shareUrl} onFocus={event => event.target.select()} /></label>}
-      <div className="report-actions">
-        {!shareUrl && <button disabled={busy} onClick={() => void act(() => share({ id, token: token() }), 'Evaluation published. Share link created.')}>{busy ? 'Publishing…' : 'Publish evaluation'}</button>}
-        {shareUrl && <><button disabled={busy} onClick={() => void act(() => navigator.clipboard.writeText(shareUrl), 'Share link copied.')}>Copy link</button><a href={shareUrl} target="_blank" rel="noreferrer">Open published view ↗</a>
-          {report.publishedVersion !== null && report.version !== report.publishedVersion && <button disabled={busy} onClick={() => void act(() => publish({ id, expectedVersion: report.version }), 'Latest chart changes published.')}>Publish latest changes</button>}
-          <button className="secondary" disabled={busy} onClick={() => void act(() => revoke({ id }), 'Public link revoked. The evaluation remains saved.')}>Revoke link</button></>}
-      </div>
-      {status && <p role="status">{status}</p>}{error && <p role="alert">{error}</p>}
-    </section>
-  </>
-}
 
 function Wizard({ machines, now }: { machines: Machine[]; now: number }) {
   const create = useMutation(api.experiments.create)
@@ -92,7 +62,7 @@ function Wizard({ machines, now }: { machines: Machine[]; now: number }) {
     const selection = JSON.stringify(input)
     pending.current = pending.current?.selection === selection ? pending.current : { selection, id: token() }
     setBusy(true);setError('')
-    try { const id = await create({ ...input, requestId: pending.current.id }); window.location.assign(`/evaluations?experiment=${id}`) }
+    try { const id = await create({ ...input, requestId: pending.current.id }); window.location.assign(`/library?experiment=${id}`) }
     catch(e) { setError(message(e));setBusy(false) }
   }
   return <section className="report-card evaluation-wizard" aria-label="New evaluation">
@@ -134,7 +104,7 @@ function Wizard({ machines, now }: { machines: Machine[]; now: number }) {
       <label>Experiment name<input maxLength={120} placeholder="Name this experiment" value={title} onChange={e=>setTitle(e.target.value)}/></label>
       <p>{machine?.name} · {benchmarkFor(taskSet)?.title ?? review[0]?.benchmark}</p>
       {!matrix.length && <p>Select harnesses and models to preview your run.</p>}
-      <div className="evaluation-table-wrap"><table><caption>Combinations to run</caption><thead><tr><th>Harness</th><th>Model</th><th>Vendor</th><th>Trials</th><th>Run deadline</th></tr></thead><tbody>{review.map(p=><tr key={p.id}><td>{agentLabel(p.agent)}</td><td>{p.model}</td><td>{p.vendor}</td><td>{p.tasks} × {attempts}</td><td>{!settingsError && Number.isSafeInteger(attempts) && attempts >= 1 && attempts <= maxAttempts ? `${Math.ceil(executionTimeoutSeconds(p, attempts, settings)/60).toLocaleString()} min` : '—'}</td></tr>)}</tbody></table></div>
+      <ComparisonReview profiles={review} attempts={attempts} settings={settings} valid={!settingsError && Number.isSafeInteger(attempts) && attempts >= 1 && attempts <= maxAttempts} />
       {unconfigured.length ? <p role="status">Resolve the {unconfigured.length} unconfigured {unconfigured.length===1?'combination':'combinations'} to preview the full trial count and start this experiment.</p> : <p><strong>{trials} trials, up to {settings?.concurrency ?? 1} at a time within each run.</strong> Each combination produces a report in this experiment. You can close the tab and return later.</p>}
       {settings && <p>Per trial: {settings.cpus ? `${settings.cpus} CPUs` : 'task CPU requirement'}, {settings.memoryMb ? `${settings.memoryMb} MiB RAM` : 'task RAM requirement'}. Up to {settings.retries} retries per trial error. {settings.cpus && settings.memoryMb ? `At full concurrency: ${settings.cpus * settings.concurrency} CPUs and ${settings.memoryMb * settings.concurrency} MiB RAM, plus worker and Docker overhead.` : 'Total resource demand depends on which tasks run together.'}</p>}
       <p className="report-notice">Starting uses the worker’s model credentials and may incur inference charges. Time limits are not dollar caps. Billing is not yet reconciled with the Gateway; missing cost remains unknown.</p>
@@ -151,8 +121,10 @@ function Experiment({ id, now }: { id: Id<'experiments'>; now: number }) {
   if (!experiment) return <p role="status">Loading experiment… Wait for its saved status.</p>
   const finished=experiment.cells.filter(c=>done(c.status)).length
   const complete=finished===experiment.cells.length
-  return <>
-    <div className="report-intro"><a href="/evaluations">← All experiments</a><h1>{experiment.title}</h1><p>{experiment.machine} · {finished} of {experiment.cells.length} runs finished</p></div>
+  const results = <>
+    <div className="report-intro">{!experiment.report && <><a className="workspace-back" href="/library">← Library</a><h1>{experiment.title}</h1></>}<p>{experiment.machine} · {finished} of {experiment.cells.length} runs finished</p></div>
+    {experiment.managed && <ManagedComparisonStatus id={experiment.managed.id} compact />}
+    {experiment.baseline && <BaselineDifference id={experiment.baseline} experiment={experiment} />}
     {experiment.setup && <section className="report-card" aria-label="Worker check"><h2>Worker check</h2><p role="status">{experiment.setup.message || experiment.setup.phase}</p><p className="report-muted">Your model task starts only after this free check passes.</p>{experiment.setup.report && <a href={`/reports?id=${experiment.setup.report}`}>View check result</a>}</section>}
     <ol className="evaluation-steps" aria-label="Evaluation progress"><li data-complete="true"><span>1</span>Configure</li><li aria-current={!complete?'step':undefined} data-complete={complete?'true':undefined}><span>2</span>Run</li><li aria-current={complete&&!!experiment.report?'step':undefined} data-complete={experiment.report?'true':undefined}><span>3</span>Inspect</li><li><span>4</span>Publish</li></ol>
     {(!experiment.online || now-experiment.lastSeen >= RUNNER_ONLINE_MS) && finished<experiment.cells.length && <p className="report-notice">Worker offline. Queued work waits for reconnection; running work may still be executing there. Start the runner on the same worker with its existing state directory to resume updates. No duplicate run will be started.</p>}
@@ -169,23 +141,47 @@ function Experiment({ id, now }: { id: Id<'experiments'>; now: number }) {
       <p className="report-muted">*Harness-reported cost is unverified against Gateway billing. Unknown is not zero. Median time includes only successful recorded trials and excludes setup. Token counts are reported by the harness; raw trajectories remain on the worker.</p>
       {finished<experiment.cells.length && <button className="secondary" disabled={busy} onClick={async()=>{setBusy(true);try{await cancel({id})}catch(e){setError(message(e))}finally{setBusy(false)}}}>Cancel unfinished runs</button>}
     </section>
-    {experiment.report ? <ExperimentReport id={experiment.report} /> : complete && <section className="report-card"><h2>No combined result is available</h2><p>A combined report requires reportable trials that fit within report storage limits. Inspect the individual run reports and messages above.</p></section>}
+    {!experiment.report && complete && <section className="report-card"><h2>No combined result is available</h2><p>A combined report requires reportable trials that fit within report storage limits. Inspect the individual run reports and messages above.</p></section>}
+    {complete && experiment.report && experiment.goal !== 'custom' && <SaveBaseline experiment={experiment} />}
   </>
+  return experiment.report ? <ReportWorkspace id={experiment.report} context="evaluation" title={experiment.title} results={results} /> : results
+}
+function ManagedExperiment({ id, now }: { id: Id<'managedComparisons'>; now: number }) {
+  const job = useQuery(api.managedComparisons.get, { id })
+  return job?.experiment ? <Experiment id={job.experiment} now={now}/> : <ManagedComparisonStatus id={id}/>
+}
+function IndividualRun({ id, machines, now }: { id: string; machines: Machine[]; now: number }) {
+  const runs = useQuery(api.runners.runs)
+  const run = runs?.find(run => run.id === id)
+  if (runs === undefined) return <p role="status">Loading run…</p>
+  if (!run) return <section className="report-card"><h1>Run unavailable</h1><a href="/library">Return to Library</a></section>
+  const results = <IndividualRuns machines={machines} setupRuns={[]} now={now} runId={id}/>
+  return run.report ? <ReportWorkspace id={run.report} results={results}/> : <><a className="workspace-back" href="/library">← Library</a><PageHeader title={run.profile.title}>Follow progress and inspect recorded results.</PageHeader>{results}</>
+}
+function ComparisonHome({ machines, now }: { machines: Machine[]; now: number }) {
+  const managed = useQuery(api.managedComparisons.catalog)
+  const baselineId = new URLSearchParams(location.search).get('baseline') as Id<'comparisonBaselines'> | null
+  const baseline = useQuery(api.baselines.get, baselineId ? { id: baselineId } : 'skip')
+  if (!managed || baselineId && !baseline) return <p role="status">Loading comparison options…</p>
+  return <ComparisonBuilder machines={machines} managed={managed} now={now} baseline={baseline} customBuilder={<Wizard machines={machines} now={now}/>} />
 }
 function Evaluations() {
-  const machines=useQuery(api.runners.list), experiments=useQuery(api.experiments.list)
+  const machines=useQuery(api.runners.list)
   const [now,setNow]=useState(Date.now)
   useEffect(()=>{const timer=setInterval(()=>setNow(Date.now()),5000);return()=>clearInterval(timer)},[])
   const id=new URLSearchParams(location.search).get('experiment') as Id<'experiments'> | null
+  const managedId=new URLSearchParams(location.search).get('managed') as Id<'managedComparisons'> | null
+  if(managedId) return <ManagedExperiment id={managedId} now={now}/>
   if(id) return <Experiment id={id} now={now}/>
+  const runId = new URLSearchParams(location.search).get('run')
+  if(runId) return <IndividualRun id={runId} machines={machines ?? []} now={now}/>
   return <>
-    <PageHeader title="Evaluations">Configure a run or view your results.</PageHeader>
-    {machines===undefined ? <p role="status">Loading computer options… Wait for your workspace to connect.</p>:machines.some(m=>!m.revoked&&m.profiles.some(p=>!p.setupCheck&&p.taskSet&&p.vendor&&p.maxAttempts!==undefined))?<Wizard machines={machines.filter(m=>!m.revoked)} now={now}/>:<section className="report-card evaluation-empty"><h2>Ready for your first evaluation?</h2><p>Set up a computer to run a worker check without model credentials. Connect a model provider when you’re ready for model evaluations.</p><a className="report-button primary" href="/machines?setup=1">Set up my computer</a></section>}
-    {machines && experiments && <IndividualRuns machines={machines} setupRuns={experiments.flatMap(e=>e.setupRun?[e.setupRun]:[])} now={now}/>}
-    <section className="report-card" data-tour="experiments"><h2>Your evaluations</h2>{experiments===undefined ? <p role="status">Loading experiments… Wait for your saved evaluations.</p>:!experiments.length ? <p>Set up a computer or start an experiment above to save your first result. For a no-model worker check, open <a href="/machines?setup=1">Runner setup</a>.</p>:<ul className="evaluation-history">{experiments.map(e=><li key={e.id}><a href={`/evaluations?experiment=${e.id}`}><strong>{e.title}</strong><span>{e.finished} / {e.runs} runs finished{e.failed ? ` · ${e.failed} need attention`:''}</span></a></li>)}</ul>}</section>
+    <a className="workspace-back" href="/library">← Library</a><PageHeader title="New comparison">Choose what to compare, review the execution and start.</PageHeader>
+    {machines===undefined ? <p role="status">Loading computer options… Wait for your workspace to connect.</p>:<ComparisonHome machines={machines.filter(m=>!m.revoked)} now={now}/>}
+
   </>
 }
 export function EvaluationApp() {
   const auth=useAppAuth(),{isLoading,isAuthenticated}=useConvexAuth()
-  return <WorkspaceLayout active="evaluations">{isLoading?<p role="status">Connecting your workspace…</p>:isAuthenticated?<Evaluations/>:<section className="report-card"><h1>Create an evaluation</h1><p>Sign in to choose a worker and keep your experiments in your account.</p>{auth.configured?<button className="primary" onClick={auth.signIn}>Sign in</button>:<p>Sign-in is not configured.</p>}</section>}</WorkspaceLayout>
+  return <WorkspaceLayout active="library">{isLoading?<p role="status">Connecting your workspace…</p>:isAuthenticated?<Evaluations/>:<section className="report-card"><h1>Create an evaluation</h1><p>Sign in to choose a worker and keep your experiments in your account.</p>{auth.configured?<button className="primary" onClick={auth.signIn}>Sign in</button>:<p>Sign-in is not configured.</p>}</section>}</WorkspaceLayout>
 }

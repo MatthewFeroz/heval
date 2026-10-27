@@ -68,7 +68,7 @@ export function builtInCopy(
   // The editor calls this while an export is still loading. Without this the
   // placeholders would advertise "NaN attempts per task per model".
   if (!rows.length || !modelCount) {
-    return { title: 'Completion rate', kicker: '', cue, note: '', source: job ? `source: heval · ${job}` : '' }
+    return { title: 'Completion rate', kicker: '', cue, note: '', source: job ? `source: openeval · ${job}` : '' }
   }
   const tasks = new Set(rows.map((row) => row.task)).size
   const harnesses = [...new Set(rows.map((row) => row.agent))]
@@ -80,6 +80,6 @@ export function builtInCopy(
     note: perCell < 3
       ? `${perCell < 1.05 ? 'One attempt' : `${perCell.toFixed(1)} attempts`} per task per model. Treat small differences as directional`
       : `${perCell.toFixed(1)} attempts per task per model`,
-    source: `source: heval · ${job}`,
+    source: `source: openeval · ${job}`,
   }
 }

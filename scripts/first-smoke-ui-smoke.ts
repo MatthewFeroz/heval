@@ -42,6 +42,9 @@ function answer(s,n,args){
  if(n==='reports:get')return args.id==='r-check'?{id:'r-check',title:'Synthetic Oracle worker check',data:${JSON.stringify(JSON.stringify(reportData))},project:${JSON.stringify(JSON.stringify(reportProject))},shareToken:null,role:'owner',version:0,publishedVersion:null,updatedBy:null}:null;
  if(n==='runners:pairingStatus')return args==='skip'?undefined:s.pairedWorker||null;
  if(n==='runners:list')return s.loading?undefined:s.machines;if(n==='runners:runs')return s.runs;if(n==='onboarding:get')return s.guide;if(n==='runners:monitoring')return null;
+ if(args==='skip')return undefined;
+ if(n==='managedComparisons:catalog')return {available:false,configured:false,permitted:false,online:false,policy:null};
+ if(n==='managedComparisons:list'||n==='baselines:list')return [];
  if(n==='experiments:list')return s.experiment?[{id:'e1',title:s.experiment.title,createdAt:0,report:null,runs:1,finished:s.runs.filter(r=>r.experiment&&r.status==='completed').length,failed:0}]:[];
  if(n==='experiments:get')return s.experiment&&{id:'e1',title:s.experiment.title,machine:'My computer',online:true,lastSeen:Date.now(),report:null,cells:s.runs.filter(r=>r.experiment).map(r=>({id:r.id,profile:r.profile,attempts:1,runSettings:null,status:r.status,phase:r.phase,message:r.message,report:r.report,result:null}))};
  throw Error('Unexpected query '+n)}
@@ -65,7 +68,7 @@ let shot = 0
 async function stage(name: string) {
   if (capture) {
     await page.evaluate(() => document.fonts.ready)
-    await page.locator('.first-smoke').screenshot({ path: `${capture}/${String(++shot).padStart(2, '0')}-${name}.png` })
+    await page.screenshot({ fullPage: true, path: `${capture}/${String(++shot).padStart(2, '0')}-${name}.png` })
   }
 }
 type Account = { guide: unknown; machines: { profiles: unknown[]; lastSeen: number }[]; runs: { id: string; status: string; phase: string; report: string | null }[] }
@@ -96,9 +99,9 @@ try {
   await expect(page.getByRole('heading',{name:'Connect your computer',exact:true})).toBeVisible()
   // A real local setup server hands its capability to the hosted UI via the URL fragment.
   await page.goto(local.url)
-  await expect(page.getByRole('link',{name:'Connect to Heval',exact:true})).toBeVisible()
+  await expect(page.getByRole('link',{name:'Connect to OpenEval',exact:true})).toBeVisible()
   await expect(page.getByLabel('Merge Gateway API key')).not.toBeVisible()
-  await page.getByRole('link',{name:'Connect to Heval',exact:true}).click()
+  await page.getByRole('link',{name:'Connect to OpenEval',exact:true}).click()
   await expect(page.getByRole('button',{name:'Connect computer',exact:true})).toBeVisible()
   assert.equal(new URL(page.url()).hash,'','Local capability is cleared before auth redirects')
   await stage('connect')
@@ -117,8 +120,8 @@ try {
   await worker(a=>{a.machines=[{id:'m1',name:'My computer',revoked:false,lastSeen:Date.now(),ready:true,health:'Ready',profiles:[],enabled:true,machine:'laptop',icon:null,activeRun:null} as never]})
   await expect(page.getByRole('heading',{name:'Connect your model provider',exact:true})).toBeVisible()
   await page.getByRole('button',{name:'Reopen setup',exact:true}).click()
-  await expect(page.locator('.first-smoke-copy code')).toHaveText('npx @mattferoz/heval@latest setup --harnesses codex')
-  await expect(page.locator('code').filter({hasText:'heval provider setup merge'})).toBeVisible()
+  await expect(page.locator('.first-smoke-copy code')).toHaveText('npx @mattferoz/openeval@latest setup --harnesses codex')
+  await expect(page.locator('code').filter({hasText:'openeval provider setup merge'})).toBeVisible()
   await expect(page.getByRole('status').filter({hasText:'Waiting for the worker check profile'})).toBeVisible()
   await stage('provider')
   // Pairing can finish before the daemon advertises profiles or health.
@@ -161,13 +164,13 @@ try {
   await page.getByRole('link',{name:'Open worker check report'}).press('Enter')
   await page.waitForURL(/reports\?id=r-check$/)
   await expect(page.getByRole('heading',{name:'Synthetic Oracle worker check',exact:true})).toBeVisible()
-  await expect(page.getByRole('link',{name:'Edit chart in Studio'})).toHaveAttribute('href','/studio?report=r-check')
+  await expect(page.getByRole('navigation',{name:'Report workspace'}).getByRole('link',{name:'Analyze',exact:true})).toBeVisible()
   if(capture)await page.locator('#workspace-main').screenshot({path:`${capture}/oracle-report.png`})
-  await page.goto(`${base}evaluations`)
-  await expect(page.getByRole('region',{name:'Individual evaluations'})).toContainText('Setup check')
-  await page.getByRole('region',{name:'Individual evaluations'}).getByRole('link',{name:'Open saved report'}).click()
+  await page.goto(`${base}library`)
+  await expect(page.getByRole('region',{name:'Library items'})).toContainText('Synthetic Oracle worker check')
+  await page.getByRole('region',{name:'Library items'}).getByRole('link',{name:/Synthetic Oracle worker check/}).click()
   await expect(page.getByRole('heading',{name:'Synthetic Oracle worker check',exact:true})).toBeVisible()
-  await page.getByRole('link',{name:'← Your reports',exact:true}).click()
+  await page.getByRole('link',{name:'← Library',exact:true}).click()
   await page.getByRole('link',{name:/Synthetic Oracle worker check/}).click()
   await expect(page.getByRole('heading',{name:'Synthetic Oracle worker check',exact:true})).toBeVisible()
   await page.goto(`${base}machines?setup=1&worker=m1`)
@@ -179,7 +182,7 @@ try {
   await page.getByRole('link',{name:'Reopen provider setup'}).click()
   await expect(page.getByRole('heading',{name:'Connect your model provider',exact:true})).toBeVisible()
   await page.getByRole('button',{name:'Reopen setup',exact:true}).click()
-  await expect(page.locator('code').filter({hasText:'heval provider setup merge'})).toBeVisible()
+  await expect(page.locator('code').filter({hasText:'openeval provider setup merge'})).toBeVisible()
   await page.goto(`${base}machines?setup=1&worker=m1`)
   await page.evaluate(`window.smokeAccount.set(a=>{a.machines[0].profiles=${JSON.stringify([oracle,codex])};return a})`)
   await worker(a=>{a.machines[0].lastSeen=0})

@@ -132,15 +132,16 @@ try {
   // This infrastructure smoke deliberately queues only a free Oracle task.
   // The first-evaluation UI and its model prerequisite are covered by onboarding smoke.
   const first = await queue(0)
-  await page.goto(`${origin}/evaluations`)
+  await page.goto(`${origin}/library?run=${first}`)
   await expect.poll(() => status(first), { timeout: 20_000 }).toBe('running')
   await chapter(page, '2 · Browser dispatches one real Harbor + Docker setup task, with no model calls')
   // A second queued job moves to B while A owns the original claim.
   const moved = await queue(0)
+  await page.goto(`${origin}/library?run=${moved}`)
   await page.locator(`[data-run-id="${moved}"]`).getByLabel('Move queued evaluation').selectOption(machineIds[1])
   await expect.poll(() => status(moved), { timeout: 20_000 }).toBe('running')
   firstDaemon.kill('SIGKILL'); await firstDaemon.exited
-  await otherPage.goto(`${origin}/evaluations`)
+  await otherPage.goto(`${origin}/library?run=${first}`)
   await expect(otherPage.locator(`[data-run-id="${first}"]`)).toBeVisible()
   await chapter(page, '3 · Queued work moves to the cloud runner; another browser sees the same active evaluation')
   await forbidden.goto(`${origin}/machines`)
@@ -164,12 +165,12 @@ try {
   await chapter(page, '6 · Harbor results arrive as a private report, ready for Studio and sharing')
   await page.screenshot({ path: resolve(evidence, '02-result.png'), fullPage: true })
   // Exercise the previously pending hosted editor flow on the new result.
-  await page.getByRole('link', { name: 'Edit chart in Studio' }).click()
+  await page.getByRole('navigation', { name: 'Report workspace' }).getByRole('link', { name: 'Analyze', exact: true }).click()
   await expect(page.locator('#f-title')).toBeVisible()
   await page.locator('#f-title').fill('Connected runner setup passed')
   await page.getByRole('button', { name: 'Save draft', exact: true }).click()
   await expect(page.getByRole('status')).toContainText('Draft saved online')
-  await page.getByRole('link', { name: 'View report', exact: true }).click()
+  await page.getByRole('navigation', { name: 'Report workspace' }).getByRole('link', { name: 'Share', exact: true }).click()
   await page.getByRole('button', { name: 'Create share link', exact: true }).click()
   await expect(page.getByLabel('Share link', { exact: true })).toBeVisible()
   const shared = await page.getByLabel('Share link', { exact: true }).inputValue()
@@ -178,8 +179,8 @@ try {
   await page.getByRole('button', { name: 'Revoke link', exact: true }).click()
   await page.getByRole('button', { name: 'Yes, revoke link', exact: true }).click()
   await expect(otherPage.getByRole('heading', { name: 'This link is unavailable' })).toBeVisible()
-  await page.goto(`${origin}/evaluations`)
   const cancelled = await queue(1)
+  await page.goto(`${origin}/library?run=${cancelled}`)
   await expect.poll(() => status(cancelled), { timeout: 20_000 }).toBe('running')
   await page.locator(`[data-run-id="${cancelled}"]`).getByRole('button', { name: 'Cancel evaluation' }).click()
   await expect.poll(() => status(cancelled), { timeout: 90_000 }).toBe('cancelled')

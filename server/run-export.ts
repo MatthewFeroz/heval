@@ -9,7 +9,7 @@ export function exportRuns(runs: Run[]): JobExport {
   return {
     schemaVersion: 1, job: `evaluation-${ids.join('-')}`, jobId: ids.length === 1 ? ids[0] : null,
     generatedAt: runs.map(run => run.finishedAt || run.startedAt).sort().at(-1)!,
-    source: 'Heval saved evaluations', agentVersions: {},
+    source: 'OpenEval saved evaluations', agentVersions: {},
     rows: runs.map(run => {
       const seconds = (end?: string) => end ? Math.max(0, (Date.parse(end) - Date.parse(run.startedAt)) / 1000) : null
       const agentSeconds = seconds(run.agentFinishedAt)

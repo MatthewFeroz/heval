@@ -60,7 +60,7 @@ export function ProviderSettings({ auth, onChanged, onClose }: { auth: AppAuth; 
         {connection.connected && !editing && <>
           <div className="provider-actions"><button disabled={busy} onClick={() => void update('validate')}>{busy ? 'Working…' : 'Validate connection'}</button><button disabled={busy} onClick={() => { setEditing(true); setDeleting(false); setMessage(''); setError('') }}>Replace key</button><button className="provider-delete" disabled={busy} onClick={() => setDeleting(true)}>Delete connection</button></div>
           {deleting && <div className="provider-delete-confirm"><p>Delete this saved key and stop your active evaluations? This does not revoke the key at Merge Gateway or delete your results.</p><div className="provider-actions"><button disabled={busy} onClick={() => void update('delete')}>Delete and stop runs</button><button disabled={busy} onClick={() => setDeleting(false)}>Keep connection</button></div></div>}
-          <details className="provider-models"><summary>{connection.models.length} available models with tool calling</summary><ul>{connection.models.map(model => <li key={model}>{model}</li>)}</ul><p>Your evaluation picker shows the models approved for this Heval instance.</p></details>
+          <details className="provider-models"><summary>{connection.models.length} available models with tool calling</summary><ul>{connection.models.map(model => <li key={model}>{model}</li>)}</ul><p>Your evaluation picker shows the models approved for this OpenEval instance.</p></details>
         </>}
       </>}
       {error && <p role="alert">{error}</p>}{message && <p className="provider-success" role="status">{message}</p>}

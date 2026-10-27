@@ -71,7 +71,7 @@ export async function startProviderSetup(directory: string, bundledTask: string,
         try { json(200, actions ? await actions.connect(body.key.trim()) : await connect(directory, body.key.trim())) }
         catch { json(400, { error: 'Merge could not verify that key. Check your model-calling key and connection, then try again. The saved key has not changed.' }) }
       } else if (req.url === '/api/pair') {
-        if (typeof body.url !== 'string' || typeof body.code !== 'string' || !/^[a-f0-9]{64}$/.test(body.code)) { json(400, { error: 'Paste the deployment URL and complete pairing code from Heval’s Machines page.' }); return }
+        if (typeof body.url !== 'string' || typeof body.code !== 'string' || !/^[a-f0-9]{64}$/.test(body.code)) { json(400, { error: 'Paste the deployment URL and complete pairing code from OpenEval’s Machines page.' }); return }
         try { json(200, await actions!.pair(body.url, body.code)) }
         catch { json(400, { error: 'Pairing failed. Check the deployment URL and pairing code. If a response was lost, retry the same code. An already paired worker cannot be paired again.' }) }
       } else {

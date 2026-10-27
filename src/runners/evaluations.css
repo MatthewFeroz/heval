@@ -43,3 +43,37 @@
 .evaluation-harness-logo { flex: none; object-fit: contain; }
 .evaluation-harness-logo[src$="codex.svg"] { filter: invert(1); }
 .evaluation-harness-logo[src$="deepagents.svg"] { object-fit: cover; object-position: left; }
+.comparison-options { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 16px; margin: 16px 0; }
+.comparison-options > label { min-width: 0; }
+.comparison-options select { width: 100%; }
+.comparison-builder .comparison-consent { display: flex; align-items: flex-start; gap: 12px; margin: 20px 0; }
+.comparison-consent input { width: 18px; min-height: 18px; flex: none; margin-top: 3px; }
+@media(max-width:600px) { .comparison-options { grid-template-columns: minmax(0,1fr); } }
+.trial-evidence { margin-block: 16px; }
+.trial-evidence pre { max-height: 420px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; padding: 16px; background: var(--bg); }
+.trial-evidence > p { overflow-wrap: anywhere; }
+
+/* Form sections share the workspace rhythm; option grids own their own gaps. */
+.comparison-builder { display: flex; flex-direction: column; gap: var(--section-gap); }
+.report-shell .comparison-builder > :is(h2, p, label, fieldset), .comparison-builder .comparison-options { margin-block: 0; }
+.comparison-builder .comparison-options { gap: var(--space-4); }
+.comparison-builder .comparison-options > label { margin: 0; }
+.comparison-builder .comparison-goals { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.comparison-builder > .evaluation-wizard { margin: 0; padding: 0; border: 0; background: transparent; }
+.evaluation-config-fields > fieldset { margin-block: var(--space-6); }
+.evaluation-config-fields > fieldset:first-child { margin-top: 0; }
+.evaluation-run-summary { display: flex; flex-direction: column; align-items: stretch; gap: var(--space-4); padding-top: var(--space-6); }
+.report-shell .evaluation-run-summary > :is(h3, p, label, .evaluation-table-wrap), .comparison-builder .evaluation-run-summary .comparison-consent { margin: 0; }
+.evaluation-run-summary > button { align-self: flex-start; }
+.evaluation-wizard { margin-bottom: 0; }
+.evaluation-wizard fieldset { min-width: 0; }
+.comparison-builder .evaluation-choice { padding: var(--space-4); }
+.evaluation-table-wrap { margin-block: var(--space-4); }
+.evaluation-run-card { padding: var(--space-4); margin-block: var(--space-4); }
+.evaluation-run-card > .run-accordion { margin: 0; }
+@media (max-width: 760px) {
+  .comparison-builder .comparison-goals { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 640px) {
+  .evaluation-run-summary > button { align-self: stretch; }
+}

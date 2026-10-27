@@ -68,7 +68,7 @@ await build({
   },
 })
 const result = await Bun.build({
-  entrypoints: [join(pkg, 'src/cli.ts'), join(pkg, 'src/runner-supervisor.ts'), join(pkg, 'src/setup-worker.ts')],
+  entrypoints: [join(pkg, 'src/cli.ts'), join(pkg, 'src/runner-supervisor.ts'), join(pkg, 'src/setup-worker.ts'), join(pkg, 'src/managed-worker.ts')],
   outdir: dist,
   target: 'node',
   format: 'esm',

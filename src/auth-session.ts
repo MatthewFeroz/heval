@@ -1,5 +1,5 @@
 export function authReturnUrl(returnTo: unknown, origin: string): string {
-  const fallback = new URL('/evaluations', origin).href
+  const fallback = new URL('/library', origin).href
   if (typeof returnTo !== 'string') return fallback
   try {
     const target = new URL(returnTo, origin)
