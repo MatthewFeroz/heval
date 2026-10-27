@@ -20,7 +20,7 @@ type Profile = {
 const read = (path: string) => JSON.parse(readFileSync(path, 'utf8'))
 export function verifyExperiment(input: JobExport, profile: Profile): string[] {
   const errors: string[] = []
-  if (!Array.isArray(input.rows)) return ['Input must be a normalized Heval job export']
+  if (!Array.isArray(input.rows)) return ['Input must be a normalized OpenEval job export']
   const expected = profile.models.length * profile.tasks.length * profile.attemptsPerTask
   if (input.rows.length !== expected)
     errors.push('Expected ' + expected + ' trials; received ' + input.rows.length)

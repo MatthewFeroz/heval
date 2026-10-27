@@ -169,7 +169,7 @@ export function MotionPreview({
   }
 
   if (exportsEnabled === false) {
-    return <div className="motion-empty"><Film size={22} /><strong>Local exports are disabled</strong><p>Start Heval with <code>HEVAL_ENABLE_EXPORTS=1 bun run start</code> to load the player and export media.</p></div>
+    return <div className="motion-empty"><Film size={22} /><strong>Local exports are disabled</strong><p>Start OpenEval with <code>HEVAL_ENABLE_EXPORTS=1 bun run start</code> to load the player and export media.</p></div>
   }
 
   const frame = motionCanvas(applied.canvas)
@@ -184,7 +184,7 @@ export function MotionPreview({
    * theme, so the grey text in every input is the literal string on the frame.
    */
   const placeholders: Record<TextOption, string> = {
-    wordmark: MOTION_THEMES[draft.theme].wordmark || 'no wordmark in this theme',
+    wordmark: MOTION_THEMES[draft.theme].wordmark || (MOTION_THEMES[draft.theme].lockup ? 'logo only' : 'no wordmark in this theme'),
     title: built.title,
     kicker: built.kicker,
     cue: built.cue,

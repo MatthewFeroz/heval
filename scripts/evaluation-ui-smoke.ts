@@ -13,7 +13,7 @@ import type { ReportData } from '../src/reports/format'
 const capture=process.argv.includes('--capture')?process.argv[process.argv.indexOf('--capture')+1]:''
 if(process.argv.includes('--capture')&&!capture)throw Error('Usage: --capture <directory>')
 if(capture)await mkdir(capture,{recursive:true})
-const profiles=['codex','claude-code','pi'].map((agent,i)=>({id:agent,digest:String(i+1).repeat(64),title:agent,benchmark:'Heval connection smoke',agent,model:'deepseek/deepseek-v4.1-flash',vendor:'particle',taskSet:'027851e8453b8dbda1df2aa930e41fd297bbc5f8b01e41387ba7bdc16603d38d',runSettingsVersion:1,maxAttempts:3,tasks:1,attempts:1,timeoutSeconds:600000,setupCheck:false}))
+const profiles=['codex','claude-code','pi'].map((agent,i)=>({id:agent,digest:String(i+1).repeat(64),title:agent,benchmark:'OpenEval connection smoke',agent,model:'deepseek/deepseek-v4.1-flash',vendor:'particle',taskSet:'027851e8453b8dbda1df2aa930e41fd297bbc5f8b01e41387ba7bdc16603d38d',runSettingsVersion:1,maxAttempts:3,tasks:1,attempts:1,timeoutSeconds:600000,setupCheck:false}))
 profiles.push({...profiles[0],id:'other-model',model:'zai/glm-5.3',vendor:'zai'})
 profiles.push({...profiles[0],id:'codex-baseten',vendor:'baseten'})
 const configuredModel='acme/worker-approved-model'
@@ -38,23 +38,42 @@ const server=await createServer({cacheDir,server:{host:'127.0.0.1',port:0},plugi
  function commit(){localStorage.setItem('wizard-test',JSON.stringify(cache));window.dispatchEvent(new Event('wizard-change'))}
  window.addEventListener('monitor-test',()=>{cache=JSON.parse(localStorage.getItem('wizard-test'));commit()});
  export function useQuery(ref,args){const [state,setState]=useState(cache);useEffect(()=>{const fn=()=>setState({...cache});window.addEventListener('wizard-change',fn);return()=>window.removeEventListener('wizard-change',fn)},[]);const n=getFunctionName(ref);
+ if(args==='skip')return undefined;
+ if(n==='managedComparisons:catalog')return state.managed??{available:false,configured:false,permitted:false,online:false,policy:null};
+ if(n==='managedComparisons:get')return state.managedJob;
+ if(n==='baselines:get')return state.baseline;
+ if(n==='managedComparisons:list')return state.jobs??[];
+ if(n==='baselines:list')return state.baselines??[];
+ if(n==='reportProjects:team')return {members:[],invites:[]};
+ if(n==='presentationExports:list')return [];if(n==='presentationExports:available')return false;
  if(n==='runners:pairingStatus')return null;
  if(n==='runners:monitoring')return state.monitoring?.[args.id]??null;
- if(n==='runners:runs'||n==='reports:list')return [];
+ if(n==='runners:runs')return state.runs??[];if(n==='reports:list')return state.reports??[];
  // An established account; the first-smoke checklist has its own smoke test.
  if(n==='onboarding:get')return {step:3,status:'completed'};
- if(n==='runners:list')return state.loading?undefined:[{...machine,...state.machine}];if(n==='experiments:list')return state.experiment?[{id:'experiment',title:state.experiment.title,runs:3,finished:0,failed:0,report:state.experiment.report}]:[];if(n==='experiments:get')return state.experiment;if(n==='reports:get')return args.id==='combined-report'?{id:'combined-report',title:'My harness comparison',data:${JSON.stringify(JSON.stringify(combinedData))},project:${JSON.stringify(JSON.stringify(combinedProject))},shareToken:null,role:'owner',version:0,publishedVersion:null,updatedBy:null}:null;throw Error('Unexpected query '+n)}
- export function useMutation(ref){return async args=>{const n=getFunctionName(ref);if(n==='experiments:create'){cache.count++;cache.input=args;cache.experiment={id:'experiment',title:args.title,machine:'Linux worker',online:true,lastSeen:Date.now(),report:null,cells:args.profiles.map(p=>({id:p.id,profile:profiles.find(x=>x.id===p.id),attempts:args.attempts,runSettings:args.runSettings,status:'queued',phase:'Queued',report:null,result:null}))};commit();return 'experiment'}if(n==='experiments:cancel'){cache.experiment.cells.forEach(c=>{if(c.status==='queued')c.status='cancelled'});cache.experiment.report='combined-report';commit();return}if(n==='runners:setEnabled'){machine.enabled=args.enabled;commit();return}if(n==='runners:setIcon'){machine.icon=args.icon;commit();return}throw Error('Unexpected mutation '+n)}}`
+ if(n==='runners:list')return state.loading?undefined:[{...machine,...state.machine}];if(n==='experiments:list')return state.experiment?[{id:'experiment',title:state.experiment.title,runs:3,finished:0,failed:0,report:state.experiment.report,createdAt:1,setupRun:null}]:[];if(n==='experiments:get')return state.experiment;if(n==='reports:get')return args.id==='combined-report'?{id:'combined-report',title:'My harness comparison',data:${JSON.stringify(JSON.stringify(combinedData))},project:state.project??${JSON.stringify(JSON.stringify(combinedProject))},shareToken:state.shareToken??null,role:state.reportRole??'owner',version:state.reportVersion??0,publishedVersion:state.publishedVersion??null,updatedBy:null,evidence:[]}:null;throw Error('Unexpected query '+n)}
+ export function useMutation(ref){return async args=>{const n=getFunctionName(ref);if(n==='reportProjects:saveDraft'){cache.project=args.document;cache.reportVersion=(cache.reportVersion??0)+1;commit();return {version:cache.reportVersion}}if(n==='reports:share'){cache.shareToken=args.token;cache.publishedVersion=cache.reportVersion??0;commit();return args.token}if(n==='reports:revoke'){cache.shareToken=null;commit();return}if(n==='reportProjects:publish'){cache.publishedVersion=cache.reportVersion??0;commit();return}if(n==='reports:save'){cache.imported=args;commit();return 'combined-report'}if(n==='managedComparisons:create'){cache.managedInput=args;cache.managedJob={id:'managed-fixture',title:args.title,spec:args.spec,status:'queued',message:'Waiting for a managed worker',experiment:null,deadline:0};commit();return 'managed-fixture'}if(n==='managedComparisons:cancel'){cache.managedJob.status='cancelled';cache.managedJob.message='Cancelled before provisioning';commit();return}if(n==='baselines:save'){cache.baseline={_id:'baseline-fixture',title:args.title,goal:cache.experiment.goal,experiment:'experiment',report:'combined-report',taskSet:cache.experiment.cells[0].profile.taskSet,attempts:cache.input.attempts,runSettings:cache.input.runSettings,profiles:cache.experiment.cells.map(c=>c.profile),results:cache.experiment.cells.map(c=>({profile:c.profile,status:c.status,result:c.result}))};commit();return 'baseline-fixture'}if(n==='experiments:create'){cache.count++;cache.input=args;cache.experiment={id:'experiment',title:args.title,goal:args.goal??'custom',baseline:args.baseline??null,machine:'Linux worker',online:true,lastSeen:Date.now(),report:null,cells:args.profiles.map(p=>({id:p.id,profile:profiles.find(x=>x.id===p.id),attempts:args.attempts,runSettings:args.runSettings,status:'queued',phase:'Queued',report:null,result:null}))};commit();return 'experiment'}if(n==='experiments:cancel'){cache.experiment.cells.forEach(c=>{if(c.status==='queued')c.status='cancelled'});cache.experiment.report='combined-report';commit();return}if(n==='runners:setEnabled'){machine.enabled=args.enabled;commit();return}if(n==='runners:setIcon'){machine.icon=args.icon;commit();return}throw Error('Unexpected mutation '+n)}}`
  }
 }]})
 await server.listen()
 const browser=await chromium.launch(),context=await browser.newContext({viewport:{width:1440,height:1000}}),errors:string[]=[]
 let page=await context.newPage()
 page.on('pageerror',e=>errors.push(e.message))
-async function stage(name:string){if(capture)await page.locator('.evaluation-wizard').screenshot({path:`${capture}/${name}.png`})}
+async function stage(name:string){if(capture)await page.locator('.evaluation-wizard').first().screenshot({path:`${capture}/${name}.png`})}
+async function captureScreen(name:string) {
+ if(!capture)return
+ const original=page.viewportSize()!
+ for(const [size,width,height] of [['desktop',1440,1000],['tablet',900,1000],['mobile',390,844]] as const){
+  await page.setViewportSize({width,height})
+  await page.evaluate(async()=>{(document.activeElement as HTMLElement)?.blur();window.scrollTo({top:0,behavior:'instant'});await document.fonts.ready;await new Promise(requestAnimationFrame)})
+  await page.screenshot({path:`${capture}/${name}-${size}.png`,fullPage:true})
+ }
+ await page.setViewportSize(original)
+}
+
 async function account(update:Record<string,unknown>){await page.evaluate(update=>{const s=JSON.parse(localStorage.getItem('wizard-test')||'{"count":0,"experiment":null}');Object.assign(s,update);localStorage.setItem('wizard-test',JSON.stringify(s));window.dispatchEvent(new Event('monitor-test'))},update)}
 try {
- await page.goto(`${server.resolvedUrls!.local[0]}evaluations`,{waitUntil:'networkidle'})
+ await page.goto(`${server.resolvedUrls!.local[0]}evaluations?custom=1`,{waitUntil:'networkidle'})
  await expect(page.getByRole('heading',{name:'Configure evaluation'})).toBeVisible()
  await account({loading:true})
  await expect(page.getByRole('status').filter({hasText:'Loading computer options'})).toContainText('Wait for your workspace')
@@ -156,8 +175,9 @@ try {
  await expect(page.getByText(/Worker offline./)).toBeVisible()
  await page.getByRole('button',{name:'Cancel unfinished runs'}).click()
  await expect(page.getByText('3 of 3 runs finished',{exact:false})).toBeVisible()
- await expect(page.getByRole('heading',{name:'Inspect, shape, and publish this evaluation.'})).toBeVisible()
- await expect(page.getByRole('button',{name:'Publish evaluation'})).toBeVisible()
+ await expect(page.getByRole('navigation',{name:'Report workspace'})).toBeVisible()
+ await page.getByRole('navigation',{name:'Report workspace'}).getByRole('link',{name:'Share',exact:true}).click()
+ await expect(page.getByRole('button',{name:'Create share link'})).toBeVisible()
  // The combined result remains available to the report editor.
  await page.clock.resume()
  await page.goto(`${server.resolvedUrls!.local[0]}studio?report=combined-report`,{waitUntil:'networkidle'})
@@ -165,7 +185,7 @@ try {
  await expect(page.getByRole('button',{name:'Save draft',exact:true})).toBeVisible()
  // Every approved model can be selected, even without published reference metadata.
  await account({count:0,experiment:null,input:null,machine:{ready:true,lastSeen:Date.now(),profiles}})
- await page.goto(`${server.resolvedUrls!.local[0]}evaluations`,{waitUntil:'networkidle'})
+ await page.goto(`${server.resolvedUrls!.local[0]}evaluations?custom=1`,{waitUntil:'networkidle'})
  await page.getByRole('checkbox',{name:/Codex CLI/}).check()
  await page.getByRole('checkbox',{name:/Claude Code/}).check()
  await page.getByRole('checkbox',{name:configuredModel,exact:true}).check()
@@ -213,7 +233,7 @@ try {
  assert.equal(configured.experiment.cells[0].profile.vendor,'worker-secondary')
  // Custom labels must not read inherited Object properties as vendor preferences.
  await account({count:0,experiment:null,input:null,machine:{ready:true,lastSeen:Date.now(),profiles}})
- await page.goto(`${server.resolvedUrls!.local[0]}evaluations`,{waitUntil:'networkidle'})
+ await page.goto(`${server.resolvedUrls!.local[0]}evaluations?custom=1`,{waitUntil:'networkidle'})
  await page.getByRole('checkbox',{name:/Codex CLI/}).check()
  await page.getByRole('checkbox',{name:'constructor',exact:true}).check()
  await page.getByLabel('Experiment name').fill('Custom model label')
@@ -222,6 +242,143 @@ try {
  await page.getByRole('button',{name:'Start experiment',exact:true}).click()
  const inherited=await page.evaluate(()=>JSON.parse(localStorage.getItem('wizard-test')!))
  assert.deepEqual(inherited.input.profiles,[{id:'codex-inherited-name',digest:profiles[0].digest}])
+ // Guided comparisons authorize a complete pair, invalidate stale approval consent,
+ // preserve a baseline, and support a separately configured managed beta.
+ await account({count:0,experiment:null,input:null,machine:{ready:true,lastSeen:Date.now(),profiles}})
+ await page.goto(`${server.resolvedUrls!.local[0]}evaluations`,{waitUntil:'networkidle'})
+ await expect(page.getByRole('heading',{name:'What do you want to compare?'})).toBeVisible()
+ await page.getByLabel('First harness',{exact:true}).selectOption('codex')
+ await page.getByLabel('Second harness',{exact:true}).selectOption('pi')
+ await page.getByLabel('Model',{exact:true}).selectOption('deepseek/deepseek-v4.1-flash')
+ await page.getByLabel('Serving vendor for first model').selectOption('particle')
+ await page.getByLabel('Comparison name').fill('Guided comparison')
+ await captureScreen('new-comparison')
+ const consent=page.getByRole('checkbox',{name:/I reviewed these combinations/})
+ await expect(page.getByRole('button',{name:'Run comparison',exact:true})).toBeDisabled()
+ await consent.check()
+ await expect(page.getByRole('button',{name:'Run comparison',exact:true})).toBeEnabled()
+ const changedProfiles=profiles.map(p=>p.id==='codex'?{...p,digest:'e'.repeat(64)}:p)
+ await account({machine:{ready:true,lastSeen:Date.now(),profiles:changedProfiles}})
+ await expect(consent).not.toBeChecked()
+ await expect(page.getByRole('button',{name:'Run comparison',exact:true})).toBeDisabled()
+ await consent.check()
+ await page.getByRole('button',{name:'Run comparison',exact:true}).click()
+ await expect(page.getByRole('heading',{name:'Guided comparison',exact:true})).toBeVisible()
+ const guided=await page.evaluate(()=>JSON.parse(localStorage.getItem('wizard-test')!))
+ assert.equal(guided.input.goal,'harnesses');assert.equal(guided.input.profiles.length,2)
+ assert.equal(guided.input.profiles[0].digest,'e'.repeat(64))
+ await account({experiment:{...guided.experiment,report:'combined-report',cells:guided.experiment.cells.map((c:Record<string,unknown>)=>({...c,status:'completed',result:{trials:1,passed:1,versions:['fixture'],reportedCost:null}}))}})
+ await page.getByRole('button',{name:'Set as baseline',exact:true}).click()
+ await page.getByRole('link',{name:'Run another comparison against this baseline'}).click()
+ await expect(page.getByRole('heading',{name:'Repeat Guided comparison'})).toBeVisible()
+ await expect(page.getByLabel('Task set',{exact:true})).toBeDisabled()
+ await expect(page.getByLabel('Comparison name')).toHaveValue('Guided comparison repeat')
+ await expect(page.getByRole('button',{name:'Run comparison',exact:true})).toBeDisabled()
+ const savedBaseline=await page.evaluate(()=>JSON.parse(localStorage.getItem('wizard-test')!).baseline)
+ await account({baseline:{...savedBaseline,attempts:2},machine:{ready:true,lastSeen:Date.now(),profiles:changedProfiles.map(p=>({...p,maxAttempts:1}))}})
+ await page.reload()
+ await expect(page.getByRole('status')).toContainText('Requested attempts exceed')
+ await expect(page.getByRole('button',{name:'Run comparison',exact:true})).toBeDisabled()
+ await account({managed:{available:true,configured:true,permitted:true,online:true,policy:{benchmark:'tblite-smoke',taskSet:'2683c14c21a9f9b797e0a576efd7993c5d5d15f54660a761c860c750a30bc762',tasks:5,harnesses:['codex','pi'],models:['test/model','test/other'],maxBudgetUsd:5,maxMinutes:30}}})
+ await page.goto(`${server.resolvedUrls!.local[0]}evaluations`,{waitUntil:'networkidle'})
+ await expect(page.getByRole('radio',{name:/Managed cloud/})).toBeChecked()
+ await page.getByLabel('Comparison name').fill('Managed model comparison')
+ await page.getByRole('radio',{name:/Compare models/}).check()
+ await page.getByRole('checkbox',{name:/I reviewed these combinations/}).check()
+ await expect(page.getByRole('button',{name:'Run comparison',exact:true})).toBeEnabled()
+ await page.getByRole('button',{name:'Run comparison',exact:true}).click()
+ await expect(page.getByRole('heading',{name:'Managed model comparison',exact:true})).toBeVisible()
+ const managedInput=await page.evaluate(()=>JSON.parse(localStorage.getItem('wizard-test')!).managedInput)
+ assert.equal(managedInput.spec.goal,'models');assert.deepEqual(managedInput.spec.models,['test/model','test/other'])
+ assert.equal(managedInput.spec.harnesses.length,1);assert.equal(managedInput.spec.budgetUsd,2)
+ await page.getByRole('button',{name:'Cancel comparison',exact:true}).click()
+ await expect(page.getByRole('status')).toContainText('Cancelled before provisioning')
+ const stateForRepeat=await page.evaluate(()=>JSON.parse(localStorage.getItem('wizard-test')!))
+ await account({baseline:{...stateForRepeat.baseline,execution:'managed',taskSet:stateForRepeat.managed.policy.taskSet,attempts:1,runSettings:{concurrency:1,retries:0,timeoutSeconds:600},profiles:[{...profiles[0],agent:'codex',model:'test/model'},{...profiles[2],agent:'pi',model:'test/model'}]}})
+ await page.goto(`${server.resolvedUrls!.local[0]}evaluations?baseline=baseline-fixture`,{waitUntil:'networkidle'})
+ await expect(page.getByRole('radio',{name:/Managed cloud/})).toBeChecked()
+ await expect(page.getByLabel('Comparison execution time (minutes)')).toBeDisabled()
+ await expect(page.getByLabel('Comparison execution time (minutes)')).toHaveValue('20')
+ // The unified Library joins the managed job, experiment and reports by ID.
+ const finishedExperiment={...guided.experiment,managed:{id:'managed-fixture',status:'cleanup',message:'Deleting managed worker'},report:'combined-report',cells:guided.experiment.cells.map((c:Record<string,unknown>)=>({...c,status:'completed',report:'child-report',result:{trials:1,passed:1,versions:['fixture'],reportedCost:null}}))}
+ const libraryJob={id:'managed-fixture',title:'Guided comparison',spec:managedInput.spec,status:'cleanup',message:'Deleting managed worker',experiment:'experiment',createdAt:1,baseline:null,deadline:0}
+ await account({experiment:finishedExperiment,managedJob:libraryJob,jobs:[libraryJob],baselines:[{id:'baseline-fixture',title:'Guided comparison',experiment:'experiment',report:'combined-report',createdAt:1}],baseline:savedBaseline,runs:[{id:'child',experiment:'experiment',report:'child-report',status:'completed',profile:profiles[0],createdAt:1}],reports:[{id:'combined-report',title:'My harness comparison',trials:2,createdAt:1,shared:false,role:'owner'},{id:'child-report',title:'Child report',trials:1,createdAt:1,shared:false,role:'owner'}]})
+ await page.goto(`${server.resolvedUrls!.local[0]}library`,{waitUntil:'networkidle'})
+ const library=page.getByRole('region',{name:'Library items'})
+ await expect(library.locator('.library-items > li')).toHaveCount(1)
+ await captureScreen('library')
+ await expect(library).toContainText('Deleting managed worker')
+ await expect(library.getByRole('link',{name:'Compare against baseline'})).toBeVisible()
+ await page.getByLabel('Search Library').fill('absent name')
+ await expect(library).toContainText('No items match')
+ await page.getByLabel('Search Library').fill('')
+ await page.getByLabel('Show',{exact:true}).selectOption('running')
+ await expect(library.locator('.library-items > li')).toHaveCount(1)
+ await library.getByRole('link',{name:/My harness comparison/}).click()
+ await expect(page.getByRole('navigation',{name:'Report workspace'})).toBeVisible()
+ await expect(page.getByRole('button',{name:'Cancel comparison',exact:true})).toBeDisabled()
+ await captureScreen('results')
+ // Editing stays in the report workspace. Visiting Share never publishes edits.
+ await page.goto(`${server.resolvedUrls!.local[0]}library?report=combined-report`,{waitUntil:'networkidle'})
+ const tabs=page.getByRole('navigation',{name:'Report workspace'})
+ await tabs.getByRole('link',{name:'Analyze',exact:true}).click()
+ await expect(page.getByRole('button',{name:'Save draft',exact:true})).toBeDisabled()
+ if(capture)await expect(page.locator('.report-editor .canvas svg')).toBeVisible()
+ await captureScreen('analysis')
+ await page.locator('#f-project-name').fill('Unsaved chart name')
+ await tabs.getByRole('link',{name:'Share',exact:true}).click()
+ await expect(page.getByText('You have unsaved chart changes.',{exact:false})).toBeVisible()
+ await page.getByRole('button',{name:'Create share link',exact:true}).click()
+ await expect(page.getByLabel('Share link',{exact:true})).toBeVisible()
+ assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('wizard-test')!).project??null),null,'Sharing does not save an unsaved chart')
+ await captureScreen('share')
+ await tabs.getByRole('link',{name:'Analyze',exact:true}).click()
+ await expect(page.locator('#f-project-name')).toHaveValue('Unsaved chart name')
+ await page.getByRole('button',{name:'Save draft',exact:true}).click()
+ await expect(page.getByText('Draft saved online · version 1',{exact:true})).toBeVisible()
+ await tabs.getByRole('link',{name:'Share',exact:true}).click()
+ await expect(page.getByRole('button',{name:'Publish saved draft',exact:true})).toBeEnabled()
+ await page.getByRole('button',{name:'Publish saved draft',exact:true}).click()
+ await expect(page.getByText('Saved draft published. Shared viewers now see this version.',{exact:true})).toBeVisible()
+ await page.getByRole('button',{name:'Revoke link',exact:true}).click()
+ await page.getByRole('button',{name:'Yes, revoke link',exact:true}).click()
+ await expect(page.getByRole('button',{name:'Create share link',exact:true})).toBeVisible()
+ await tabs.getByRole('link',{name:'Export',exact:true}).click()
+ await expect(page.getByLabel('Question',{exact:true})).toBeVisible()
+ await captureScreen('export')
+ const download=page.waitForEvent('download')
+ await page.getByRole('button',{name:'Download results JSON',exact:true}).click()
+ assert.equal((await download).suggestedFilename(),'openeval-results.json')
+ await page.goBack()
+ await expect(tabs.getByRole('link',{name:'Share',exact:true})).toHaveAttribute('aria-current','page')
+ await tabs.getByRole('link',{name:'Analyze',exact:true}).click()
+ await expect(page.locator('#f-project-name')).toHaveValue('Unsaved chart name')
+ await page.setViewportSize({width:390,height:844})
+ const settingsToggle=page.getByRole('button',{name:'Chart settings',exact:true})
+ await expect(settingsToggle).toHaveAttribute('aria-expanded','false')
+ await settingsToggle.click()
+ await expect(page.locator('#f-project-name')).toHaveValue('Unsaved chart name')
+ await expect(settingsToggle).toHaveAttribute('aria-expanded','true')
+ await settingsToggle.click()
+ await expect(page.locator('#f-project-name')).not.toBeVisible()
+ assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'Unified editor fits a narrow viewport')
+ await account({reportRole:'viewer'})
+ await tabs.getByRole('link',{name:'Share',exact:true}).click()
+ await expect(page.getByRole('button',{name:'Create share link',exact:true})).toHaveCount(0)
+ await expect(page.getByRole('heading',{name:'Sharing is managed by the owner'})).toBeVisible()
+ await tabs.getByRole('link',{name:'Export',exact:true}).click()
+ await expect(page.getByRole('button',{name:'Save draft',exact:true})).toHaveCount(0)
+ await expect(page.getByRole('button',{name:'Download results JSON',exact:true})).toBeVisible()
+ // Imports enter the same workspace after an explicit data review.
+ await account({reportRole:'owner'})
+ await page.goto(`${server.resolvedUrls!.local[0]}library?import=1`,{waitUntil:'networkidle'})
+ await page.getByLabel('Choose Harbor JSON').setInputFiles({name:'results.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(combinedData))})
+ await expect(page.getByRole('heading',{name:'Review before saving',exact:true})).toBeVisible()
+ await page.getByLabel('Report title').fill('Imported comparison')
+ await captureScreen('import')
+ await page.getByRole('button',{name:'Save private report',exact:true}).click()
+ await expect(page.getByRole('navigation',{name:'Report workspace'})).toBeVisible()
+ assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('wizard-test')!).imported.title),'Imported comparison')
  assert.deepEqual(errors,[])
- console.log('PASS: browser configures an evaluation, restores progress, inspects a run, combines terminal results, and exposes publishing.')
+ console.log('PASS: guided/custom comparisons, live progress, baseline repeats, unified Library, preserved drafts, publish/revoke, exports, viewer access, imports and mobile; simulated auth/provider transport.')
 }finally{await browser.close();await server.close();rmSync(cacheDir,{recursive:true,force:true})}

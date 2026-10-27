@@ -1,0 +1,18 @@
+# Build packages/cli/dist first. Publish this image under a reviewed immutable
+# digest and register it as a Daytona Linux VM snapshot, never a shared worker.
+FROM node:22-bookworm-slim@sha256:83f487e0a63425e5b4d146fb5e5be574bcbe1b7b843d3ebafdd95eaf7767a7e5 AS node
+FROM docker:29-dind@sha256:9e79b879b177fbd72c34376a3dd3d91747da5db49e1f560f76aea59561471977 AS docker
+FROM python:3.12-bookworm@sha256:581429e3df12d76e6af4be5ab7d0e7fc2013eb57dc23d2de691411c8efdbb970
+COPY --from=node /usr/local/bin/node /usr/local/bin/node
+COPY --from=docker /usr/local/bin/ /usr/local/bin/
+COPY --from=docker /usr/local/libexec/docker/cli-plugins /usr/local/libexec/docker/cli-plugins
+RUN apt-get update && apt-get install -y --no-install-recommends iptables git ca-certificates && rm -rf /var/lib/apt/lists/* && useradd --create-home --uid 1000 heval
+COPY packages/cli/worker/requirements.txt /opt/heval-requirements.txt
+RUN pip install --no-cache-dir -r /opt/heval-requirements.txt && pip check
+COPY packages/cli/package.json /opt/heval/package.json
+COPY packages/cli/dist /opt/heval/dist
+COPY src/runners/tblite.json /opt/heval/tblite.json
+RUN git clone https://github.com/open-thoughts/OpenThoughts-TBLite /opt/heval/benchmark && git -C /opt/heval/benchmark checkout "$(node -p 'JSON.parse(require("fs").readFileSync("/opt/heval/tblite.json")).commit')" && rm -rf /opt/heval/benchmark/.git
+COPY deploy/managed/worker-entrypoint.sh /opt/heval/worker-entrypoint.sh
+ENV HARBOR_TELEMETRY=0
+ENTRYPOINT ["sh", "/opt/heval/worker-entrypoint.sh"]

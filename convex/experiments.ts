@@ -1,23 +1,33 @@
-import { v, ConvexError } from 'convex/values'
+import { v, ConvexError, type Infer } from 'convex/values'
 import { mutation, query } from './_generated/server'
+import type { MutationCtx } from './_generated/server'
 import { identity } from './reportAccess'
 import { RUNNER_ONLINE_MS, terminalStates } from '../src/runners/protocol'
-import { runSettingsValidator } from './runnerValidators'
+import { comparisonGoalValidator, runSettingsValidator } from './runnerValidators'
+import { validateComparison, sameSettings } from '../src/runners/comparison'
 import { executionTimeoutSeconds } from '../src/runners/protocol'
 import { materializeExperimentReport } from './experimentReports'
 import { assertReportCapacity } from './reportCapacity'
 import { summarizeRun } from './runResults'
 import type { ReportData } from '../src/reports/format'
 
-export const create = mutation({ args: {
+export const experimentInput = v.object({
   runner: v.id('runners'), title: v.string(), requestId: v.string(), attempts: v.number(), runSettings: v.optional(runSettingsValidator),
   profiles: v.array(v.object({ id: v.string(), digest: v.string() })),
   checkWorker: v.optional(v.boolean()),
-}, handler: async (ctx, args) => {
+  goal: v.optional(comparisonGoalValidator), baseline: v.optional(v.id('comparisonBaselines')),
+})
+export const create = mutation({ args: experimentInput, handler: async (ctx, args) => {
   const owner = (await identity(ctx)).subject
+  const machine = await ctx.db.get(args.runner)
+  if (machine?.owner === owner && machine.managed) throw new ConvexError('Submit managed comparisons through the managed workflow.')
+  return createExperiment(ctx, owner, args)
+} })
+
+export async function createExperiment(ctx: MutationCtx, owner: string, args: Infer<typeof experimentInput>) {
   if (!args.title.trim() || args.title.length > 120 || !/^[a-f0-9]{64}$/.test(args.requestId)) throw new ConvexError('Enter a title and a valid submission ID.')
   if (!args.profiles.length || new Set(args.profiles.map(p => p.id)).size !== args.profiles.length) throw new ConvexError('Choose one or more distinct combinations.')
-  const selection = JSON.stringify({ runner: args.runner, title: args.title.trim(), attempts: args.attempts, ...(args.runSettings ? { runSettings: args.runSettings } : {}), ...(args.checkWorker ? { checkWorker: true } : {}), profiles: [...args.profiles].sort((a,b) => a.id.localeCompare(b.id)) })
+  const selection = JSON.stringify({ runner: args.runner, title: args.title.trim(), attempts: args.attempts, ...(args.runSettings ? { runSettings: args.runSettings } : {}), ...(args.checkWorker ? { checkWorker: true } : {}), ...(args.goal ? { goal: args.goal } : {}), ...(args.baseline ? { baseline: args.baseline } : {}), profiles: [...args.profiles].sort((a,b) => a.id.localeCompare(b.id)) })
   const prior = await ctx.db.query('experiments').withIndex('by_request', q => q.eq('owner', owner).eq('requestId', args.requestId)).unique()
   if (prior) {
     if (prior.selection !== selection) throw new ConvexError('This submission already belongs to another experiment.')
@@ -35,6 +45,12 @@ export const create = mutation({ args: {
     return p
   })
   if (new Set(profiles.map(p => p.taskSet)).size !== 1) throw new ConvexError('Use the same task set for every combination.')
+  try { validateComparison(args.goal ?? 'custom', profiles) } catch (error) { throw new ConvexError((error as Error).message) }
+  if (args.baseline) {
+    const baseline = await ctx.db.get(args.baseline)
+    if (!baseline || baseline.owner !== owner) throw new ConvexError('Baseline not found.')
+    if (baseline.taskSet !== profiles[0].taskSet || baseline.profiles[0].tasks !== profiles[0].tasks || baseline.attempts !== args.attempts || !sameSettings(baseline.runSettings, args.runSettings)) throw new ConvexError('Keep the baseline task snapshot, attempts and execution settings to compare results.')
+  }
   for (const model of new Set(profiles.map(p => p.model))) {
     if (new Set(profiles.filter(p => p.model === model).map(p => p.vendor)).size !== 1) throw new ConvexError('Use the same vendor across harnesses for each model.')
   }
@@ -49,17 +65,17 @@ export const create = mutation({ args: {
   // Persist the prerequisite with the experiment. It continues without a browser
   // and the worker cannot claim model work until the free check has passed.
   const setupRun = check ? await ctx.db.insert('runnerRuns', { owner, runner: args.runner, requestId: `${args.requestId}:setup`, profile: check, status: 'queued', phase: 'Checking this computer before the first evaluation' }) : undefined
-  const id = await ctx.db.insert('experiments', { owner, title: args.title.trim(), runner: args.runner, requestId: args.requestId, selection, attempts: args.attempts, taskSet: profiles[0].taskSet!, ...(setupRun ? { setupRun } : {}) })
+  const id = await ctx.db.insert('experiments', { owner, title: args.title.trim(), runner: args.runner, requestId: args.requestId, selection, attempts: args.attempts, taskSet: profiles[0].taskSet!, ...(args.goal ? { goal: args.goal } : {}), ...(args.baseline ? { baseline: args.baseline } : {}), ...(setupRun ? { setupRun } : {}) })
   for (const p of profiles) await ctx.db.insert('runnerRuns', { owner, runner: args.runner, experiment: id, requestedAttempts: args.attempts, ...(args.runSettings ? { runSettings: args.runSettings } : {}), requestId: `${args.requestId}:${p.id}`, profile: p, status: 'queued', phase: 'Queued for this machine' })
   return id
-} })
+}
 
 export const list = query({ args: {}, handler: async ctx => {
   const owner = (await identity(ctx)).subject
   const experiments = await ctx.db.query('experiments').withIndex('by_owner', q => q.eq('owner', owner)).order('desc').take(200)
   return Promise.all(experiments.map(async e => {
     const runs = await ctx.db.query('runnerRuns').withIndex('by_experiment', q => q.eq('experiment', e._id)).collect()
-    return { id: e._id, title: e.title, createdAt: e._creationTime, report: e.report ?? null, setupRun: e.setupRun ?? null, runs: runs.length, finished: runs.filter(r => terminalStates.includes(r.status as typeof terminalStates[number])).length, failed: runs.filter(r => r.status === 'failed' || r.status === 'interrupted').length }
+    return { id: e._id, title: e.title, goal: e.goal ?? 'custom', baseline: e.baseline ?? null, createdAt: e._creationTime, report: e.report ?? null, setupRun: e.setupRun ?? null, runs: runs.length, finished: runs.filter(r => terminalStates.includes(r.status as typeof terminalStates[number])).length, failed: runs.filter(r => r.status === 'failed' || r.status === 'interrupted').length }
   }))
 } })
 
@@ -68,6 +84,7 @@ export const get = query({ args: { id: v.id('experiments') }, handler: async (ct
   if (!e || e.owner !== owner) throw new ConvexError('Experiment not found.')
   const machine = await ctx.db.get(e.runner)
   const setup = e.setupRun ? await ctx.db.get(e.setupRun) : null
+  const managed = await ctx.db.query('managedComparisons').withIndex('by_experiment', q => q.eq('experiment', id)).unique()
   const runs = await ctx.db.query('runnerRuns').withIndex('by_experiment', q => q.eq('experiment', id)).collect()
   const cells = await Promise.all(runs.map(async r => {
     // Older records retain their metrics until the bounded summary backfill runs.
@@ -76,12 +93,14 @@ export const get = query({ args: { id: v.id('experiments') }, handler: async (ct
     return { id: r._id, profile: r.profile, attempts: r.requestedAttempts ?? r.profile.attempts, runSettings: r.runSettings ?? null, status: r.status, phase: r.phase, message: r.message ?? null, report: r.report ?? null,
       result }
   }))
-  return { id, title: e.title, createdAt: e._creationTime, report: e.report ?? null, setup: setup ? { status: setup.status, phase: setup.phase, message: setup.message ?? null, report: setup.report ?? null } : null, machine: machine?.name ?? 'Disconnected worker', lastSeen: machine?.lastSeen ?? 0, online: !!machine && !machine.revoked && Date.now()-machine.lastSeen < RUNNER_ONLINE_MS, cells }
+  return { id, title: e.title, goal: e.goal ?? 'custom', baseline: e.baseline ?? null, managed: managed ? { id: managed._id, status: managed.status, message: managed.message } : null, createdAt: e._creationTime, report: e.report ?? null, setup: setup ? { status: setup.status, phase: setup.phase, message: setup.message ?? null, report: setup.report ?? null } : null, machine: machine?.name ?? 'Disconnected worker', lastSeen: machine?.lastSeen ?? 0, online: !!machine && !machine.revoked && Date.now()-machine.lastSeen < RUNNER_ONLINE_MS, cells }
 } })
 
 export const cancel = mutation({ args: { id: v.id('experiments') }, handler: async (ctx, { id }) => {
   const owner = (await identity(ctx)).subject, e = await ctx.db.get(id)
   if (!e || e.owner !== owner) throw new ConvexError('Experiment not found.')
+  const managed = await ctx.db.query('managedComparisons').withIndex('by_experiment', q => q.eq('experiment', id)).unique()
+  if (managed && !['completed', 'failed', 'cancelled'].includes(managed.status)) await ctx.db.patch(managed._id, { cancelRequested: true, stoppingAt: managed.stoppingAt ?? Date.now(), status: 'stopping', message: 'Stopping execution and cleaning up resources' })
   const runs = await ctx.db.query('runnerRuns').withIndex('by_experiment', q => q.eq('experiment', id)).collect()
   const setup = e.setupRun ? await ctx.db.get(e.setupRun) : null
   if (setup) runs.push(setup)

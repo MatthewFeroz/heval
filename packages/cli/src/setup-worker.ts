@@ -32,7 +32,7 @@ if (process.argv[2] === 'rpc') {
   initializeProfiles(directory, task)
   const stop = new AbortController()
   process.once('SIGTERM', () => stop.abort()); process.once('SIGINT', () => stop.abort())
-  console.log('Heval worker ready for local setup. Waiting for account pairing.')
+  console.log('OpenEval worker ready for local setup. Waiting for account pairing.')
   while (!stop.signal.aborted) {
     let paired = false
     try { paired = !!JSON.parse(readFileSync(join(directory, 'connection.json'), 'utf8')).id } catch { /* Not paired yet. */ }

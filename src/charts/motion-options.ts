@@ -183,8 +183,6 @@ export type OverrideMap = keyof typeof OVERRIDE_MAPS
 
 export const OVERRIDE_KEYS = Object.keys(OVERRIDE_MAPS) as OverrideMap[]
 
-/** @deprecated Read `OVERRIDE_MAPS.barLabels.param`. Kept for older links. */
-export const BAR_LABEL_PARAM = OVERRIDE_MAPS.barLabels.param
 
 /** On/off knobs. Labels stay about the drawing, never about one chart's copy. */
 export type FlagOption = 'plotRule' | 'gridLines' | 'showCue'
@@ -229,10 +227,7 @@ export const COMPLETION_CONTROLS: Record<NumericOption, { min: number; max: numb
   duration: { min: 4, max: 12, step: 0.5 },
 }
 
-/** A headline longer than this wraps past two lines and pushes the plot down. */
-export const COMPLETION_TITLE_MAX = COMPLETION_TEXT.title.max
 
-export const NUMERIC_OPTIONS = Object.keys(COMPLETION_CONTROLS) as NumericOption[]
 
 /** Collapse whitespace so a pasted newline cannot break out of a text slot. */
 function collapse(value: unknown, max: number): string {
@@ -327,21 +322,6 @@ export function completionTiming(options: CompletionOptions): { duration: number
   return { duration: options.duration, finalFrameAt: Math.max(0, options.duration - 0.1) }
 }
 
-/** Only the values that differ from the defaults, for a short player URL. */
-export function completionQuery(options: CompletionOptions): string {
-  const params = new URLSearchParams()
-  for (const key of Object.keys(COMPLETION_DEFAULTS) as (keyof CompletionOptions)[]) {
-    // The override maps are records; String() on one sends "[object Object]".
-    if ((OVERRIDE_KEYS as string[]).includes(key)) continue
-    if (options[key] !== COMPLETION_DEFAULTS[key]) params.set(key, String(options[key]))
-  }
-  for (const map of OVERRIDE_KEYS) {
-    for (const [key, label] of Object.entries(options[map] ?? {})) {
-      if (label) params.set(`${OVERRIDE_MAPS[map].param}${key}`, label)
-    }
-  }
-  return params.toString()
-}
 
 /**
  * Whether two option sets would draw the same frame.

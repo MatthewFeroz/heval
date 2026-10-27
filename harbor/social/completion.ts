@@ -9,6 +9,7 @@ import { join, resolve } from 'node:path'
 import { buildPanel, labelLines, PANELS, POSTER_MAX_SERIES } from '../../src/charts/poster'
 import { barLabelLines, builtInCopy, tickKey } from '../../src/charts/motion-copy'
 import { motionTheme } from '../../src/charts/motion-themes'
+import { lockupSvg } from '../../src/brand'
 import type { JobExport } from '../../src/charts/trial'
 import { COMPLETION_DEFAULTS, motionCanvas, type CompletionOptions } from '../../src/charts/motion-options'
 
@@ -31,7 +32,7 @@ const esc = (value: string) => value
   .replace(/"/g, '&quot;')
 
 export async function completionComposition(exp: JobExport, options: CompletionOptions = COMPLETION_DEFAULTS): Promise<string> {
-  if (!Array.isArray(exp.rows) || !exp.rows.length) throw new Error('Heval job export has no rows')
+  if (!Array.isArray(exp.rows) || !exp.rows.length) throw new Error('OpenEval job export has no rows')
   const order = [...new Set(exp.rows.map((row) => row.modelShort))].sort()
   if (order.length > POSTER_MAX_SERIES) throw new Error(`${order.length} models exceeds the ${POSTER_MAX_SERIES}-series poster limit`)
 
@@ -78,7 +79,7 @@ export async function completionComposition(exp: JobExport, options: CompletionO
   const wordmark = options.wordmark || theme.wordmark
   const fonts = ''
   const brandBg = ''
-  const lockup = ''
+  const lockup = theme.lockup ? lockupSvg() : ''
 
   // An override changes a tick's text, never where the scale puts it.
   const ticks = panel.ticks

@@ -1,12 +1,12 @@
 import tblite from './tblite.json'
 
 /**
- * Benchmarks Heval knows how to install on a worker. The worker still approves and runs them;
+ * Benchmarks OpenEval knows how to install on a worker. The worker still approves and runs them;
  * the browser matches a worker's advertised task set to an entry by content hash (`taskSet`).
  */
 export type Benchmark = {
   id: string; title: string; publisher: string; summary: string; tasks: number
-  /** `available`: installable and tested with Heval. `preview`: installable, not yet validated on Heval workers. `unsupported`: listed for reference only. */
+  /** `available`: installable and tested with OpenEval. `preview`: installable, not yet validated on OpenEval workers. `unsupported`: listed for reference only. */
   status: 'available' | 'preview' | 'unsupported'
   note: string
   source?: { url: string; commit: string; license: string }
@@ -23,17 +23,17 @@ const TBLITE_COMMIT = tblite.commit
 
 export const BENCHMARKS: Benchmark[] = [
   {
-    id: 'heval-smoke', title: 'Heval connection smoke', publisher: 'Heval', tasks: 1, status: 'available',
+    id: 'heval-smoke', title: 'OpenEval connection smoke', publisher: 'OpenEval', tasks: 1, status: 'available',
     summary: 'One bundled file-writing task. Confirms each harness reaches its model through Merge Gateway.',
     note: 'Checks the connection. It isn’t a capability score.',
     taskHashes: [['heval-setup', '991449f7fe5ebb2ff48390673ca91ce71bee08596a836f573d586b18bac63106']],
     taskSet: '027851e8453b8dbda1df2aa930e41fd297bbc5f8b01e41387ba7bdc16603d38d',
-    install: ['heval provider connect merge', 'heval provider status merge', 'heval runner setup --model MODEL_ID --harnesses codex,claude-code,pi'],
+    install: ['openeval provider connect merge', 'openeval provider status merge', 'openeval runner setup --model MODEL_ID --harnesses codex,claude-code,pi'],
   },
   {
     id: 'tblite-smoke', title: 'OpenThoughts-TBLite smoke', publisher: 'OpenThoughts', tasks: 5, status: 'preview',
     summary: 'Five easy TBLite tasks across data processing, data science, debugging, system administration and security.',
-    note: 'A quick smoke run on real Terminal-Bench-style tasks. Not a TBLite score, and not yet validated on Heval workers.',
+    note: 'A quick smoke run on real Terminal-Bench-style tasks. Not a TBLite score, and not yet validated on OpenEval workers.',
     source: { url: TBLITE, commit: TBLITE_COMMIT, license: 'Apache-2.0' },
     taskHashes: [
       ['jq-data-processing', '4f899ad98d251b519aa73915c7d9f27787eb5ed1c8c93726660f771b4a94ac6b'],
@@ -45,25 +45,25 @@ export const BENCHMARKS: Benchmark[] = [
     taskSet: '2683c14c21a9f9b797e0a576efd7993c5d5d15f54660a761c860c750a30bc762',
     timeoutSeconds: tblite.smokeTimeoutSeconds,
     install: [
-      'heval provider connect merge',
+      'openeval provider connect merge',
       `git clone ${TBLITE} ~/.heval/benchmarks/openthoughts-tblite`,
       `git -C ~/.heval/benchmarks/openthoughts-tblite checkout ${TBLITE_COMMIT}`,
-      'heval runner setup --benchmark tblite-smoke --source ~/.heval/benchmarks/openthoughts-tblite --model MODEL_ID --harnesses codex,claude-code,pi',
+      'openeval runner setup --benchmark tblite-smoke --source ~/.heval/benchmarks/openthoughts-tblite --model MODEL_ID --harnesses codex,claude-code,pi',
     ],
   },
   {
     id: 'tblite', title: 'OpenThoughts-TBLite', publisher: 'OpenThoughts', tasks: 100, status: 'preview',
     summary: '100 Terminal-Bench tasks with difficulty calibrated against Claude Haiku 4.5. Tracks Terminal-Bench 2.0 rankings and runs faster.',
-    note: 'Full pinned 100-task set. Installable on Linux workers; not yet validated by a full Heval evaluation.',
+    note: 'Full pinned 100-task set. Installable on Linux workers; not yet validated by a full OpenEval evaluation.',
     source: { url: TBLITE, commit: TBLITE_COMMIT, license: 'Apache-2.0' },
     taskHashes: tblite.taskHashes as [string, string][],
     taskSet: tblite.taskSet,
     timeoutSeconds: tblite.timeoutSeconds,
     install: [
-      'heval provider connect merge',
+      'openeval provider connect merge',
       `git clone ${TBLITE} ~/.heval/benchmarks/openthoughts-tblite`,
       `git -C ~/.heval/benchmarks/openthoughts-tblite checkout ${TBLITE_COMMIT}`,
-      'heval runner setup --benchmark tblite --source ~/.heval/benchmarks/openthoughts-tblite --model MODEL_ID --harnesses codex,claude-code,pi',
+      'openeval runner setup --benchmark tblite --source ~/.heval/benchmarks/openthoughts-tblite --model MODEL_ID --harnesses codex,claude-code,pi',
     ],
   },
 ]

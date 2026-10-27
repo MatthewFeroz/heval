@@ -1,4 +1,4 @@
-# Heval website design
+# OpenEval website design
 
 Use the homepage's charcoal and off-white design across the website, including
 Machines, Reports, the run workbench, and Studio. `src/tokens.css` owns the shared

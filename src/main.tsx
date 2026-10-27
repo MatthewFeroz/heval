@@ -11,5 +11,5 @@ const App = import.meta.env.VITE_HEVAL_PUBLIC_DEMO === '1'
   : lazy(() => import('./App'))
 
 createRoot(document.getElementById('root')!).render(
-  <StrictMode><AuthBoundary>{auth => <Suspense fallback={<p>Loading Heval…</p>}><App auth={auth} /></Suspense>}</AuthBoundary></StrictMode>,
+  <StrictMode><AuthBoundary>{auth => <Suspense fallback={<p>Loading OpenEval…</p>}><App auth={auth} /></Suspense>}</AuthBoundary></StrictMode>,
 )

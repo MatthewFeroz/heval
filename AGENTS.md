@@ -1,8 +1,8 @@
-# Heval working instructions
+# OpenEval working instructions
 
 ## Public release boundary
 
-- Publish Heval functionality without importing private development history,
+- Publish OpenEval functionality without importing private development history,
   personal setup notes, private evaluation results, or unpublished research.
 - Keep the public Studio's neutral design. Do not import Merge-specific logos,
   themes, palettes, licensed presentation fonts, or private Studio design changes.
@@ -21,7 +21,7 @@
 
 ## Architecture and documentation
 
-- The connected Heval runner requires Linux. Describe its requirements from the
+- The connected OpenEval runner requires Linux. Describe its requirements from the
   implementation and connected-runner documentation.
 - Keep product architecture independent of a developer's personal machine,
   virtualization setup, filesystem paths, and administration credentials.

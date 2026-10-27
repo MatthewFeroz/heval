@@ -9,7 +9,7 @@ const original = JSON.parse(await readFile(resolve(path), 'utf8'))
 const input = { ...parseMotionInput(original), generatedAt: typeof original.generatedAt === 'string' ? original.generatedAt : new Date().toISOString() }
 if (!/^[a-z0-9][a-z0-9-]{0,180}$/.test(input.job)) throw new Error('Use a lowercase job name with letters, digits and hyphens, at most 181 characters.')
 // Publish normalized measurements, without local paths or owner identities.
-input.source = 'Heval independent evaluations'
+input.source = 'OpenEval independent evaluations'
 const directory = resolve('results/public')
 await mkdir(directory, { recursive: true })
 const indexPath = join(directory, 'index.json')

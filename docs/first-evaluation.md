@@ -1,22 +1,21 @@
-# Your first Heval evaluation
+# Your first OpenEval evaluation
 
-For the upcoming automated installation, see [one-command setup](setup-command.md).
+For the automated installation, see [one-command setup](setup-command.md).
 It installs Harbor and the worker runtime in Docker and opens a local pairing
-and provider form. That feature is not in published CLI 0.2.0. This walkthrough
-now targets the source-built CLI with Harbor 0.24.0; published CLI 0.2.0 still
-requires 0.23.0.
+and provider form. This walkthrough prepares a worker by hand with CLI 0.3.0
+and Harbor 0.24.0.
 
 This walkthrough takes you from a fresh Linux worker to a saved evaluation in
-Heval. The first saved report uses **Oracle**, Harbor’s reference solution,
+OpenEval. The first saved report uses **Oracle**, Harbor’s reference solution,
 with **no provider credentials or model calls**. You can stop after step 9.
 Steps 10–15 optionally add one model through Merge Gateway and the Codex harness.
 
-The manual installation instructions target **Ubuntu 24.04**, the **source-built Heval CLI**
+The manual installation instructions target **Ubuntu 24.04**, the **source-built OpenEval CLI**
 and **Harbor 0.24.0**.
 Other Linux distributions need different prerequisite installation commands;
-the Heval commands are the same.
+the OpenEval commands are the same.
 
-You need access to a deployed Heval website with working sign-in and connected
+You need access to a deployed OpenEval website with working sign-in and connected
 runner support. Installing this CLI does not deploy or upgrade that website.
 The worker and hosted application must have compatible connected-runner code.
 
@@ -31,9 +30,9 @@ from a checkout also needs the pinned Bun version.
 
 | Component | Purpose |
 | --- | --- |
-| Your browser | Configure runs, start them, and inspect results in Heval. It can run on any computer. |
+| Your browser | Configure runs, start them, and inspect results in OpenEval. It can run on any computer. |
 | Linux worker | The computer or VM that executes evaluations. Run all terminal commands below here. |
-| Heval runner | Connects the worker to your account and picks up queued evaluations. |
+| OpenEval runner | Connects the worker to your account and picks up queued evaluations. |
 | Docker | Creates the task environments. |
 | Harbor | Executes tasks and checks their results. |
 | Codex harness | Operates the coding agent during a trial. |
@@ -56,7 +55,7 @@ Replace both placeholders with that machine's username and address. Once
 connected, commands execute on the remote machine.
 
 Use a regular user account with `sudo` access. Use that **same user account on
-the same worker** for every step. Do not run Heval with `sudo`.
+the same worker** for every step. Do not run OpenEval with `sudo`.
 
 Check the operating system:
 
@@ -99,7 +98,7 @@ npm --version
 ```
 
 Node should print a version beginning with `v22.`. npm should print its version.
-Node runs the installed Heval CLI; npm installs it.
+Node runs the installed OpenEval CLI; npm installs it.
 
 ## 3. Install Docker Engine and Compose
 
@@ -162,7 +161,7 @@ source "$HOME/.local/bin/env"
 uv --version
 ```
 
-Install Python and the Harbor version Heval expects:
+Install Python and the Harbor version OpenEval expects:
 
 ```sh
 uv python install 3.12
@@ -172,37 +171,41 @@ harbor --version
 
 Harbor must report `0.24.0`. The runner checks that version explicitly.
 
-## 5. Install the source-built Heval tarball
+## 5. Install the source-built OpenEval tarball
 
-Build from a checkout of this repository, then install the resulting artifact
-on the worker. You can build on another machine and copy the tarball to the
-worker.
+Install the published CLI with `npm install -g @mattferoz/openeval@0.3.1`, or build from
+a checkout of this repository and install the resulting artifact on the worker.
+You can build on another machine and copy the tarball to the worker.
 
 ```sh
 git clone --branch main https://github.com/MatthewFeroz/heval.git
 cd heval
 bun install --frozen-lockfile
 bun run cli:pack
-npm install -g ./.scratch/mattferoz-heval-0.2.0.tgz
-heval --version
-heval --help
+npm install -g ./.scratch/mattferoz-openeval-0.3.1.tgz
+openeval --version
+openeval --help
 ```
 
-Expect version `0.2.0`. The help must list `runner connect`, `runner start`,
+Expect version `0.3.1`. The help must list `runner connect`, `runner start`,
 `runner setup`, and `provider connect merge`.
 
 Installing a newer tarball the same way upgrades an older installation. Finish
 active evaluations before replacing their CLI installation.
 
-If `heval` still reports `0.1.0`, run `command -v heval` to identify which
+If this machine has the earlier `@mattferoz/heval` package installed globally,
+run `npm uninstall -g @mattferoz/heval` first. Both packages provide the `heval`
+command, so npm refuses to install one over the other.
+
+If `openeval --version` reports an older version, run `command -v openeval` to identify which
 installation your terminal is using. The old local viewer cannot connect a worker.
 
-Do not use `heval open` to launch the first evaluation: that command opens
+Do not use `openeval open` to launch the first evaluation: that command opens
 existing results or the bundled archived example.
 
 ## 6. Create a pairing code in the browser
 
-Open your deployed Heval website and sign in. Navigate to **Runner setup**,
+Open your deployed OpenEval website and sign in. Navigate to **Runner setup**,
 whose route is `/machines` on that website.
 
 If the four-step setup starts at **Set up your machine**, choose **Setup is
@@ -215,7 +218,7 @@ The page displays a **Deployment URL** and **One-time pairing code**. Use its
 deployment URL in this command on the Linux worker:
 
 ```sh
-heval runner connect --url https://YOUR-DEPLOYMENT.convex.cloud
+openeval runner connect --url https://YOUR-DEPLOYMENT.convex.cloud
 ```
 
 Copy the **actual deployment URL from your website**. The Convex URL identifies its
@@ -226,7 +229,7 @@ backend; it is not the same as the website's browser address.
 Paste that command into the worker's terminal. When prompted:
 
 ```text
-Paste the one-time pairing code from Heval:
+Paste the one-time pairing code from OpenEval:
 ```
 
 Copy the pairing code from the browser, paste it, and press Enter.
@@ -238,7 +241,7 @@ and repeat this step. Pairing does not require your model-provider key.
 ## 8. Start the runner
 
 ```sh
-heval runner start
+openeval runner start
 ```
 
 This process stays running and normally does not return to the command prompt.
@@ -275,7 +278,7 @@ If the worker check profile has not appeared, keep Terminal A running and wait
 for its next check-in. If it stays missing, inspect that terminal’s errors and
 check that the worker and website versions are compatible. For **Worker not
 ready**, check `harbor --version`, `docker info` and `docker compose version`.
-For **Offline**, restore the worker’s power/network and run `heval runner start`
+For **Offline**, restore the worker’s power/network and run `openeval runner start`
 with the same state directory. Do not create a new pairing or delete the state
 to recover an existing worker.
 
@@ -297,11 +300,11 @@ to use. See [Merge's getting-started guide](https://docs.merge.dev/merge-gateway
 
 ## 11. Save the provider connection on the worker
 
-With a CLI build that lists `provider setup merge` in `heval --help`, use the
+With a CLI build that lists `provider setup merge` in `openeval --help`, use the
 browser setup page:
 
 ```sh
-heval provider setup merge
+openeval provider setup merge
 ```
 
 Keep the terminal open. On the local page, paste the model-calling key into the
@@ -324,24 +327,24 @@ Choose another free port if needed. Use the same `--state` directory as your
 runner. The page listens only on loopback, requires its session token, and
 expires after 15 minutes without an open setup page. Stop it with Ctrl+C when finished.
 
-This browser flow requires the updated CLI and hosted UI; npm 0.2.0 installations
-without this command can use the terminal flow below.
+This browser flow requires CLI 0.3.0 and the matching hosted UI; older
+installations without this command can use the terminal flow below.
 
 Keep Terminal A running. Open **Terminal B**, a second terminal or SSH session
 on the same worker, logged in as the same user.
 
 ```sh
-heval provider connect merge
+openeval provider connect merge
 ```
 
 At `Merge Gateway key (hidden):`, paste your key and press Enter. Invisible
-input is normal. Heval validates it by reading the model catalog and stores
-it under this user's runner state. Do not paste the key into Heval's website.
+input is normal. OpenEval validates it by reading the model catalog and stores
+it under this user's runner state. Do not paste the key into OpenEval's website.
 
 Check the connection:
 
 ```sh
-heval provider status merge
+openeval provider status merge
 ```
 
 Expect `"connected": true` and a `models` array. Copy one exact model ID from
@@ -352,7 +355,7 @@ that array, including its provider prefix and any slashes.
 In Terminal B, replace `MODEL_ID` with the exact ID you copied:
 
 ```sh
-heval runner setup --model MODEL_ID --harnesses codex
+openeval runner setup --model MODEL_ID --harnesses codex
 ```
 
 Expect a message containing:
@@ -369,15 +372,15 @@ The running daemon picks up the profile on a subsequent check-in. You do not
 need to restart it. Do not repeat setup for the same profile: existing profiles
 are intentionally not overwritten.
 
-`heval runner test` is an optional separate local execution that uses model
+`openeval runner test` is an optional separate local execution that uses model
 credits. Skip it here: the next step starts your model run from the website.
 
-## 13. Configure the evaluation in Heval
+## 13. Configure the evaluation in OpenEval
 
-Open **Evaluations**, at `/evaluations` on your Heval website.
+Open **Evaluations**, at `/evaluations` on your OpenEval website.
 
 1. Select `My first Linux worker` in **Worker**.
-2. Select **Heval connection smoke** under **Benchmark**. It should be installed.
+2. Select **OpenEval connection smoke** under **Benchmark**. It should be installed.
 3. Select **Codex CLI** under **Harnesses**.
 4. Select your configured model under **Models**.
 5. Retain the serving-vendor option offered for this profile.
@@ -406,7 +409,7 @@ worker awake and Terminal A connected. You may close the browser and return
 to the experiment later.
 
 Expand the harness/model result and click **Inspect this run**. When available,
-Heval also displays the combined experiment report. For this first task, look
+OpenEval also displays the combined experiment report. For this first task, look
 for **one trial and one pass**.
 
 Execution completion and task success are separate: a completed run can contain
@@ -428,7 +431,7 @@ git -C ~/.heval/benchmarks/openthoughts-tblite checkout 5c37b41f00ce04719a445306
 Replace `MODEL_ID` with your chosen model:
 
 ```sh
-heval runner setup \
+openeval runner setup \
   --benchmark tblite-smoke \
   --source ~/.heval/benchmarks/openthoughts-tblite \
   --model MODEL_ID \
@@ -440,7 +443,7 @@ it. Back in Evaluations, select **OpenThoughts-TBLite smoke**, Codex, and your
 model. With one attempt, the summary should show five trials. Starting it
 uses model credits. The five-task subset is not a full TBLite score.
 
-CLI 0.2.0 also supports `--benchmark tblite` for the full 100-task set using the
+CLI 0.3.0 also supports `--benchmark tblite` for the full 100-task set using the
 same source checkout. The hosted frontend and backend must include the updated
 catalog and removal of the old task/trial limits. Updating the CLI alone does
 not update those deployed services. The full set remains a preview benchmark;
@@ -452,7 +455,7 @@ by this release. Account storage and report-size limits still apply.
 Installation, pairing, and provider connection are normally one-time setup.
 For another run of an existing profile, use Evaluations in the browser.
 
-After a worker reboot, start `heval runner start` again unless you have installed
+After a worker reboot, start `openeval runner start` again unless you have installed
 the [documented Linux service](connected-runners.md). The service lets the runner
 stay connected without an interactive terminal. A reboot interrupts an executing
 run; interrupted evaluations are not automatically repeated.
@@ -461,10 +464,10 @@ run; interrupted evaluations are not automatically repeated.
 
 | Symptom | First check |
 | --- | --- |
-| `heval` is missing or reports `0.1.0` | Install 0.2.0 under the same Node/user account; check `command -v heval`. |
+| `openeval` is missing or reports an older version | Install 0.3.1 under the same Node/user account; check `command -v openeval`. |
 | Worker says **Needs setup** | Read its health message; check `harbor --version`, `docker info`, and `docker compose version`. |
-| Worker says **Offline** | Check Terminal A, worker power/network access, and `heval runner status`. |
-| Provider catalog validation fails | Check the Gateway key and outbound network access; reconnect with `heval provider connect merge`. |
+| Worker says **Offline** | Check Terminal A, worker power/network access, and `openeval runner status`. |
+| Provider catalog validation fails | Check the Gateway key and outbound network access; reconnect with `openeval provider connect merge`. |
 | Connected worker has no model options | Run `runner setup` after connecting the provider, under the same Linux user. |
 | Setup says the profile already exists | Use the existing profile; do not rerun setup for it. |
 | Model execution fails | Expand its run message; inspect provider access/credit and worker logs before retrying. |
@@ -472,4 +475,4 @@ run; interrupted evaluations are not automatically repeated.
 
 By default, connection state, provider connection, and profiles live in
 `~/.heval/runner` on the worker. If you use `--state`, use the exact same directory
-for all Heval commands. Provider status never prints the saved key.
+for all OpenEval commands. Provider status never prints the saved key.

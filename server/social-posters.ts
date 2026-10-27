@@ -166,7 +166,7 @@ export async function renderPosters(
     return {
       bytes: zipFiles(files),
       type: 'application/zip',
-      filename: 'heval-evaluation-thread.zip',
+      filename: 'openeval-evaluation-thread.zip',
     }
   } finally {
     try {

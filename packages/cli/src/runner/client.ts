@@ -10,7 +10,8 @@ import { ConvexHttpClient } from 'convex/browser'
 import { ConvexError } from 'convex/values'
 import { api } from '../../../../convex/_generated/api'
 import type { Id } from '../../../../convex/_generated/dataModel'
-import { randomSecret, readJson, writeJson } from './files'
+import { randomSecret, readJson, writeJson, sha256 } from './files'
+import { readReviewedEvidence } from './evidence'
 import { initializeProfiles, loadProfiles, snapshotProfile, requestedProfile } from './profiles'
 import { processKey, supervisorAlive, type Outcome } from './supervisor'
 import type { RunMonitoring } from '../../../../src/runners/monitoring'
@@ -21,7 +22,7 @@ export function cloudUrl(input: string, allowLocal = process.env.HEVAL_RUNNER_AL
   const url = new URL(input)
   const cloud = url.protocol === 'https:' && /^[a-z0-9-]+\.convex\.cloud$/.test(url.hostname) && !url.port
   const loopback = allowLocal && url.protocol === 'http:' && (url.hostname === '127.0.0.1' || url.hostname === 'localhost') && !!url.port
-  if ((!cloud && !loopback) || url.username || url.password || url.search || url.hash || url.pathname !== '/') throw new Error('Use the HTTPS convex.cloud deployment URL displayed in Heval.')
+  if ((!cloud && !loopback) || url.username || url.password || url.search || url.hash || url.pathname !== '/') throw new Error('Use the HTTPS convex.cloud deployment URL displayed in OpenEval.')
   return url.origin
 }
 function client(url: string) {
@@ -30,7 +31,7 @@ function client(url: string) {
 }
 export async function connectRunner(directory: string, url: string, code: string, bundledTask: string) {
   url = cloudUrl(url)
-  if (!/^[a-f0-9]{64}$/.test(code)) throw new Error('Paste the complete pairing code from Heval.')
+  if (!/^[a-f0-9]{64}$/.test(code)) throw new Error('Paste the complete pairing code from OpenEval.')
   mkdirSync(directory, { recursive: true, mode: 0o700 })
   const path = join(directory, 'connection.json')
   const previous = existsSync(path) ? readJson<Connection>(path) : undefined
@@ -80,7 +81,11 @@ export async function runDaemon(options: { directory: string; harbor: string; su
   let health = { ready: false, health: 'Checking Harbor and Docker' }, nextCheck = 0, machine: MachineKind | undefined
   let lastCatalog: string | undefined
   let lastError = '', activeDirectory: string | null = null
+  const evidenceErrors = new Set<string>()
+  let evidenceCursor = 0
+  const reviewedUploads = process.env.HEVAL_CAPTURE_REVIEWED_EVIDENCE === '1'
   event(`Connected machine: ${connection.name}. Closing the browser does not stop evaluations.`)
+  if (reviewedUploads) event('Reviewed artifact upload enabled. Only explicit reviewed-evidence.json files are uploaded, privately.')
   try {
     while (!stopped && !options.signal?.aborted) {
       try {
@@ -147,6 +152,33 @@ export async function runDaemon(options: { directory: string; harbor: string; su
           } else if (!supervisorAlive(runDir) && Date.now() - statSync(join(runDir, 'started')).mtimeMs > 30_000) {
             writeJson(join(runDir, 'cleanup-required.json'), true)
             writeJson(outcomePath, { status: 'interrupted', message: 'The execution supervisor stopped unexpectedly. Inspect the machine and its containers; this run will not restart automatically.' })
+          }
+        }
+        // Durable receipts survive daemon restarts and lost responses. Evidence
+        // failure never blocks polling, cancellation or final report delivery.
+        if (reviewedUploads) {
+          const runsRoot = join(directory, 'runs')
+          const candidates = existsSync(runsRoot) ? readdirSync(runsRoot, { withFileTypes: true }) : []
+          for (let offset = 0; offset < candidates.length; offset++) {
+            const position = (evidenceCursor + offset) % candidates.length, entry = candidates[position]
+            if (!entry.isDirectory() || entry.isSymbolicLink()) continue
+            const runDir = join(runsRoot, entry.name)
+            if (!existsSync(join(runDir, 'reviewed-evidence.json')) || !existsSync(join(runDir, 'acknowledged.json'))) continue
+            try {
+              const saved = readJson<{ report?: string }>(join(runDir, 'acknowledged.json'))
+              if (!saved.report) continue
+              const entries = readReviewedEvidence(runDir), hash = sha256(JSON.stringify(entries))
+              const receipt = join(runDir, 'evidence-receipt.json')
+              if (existsSync(receipt) && readJson<{ hash: string }>(receipt).hash === hash) continue
+              const execution = readJson<{ claimId: string }>(join(runDir, 'execution.json'))
+              await cloud.mutation(api.runners.captureEvidence, { credential, session, id: entry.name as Id<'runnerRuns'>, claimId: execution.claimId, entries })
+              writeJson(receipt, { hash }); evidenceErrors.delete(entry.name)
+              event(`Evaluation ${entry.name}: reviewed artifacts saved privately.`)
+            } catch {
+              if (!evidenceErrors.has(entry.name)) { event(`Evaluation ${entry.name}: reviewed evidence was not uploaded. Check the manifest, connection and report limits; it will retry.`); evidenceErrors.add(entry.name) }
+            }
+            evidenceCursor = (position + 1) % candidates.length
+            break // Round-robin retries; a broken manifest cannot starve later runs.
           }
         }
       } catch (error) {

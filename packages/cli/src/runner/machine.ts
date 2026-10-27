@@ -7,7 +7,7 @@ import { isMachineKind, type MachineKind } from '../../../../src/runners/protoco
 /**
  * Best-effort host detection for a worker's icon; any probe may fail and null
  * means "no signal". A containerized worker cannot see its host (Docker
- * Desktop reads as a VM), so `heval setup` detects on the host and stores the
+ * Desktop reads as a VM), so `openeval setup` detects on the host and stores the
  * result in the worker state as machine.json; the daemon prefers that file.
  * Adapted from T3 Code's environment icon detection.
  */

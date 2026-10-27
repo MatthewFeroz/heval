@@ -1,8 +1,8 @@
 # Homepage design sources
 
-The Heval homepage adapts the typography, dark grid, floating agent cards,
+The OpenEval homepage adapts the typography, dark grid, floating agent cards,
 staggered entrances, pointer parallax, and preview sizing from [T3 Code](https://t3.codes/).
-The implementation was inspected on 2026-09-16 and adapted to React, Heval's
+The implementation was inspected on 2026-09-16 and adapted to React, OpenEval's
 evaluation workflows, and its eight featured ecosystem projects.
 
 Upstream sources:
@@ -19,7 +19,7 @@ Third-party marks are documented in [harness sources](../public/harnesses/SOURCE
 
 The featured cards identify the ecosystem; adding Grok and Cursor to this presentation
 does not add execution adapters. The measured comparisons, run database,
-reports, Studio, and connected-machine entry points retain Heval's own data and behavior.
+reports, Studio, and connected-machine entry points retain OpenEval's own data and behavior.
 
 Motion stops for reduced-motion preferences and pauses outside the viewport or
 when the tab is hidden. Pointer parallax is enabled only for a fine pointer.

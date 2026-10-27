@@ -1,5 +1,5 @@
 import { DEFAULT_STATE, type ChartState, type ChartField } from '../charts/recipes'
-import { DIMENSIONS, DIMENSION_LABEL, MEASURE_LABEL, type Dimension, type Measure, type TrialRow } from '../charts/trial'
+import { DIMENSIONS, DIMENSION_LABEL, MEASURE_LABEL, type Measure, type TrialRow } from '../charts/trial'
 import type { CommonDimensionSemantic, CommonMetricSemantic, EvaluationArtifact, FieldMappings, HevalProject, ProjectSource, FieldDefinition, Presentation, AnalysisView } from './schema'
 
 const DIMENSION_KEY: Record<CommonDimensionSemantic, keyof TrialRow> = {
@@ -118,11 +118,8 @@ export function presentationChart(viewChart: ChartState | undefined, overrides: 
   return { ...DEFAULT_STATE, ...(viewChart ?? {}), ...overrides, ...(title ? { title } : {}) }
 }
 
-export function dimensionsInRows(rows: TrialRow[], dimensions: readonly Dimension[]): Dimension[] {
-  return dimensions.filter((dimension) => rows.some((row) => row[dimension] !== null && row[dimension] !== undefined && String(row[dimension]) !== 'unknown'))
-}
 
-/** Unknown semantics stay distinct from canonical Heval fields. */
+/** Unknown semantics stay distinct from canonical OpenEval fields. */
 export function fieldKey(field: FieldDefinition, mappings?: FieldMappings): string {
   const semantic = mappings?.dimensions?.[field.id] ?? mappings?.metrics?.[field.id] ?? field.semantic
   const known = field.kind === 'dimension' ? DIMENSION_KEY : METRIC_KEY

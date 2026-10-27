@@ -5,6 +5,7 @@ import { parseReport } from '../src/reports/format'
 import { renderReportProject, initialReportProject, validateReportProject, type ReportProject } from '../src/reports/project'
 import type { AnalysisView } from '../src/project/schema'
 import { assertReportCapacity } from './reportCapacity'
+import { reportEvidence } from './reportEvidence'
 
 export const list = query({ args: {}, handler: async ctx => {
   const user = (await identity(ctx)).subject
@@ -28,7 +29,7 @@ export const get = query({ args: { id: v.id('reports') }, handler: async (ctx, {
   const allowed = await access(ctx, id)
   if (!allowed) return null
   const state = await projectState(ctx, allowed.report)
-  return { id, title: allowed.report.title, data: state.data, shareToken: allowed.role === 'owner' ? allowed.report.shareToken : null, role: allowed.role,
+  return { id, evidence: await reportEvidence(ctx, id), title: allowed.report.title, data: state.data, shareToken: allowed.role === 'owner' ? allowed.report.shareToken : null, role: allowed.role,
     project: JSON.stringify(state.document), version: state.version, publishedVersion: state.stored?.publishedVersion ?? (allowed.report.shareToken ? 0 : null), updatedBy: state.stored?.updatedBy ?? null }
 } })
 export const shared = query({ args: { token: v.string() }, handler: async (ctx, { token }) => {
@@ -37,7 +38,7 @@ export const shared = query({ args: { token: v.string() }, handler: async (ctx, 
   if (!report) return null
   const state = await projectState(ctx, report)
   const project = state.stored?.published ?? JSON.stringify(state.initial)
-  return { title: (JSON.parse(project) as typeof state.document).project.label, data: state.data, project, version: state.stored?.publishedVersion ?? 0 }
+  return { evidence: await reportEvidence(ctx, report._id, true), title: (JSON.parse(project) as typeof state.document).project.label, data: state.data, project, version: state.stored?.publishedVersion ?? 0 }
 } })
 export const share = mutation({ args: { id: v.id('reports'), token: v.string() }, handler: async (ctx, { id, token }) => {
   const user = (await identity(ctx)).subject

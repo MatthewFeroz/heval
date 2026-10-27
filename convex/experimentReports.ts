@@ -3,6 +3,7 @@ import type { Id } from './_generated/dataModel'
 import { terminalStates } from '../src/runners/protocol'
 import { MAX_IMPORT_BYTES, parseReport, parseStoredReport, type ReportData } from '../src/reports/format'
 import { hasReportCapacity } from './reportCapacity'
+import { addEvidenceBatch, reportEvidence, MAX_EVIDENCE_ITEMS, type EvidenceEntry } from './reportEvidence'
 
 /**
  * Turn the per-combination reports produced by the runner into the single
@@ -20,12 +21,23 @@ export async function materializeExperimentReport(ctx: MutationCtx, id: Id<'expe
   const encoder = new TextEncoder()
   let generatedAt = experiment._creationTime
   let rowBytes = 0
+  let evidenceBytes = 0
+  const evidence: EvidenceEntry[] = []
   const document = () => ({ schemaVersion: 1, job: experiment.title, generatedAt: new Date(generatedAt).toISOString(), rows })
   for (const run of runs) {
     if (!run.report) continue
     const stored = await ctx.db.query('reportData').withIndex('by_report', q => q.eq('report', run.report!)).unique()
     if (!stored) continue
     const data = parseStoredReport(stored.json)
+    const artifacts = await reportEvidence(ctx, run.report)
+    for (const item of artifacts) {
+      const size = encoder.encode(item.text).length
+      if (evidence.length >= MAX_EVIDENCE_ITEMS || evidenceBytes + size > 750_000) continue
+      const index = data.rows.findIndex(row => row.trial === item.trial)
+      if (index < 0) continue
+      evidence.push({ trial: `${run.profile.id}:${index + 1}:${item.trial}`.slice(0, 256), title: item.title, kind: item.kind, text: item.text })
+      evidenceBytes += size
+    }
     generatedAt = Math.max(generatedAt, Date.parse(data.generatedAt))
     const envelopeBytes = encoder.encode(JSON.stringify({ ...document(), rows: [] })).length
     if (envelopeBytes + rowBytes > MAX_IMPORT_BYTES) return null
@@ -56,6 +68,7 @@ export async function materializeExperimentReport(ctx: MutationCtx, id: Id<'expe
     shareToken: null,
   })
   await ctx.db.insert('reportData', { report, json: JSON.stringify(data) })
+  if (evidence.length) await addEvidenceBatch(ctx, report, evidence)
   await ctx.db.patch(id, { report })
   return report
 }

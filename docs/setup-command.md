@@ -1,17 +1,15 @@
 # One-command worker setup
 
-This is an **unreleased CLI feature**. Published `@mattferoz/heval@0.2.0` does
-not include it. After a separately reviewed npm release, the entry point is:
+Available from CLI 0.3.0, published on npm as `@mattferoz/openeval`:
 
 ```sh
-npx @mattferoz/heval@latest setup
+npx @mattferoz/openeval@latest setup
 ```
 
-The `@` matters: `npx mattferoz/heval` refers to a GitHub repository, not the
-scoped npm package. A future `nightly` tag can select a preview release; this
-PR does not publish a package, create that tag, or deploy the website.
+The earlier `@mattferoz/heval@0.2.0` package does not include this command. A
+future `nightly` tag can select a preview release.
 
-With a build from this branch, install the packed `.tgz` and run `heval setup`.
+With a build from this branch, install the packed `.tgz` and run `openeval setup`.
 Users of the published package will need only Node.js 22+ and npm to launch it;
 they do not clone the repository, install Bun, or build the frontend.
 
@@ -31,9 +29,9 @@ they do not clone the repository, install Bun, or build the frontend.
    digest-pinned base images and pinned Python dependencies. Docker caches the
    runtime layers. Harbor, Python, Node, Docker CLI and Compose live inside
    that worker. Harbor installs each selected harness inside its disposable
-   task container when an evaluation starts. Heval does not install standalone
+   task container when an evaluation starts. OpenEval does not install standalone
    harness CLIs on the worker or host.
-4. The local browser opens. Choose **Connect to Heval**, sign in, and approve
+4. The local browser opens. Choose **Connect to OpenEval**, sign in, and approve
    **Connect computer** in the hosted setup page. The browser returns to local
    setup and pairing starts the outbound runner automatically. A previously
    paired worker keeps its account connection. **Use a pairing code instead**
@@ -57,10 +55,10 @@ The local model/provider form uses the homepage's nine-harness catalog and icons
 Choose only the harnesses you want to evaluate, or preselect them from a terminal:
 
 ```sh
-heval setup --harnesses codex,pi
-heval setup --harnesses all
+openeval setup --harnesses codex,pi
+openeval setup --harnesses all
 # On an existing connected Linux worker:
-heval runner setup --model MODEL_ID --harnesses all
+openeval runner setup --model MODEL_ID --harnesses all
 ```
 
 `all` means all six supported Merge adapters: Codex, Claude Code, OpenCode, Pi,
@@ -71,7 +69,7 @@ user launches a run. No separate harness installation step is required.
 Cursor, Antigravity and DeepSeek Harness remain visible with disabled choices
 and specific blockers. Cursor needs its own account and a verified custom
 provider route; Antigravity needs a verified Gemini-compatible route; DeepSeek
-Harness has a known reasoning/streaming-tool incompatibility. Heval does not
+Harness has a known reasoning/streaming-tool incompatibility. OpenEval does not
 represent these as runnable just because Harbor knows a harness name.
 
 Grok uses Harbor's built-in adapter. Deep Agents uses the bundled adapter for the
@@ -119,13 +117,13 @@ Docker command on Windows). Resume it by rerunning setup. To upgrade to a
 different artifact, finish evaluations, stop and remove **only the container**,
 then run the new setup command with the same name. Keep the volume. Setup
 refuses to replace a different artifact or adopt unlabelled Docker resources.
-Revoking a worker's account connection remains an explicit action in Heval.
+Revoking a worker's account connection remains an explicit action in OpenEval.
 
 ## Coding agents and CI
 
 ```sh
-npx @mattferoz/heval@latest setup --plan --json
-npx @mattferoz/heval@latest setup --yes --no-browser
+npx @mattferoz/openeval@latest setup --plan --json
+npx @mattferoz/openeval@latest setup --yes --no-browser
 ```
 
 The first command is read-only and returns a versioned plan. The second
@@ -166,11 +164,11 @@ Research is pinned to upstream commit
   the persistent service has a stable installed executable and owns shutdown;
   its lifetime is independent of the interactive launcher.
 
-Heval adopts the relevant properties: a prebuilt web/CLI npm artifact, no
+OpenEval adopts the relevant properties: a prebuilt web/CLI npm artifact, no
 runtime npm dependency resolution or postinstall script, artifact-level smoke
 tests, an explicit setup operation, a runtime outside the temporary npx cache,
 and persistent data separate from versioned code. Unlike T3's native app,
-Harbor requires Linux and Docker, so Heval uses one portable Linux worker
+Harbor requires Linux and Docker, so OpenEval uses one portable Linux worker
 recipe instead of six native executables. The first build downloads Python
 dependencies; it is not instant and not offline. A future prebuilt OCI release
 could shorten that cold start, but would need its own authorized publication,

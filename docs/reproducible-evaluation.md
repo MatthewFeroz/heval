@@ -18,8 +18,9 @@ Record `git rev-parse HEAD`, `git status --short`, `bun --version`,
 `node --version`, `harbor --version`, `docker version` and
 `docker compose version` in a private evidence directory. Record the exact
 installed CLI artifact and its SHA-256 when testing a tarball. A printed package
-version alone cannot distinguish an unreleased source build from npm 0.2.0.
-Current source requires Harbor 0.24.0; npm CLI 0.2.0 requires 0.23.0.
+version alone cannot distinguish an unreleased source build from the npm
+release of the same version. CLI 0.3.0 requires Harbor 0.24.0; the earlier
+`@mattferoz/heval@0.2.0` requires 0.23.0.
 
 ## Create an isolated approved profile
 
@@ -107,7 +108,7 @@ model label. Missing harness versions, timing, tokens or billing remain null or
 unknown; no-model execution does not justify fabricating zero cost in a report.
 For model-backed runs, a configured vendor label is not proof of every served
 request. Model aliases, image tags and harness installation dependencies can
-change independently of the Heval source revision.
+change independently of the OpenEval source revision.
 
 Raw configuration, credentials and logs remain on the worker. Convex receives
 sanitized reports and monitoring snapshots, not a raw-artifact archive. The

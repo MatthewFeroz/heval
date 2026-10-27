@@ -3,7 +3,7 @@ import { DEFAULT_STATE, type ChartState } from '../charts/recipes'
 import { COMPLETION_DEFAULTS, type CanvasId, type CompletionOptions } from '../charts/motion-options'
 import { PRESENTATION_DEFAULT_SOURCE } from '../charts/presentation-defaults'
 import { DEFAULT_THEME, type ThemeId } from '../charts/motion-themes'
-import type { JobExport, Measure, TrialRow } from '../charts/trial'
+import type { JobExport, TrialRow } from '../charts/trial'
 
 export type JsonPrimitive = string | number | boolean | null
 export type JsonValue = JsonPrimitive | JsonValue[] | { [key: string]: JsonValue }
@@ -249,7 +249,7 @@ function jobRecord(row: TrialRow): ArtifactRecord {
 }
 
 export async function adaptJobExportV1(exp: JobExport, uri = ''): Promise<EvaluationArtifact> {
-  if (!isObject(exp) || exp.schemaVersion !== 1 || !Array.isArray(exp.rows)) throw new HevalSchemaError('Expected a Heval JobExport schemaVersion 1')
+  if (!isObject(exp) || exp.schemaVersion !== 1 || !Array.isArray(exp.rows)) throw new HevalSchemaError('Expected a OpenEval JobExport schemaVersion 1')
   const taskChecksums = [...new Set(exp.rows.map((row) => row.taskChecksum).filter(Boolean))].sort()
   const started = exp.rows.map((row) => row.startedAt).filter((value): value is string => !!value).sort()[0]
   const artifact: EvaluationArtifact = {
@@ -284,7 +284,7 @@ export async function adaptJobExportV1(exp: JobExport, uri = ''): Promise<Evalua
 }
 
 export function parseEvaluationArtifact(value: unknown): EvaluationArtifact {
-  if (!isObject(value) || value.artifactType !== 'heval-evaluation' || value.schemaVersion !== EVALUATION_SCHEMA_VERSION) throw new HevalSchemaError('Expected a heval-evaluation schemaVersion 2 artifact')
+  if (!isObject(value) || value.artifactType !== 'heval-evaluation' || value.schemaVersion !== EVALUATION_SCHEMA_VERSION) throw new HevalSchemaError('Expected an OpenEval evaluation artifact (schemaVersion 2)')
   string(value.id, 'artifact.id')
   string(value.contentHash, 'artifact.contentHash')
   if (!isObject(value.run)) throw new HevalSchemaError('artifact.run must be an object')
@@ -295,7 +295,7 @@ export function parseEvaluationArtifact(value: unknown): EvaluationArtifact {
 }
 
 export function parseProject(value: unknown): HevalProject {
-  if (!isObject(value) || value.artifactType !== 'heval-project' || value.schemaVersion !== PROJECT_SCHEMA_VERSION) throw new HevalSchemaError('Expected a .heval-project.json schemaVersion 1 file')
+  if (!isObject(value) || value.artifactType !== 'heval-project' || value.schemaVersion !== PROJECT_SCHEMA_VERSION) throw new HevalSchemaError('Expected an OpenEval project file (.openeval-project.json, schemaVersion 1)')
   string(value.id, 'project.id')
   string(value.label, 'project.label')
   array(value.sources, 'project.sources')
@@ -316,7 +316,7 @@ export function parseProject(value: unknown): HevalProject {
 }
 
 export function parseBundle(value: unknown): HevalBundle {
-  if (!isObject(value) || value.artifactType !== 'heval-bundle' || value.schemaVersion !== BUNDLE_SCHEMA_VERSION) throw new HevalSchemaError('Expected a .heval-bundle.json schemaVersion 1 file')
+  if (!isObject(value) || value.artifactType !== 'heval-bundle' || value.schemaVersion !== BUNDLE_SCHEMA_VERSION) throw new HevalSchemaError('Expected an OpenEval bundle file (.openeval-bundle.json, schemaVersion 1)')
   string(value.contentHash, 'bundle.contentHash')
   parseProject(value.project)
   for (const artifact of array(value.artifacts, 'bundle.artifacts')) parseEvaluationArtifact(artifact)
@@ -371,9 +371,6 @@ export async function makeBundle(project: HevalProject, artifacts: EvaluationArt
   return bundle
 }
 
-export function metricSemantic(measure: Measure): CommonMetricSemantic {
-  return METRIC_FIELDS.find((field) => field.id === measure)?.semantic as CommonMetricSemantic
-}
 
 /** Validate persisted JSON without requiring a browser or mutating the document. */
 export function validateCustomSpec(spec: unknown): void {

@@ -64,7 +64,7 @@ export function SocialPreview({
   const [error, setError] = useState(''),
     [busy, setBusy] = useState(false),
     [loading, setLoading] = useState(false)
-  const payload = JSON.stringify({ input: motionInput(settings.source || 'Heval evaluations', rows), settings })
+  const payload = JSON.stringify({ input: motionInput(settings.source || 'OpenEval evaluations', rows), settings })
   const preview = received?.signature === payload && !unavailableReason ? received : null
   useEffect(() => {
     const controller = new AbortController()
@@ -138,7 +138,7 @@ export function SocialPreview({
           const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }))
           const a = document.createElement('a')
           a.href = url
-          a.download = `heval-${settings.preset}-${i + 1}.svg`
+          a.download = `openeval-${settings.preset}-${i + 1}.svg`
           a.click()
           setTimeout(() => URL.revokeObjectURL(url), 1000)
         }
@@ -155,7 +155,7 @@ export function SocialPreview({
       a.href = url
       a.download =
         response.headers.get('content-disposition')?.match(/filename="([^"]+)"/)?.[1] ??
-        'heval-evaluation.png'
+        'openeval-evaluation.png'
       a.click()
       setTimeout(() => URL.revokeObjectURL(url), 1000)
     } catch (e) {

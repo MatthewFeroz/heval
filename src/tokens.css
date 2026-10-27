@@ -1,5 +1,5 @@
 /*
- * Heval design tokens - the one place the brand lives as CSS.
+ * OpenEval design tokens - the one place the brand lives as CSS.
  *
  * Imported by the homepage, workbench, Machines, Reports and Studio.
  * Chart/export palettes are separate: changing the app does not recolor data.
@@ -9,7 +9,7 @@
 @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&display=swap');
 
 @font-face {
-  font-family: 'Heval DM Sans';
+  font-family: 'OpenEval DM Sans';
   src: url('/fonts/dm-sans-latin.woff2') format('woff2');
   font-style: normal;
   font-weight: 100 1000;
@@ -63,7 +63,21 @@
   --type-sm: 14px/20px;
   --type-base: 16px/24px;
   --type-2xl: 24px/32px;
-  --control-height: 32px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --control-height: 36px;
+  --control-height-compact: 32px;
+  --control-height-touch: 44px;
+  --page-gutter: var(--space-6);
+  --section-gap: var(--space-6);
+  --card-padding: var(--space-6);
 
   --radius-control: 8px;
   --radius-card: 14px;
@@ -72,5 +86,5 @@
   --header-height: 64px;
 
   --mono: 'DM Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
-  --sans: 'Heval DM Sans', system-ui, sans-serif;
+  --sans: 'OpenEval DM Sans', system-ui, sans-serif;
 }

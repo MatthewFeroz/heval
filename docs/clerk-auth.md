@@ -1,6 +1,6 @@
 # Clerk sign-in and Convex workspace ownership
 
-Heval uses Clerk for browser identity and Convex for reports, evaluations,
+OpenEval uses Clerk for browser identity and Convex for reports, evaluations,
 onboarding state, and linked workers. Workers continue to poll Convex outbound
 with their existing machine credentials. They do not need a Clerk login or a
 browser-accessible address. This changes sign-in, not sandbox persistence.
@@ -19,14 +19,14 @@ Reloads and the separate Studio/reports pages use the same Clerk session.
 Sign-out returns to the homepage.
 
 1. Sign in to the [Clerk dashboard](https://dashboard.clerk.com) and connect the
-   CLI with `bunx clerk auth login`. Create/link a Heval application using
+   CLI with `bunx clerk auth login`. Create/link a OpenEval application using
    `bunx clerk apps create` and `bunx clerk link` (see their `--help`). Use a
    development instance for preview validation, and a production instance for
    the stable public site. Accountless CLI setup is not currently supported for
    this React integration.
 2. Enable email sign-in/sign-up and email-code verification in the selected
    instance. Existing Google/GitHub SSO may also be enabled if desired. Clerk
-   manages these flows; Heval does not store passwords.
+   manages these flows; OpenEval does not store passwords.
 3. Create a JWT template named **convex** with audience **convex**, using Clerk's
    Convex template. Set `CLERK_JWT_ISSUER_DOMAIN` in the matching Convex deployment
    to the template issuer. The browser requests this token for both Convex and
@@ -52,7 +52,7 @@ WorkOS and Clerk issue different user IDs. Reusing the same email alone must
 not grant access to an existing workspace.
 
 Verify both account identities through their respective administrative account
-records. Before the new Clerk account creates any Heval data, call the
+records. Before the new Clerk account creates any OpenEval data, call the
 operator-only Convex function in the intended deployment:
 
 ```sh
@@ -67,11 +67,37 @@ owners and Clerk accounts that already have workspace data or memberships.
 There is no public account-linking endpoint and no email-based auto-linking.
 New accounts without a mapping use their Clerk ID as their workspace owner.
 
-Keep Convex's `WORKOS_CLIENT_ID` during the coordinated cutover so the previous
-frontend can still authenticate for rollback. First deploy the additive Clerk
-configuration and account mappings, then deploy the matching frontend. Verify
-existing data and workers through Clerk before removing `WORKOS_CLIENT_ID`.
-Do not remove or revoke the old WorkOS application as part of preview setup.
+The current authentication configuration accepts Clerk tokens only. Existing
+account links still map Clerk identities to their original stored ownership;
+keeping that mapping does not require WorkOS token verification. Remove stale
+`VITE_WORKOS_CLIENT_ID` and `WORKOS_CLIENT_ID` deployment variables after verifying
+the account mapping. Removing these variables does not delete an identity
+provider application or any stored reports and workers.
+
+Configure `VITE_CLERK_PUBLISHABLE_KEY`, `VITE_CONVEX_URL` and
+`VITE_HEVAL_AUTH_ORIGIN` in Vercel's Production and Preview environments. Preview
+sign-in returns to the configured stable workspace. The Vercel build fails if
+its Clerk key or workspace backend configuration is missing, and includes only
+the reviewed public result catalog.
+
+## Production domain
+
+The hosted workspace is `https://openeval.howaiworks.io`. The Clerk production
+instance uses the root domain `howaiworks.io`, so its Frontend API is
+`https://clerk.howaiworks.io` and it accepts sign-in from any `howaiworks.io`
+subdomain. That issuer is `CLERK_JWT_ISSUER_DOMAIN` in the production Convex
+deployment and in Vercel. `VITE_HEVAL_AUTH_ORIGIN` is
+`https://openeval.howaiworks.io` in Production and Preview. The old
+`heval.howaiworks.io` address redirects there with a 308.
+
+Clerk's five DNS records (`clerk`, `accounts`, `clkmail`, `clk._domainkey`,
+`clk2._domainkey`) are DNS-only CNAMEs in the Cloudflare zone for `howaiworks.io`.
+Get their exact targets from Clerk's Domains page before changing them.
+
+Account links in `authAccountLinks` are keyed by issuer. When the Clerk domain
+changes, rewrite each link's `issuer` to the new Frontend API before users sign
+in. Otherwise linked accounts lose access to their earlier reports. Clerk user
+IDs do not change.
 
 ## Verification
 

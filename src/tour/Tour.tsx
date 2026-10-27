@@ -8,8 +8,9 @@ type Rect = { top: number; left: number; width: number; height: number }
 const CARD_WIDTH = 360, GAP = 12, PAD = 6
 
 function tourHref(step: TourStep, index: number) {
-  return `${step.page}?tour=${TOUR_ID}&step=${index}`
+  return `${step.page}?${step.search ? `${step.search}&` : ''}tour=${TOUR_ID}&step=${index}`
 }
+const onTourPage = (step: TourStep) => step.page === location.pathname && new URLSearchParams(step.search).get('new') === new URLSearchParams(location.search).get('new')
 const visible = (target: string) => [...document.querySelectorAll<HTMLElement>(`[data-tour="${target}"]`)].find(el => el.getClientRects().length)
 
 /**
@@ -37,7 +38,7 @@ export function Tour() {
     if (next < 0 || next >= FIRST_RUN_TOUR.length) return close()
     direction.current = next > index ? 1 : -1
     const target = FIRST_RUN_TOUR[next]
-    if (target.page !== location.pathname) return location.assign(tourHref(target, next))
+    if (!onTourPage(target)) return location.assign(tourHref(target, next))
     const url = new URL(location.href)
     url.searchParams.set('step', String(next))
     history.replaceState(null, '', url)
@@ -48,7 +49,7 @@ export function Tour() {
   // Find the target once the page's data has rendered; skip optional steps that never appear.
   useEffect(() => {
     if (!step) return
-    if (step.page !== location.pathname) { location.replace(tourHref(step, index)); return }
+    if (!onTourPage(step)) { location.replace(tourHref(step, index)); return }
     let tries = 0, timer = 0
     const find = () => {
       const el = visible(step.target)
@@ -128,7 +129,7 @@ export function Tour() {
       <p id="tour-body">{step.body}{missing && ' This appears once a worker is connected.'}</p>
       <div className="tour-actions">
         {index > 0 && <button type="button" className="secondary" onClick={() => go(index - 1)}>Back</button>}
-        <button type="button" className="primary" onClick={() => go(index + 1)}>{last ? 'Done' : FIRST_RUN_TOUR[index + 1].page !== step.page ? 'Next: Evaluations' : 'Next'}</button>
+        <button type="button" className="primary" onClick={() => go(index + 1)}>{last ? 'Done' : 'Next'}</button>
       </div>
     </div>
   </div>, document.querySelector('.report-shell') ?? document.body)

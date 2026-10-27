@@ -1,0 +1,16 @@
+.git
+.env
+.env.*
+**/.env
+**/.env.*
+**/*.local
+node_modules
+.scratch
+recordings
+data
+results
+experiments
+.vercel
+deploy/ssh
+test-results
+playwright-report

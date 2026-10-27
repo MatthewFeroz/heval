@@ -4,13 +4,13 @@
  * `optional` steps are skipped when absent; the others explain in place
  * (centered) what appears once a worker is connected.
  */
-export type TourStep = { page: '/machines' | '/evaluations'; target: string; title: string; body: string; optional?: boolean }
+export type TourStep = { page: '/settings' | '/library'; search?: string; target: string; title: string; body: string; optional?: boolean }
 
 export const TOUR_ID = 'first-run'
 
 export const FIRST_RUN_TOUR: TourStep[] = [
-  { page: '/machines', target: 'machines', title: 'Your computers', body: 'Connect a computer here. Setup walks you through installation, account connection, a model provider, and your first evaluation.' },
-  { page: '/evaluations', target: 'benchmark', title: 'Configure an evaluation', body: 'Choose an installed benchmark, then the harnesses and models you want to compare.' },
-  { page: '/evaluations', target: 'summary', title: 'Review and run', body: 'Review the combinations and trial count, name your evaluation, and start it. Model tasks use your provider credits.' },
-  { page: '/evaluations', target: 'experiments', title: 'Your results', body: 'Return here for live progress and saved results. Open a report to inspect trials or edit its charts in Studio.' },
+  { page: '/settings', target: 'setup', title: 'Execution settings', body: 'Connect a Linux worker and model provider here when you want to use your own computer. Managed cloud comparisons do not require connecting a worker.' },
+  { page: '/library', search: 'new=1', target: 'comparison-question', title: 'Choose a comparison', body: 'Compare harnesses, compare models or configure a custom matrix. Choose managed cloud or a connected worker.' },
+  { page: '/library', search: 'new=1', target: 'comparison-review', title: 'Review and run', body: 'Review the exact combinations, routes and trial count before authorizing compute and model use.', optional: true },
+  { page: '/library', target: 'experiments', title: 'Your Library', body: 'Return here for running comparisons, imported results and baselines. Each result opens Results, Analyze, Export and Share in one workspace.' },
 ]

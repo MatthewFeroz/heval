@@ -90,8 +90,8 @@ describe('project and bundle files', () => {
   })
 
   test('rejects files with the wrong schema identity', () => {
-    expect(() => parseProject({ schemaVersion: 1, sources: [] })).toThrow('Expected a .heval-project.json')
-    expect(() => parseBundle({ artifactType: 'heval-bundle', schemaVersion: 2 })).toThrow('Expected a .heval-bundle.json')
+    expect(() => parseProject({ schemaVersion: 1, sources: [] })).toThrow('Expected an OpenEval project file')
+    expect(() => parseBundle({ artifactType: 'heval-bundle', schemaVersion: 2 })).toThrow('Expected an OpenEval bundle file')
   })
 })
 

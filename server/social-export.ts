@@ -44,7 +44,7 @@ function catalogJobs(): Set<string> {
 }
 
 function inputFor(job: string): string {
-  if (!/^[a-z0-9][a-z0-9-]*$/.test(job) || !catalogJobs().has(job)) throw new SocialExportError('Unknown Heval job', 404)
+  if (!/^[a-z0-9][a-z0-9-]*$/.test(job) || !catalogJobs().has(job)) throw new SocialExportError('Unknown OpenEval job', 404)
   const input = join(resultsRoot, `${job}.json`)
   if (!existsSync(input)) throw new SocialExportError('The normalized job export is missing', 404)
   return input

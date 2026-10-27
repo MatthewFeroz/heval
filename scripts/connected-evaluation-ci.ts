@@ -39,7 +39,7 @@ const isolatedEnv = Object.fromEntries(['PATH', 'HOME', 'LANG', 'LC_ALL', 'TMPDI
 function unusedPort() { const server = Bun.serve({ hostname: '127.0.0.1', port: 0, fetch: () => new Response('') }); const port = server.port!; server.stop(true); return port }
 function startDaemon() {
   return Bun.spawn(['node', join(cli, 'cli.js'), 'runner', 'start', '--state', state, '--harbor', harbor], {
-    cwd: root, env: { ...isolatedEnv, HEVAL_RUNNER_ALLOW_LOCAL_CONVEX: '1' }, stdout: 'inherit', stderr: 'inherit',
+    cwd: root, env: { ...isolatedEnv, HEVAL_RUNNER_ALLOW_LOCAL_CONVEX: '1', HEVAL_CAPTURE_REVIEWED_EVIDENCE: '1' }, stdout: 'inherit', stderr: 'inherit',
   })
 }
 function projects(id: string) {
@@ -227,6 +227,20 @@ try {
   assert.notEqual(finished.report, finished.cells[0].report, 'The experiment must own a combined report separate from its diagnostic child report.')
   const report = await ownerApi.query(api.reports.get, { id: finished.report })
   assert(report, 'The combined report is not readable by its owner.')
+  assert.equal(report.evidence.filter(item => item.kind === 'timeline').length, 2, 'Observed lifecycles must survive report completion and combined trial remapping.')
+  const childReport = (await ownerApi.query(api.reports.get, { id: finished.cells[0].report }))!
+  const sourceTrial = JSON.parse(childReport.data).rows[0].trial as string
+  await writeFile(join(directory, 'reviewed-evidence.json'), JSON.stringify({ schemaVersion: 1, entries: [{ trial: sourceTrial, title: 'Synthetic reviewed output', kind: 'html', text: '<h1>Connected-worker demonstration output</h1>' }] }))
+  await waitFor(async () => {
+    const report = await ownerApi!.query(api.reports.get, { id: finished.report! })
+    return report?.evidence.some(item => item.kind === 'html' && !item.published) ? report : null
+  }, 'reviewed private output upload and combined trial remapping')
+  await waitFor(() => Promise.resolve(existsSync(join(directory, 'evidence-receipt.json'))), 'durable reviewed evidence receipt')
+  const shareToken = randomSecret()
+  await ownerApi.mutation(api.reports.share, { id: finished.report, token: shareToken })
+  assert.deepEqual((await ownerApi.query(api.reports.shared, { token: shareToken }))!.evidence, [], 'Captured lifecycle and output must remain private on shared reports.')
+  await ownerApi.mutation(api.reports.revoke, { id: finished.report })
+  evidence.push({ scenario: 'recorded lifecycle and explicit reviewed output', run: id, expected: 'combined trial mapping, private evidence and durable upload receipt', observed: 'matched' })
   const data = JSON.parse(report.data) as { job: string; rows: { agent: string; passed: number }[] }
   assert.equal(data.job, 'CI connected evaluation')
   assert.deepEqual(data.rows.map(row => ({ agent: row.agent, passed: row.passed })), [{ agent: 'oracle', passed: 1 }, { agent: 'oracle', passed: 1 }])
@@ -283,7 +297,7 @@ try {
   assert.equal((await ownerApi.query(api.reports.list)).length, 4, 'Terminal delivery created duplicate reports.')
   assert(!existsSync(join(state, 'runs', queued)))
   evidence.push({ scenario: 'active cancellation with telemetry rejected', experiment, run: active.id, queuedRun: queued, childReport: cancelled.cells[0].report, combinedReport: cancelled.report, expected: 'cancelled after cleanup; one verified pass, unfinished trial excluded; queued work never launched', observed: 'matched' })
-  console.log(JSON.stringify({ baseRevision: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(), modelCalls: 0, droppedTelemetry, evidence }, null, 2))
+  console.log(JSON.stringify({ baseRevision: process.env.HEVAL_TEST_BASE_REVISION ?? execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(), modelCalls: 0, droppedTelemetry, evidence }, null, 2))
   console.log(`PASS: Convex queue -> live daemon -> Harbor ${HARBOR_VERSION}/Docker -> combined report (${finished.report}).`)
   if (web && process.env.HEVAL_TEST_BROWSER_ACK_FILE) {
     console.log(`BROWSER: ${web.resolvedUrls!.local[0]}evaluations?experiment=${experiment}`)
