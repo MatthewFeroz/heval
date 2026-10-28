@@ -138,5 +138,6 @@ commands is synthetic. See [the exporter guide](harbor/report/README.md) and
 - [Publishing the CLI](docs/publishing-cli.md)
 - [Design system](docs/design-system.md)
 
-OpenEval's own source is currently marked `UNLICENSED`. Third-party dependencies
-and assets retain their respective licenses. Harbor is installed separately.
+OpenEval's own source is available under the [MIT License](LICENSE). Third-party
+dependencies, fonts, harness logos and other assets retain their respective
+licenses and marks. Harbor is installed separately.
