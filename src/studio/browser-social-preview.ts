@@ -15,7 +15,7 @@ export function browserSocialPreview(rows: readonly TrialRow[], settings: Social
     `html,body{margin:0;background:${SOCIAL_THEMES[settings.theme ?? PRESENTATION_DEFAULT_THEME].surface}}` +
     'svg{display:block;width:100%;height:auto;font-feature-settings:"liga" 0,"calt" 0}</style>' +
     socialSvg(chart, settings, '', page) + '<script>' + layoutScript +
-    ';window.__hevalLayoutReady.then(result=>window.parent.postMessage({type:"heval-layout",...result,svg:new XMLSerializer().serializeToString(document.querySelector("svg"))},"*"));</script></html>',
+    ';window.__openevalLayoutReady.then(result=>window.parent.postMessage({type:"openeval-layout",...result,svg:new XMLSerializer().serializeToString(document.querySelector("svg"))},"*"));</script></html>',
   )
   return { chart, pages }
 }

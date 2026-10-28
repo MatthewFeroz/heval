@@ -68,7 +68,7 @@ Automatic monitoring does not upload prompts, terminal transcripts or arbitrary
 files. To opt into explicit artifact uploads, start the updated daemon with:
 
 ```sh
-HEVAL_CAPTURE_REVIEWED_EVIDENCE=1 heval runner start --state <state-directory>
+HEVAL_CAPTURE_REVIEWED_EVIDENCE=1 openeval runner start --state <state-directory>
 ```
 
 After reviewing an artifact, create

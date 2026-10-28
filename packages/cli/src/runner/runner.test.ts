@@ -12,7 +12,7 @@ import { exportJob } from '../../../../harbor/report/trials'
 
 const temporary: string[] = []
 const task = resolve(import.meta.dirname, '../../runner-task')
-function state() { const dir = mkdtempSync(join(tmpdir(), 'heval-runner-')); temporary.push(dir); return dir }
+function state() { const dir = mkdtempSync(join(tmpdir(), 'openeval-runner-')); temporary.push(dir); return dir }
 afterEach(() => { for (const path of temporary.splice(0)) rmSync(path, { recursive: true, force: true }) })
 test('pairing refuses credential-bearing URLs, insecure origins and unrelated hosts', () => {
   expect(cloudUrl('https://example.convex.cloud')).toBe('https://example.convex.cloud')

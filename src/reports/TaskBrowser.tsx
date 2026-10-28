@@ -4,7 +4,7 @@ import { comparability, groupTasks, outcome } from './taskComparison'
 import { RunArtifact, type TrialArtifact } from './RunArtifact'
 import './task-browser.css'
 
-function subscribe(listener: () => void) { window.addEventListener('popstate', listener); window.addEventListener('heval:task-selection', listener); return () => { window.removeEventListener('popstate', listener); window.removeEventListener('heval:task-selection', listener) } }
+function subscribe(listener: () => void) { window.addEventListener('popstate', listener); window.addEventListener('openeval:task-selection', listener); return () => { window.removeEventListener('popstate', listener); window.removeEventListener('openeval:task-selection', listener) } }
 type View = 'output' | 'patch' | 'verifier' | 'timeline'
 const views: { id: View; label: string }[] = [{ id: 'output', label: 'Output' }, { id: 'patch', label: 'Patch' }, { id: 'verifier', label: 'Tests' }, { id: 'timeline', label: 'Timeline' }]
 const attempt = (row: TrialRow) => `${row.modelShort || row.model} · ${row.agent} · ${row.trial}`
@@ -23,7 +23,7 @@ export function TaskBrowser({ rows, evidence = [] }: { rows: TrialRow[]; evidenc
     const url = new URL(location.href)
     for (const [name, value] of Object.entries(values)) { if (value === null) url.searchParams.delete(name); else url.searchParams.set(name, value) }
     history.pushState(null, '', url)
-    window.dispatchEvent(new Event('heval:task-selection'))
+    window.dispatchEvent(new Event('openeval:task-selection'))
     setCopied(false); setCopyError('')
   }
   async function copyLink() {

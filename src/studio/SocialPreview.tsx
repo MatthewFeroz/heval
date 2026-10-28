@@ -41,7 +41,7 @@ export function SocialPreview({
       const index = frames.current.findIndex((frame) => frame?.contentWindow === event.source)
       if (
         index < 0 ||
-        event.data?.type !== 'heval-layout' ||
+        event.data?.type !== 'openeval-layout' ||
         !Array.isArray(event.data.errors) ||
         !Array.isArray(event.data.adjustments)
       )

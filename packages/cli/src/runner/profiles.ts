@@ -78,7 +78,7 @@ const copyTask = (from: string, to: string) => cpSync(from, to, { recursive: tru
 /** Copy a catalog benchmark's pinned tasks into the runner state, refusing any content that differs from the pin. */
 function installBenchmark(directory: string, id: string, source: string, catalog: Benchmark[]) {
   const benchmark = catalog.find(b => b.id === id)
-  if (!benchmark || benchmark.id === 'heval-smoke' || !benchmark.taskHashes || benchmark.status === 'unsupported') throw new Error(`Choose an installable benchmark: ${catalog.filter(b => b.taskHashes && b.status !== 'unsupported' && b.id !== 'heval-smoke').map(b => b.id).join(', ')}.`)
+  if (!benchmark || benchmark.id === 'openeval-smoke' || !benchmark.taskHashes || benchmark.status === 'unsupported') throw new Error(`Choose an installable benchmark: ${catalog.filter(b => b.taskHashes && b.status !== 'unsupported' && b.id !== 'openeval-smoke').map(b => b.id).join(', ')}.`)
   const target = join(directory, 'benchmarks', benchmark.id)
   for (const [task, expected] of benchmark.taskHashes) {
     const path = join(resolve(source), task)

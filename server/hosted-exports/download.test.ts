@@ -10,9 +10,9 @@ vi.mock('@vercel/blob', () => ({ get: mocks.get }))
 import { GET } from '../../api/presentation-export'
 beforeEach(() => { vi.resetAllMocks(); vi.stubEnv('CONVEX_URL', 'https://test.convex.cloud'); vi.stubEnv('BLOB_READ_WRITE_TOKEN', 'private-token') })
 afterEach(() => vi.unstubAllEnvs())
-const request = () => new Request('https://heval.invalid/api/presentation-export?job=job', { headers: { Authorization: 'Bearer user-token' } })
+const request = () => new Request('https://openeval.invalid/api/presentation-export?job=job', { headers: { Authorization: 'Bearer user-token' } })
 test('download requires auth and current report access before contacting private storage', async () => {
-  expect((await GET(new Request('https://heval.invalid/api/presentation-export?job=job'))).status).toBe(401)
+  expect((await GET(new Request('https://openeval.invalid/api/presentation-export?job=job'))).status).toBe(401)
   expect(mocks.query).not.toHaveBeenCalled()
   mocks.query.mockRejectedValue(new Error('No membership'))
   expect((await GET(request())).status).toBe(404)
@@ -39,7 +39,7 @@ test.each(['viewer', 'editor'] as const)('download proxy rechecks %s membership 
   let client = member
   mocks.query.mockImplementation((ref, args) => client.query(ref, args))
   mocks.get.mockImplementation(() => ({ statusCode: 200, stream: new Blob(['synthetic-bytes']).stream() }))
-  const download = () => GET(new Request(`https://heval.invalid/api/presentation-export?job=${job}`, { headers: { Authorization: 'Bearer synthetic-user-token' } }))
+  const download = () => GET(new Request(`https://openeval.invalid/api/presentation-export?job=${job}`, { headers: { Authorization: 'Bearer synthetic-user-token' } }))
   const assertDenied = async () => {
     mocks.get.mockClear()
     const response = await download()
@@ -61,7 +61,7 @@ test.each(['viewer', 'editor'] as const)('download proxy rechecks %s membership 
   await owner.mutation(api.reports.share, { id: report, token: shareToken })
   expect(await member.query(api.reports.shared, { token: shareToken })).not.toBeNull()
   await assertDenied()
-  const anonymous = await GET(new Request(`https://heval.invalid/api/presentation-export?job=${job}#${shareToken}`))
+  const anonymous = await GET(new Request(`https://openeval.invalid/api/presentation-export?job=${job}#${shareToken}`))
   expect(anonymous.status).toBe(401)
   expect(mocks.get).not.toHaveBeenCalled()
   await owner.mutation(api.reports.revoke, { id: report })

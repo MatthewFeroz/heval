@@ -70,8 +70,8 @@ export function RunWorkbench({ auth }: { auth: AppAuth }) {
 
   useEffect(() => {
     const configure = (event: Event) => setHarness((event as CustomEvent<string>).detail)
-    window.addEventListener('heval-configure', configure)
-    return () => window.removeEventListener('heval-configure', configure)
+    window.addEventListener('openeval-configure', configure)
+    return () => window.removeEventListener('openeval-configure', configure)
   }, [])
 
   useEffect(() => {

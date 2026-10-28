@@ -19,7 +19,7 @@ export function createInferenceProxy(connections: Pick<ConnectionStore, 'secret'
     },
     revokeOwner(owner: string) { for (const [token, lease] of leases) if (lease.owner === owner) revoke(token) },
     async handle(req: Request): Promise<Response> {
-      const json = (error: string, status: number) => Response.json({ error: { message: error, type: 'heval_proxy_error' } }, { status, headers: { 'Cache-Control': 'no-store' } })
+      const json = (error: string, status: number) => Response.json({ error: { message: error, type: 'openeval_proxy_error' } }, { status, headers: { 'Cache-Control': 'no-store' } })
       if (new URL(req.url).pathname !== '/api/inference/chat/completions') return json('Endpoint unavailable', 404)
       const token = req.headers.get('authorization')?.replace(/^Bearer /, '') || ''
       const lease = leases.get(token)

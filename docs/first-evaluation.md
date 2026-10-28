@@ -178,8 +178,8 @@ a checkout of this repository and install the resulting artifact on the worker.
 You can build on another machine and copy the tarball to the worker.
 
 ```sh
-git clone --branch main https://github.com/MatthewFeroz/heval.git
-cd heval
+git clone --branch main https://github.com/MatthewFeroz/openeval.git
+cd openeval
 bun install --frozen-lockfile
 bun run cli:pack
 npm install -g ./.scratch/mattferoz-openeval-0.3.1.tgz

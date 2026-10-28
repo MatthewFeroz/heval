@@ -8,7 +8,7 @@ const cleanups: Array<() => Promise<void>> = []
 afterEach(async () => { for (const cleanup of cleanups.splice(0).reverse()) await cleanup() })
 
 async function proxy(options: { pins?: boolean; budget?: number; rates?: object } = {}) {
-  const directory = mkdtempSync(join(tmpdir(), 'heval-proxy-'))
+  const directory = mkdtempSync(join(tmpdir(), 'openeval-proxy-'))
   const spend = join(directory, 'spend')
   mkdirSync(spend)
   const log = join(spend, 'proxy.jsonl')

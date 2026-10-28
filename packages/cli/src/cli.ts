@@ -150,7 +150,7 @@ async function main() {
       let code: string
       try { code = (await input.question('Paste the one-time pairing code from OpenEval: ')).trim() } finally { input.close() }
       const result = await connectRunner(directory, values.url, code, join(dist, 'runner-task'))
-      console.log(`Paired ${result.name}. Start the connection with:\nheval runner start --state ${JSON.stringify(directory)}\nThe setup profile uses no model credits. Keep this state directory on this machine.`)
+      console.log(`Paired ${result.name}. Start the connection with:\nopeneval runner start --state ${JSON.stringify(directory)}\nThe setup profile uses no model credits. Keep this state directory on this machine.`)
     } else if (path === 'start') {
       await runDaemon({ directory, harbor: values.harbor ?? 'harbor', supervisor: join(dist, 'runner-supervisor.js'), profileFile: values.profiles ? resolve(values.profiles) : undefined })
     } else if (path === 'status') console.log(JSON.stringify(runnerStatus(directory), null, 2))

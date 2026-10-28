@@ -6,7 +6,7 @@ import { chromium, expect } from '@playwright/test'
 
 const root = resolve(import.meta.dirname, '..')
 const dist = join(root, 'dist')
-const temporary = await mkdtemp(join(tmpdir(), 'heval-deployment-'))
+const temporary = await mkdtemp(join(tmpdir(), 'openeval-deployment-'))
 const env = { ...process.env, VITE_CLERK_PUBLISHABLE_KEY: '', VITE_CONVEX_URL: '', CLERK_JWT_ISSUER_DOMAIN: '', HEVAL_ENABLE_RUNNER: '0', HEVAL_ENABLE_EXPORTS: '0' }
 const browser = await chromium.launch()
 let staticServer: ReturnType<typeof Bun.serve> | undefined
@@ -71,7 +71,7 @@ try {
   backend = Bun.spawn(['bun', 'server/index.ts'], {
     cwd: root,
     env: { ...env, HOST: '127.0.0.1', PORT: '0', HEVAL_DATA_DIR: temporary, HEVAL_HOSTED: '1',
-      HEVAL_PUBLIC_ORIGIN: 'https://heval.example.invalid', HEVAL_CONNECTION_ENCRYPTION_KEY: 'ab'.repeat(32) },
+      HEVAL_PUBLIC_ORIGIN: 'https://openeval.example.invalid', HEVAL_CONNECTION_ENCRYPTION_KEY: 'ab'.repeat(32) },
     stdin: 'ignore', stdout: 'pipe', stderr: 'pipe',
   })
   const process = backend

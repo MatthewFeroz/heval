@@ -5,7 +5,7 @@ import { join } from 'node:path'
 import { fingerprintDirectory, hashDirectory } from './files'
 
 const temporary: string[] = []
-function state() { const dir = fs.mkdtempSync(join(tmpdir(), 'heval-task-fingerprint-')); temporary.push(dir); return dir }
+function state() { const dir = fs.mkdtempSync(join(tmpdir(), 'openeval-task-fingerprint-')); temporary.push(dir); return dir }
 afterEach(() => { for (const dir of temporary.splice(0)) fs.rmSync(dir, { recursive: true, force: true }) })
 
 test('content and execution fingerprints share one file read and exclude local root paths', () => {

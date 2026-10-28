@@ -126,7 +126,7 @@ export async function renderPosters(
     const presets = collection ? settings.collection : [settings.preset]
     // Validate the entire collection before starting any browser processes.
     const documents = presets.map((preset) => posterDocuments(input, { ...settings, preset }))
-    scratch = mkdtempSync(join(tmpdir(), 'heval-poster-export-'))
+    scratch = mkdtempSync(join(tmpdir(), 'openeval-poster-export-'))
     const files: { name: string; bytes: Uint8Array }[] = []
     const charts: SocialChart[] = []
     for (const { chart, pages } of documents) {
@@ -181,7 +181,7 @@ function removeScratch(scratch: string) {
   const target = resolve(scratch)
   if (
     !target.startsWith(resolve(tmpdir()) + sep) ||
-    !basename(target).startsWith('heval-poster-export-')
+    !basename(target).startsWith('openeval-poster-export-')
   )
     throw new Error('Invalid scratch path')
   rmSync(target, { recursive: true, force: true })

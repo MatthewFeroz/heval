@@ -9,7 +9,7 @@ import { chromium, expect } from '@playwright/test'
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../../..')
 const { name, version } = JSON.parse(readFileSync(join(root, 'packages/cli/package.json'), 'utf8')) as { name: string; version: string }
 const tarball = join(root, '.scratch', `${name.replace(/^@/, '').replace('/', '-')}-${version}.tgz`)
-const temporary = mkdtempSync(join(tmpdir(), 'heval-package-smoke-'))
+const temporary = mkdtempSync(join(tmpdir(), 'openeval-package-smoke-'))
 const node = realpathSync(Bun.which('node')!)
 const npm = realpathSync(Bun.which('npm')!)
 const fromRegistry = process.argv.includes('--registry')
@@ -91,7 +91,7 @@ try {
   await page.locator('.vega-embed svg').waitFor()
   assert.equal(await page.locator('.card svg .mark-rect.role-mark path').count(), 6)
   assert.equal(await page.getByRole('note').count(), 1)
-  await page.screenshot({ path: join(root, '.scratch/heval-cli.png') })
+  await page.screenshot({ path: join(root, '.scratch/openeval-cli.png') })
   console.log('PASS: fresh install, CLI version/help, missing-prerequisite checks, and six-model synthetic example.')
   let bundle: Buffer | undefined
   // Current builds group downloads in the file menu; older published builds

@@ -148,7 +148,7 @@ export type Presentation = {
   updatedAt: string
 }
 
-export type HevalProject = {
+export type OpenEvalProject = {
   artifactType: 'heval-project'
   schemaVersion: typeof PROJECT_SCHEMA_VERSION
   id: string
@@ -160,29 +160,29 @@ export type HevalProject = {
   presentations: Presentation[]
 }
 
-export type HevalBundle = {
+export type OpenEvalBundle = {
   artifactType: 'heval-bundle'
   schemaVersion: typeof BUNDLE_SCHEMA_VERSION
   contentHash: string
   createdAt: string
-  project: HevalProject
+  project: OpenEvalProject
   artifacts: EvaluationArtifact[]
 }
 
-export class HevalSchemaError extends Error {
+export class OpenEvalSchemaError extends Error {
   constructor(message: string) {
     super(message)
-    this.name = 'HevalSchemaError'
+    this.name = 'OpenEvalSchemaError'
   }
 }
 
 const isObject = (value: unknown): value is Record<string, unknown> => !!value && typeof value === 'object' && !Array.isArray(value)
 const string = (value: unknown, at: string) => {
-  if (typeof value !== 'string' || !value) throw new HevalSchemaError(`${at} must be a non-empty string`)
+  if (typeof value !== 'string' || !value) throw new OpenEvalSchemaError(`${at} must be a non-empty string`)
   return value
 }
 const array = (value: unknown, at: string) => {
-  if (!Array.isArray(value)) throw new HevalSchemaError(`${at} must be an array`)
+  if (!Array.isArray(value)) throw new OpenEvalSchemaError(`${at} must be an array`)
   return value
 }
 
@@ -249,7 +249,7 @@ function jobRecord(row: TrialRow): ArtifactRecord {
 }
 
 export async function adaptJobExportV1(exp: JobExport, uri = ''): Promise<EvaluationArtifact> {
-  if (!isObject(exp) || exp.schemaVersion !== 1 || !Array.isArray(exp.rows)) throw new HevalSchemaError('Expected a OpenEval JobExport schemaVersion 1')
+  if (!isObject(exp) || exp.schemaVersion !== 1 || !Array.isArray(exp.rows)) throw new OpenEvalSchemaError('Expected a OpenEval JobExport schemaVersion 1')
   const taskChecksums = [...new Set(exp.rows.map((row) => row.taskChecksum).filter(Boolean))].sort()
   const started = exp.rows.map((row) => row.startedAt).filter((value): value is string => !!value).sort()[0]
   const artifact: EvaluationArtifact = {
@@ -284,25 +284,25 @@ export async function adaptJobExportV1(exp: JobExport, uri = ''): Promise<Evalua
 }
 
 export function parseEvaluationArtifact(value: unknown): EvaluationArtifact {
-  if (!isObject(value) || value.artifactType !== 'heval-evaluation' || value.schemaVersion !== EVALUATION_SCHEMA_VERSION) throw new HevalSchemaError('Expected an OpenEval evaluation artifact (schemaVersion 2)')
+  if (!isObject(value) || value.artifactType !== 'heval-evaluation' || value.schemaVersion !== EVALUATION_SCHEMA_VERSION) throw new OpenEvalSchemaError('Expected an OpenEval evaluation artifact (schemaVersion 2)')
   string(value.id, 'artifact.id')
   string(value.contentHash, 'artifact.contentHash')
-  if (!isObject(value.run)) throw new HevalSchemaError('artifact.run must be an object')
+  if (!isObject(value.run)) throw new OpenEvalSchemaError('artifact.run must be an object')
   string(value.run.id, 'artifact.run.id')
   array(value.fields, 'artifact.fields')
   array(value.records, 'artifact.records')
   return value as EvaluationArtifact
 }
 
-export function parseProject(value: unknown): HevalProject {
-  if (!isObject(value) || value.artifactType !== 'heval-project' || value.schemaVersion !== PROJECT_SCHEMA_VERSION) throw new HevalSchemaError('Expected an OpenEval project file (.openeval-project.json, schemaVersion 1)')
+export function parseProject(value: unknown): OpenEvalProject {
+  if (!isObject(value) || value.artifactType !== 'heval-project' || value.schemaVersion !== PROJECT_SCHEMA_VERSION) throw new OpenEvalSchemaError('Expected an OpenEval project file (.openeval-project.json, schemaVersion 1)')
   string(value.id, 'project.id')
   string(value.label, 'project.label')
   array(value.sources, 'project.sources')
   array(value.analysisViews, 'project.analysisViews')
   array(value.presentations, 'project.presentations')
   for (const [index, source] of (value.sources as unknown[]).entries()) {
-    if (!isObject(source)) throw new HevalSchemaError(`project.sources[${index}] must be an object`)
+    if (!isObject(source)) throw new OpenEvalSchemaError(`project.sources[${index}] must be an object`)
     string(source.contentHash, `project.sources[${index}].contentHash`)
     string(source.uri, `project.sources[${index}].uri`)
   }
@@ -312,15 +312,15 @@ export function parseProject(value: unknown): HevalProject {
     validateCustomSpec(presentation.customSpec)
     if (presentation.analysisSnapshot) validateCustomSpec(presentation.analysisSnapshot.customSpec)
   }
-  return value as HevalProject
+  return value as OpenEvalProject
 }
 
-export function parseBundle(value: unknown): HevalBundle {
-  if (!isObject(value) || value.artifactType !== 'heval-bundle' || value.schemaVersion !== BUNDLE_SCHEMA_VERSION) throw new HevalSchemaError('Expected an OpenEval bundle file (.openeval-bundle.json, schemaVersion 1)')
+export function parseBundle(value: unknown): OpenEvalBundle {
+  if (!isObject(value) || value.artifactType !== 'heval-bundle' || value.schemaVersion !== BUNDLE_SCHEMA_VERSION) throw new OpenEvalSchemaError('Expected an OpenEval bundle file (.openeval-bundle.json, schemaVersion 1)')
   string(value.contentHash, 'bundle.contentHash')
   parseProject(value.project)
   for (const artifact of array(value.artifacts, 'bundle.artifacts')) parseEvaluationArtifact(artifact)
-  return value as HevalBundle
+  return value as OpenEvalBundle
 }
 
 export async function sourceFromArtifact(artifact: EvaluationArtifact, uri: string): Promise<ProjectSource> {
@@ -328,7 +328,7 @@ export async function sourceFromArtifact(artifact: EvaluationArtifact, uri: stri
   return { id: `source:${artifact.id}`, label: artifact.label, uri, artifactId: artifact.id, runId: artifact.run.id, contentHash: artifact.contentHash }
 }
 
-export function newProject(source: ProjectSource, artifact: EvaluationArtifact): HevalProject {
+export function newProject(source: ProjectSource, artifact: EvaluationArtifact): OpenEvalProject {
   const now = new Date().toISOString()
   const view: AnalysisView = {
     id: crypto.randomUUID(),
@@ -342,7 +342,7 @@ export function newProject(source: ProjectSource, artifact: EvaluationArtifact):
   return { artifactType: 'heval-project', schemaVersion: PROJECT_SCHEMA_VERSION, id: crypto.randomUUID(), label: artifact.label, createdAt: now, updatedAt: now, sources: [source], analysisViews: [view], presentations: [] }
 }
 
-export function newPresentation(project: HevalProject, view: AnalysisView): Presentation {
+export function newPresentation(project: OpenEvalProject, view: AnalysisView): Presentation {
   const now = new Date().toISOString()
   const sourceById = new Map(project.sources.map((source) => [source.id, source]))
   return {
@@ -365,8 +365,8 @@ export function newPresentation(project: HevalProject, view: AnalysisView): Pres
   }
 }
 
-export async function makeBundle(project: HevalProject, artifacts: EvaluationArtifact[]): Promise<HevalBundle> {
-  const bundle: HevalBundle = { artifactType: 'heval-bundle', schemaVersion: BUNDLE_SCHEMA_VERSION, contentHash: '', createdAt: new Date().toISOString(), project, artifacts }
+export async function makeBundle(project: OpenEvalProject, artifacts: EvaluationArtifact[]): Promise<OpenEvalBundle> {
+  const bundle: OpenEvalBundle = { artifactType: 'heval-bundle', schemaVersion: BUNDLE_SCHEMA_VERSION, contentHash: '', createdAt: new Date().toISOString(), project, artifacts }
   bundle.contentHash = await contentHash(bundle)
   return bundle
 }
@@ -375,8 +375,8 @@ export async function makeBundle(project: HevalProject, artifacts: EvaluationArt
 /** Validate persisted JSON without requiring a browser or mutating the document. */
 export function validateCustomSpec(spec: unknown): void {
   if (spec === undefined || spec === null) return
-  if (typeof spec !== 'string') throw new HevalSchemaError('Custom spec must be JSON text')
+  if (typeof spec !== 'string') throw new OpenEvalSchemaError('Custom spec must be JSON text')
   let parsed: unknown
-  try { parsed = JSON.parse(spec) } catch { throw new HevalSchemaError('Custom spec must contain valid JSON') }
-  if (!isObject(parsed)) throw new HevalSchemaError('Custom spec must be a JSON object')
+  try { parsed = JSON.parse(spec) } catch { throw new OpenEvalSchemaError('Custom spec must contain valid JSON') }
+  if (!isObject(parsed)) throw new OpenEvalSchemaError('Custom spec must be a JSON object')
 }

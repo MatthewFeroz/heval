@@ -10,7 +10,7 @@ import type { Catalog } from '../../../harbor/gateway/catalog'
 import { supervise, type Outcome } from './runner/supervisor'
 
 const directories: string[] = []
-function state() { const path = mkdtempSync(join(tmpdir(), 'heval-merge-')); directories.push(path); return path }
+function state() { const path = mkdtempSync(join(tmpdir(), 'openeval-merge-')); directories.push(path); return path }
 afterEach(() => { directories.splice(0).forEach(p => rmSync(p, { recursive: true, force: true })) })
 const model = 'anthropic/test-model'
 const catalog: Catalog = { schemaVersion: 1, fetchedAt: '2026-09-20T00:00:00Z', source: 'test', models: [
@@ -109,7 +109,7 @@ fs.writeFileSync('jobs/evaluation/trial/result.json', JSON.stringify({finished_a
 
 test('catalog task-set hashes match their pinned task hashes and the bundled smoke task', () => {
   for (const b of BENCHMARKS.filter(b => b.taskHashes)) expect(sha256(JSON.stringify(b.taskHashes!.map(([, hash]) => hash)))).toBe(b.taskSet!)
-  expect(BENCHMARKS.find(b => b.id === 'heval-smoke')!.taskHashes![0][1]).toBe(hashDirectory(bundledTask))
+  expect(BENCHMARKS.find(b => b.id === 'openeval-smoke')!.taskHashes![0][1]).toBe(hashDirectory(bundledTask))
 })
 
 test('benchmark setup installs pinned tasks, one profile per harness and model, and rejects drift', async () => {

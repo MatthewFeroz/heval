@@ -97,7 +97,7 @@ import {
   sourceFromArtifact,
   verifyContentHash,
   type EvaluationArtifact,
-  type HevalProject,
+  type OpenEvalProject,
   type Presentation,
 } from '../project/schema'
 import { CANVAS_IDS, MOTION_CANVASES } from '../charts/motion-options'
@@ -186,7 +186,7 @@ export function Studio({ localViewer = false, hosted, workspaceSection, onDirtyC
   const [selected, setSelected] = useState<string | null>(null)
   const [copied, setCopied] = useState<string | null>(null)
   const [runSort, setRunSort] = useState<RunSort>({ key: 'agent', dir: 1 })
-  const [project, setProject] = useState<HevalProject | null>(hosted?.initial.project ?? null)
+  const [project, setProject] = useState<OpenEvalProject | null>(hosted?.initial.project ?? null)
   const [artifacts, setArtifacts] = useState<Map<string, EvaluationArtifact>>(() => hosted ? new Map([[hosted.artifact.id, hosted.artifact]]) : new Map())
   const [activeViewId, setActiveViewId] = useState<string | null>(hosted?.initial.viewId ?? null)
   const [activePresentationId, setActivePresentationId] = useState<string | null>(hosted?.initial.presentationId ?? null)
@@ -430,7 +430,7 @@ export function Studio({ localViewer = false, hosted, workspaceSection, onDirtyC
     setCopied(what)
   }
 
-  const installProject = async (next: HevalProject, embedded: EvaluationArtifact[] = []) => {
+  const installProject = async (next: OpenEvalProject, embedded: EvaluationArtifact[] = []) => {
     const loaded = new Map<string, EvaluationArtifact>()
     for (const artifact of embedded) {
       if (!await verifyContentHash(artifact)) throw new Error(`Content hash mismatch for ${artifact.label}`)

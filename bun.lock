@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "heval",
+      "name": "openeval",
       "dependencies": {
         "@clerk/react": "^6.17.5",
         "@daytona/sdk": "0.226.1",

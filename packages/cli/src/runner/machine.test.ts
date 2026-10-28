@@ -29,7 +29,7 @@ describe('machine kind detection', () => {
   })
 
   test('a containerized worker uses the host-reported kind and never self-detects', async () => {
-    const directory = mkdtempSync(join(tmpdir(), 'heval-machine-'))
+    const directory = mkdtempSync(join(tmpdir(), 'openeval-machine-'))
     const previous = process.env.HEVAL_WORKER_STATE
     process.env.HEVAL_WORKER_STATE = directory
     try {

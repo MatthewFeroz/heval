@@ -1,5 +1,5 @@
 {
-  "name": "heval",
+  "name": "openeval",
   "private": true,
   "version": "0.1.0",
   "packageManager": "bun@1.4.2",

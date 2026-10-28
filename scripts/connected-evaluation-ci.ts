@@ -21,7 +21,7 @@ import { randomSecret } from '../packages/cli/src/runner/files'
 import { HARBOR_VERSION } from '../packages/cli/src/harbor-version'
 
 const root = resolve(import.meta.dirname, '..')
-const temporary = await mkdtemp(join(tmpdir(), 'heval-connected-evaluation-'))
+const temporary = await mkdtemp(join(tmpdir(), 'openeval-connected-evaluation-'))
 const app = join(temporary, 'app')
 const state = join(temporary, 'runner')
 const cli = join(temporary, 'cli/dist')
@@ -107,8 +107,8 @@ try {
 
   const { publicKey, privateKey } = await generateKeyPair('RS256')
   const jwk = { ...await exportJWK(publicKey), kid: 'ci', alg: 'RS256', use: 'sig' }
-  const issuer = 'https://heval-ci.invalid'
-  await writeFile(join(app, 'convex/auth.config.ts'), `export default ${JSON.stringify({ providers: [{ type: 'customJwt', issuer, applicationID: 'heval-ci', algorithm: 'RS256', jwks: `data:text/plain;charset=utf-8;base64,${Buffer.from(JSON.stringify({ keys: [jwk] })).toString('base64')}` }] })}`)
+  const issuer = 'https://openeval-ci.invalid'
+  await writeFile(join(app, 'convex/auth.config.ts'), `export default ${JSON.stringify({ providers: [{ type: 'customJwt', issuer, applicationID: 'openeval-ci', algorithm: 'RS256', jwks: `data:text/plain;charset=utf-8;base64,${Buffer.from(JSON.stringify({ keys: [jwk] })).toString('base64')}` }] })}`)
 
   await mkdir(join(temporary, 'home'))
   const cloudPort = unusedPort(), sitePort = unusedPort()
@@ -120,7 +120,7 @@ try {
   })
   const url = await localUrl()
   assert.equal(new URL(url).hostname, '127.0.0.1', 'The harness must use its disposable local backend.')
-  const token = await new SignJWT({ email: 'ci@example.invalid' }).setProtectedHeader({ alg: 'RS256', kid: 'ci', typ: 'JWT' }).setSubject('ci-owner').setIssuer(issuer).setAudience('heval-ci').setIssuedAt().setExpirationTime('1h').sign(privateKey)
+  const token = await new SignJWT({ email: 'ci@example.invalid' }).setProtectedHeader({ alg: 'RS256', kid: 'ci', typ: 'JWT' }).setSubject('ci-owner').setIssuer(issuer).setAudience('openeval-ci').setIssuedAt().setExpirationTime('1h').sign(privateKey)
   ownerApi = new ConvexHttpClient(url); ownerApi.setAuth(token)
 
   const code = randomSecret()

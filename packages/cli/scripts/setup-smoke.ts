@@ -10,7 +10,7 @@ import { execute } from '../src/setup'
 // This test creates its own unpaired worker and never reads real credentials.
 const root = resolve(import.meta.dirname, '../../..')
 const { name: packageName, version } = JSON.parse(readFileSync(join(root, 'packages/cli/package.json'), 'utf8'))
-const temporary = mkdtempSync(join(tmpdir(), 'heval-bootstrap-'))
+const temporary = mkdtempSync(join(tmpdir(), 'openeval-bootstrap-'))
 const worker = `heval-ci-${process.pid}-${Date.now()}`
 const volume = `${worker}-data`
 const node = realpathSync(Bun.which('node')!)

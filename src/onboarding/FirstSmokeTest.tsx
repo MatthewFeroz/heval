@@ -113,7 +113,7 @@ export function FirstSmokeTest({ machines, now, localLink, onClose }: { machines
         <div className="report-actions setup-stage-actions">
           {validLink ? <a className="report-button primary" href={validLink}>Open local setup</a> : <button type="button" className="secondary" aria-expanded={reopen} onClick={()=>setReopen(!reopen)}>{reopen?'Hide command':'Reopen setup'}</button>}
         </div>
-        {reopen && <><p>For a setup-managed Docker worker, rerun the same setup command to reopen its local page.</p><SetupCommand/><p>For a manually prepared Linux worker, run <code>openeval provider setup merge</code> in another terminal with the same runner state directory. Keep the runner terminal open.</p><p className="report-muted">Requires a setup-enabled CLI build. With CLI 0.2.0, follow the <a href="https://github.com/MatthewFeroz/heval/blob/main/docs/first-evaluation.md">manual provider setup guide</a>.</p></>}
+        {reopen && <><p>For a setup-managed Docker worker, rerun the same setup command to reopen its local page.</p><SetupCommand/><p>For a manually prepared Linux worker, run <code>openeval provider setup merge</code> in another terminal with the same runner state directory. Keep the runner terminal open.</p><p className="report-muted">Requires a setup-enabled CLI build. With CLI 0.2.0, follow the <a href="https://github.com/MatthewFeroz/openeval/blob/main/docs/first-evaluation.md">manual provider setup guide</a>.</p></>}
         <p role="status">Waiting for {machine?.name} to share its model connection…</p>
       </>}
       {step==='run' && profile && <>

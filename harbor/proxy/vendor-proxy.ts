@@ -325,7 +325,7 @@ const server = Bun.serve({
               || requiredPin === null || parsed.vendor !== requiredPin)) {
             log({ path: url.pathname, status: 403, ms: Date.now() - started, model, vendor: parsed.vendor ?? null, blocked: 'model' })
             return Response.json({ error: { type: 'permission_error', code: 'model_not_allowed',
-              message: `Only ${ONLY_MODEL} via its configured vendor is available in this evaluation`, source: 'heval-vendor-proxy' } }, { status: 403 })
+              message: `Only ${ONLY_MODEL} via its configured vendor is available in this evaluation`, source: 'openeval-vendor-proxy' } }, { status: 403 })
           }
           if (BUDGET_USD !== null) {
             try { appendFileSync(LOG, '') } catch { logUnavailable = true }
@@ -341,14 +341,14 @@ const server = Bun.serve({
             if (spent >= BUDGET_USD) {
               log({ path: url.pathname, status: 402, ms: Date.now() - started, model, blocked: 'budget', spentUsd: spent })
               return Response.json({ error: { type: 'budget_exhausted', code: 'budget_exhausted',
-                message: `Evaluation spend limit reached: $${spent.toFixed(2)} of $${BUDGET_USD}`, source: 'heval-vendor-proxy' } }, { status: 402 })
+                message: `Evaluation spend limit reached: $${spent.toFixed(2)} of $${BUDGET_USD}`, source: 'openeval-vendor-proxy' } }, { status: 402 })
             }
           }
           const hosted = REJECT_HOSTED_TOOLS ? hostedTools(parsed) : []
           if (hosted.length) {
             log({ path: url.pathname, status: 400, ms: Date.now() - started, model, rejected: hosted })
             return Response.json({ error: { type: 'invalid_request_error', code: 'hosted_tool_rejected',
-              message: `Hosted tools are disabled for this evaluation: ${hosted.join(', ')}`, source: 'heval-vendor-proxy' } }, { status: 400 })
+              message: `Hosted tools are disabled for this evaluation: ${hosted.join(', ')}`, source: 'openeval-vendor-proxy' } }, { status: 400 })
           }
           // Logged so each harness's effort setting is verified from its requests, not assumed.
           effort = parsed.reasoning_effort ?? (parsed.reasoning as { effort?: unknown } | undefined)?.effort
@@ -402,7 +402,7 @@ const server = Bun.serve({
       stats.errors++
       const message = err instanceof Error ? err.message : String(err)
       log({ path: url.pathname, error: message, ms: Date.now() - started, model })
-      return Response.json({ error: { type: 'proxy_error', message, source: 'heval-vendor-proxy' } }, { status: 502 })
+      return Response.json({ error: { type: 'proxy_error', message, source: 'openeval-vendor-proxy' } }, { status: 502 })
     }
   },
 })
