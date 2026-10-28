@@ -17,7 +17,7 @@ After 0.3.0 is published, deprecate the old package so its installs point here:
 Under the old name, the initial version `0.1.0` was published with public access under the
 `mattferoz` account. The registry tarball SHA-1 is
 `9aaa6b1dd4dd96aca14c514f925120e08677ab30`, matching the tested release artifact.
-The release currently uses `UNLICENSED` for OpenEval's own code.
+That release used `UNLICENSED` for OpenEval's own code.
 
 Version `0.2.0` was published under the old name. Its registry tarball
 SHA-1 is `ff8393ee421283e3ecc21395c7c29ae8dd9e3687`, matching the tested local
@@ -96,10 +96,11 @@ npx @mattferoz/openeval@latest open
 ```
 
 Publishing the tested tarball avoids rebuilding between validation and upload.
-OpenEval's own license is a maintainer choice; the initial scaffold leaves it
-`UNLICENSED` until selected. Do not assume Harbor's license automatically
-licenses OpenEval or third-party artwork. The shipped viewer includes no Merge
-font files or generated branded posters.
+OpenEval's own code is MIT licensed. Versions up to and including 0.3.1 were
+published as `UNLICENSED`; the next published version is the first to ship the
+MIT license and its `LICENSE` file. The MIT license does not cover Harbor or
+third-party artwork, fonts and marks. The shipped viewer includes no Merge font
+files or generated branded posters.
 
 ## Later releases
 

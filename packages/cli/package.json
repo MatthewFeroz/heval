@@ -6,7 +6,7 @@
   "bin": { "openeval": "dist/cli.js", "heval": "dist/cli.js" },
   "files": ["dist", "scripts/check-package.mjs"],
   "engines": { "node": ">=22" },
-  "license": "UNLICENSED",
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/MatthewFeroz/heval.git",
