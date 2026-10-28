@@ -1,7 +1,7 @@
 /**
  * Chart recipes: normalized trial rows + editor state -> Vega-Lite spec.
  *
- * This module is the one place a Heval chart is defined. The graph editor
+ * This module is the one place a OpenEval chart is defined. The graph editor
  * renders the spec in the browser; `harbor/report/build-report.ts` compiles the
  * same spec to SVG headlessly for the static report. Editing a control in the
  * studio and re-running the report therefore produce the same picture.

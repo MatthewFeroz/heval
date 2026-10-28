@@ -7,7 +7,7 @@ import { readJson, writeJson } from './files'
 
 for (const cancelled of [true, false]) {
   test(`${cancelled ? 'cancellation' : 'deadline'} saves verified partial results without scoring unfinished tasks or rerunning`, async () => {
-    const directory = mkdtempSync(join(tmpdir(), 'heval-supervisor-partial-'))
+    const directory = mkdtempSync(join(tmpdir(), 'openeval-supervisor-partial-'))
     try {
       const harbor = join(directory, 'synthetic-harbor.cjs')
       writeFileSync(harbor, `#!/usr/bin/env node

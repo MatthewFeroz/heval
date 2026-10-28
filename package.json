@@ -1,5 +1,5 @@
 {
-  "name": "heval",
+  "name": "openeval",
   "private": true,
   "version": "0.1.0",
   "packageManager": "bun@1.4.2",
@@ -20,7 +20,7 @@
     "test:e2e": "playwright test",
     "test:auth": "bun scripts/auth-session-smoke.ts",
     "test:deployments": "bun scripts/deployment-smoke.ts",
-    "test:unit": "bun test src/project src/charts src/onboarding src/runs/database.test.ts src/runners/modelReference.test.ts scripts/refresh-merge-public-catalog.test.ts harbor/report/trials.test.ts",
+    "test:unit": "bun test src/project src/charts src/onboarding src/runs/database.test.ts src/reports/libraryItems.test.ts src/reports/taskComparison.test.ts src/runners/modelReference.test.ts scripts/refresh-merge-public-catalog.test.ts harbor/report",
     "test:backend": "vitest run",
     "test:reports": "bun run test:backend",
     "test:reports:smoke": "bun scripts/report-smoke.ts",
@@ -46,15 +46,19 @@
     "test:exports:ui": "bun scripts/hosted-export-ui-smoke.ts",
     "test:exports:renderer": "bun scripts/export-renderer-smoke.ts",
     "models:refresh": "bun scripts/refresh-merge-public-catalog.ts",
+    "test:runs:ui": "bun scripts/run-viewer-ui-smoke.ts",
     "test:evaluations:ui": "bun scripts/evaluation-ui-smoke.ts",
     "test:onboarding:ui": "bun scripts/first-smoke-ui-smoke.ts",
     "demo:first-smoke": "bun scripts/first-smoke-ui-smoke.ts --capture .scratch/first-smoke",
     "test:evaluations:e2e": "bun run cli:build && bun scripts/connected-evaluation-ci.ts",
-    "runs:build": "bun scripts/build-run-database.ts"
+    "runs:build": "bun scripts/build-run-database.ts",
+    "managed:coordinator": "bun server/managed/main.ts",
+    "managed:worker:build": "bun run cli:build && docker build --platform=linux/amd64 -f deploy/managed/Dockerfile.worker -t heval-managed-worker:local .",
+    "managed:test:worker": "bun scripts/managed-worker-smoke.ts"
   },
   "dependencies": {
     "@clerk/react": "^6.17.5",
-    "@earendil-works/pi-coding-agent": "0.84.4",
+    "@daytona/sdk": "0.226.1",
     "@hyperframes/player": "0.8.27",
     "@vercel/blob": "2.8.0",
     "@vercel/sandbox": "3.3.0",

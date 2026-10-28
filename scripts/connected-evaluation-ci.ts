@@ -21,7 +21,7 @@ import { randomSecret } from '../packages/cli/src/runner/files'
 import { HARBOR_VERSION } from '../packages/cli/src/harbor-version'
 
 const root = resolve(import.meta.dirname, '..')
-const temporary = await mkdtemp(join(tmpdir(), 'heval-connected-evaluation-'))
+const temporary = await mkdtemp(join(tmpdir(), 'openeval-connected-evaluation-'))
 const app = join(temporary, 'app')
 const state = join(temporary, 'runner')
 const cli = join(temporary, 'cli/dist')
@@ -39,7 +39,7 @@ const isolatedEnv = Object.fromEntries(['PATH', 'HOME', 'LANG', 'LC_ALL', 'TMPDI
 function unusedPort() { const server = Bun.serve({ hostname: '127.0.0.1', port: 0, fetch: () => new Response('') }); const port = server.port!; server.stop(true); return port }
 function startDaemon() {
   return Bun.spawn(['node', join(cli, 'cli.js'), 'runner', 'start', '--state', state, '--harbor', harbor], {
-    cwd: root, env: { ...isolatedEnv, HEVAL_RUNNER_ALLOW_LOCAL_CONVEX: '1' }, stdout: 'inherit', stderr: 'inherit',
+    cwd: root, env: { ...isolatedEnv, HEVAL_RUNNER_ALLOW_LOCAL_CONVEX: '1', HEVAL_CAPTURE_REVIEWED_EVIDENCE: '1' }, stdout: 'inherit', stderr: 'inherit',
   })
 }
 function projects(id: string) {
@@ -107,8 +107,8 @@ try {
 
   const { publicKey, privateKey } = await generateKeyPair('RS256')
   const jwk = { ...await exportJWK(publicKey), kid: 'ci', alg: 'RS256', use: 'sig' }
-  const issuer = 'https://heval-ci.invalid'
-  await writeFile(join(app, 'convex/auth.config.ts'), `export default ${JSON.stringify({ providers: [{ type: 'customJwt', issuer, applicationID: 'heval-ci', algorithm: 'RS256', jwks: `data:text/plain;charset=utf-8;base64,${Buffer.from(JSON.stringify({ keys: [jwk] })).toString('base64')}` }] })}`)
+  const issuer = 'https://openeval-ci.invalid'
+  await writeFile(join(app, 'convex/auth.config.ts'), `export default ${JSON.stringify({ providers: [{ type: 'customJwt', issuer, applicationID: 'openeval-ci', algorithm: 'RS256', jwks: `data:text/plain;charset=utf-8;base64,${Buffer.from(JSON.stringify({ keys: [jwk] })).toString('base64')}` }] })}`)
 
   await mkdir(join(temporary, 'home'))
   const cloudPort = unusedPort(), sitePort = unusedPort()
@@ -120,7 +120,7 @@ try {
   })
   const url = await localUrl()
   assert.equal(new URL(url).hostname, '127.0.0.1', 'The harness must use its disposable local backend.')
-  const token = await new SignJWT({ email: 'ci@example.invalid' }).setProtectedHeader({ alg: 'RS256', kid: 'ci', typ: 'JWT' }).setSubject('ci-owner').setIssuer(issuer).setAudience('heval-ci').setIssuedAt().setExpirationTime('1h').sign(privateKey)
+  const token = await new SignJWT({ email: 'ci@example.invalid' }).setProtectedHeader({ alg: 'RS256', kid: 'ci', typ: 'JWT' }).setSubject('ci-owner').setIssuer(issuer).setAudience('openeval-ci').setIssuedAt().setExpirationTime('1h').sign(privateKey)
   ownerApi = new ConvexHttpClient(url); ownerApi.setAuth(token)
 
   const code = randomSecret()
@@ -227,6 +227,20 @@ try {
   assert.notEqual(finished.report, finished.cells[0].report, 'The experiment must own a combined report separate from its diagnostic child report.')
   const report = await ownerApi.query(api.reports.get, { id: finished.report })
   assert(report, 'The combined report is not readable by its owner.')
+  assert.equal(report.evidence.filter(item => item.kind === 'timeline').length, 2, 'Observed lifecycles must survive report completion and combined trial remapping.')
+  const childReport = (await ownerApi.query(api.reports.get, { id: finished.cells[0].report }))!
+  const sourceTrial = JSON.parse(childReport.data).rows[0].trial as string
+  await writeFile(join(directory, 'reviewed-evidence.json'), JSON.stringify({ schemaVersion: 1, entries: [{ trial: sourceTrial, title: 'Synthetic reviewed output', kind: 'html', text: '<h1>Connected-worker demonstration output</h1>' }] }))
+  await waitFor(async () => {
+    const report = await ownerApi!.query(api.reports.get, { id: finished.report! })
+    return report?.evidence.some(item => item.kind === 'html' && !item.published) ? report : null
+  }, 'reviewed private output upload and combined trial remapping')
+  await waitFor(() => Promise.resolve(existsSync(join(directory, 'evidence-receipt.json'))), 'durable reviewed evidence receipt')
+  const shareToken = randomSecret()
+  await ownerApi.mutation(api.reports.share, { id: finished.report, token: shareToken })
+  assert.deepEqual((await ownerApi.query(api.reports.shared, { token: shareToken }))!.evidence, [], 'Captured lifecycle and output must remain private on shared reports.')
+  await ownerApi.mutation(api.reports.revoke, { id: finished.report })
+  evidence.push({ scenario: 'recorded lifecycle and explicit reviewed output', run: id, expected: 'combined trial mapping, private evidence and durable upload receipt', observed: 'matched' })
   const data = JSON.parse(report.data) as { job: string; rows: { agent: string; passed: number }[] }
   assert.equal(data.job, 'CI connected evaluation')
   assert.deepEqual(data.rows.map(row => ({ agent: row.agent, passed: row.passed })), [{ agent: 'oracle', passed: 1 }, { agent: 'oracle', passed: 1 }])
@@ -283,7 +297,7 @@ try {
   assert.equal((await ownerApi.query(api.reports.list)).length, 4, 'Terminal delivery created duplicate reports.')
   assert(!existsSync(join(state, 'runs', queued)))
   evidence.push({ scenario: 'active cancellation with telemetry rejected', experiment, run: active.id, queuedRun: queued, childReport: cancelled.cells[0].report, combinedReport: cancelled.report, expected: 'cancelled after cleanup; one verified pass, unfinished trial excluded; queued work never launched', observed: 'matched' })
-  console.log(JSON.stringify({ baseRevision: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(), modelCalls: 0, droppedTelemetry, evidence }, null, 2))
+  console.log(JSON.stringify({ baseRevision: process.env.HEVAL_TEST_BASE_REVISION ?? execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(), modelCalls: 0, droppedTelemetry, evidence }, null, 2))
   console.log(`PASS: Convex queue -> live daemon -> Harbor ${HARBOR_VERSION}/Docker -> combined report (${finished.report}).`)
   if (web && process.env.HEVAL_TEST_BROWSER_ACK_FILE) {
     console.log(`BROWSER: ${web.resolvedUrls!.local[0]}evaluations?experiment=${experiment}`)

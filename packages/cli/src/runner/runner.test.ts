@@ -12,7 +12,7 @@ import { exportJob } from '../../../../harbor/report/trials'
 
 const temporary: string[] = []
 const task = resolve(import.meta.dirname, '../../runner-task')
-function state() { const dir = mkdtempSync(join(tmpdir(), 'heval-runner-')); temporary.push(dir); return dir }
+function state() { const dir = mkdtempSync(join(tmpdir(), 'openeval-runner-')); temporary.push(dir); return dir }
 afterEach(() => { for (const path of temporary.splice(0)) rmSync(path, { recursive: true, force: true }) })
 test('pairing refuses credential-bearing URLs, insecure origins and unrelated hosts', () => {
   expect(cloudUrl('https://example.convex.cloud')).toBe('https://example.convex.cloud')
@@ -133,10 +133,12 @@ test('profile approval rejects implicit datasets, multiple agents, symlinks and 
   symlinkSync('/etc/passwd', join(dir, 'tasks/heval-setup/leak'))
   expect(() => loadProfiles(registry)).toThrow('symlinks')
 })
-test('runner state writes use private file permissions and process identity includes a live start time', () => {
+test('runner state writes use private file permissions', () => {
   const path = join(state(), 'connection.json')
   writeJson(path, { credential: 'private' })
   expect(statSync(path).mode & 0o777).toBe(0o600)
+})
+test.skipIf(process.platform !== 'linux')('Linux process identity includes a live start time', () => {
   expect(processKey(process.pid)).not.toBeNull()
   expect(processKey(99999999)).toBeNull()
 })

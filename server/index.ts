@@ -50,7 +50,7 @@ const server = Bun.serve<SocketData>({
     if (!['GET', 'HEAD'].includes(req.method)) return new Response('Method not allowed', { status: 405 })
     const path = url.pathname === '/' || url.pathname === '/login' ? '/index.html'
       : url.pathname === '/studio' ? '/studio.html'
-      : ['/reports', '/share', '/machines', '/evaluations'].includes(url.pathname) ? '/reports.html' : url.pathname
+      : ['/reports', '/share', '/machines', '/evaluations', '/library', '/settings', '/explore'].includes(url.pathname) ? '/reports.html' : url.pathname
     let decoded: string
     try { decoded = decodeURIComponent(path) } catch { return new Response('Bad path', { status: 400 }) }
     const target = resolve(dist, `.${decoded}`)
@@ -74,4 +74,4 @@ const server = Bun.serve<SocketData>({
 for (const signal of ['SIGINT', 'SIGTERM'] as const) process.on(signal, () => {
   void runner.shutdown().finally(() => { server.stop(true); process.exit(0) })
 })
-console.log(`Heval Bun server listening on ${server.url}`)
+console.log(`OpenEval Bun server listening on ${server.url}`)

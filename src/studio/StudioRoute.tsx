@@ -44,7 +44,7 @@ export function StudioRoute() {
                 : <p role="status">Sign-in isn’t available on this deployment yet. Please try again later.</p>}
               {error && <p className="studio-access-error" role="alert">{error}</p>}
             </>}
-          <a className="studio-access-back" href="/"><ArrowLeft size={15} />Back to Heval</a>
+          <a className="studio-access-back" href="/"><ArrowLeft size={15} />Back to OpenEval</a>
         </section>
       </main>
     </div>

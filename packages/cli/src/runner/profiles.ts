@@ -17,7 +17,7 @@ export function initializeProfiles(directory: string, bundledTask: string) {
   // Explicit traversal avoids Node's native recursive-copy failure on Docker Desktop bind mounts.
   cpSync(bundledTask, join(directory, 'tasks/heval-setup'), { recursive: true, filter: name => !name.split('/').some(part => part === '.git' || part === '__pycache__') })
   writeJson(join(directory, 'setup.json'), { n_attempts: 1, agents: [{ name: 'oracle' }], tasks: [{ path: 'tasks/heval-setup' }] })
-  writeJson(path, { schemaVersion: 1, profiles: [{ id: 'heval-setup', title: 'Check this machine', benchmark: 'Heval setup check v1', config: 'setup.json', timeoutSeconds: 300 }] })
+  writeJson(path, { schemaVersion: 1, profiles: [{ id: 'heval-setup', title: 'Check this machine', benchmark: 'OpenEval setup check v1', config: 'setup.json', timeoutSeconds: 300 }] })
   return path
 }
 export function loadProfiles(file: string, connectionDirectory = dirname(file)): LocalProfile[] {
@@ -78,7 +78,7 @@ const copyTask = (from: string, to: string) => cpSync(from, to, { recursive: tru
 /** Copy a catalog benchmark's pinned tasks into the runner state, refusing any content that differs from the pin. */
 function installBenchmark(directory: string, id: string, source: string, catalog: Benchmark[]) {
   const benchmark = catalog.find(b => b.id === id)
-  if (!benchmark || benchmark.id === 'heval-smoke' || !benchmark.taskHashes || benchmark.status === 'unsupported') throw new Error(`Choose an installable benchmark: ${catalog.filter(b => b.taskHashes && b.status !== 'unsupported' && b.id !== 'heval-smoke').map(b => b.id).join(', ')}.`)
+  if (!benchmark || benchmark.id === 'openeval-smoke' || !benchmark.taskHashes || benchmark.status === 'unsupported') throw new Error(`Choose an installable benchmark: ${catalog.filter(b => b.taskHashes && b.status !== 'unsupported' && b.id !== 'openeval-smoke').map(b => b.id).join(', ')}.`)
   const target = join(directory, 'benchmarks', benchmark.id)
   for (const [task, expected] of benchmark.taskHashes) {
     const path = join(resolve(source), task)
@@ -125,7 +125,7 @@ export function setupMergeProfiles(directory: string, bundledTask: string, model
     writeJson(join(directory, `${id}.json`), configFor(harness))
     registry.profiles.push(entry
       ? { id, title: `${entry.title}: ${harness} / ${model}`, benchmark: entry.title, config: `${id}.json`, provider: 'merge', timeoutSeconds: entry.timeoutSeconds ?? 3600 }
-      : { id, title: `Merge smoke: ${harness}`, benchmark: 'Heval model connection smoke test', config: `${id}.json`, provider: 'merge', timeoutSeconds: 600 })
+      : { id, title: `Merge smoke: ${harness}`, benchmark: 'OpenEval model connection smoke test', config: `${id}.json`, provider: 'merge', timeoutSeconds: 600 })
   }
   writeJson(path, registry)
   return harnesses.map(idFor)

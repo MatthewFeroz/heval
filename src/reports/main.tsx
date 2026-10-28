@@ -6,6 +6,7 @@ import { ReportsApp } from './ReportsApp'
 import { EvaluationApp } from '../runners/EvaluationApp'
 import { RunnerApp } from '../runners/RunnerApp'
 import { WorkspaceLayout } from './WorkspaceLayout'
+import { ExploreApp } from './ExploreApp'
 import './reports.css'
 
 class ReportErrorBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
@@ -16,6 +17,8 @@ class ReportErrorBoundary extends Component<{ children: ReactNode }, { failed: b
   }
 }
 
+const params = new URLSearchParams(location.search)
+const evaluation = location.pathname === '/evaluations' || location.pathname === '/library' && ['new', 'experiment', 'managed', 'run', 'baseline', 'custom'].some(key => params.has(key))
 createRoot(document.getElementById('root')!).render(<StrictMode><ReportErrorBoundary>
-  <AuthBoundary>{auth => <ReportProvider>{location.pathname === '/evaluations' ? <EvaluationApp key={auth.user?.email ?? 'public'} /> : location.pathname === '/machines' ? <RunnerApp key={auth.user?.email ?? 'public'} /> : <ReportsApp key={auth.user?.email ?? 'public'} />}</ReportProvider>}</AuthBoundary>
+  <AuthBoundary>{auth => location.pathname === '/explore' ? <ExploreApp /> : <ReportProvider>{evaluation ? <EvaluationApp key={auth.user?.email ?? 'public'} /> : ['/machines', '/settings'].includes(location.pathname) ? <RunnerApp key={auth.user?.email ?? 'public'} /> : <ReportsApp key={auth.user?.email ?? 'public'} />}</ReportProvider>}</AuthBoundary>
 </ReportErrorBoundary></StrictMode>)

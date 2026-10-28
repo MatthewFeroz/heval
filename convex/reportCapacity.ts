@@ -22,7 +22,9 @@ export async function hasReportCapacity(ctx: QueryCtx, owner: string, additional
   // Terminal transitions already attempt materialization, so cancelled runs
   // without rows and oversized results no longer reserve a combined output.
   const combined = experiments.filter(experiment => experiment && !experiment.report).length
-  return stored + unfinished.length + combined + additional <= MAX_REPORTS
+  const managed = await ctx.db.query('managedComparisons').withIndex('by_owner', q => q.eq('owner', owner)).take(100)
+  const reserved = managed.filter(job => job.status === 'queued' || job.status === 'provisioning').reduce((sum, job) => sum + job.spec.harnesses.length * job.spec.models.length + 2, 0)
+  return stored + unfinished.length + combined + reserved + additional <= MAX_REPORTS
 }
 
 /** Reserve output space in the same transaction that accepts work or an import. */

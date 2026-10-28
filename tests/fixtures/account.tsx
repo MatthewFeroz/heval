@@ -28,7 +28,7 @@ export function Fixture() {
   return <div style={{ background: '#0b0b0b', color: '#f4f4f5', minHeight: '100vh', fontFamily: 'system-ui' }}>
     <header style={{ position: 'sticky', top: 0, overflowX: 'auto', background: '#101010', padding: 16, backdropFilter: 'blur(18px)' }}>
       <nav style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 20, minWidth: params.has('overflow') ? 900 : undefined }}>
-        <a href="#home" style={{ color: 'white', fontSize: 24 }}>heval</a>
+        <a href="#home" style={{ color: 'white', fontSize: 24 }}>openeval</a>
         <AccountControls auth={auth} showWorkspaceLink />
       </nav>
     </header>

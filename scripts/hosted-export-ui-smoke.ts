@@ -1,6 +1,9 @@
 /** Real Studio components with in-browser Convex/auth adapters. No cloud calls.
  * Backend authorization/persistence and the download proxy have separate tests. */
 import assert from 'node:assert/strict'
+import { mkdtempSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { createServer } from 'vite'
 import { chromium, expect } from '@playwright/test'
 import { initialReportProject } from '../src/reports/project'
@@ -17,7 +20,8 @@ document.project.presentations = [presentation]; document.presentationId = prese
 const initial = { report: { id, title: 'Hosted export smoke', data: JSON.stringify(data), project: JSON.stringify(document), version: 0, role: 'owner', publishedVersion: null, shareToken: null }, jobs: [] }
 process.env.VITE_CONVEX_URL = 'https://export-test.convex.cloud'
 process.env.VITE_HEVAL_STATIC_SITE = '1'
-const server = await createServer({ server: { host: '127.0.0.1', port: 0 }, plugins: [{
+const cacheDir = mkdtempSync(join(tmpdir(), 'openeval-export-ui-cache-'))
+const server = await createServer({ cacheDir, server: { host: '127.0.0.1', port: 0 }, plugins: [{
   name: 'hosted-export-test-adapters', enforce: 'pre',
   resolveId(source) {
     if (source === 'convex/react') return '\0export-test-convex'
@@ -93,7 +97,7 @@ try {
   await expect(page.frameLocator('iframe[title="Social chart preview 1"]').getByRole('img', { name: 'Cost per successful task', exact: true })).toBeVisible()
   await page.getByRole('button', { name: 'Export thread ZIP online', exact: true }).click()
   await expect(page.getByLabel('Hosted exports').getByText(/Thread ZIP.*queued/)).toBeVisible()
-  await page.screenshot({ path: '/tmp/heval-hosted-export-history.png', fullPage: true })
+  await page.screenshot({ path: '/tmp/openeval-hosted-export-history.png', fullPage: true })
   assert.deepEqual(errors, [])
   console.log('PASS: Studio queues PNG, saves settings, restores completed history on reload, authenticates download, and queues ZIP (cloud adapters simulated).')
-} finally { await browser.close(); await server.close() }
+} finally { await browser.close(); await server.close(); rmSync(cacheDir, { recursive: true, force: true }) }

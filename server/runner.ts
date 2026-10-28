@@ -5,8 +5,6 @@ import { readTranscript, restoreRuns, saveSummary } from './history'
 import { type WorkerBackend, type WorkerProcess, type RunAccess } from './docker'
 import { Recording } from './recording'
 import { RunnerError, type HarnessId, type Run, type RunConfig } from './types'
-export { isHarness } from './types'
-export type { HarnessId, Run, Chunk, Grade } from './types'
 
 type Socket = { send(data: string): unknown }
 type Options = {

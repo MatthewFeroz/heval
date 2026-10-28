@@ -1,4 +1,4 @@
-"""Heval's pinned Deep Agents Code adapter.
+"""OpenEval's pinned Deep Agents Code adapter.
 
 Native output and dependency versions are retained locally. Token/cost and ATIF
 trajectory conversion are not implemented; those measurements remain unknown.

@@ -15,7 +15,7 @@ mkdirSync(dist, { recursive: true })
 // Collect the actual bundled browser dependencies, including their license texts.
 const notices = new Map<string, string>()
 const licenses: Plugin = {
-  name: 'heval-package-notices',
+  name: 'openeval-package-notices',
   generateBundle(_options, bundle) {
     for (const chunk of Object.values(bundle)) {
       if (chunk.type !== 'chunk') continue
@@ -41,7 +41,7 @@ await build({
   root: join(pkg, 'web'),
   publicDir: join(root, 'public'),
   plugins: [react(), licenses, {
-    name: 'heval-offline-fonts',
+    name: 'openeval-offline-fonts',
     enforce: 'pre',
     transform(code, id) {
       if (id.replaceAll('\\', '/') !== join(root, 'src/studio/studio.css').replaceAll('\\', '/')) return
@@ -68,7 +68,7 @@ await build({
   },
 })
 const result = await Bun.build({
-  entrypoints: [join(pkg, 'src/cli.ts'), join(pkg, 'src/runner-supervisor.ts'), join(pkg, 'src/setup-worker.ts')],
+  entrypoints: [join(pkg, 'src/cli.ts'), join(pkg, 'src/runner-supervisor.ts'), join(pkg, 'src/setup-worker.ts'), join(pkg, 'src/managed-worker.ts')],
   outdir: dist,
   target: 'node',
   format: 'esm',

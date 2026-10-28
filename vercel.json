@@ -5,12 +5,45 @@
   "buildCommand": "npx --yes --package=bun@1.4.2 bun scripts/vercel-build.ts",
   "outputDirectory": "dist",
   "rewrites": [
-    { "source": "/", "destination": "/index.html" },
-    { "source": "/login", "destination": "/index.html" },
-    { "source": "/studio", "destination": "/studio.html" },
-    { "source": "/reports", "destination": "/reports.html" },
-    { "source": "/share", "destination": "/reports.html" },
-    { "source": "/machines", "destination": "/reports.html" },
-    { "source": "/evaluations", "destination": "/reports.html" }
+    {
+      "source": "/",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/login",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/studio",
+      "destination": "/studio.html"
+    },
+    {
+      "source": "/reports",
+      "destination": "/reports.html"
+    },
+    {
+      "source": "/share",
+      "destination": "/reports.html"
+    },
+    {
+      "source": "/machines",
+      "destination": "/reports.html"
+    },
+    {
+      "source": "/evaluations",
+      "destination": "/reports.html"
+    },
+    {
+      "source": "/library",
+      "destination": "/reports.html"
+    },
+    {
+      "source": "/settings",
+      "destination": "/reports.html"
+    },
+    {
+      "source": "/explore",
+      "destination": "/reports.html"
+    }
   ]
 }

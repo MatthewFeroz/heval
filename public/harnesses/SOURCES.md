@@ -1,6 +1,6 @@
 # Harness logo sources
 
-The harness marks shown on the Heval homepage come from the sources below.
+The harness marks shown on the OpenEval homepage come from the sources below.
 They identify third-party products; ownership and
 trademark rights remain with their respective owners.
 

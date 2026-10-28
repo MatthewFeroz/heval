@@ -54,7 +54,7 @@ export async function cleanupRun(directory: string) {
 /** Explicit operator recovery after an orphaned execution; never used to retry a claim. */
 export async function recoverRun(directory: string) {
   if (!existsSync(join(directory, 'cleanup-required.json'))) throw new Error('This run has no pending cleanup marker.')
-  if (supervisorAlive(directory)) throw new Error('The supervisor is still running. Cancel the evaluation in Heval and wait for it to stop.')
+  if (supervisorAlive(directory)) throw new Error('The supervisor is still running. Cancel the evaluation in OpenEval and wait for it to stop.')
   const path = join(directory, 'harbor-process.json')
   if (existsSync(path)) {
     const { pid, key } = readJson<{ pid: number; key: string }>(path)

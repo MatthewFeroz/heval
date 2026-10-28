@@ -3,7 +3,7 @@
 Status: proposed product direction. Consolidating development work does not
 implement this gallery or publish existing private results.
 
-Heval should let visitors choose a task, inspect what different harness/model
+OpenEval should let visitors choose a task, inspect what different harness/model
 stacks produced, and compare those outputs visually without signing in. The
 reference is [WhichAI](https://github.com/SunkenInTime/which-ai): real generated
 outputs, preserved attempts and shareable comparisons with visible conditions.

@@ -1,6 +1,6 @@
 /* One current action, with a compact progress rail. No collapsed setup panels. */
-.first-smoke { max-width: 760px; margin: 0 auto; }
-.setup-progress { list-style: none; display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 16px; padding: 0; margin: 24px 0; }
+.first-smoke { width: 100%; display: flex; flex-direction: column; gap: var(--section-gap); }
+.setup-progress { list-style: none; display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: var(--space-4); padding: 0; margin: 0; }
 .setup-progress li { display: flex; gap: 8px; align-items: center; color: var(--muted); font: 500 var(--type-xs) var(--sans); }
 .setup-progress li > span:first-child { display: grid; place-items: center; flex: none; width: 24px; height: 24px; border: 1px solid var(--line-strong); border-radius: 50%; }
 .setup-progress li[aria-current=step] { color: var(--white); }
@@ -11,9 +11,9 @@
 .report-shell .setup-stage > h2 { font: 600 var(--type-2xl) var(--sans); margin: 0 0 16px; }
 .setup-stage > button, .setup-stage > .report-button { margin: 16px 8px 0 0; }
 .setup-stage-actions { margin-top: 16px; }
-.first-smoke-copy { display: flex; align-items: center; gap: 8px; min-width: 0; margin: 20px 0; }
+.first-smoke-copy { display: flex; align-items: center; gap: var(--space-3); min-width: 0; margin: var(--space-6) 0; }
 .first-smoke-copy code { flex: 1; min-width: 0; padding: 11px; border: 1px solid var(--line-strong); border-radius: var(--radius-control); background: var(--bg); font: var(--type-xs) var(--mono); line-height: 20px; overflow-wrap: anywhere; }
-.setup-review { display: grid; gap: 12px; margin: 20px 0; }
+.setup-review { display: grid; gap: var(--space-3); margin: var(--space-6) 0; }
 .setup-review > div { display: grid; grid-template-columns: 80px minmax(0,1fr); gap: 16px; }
 .setup-review dt { color: var(--muted); }
 .setup-review dd { margin: 0; overflow-wrap: anywhere; }

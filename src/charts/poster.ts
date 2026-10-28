@@ -25,8 +25,6 @@ import type { TrialRow } from './trial'
 /** Neutral public chart styling. */
 export const POSTER_SURFACE = '#171717'
 
-/** Neutral public chart styling. */
-export const POSTER_SERIES = ['#BDBDBD', '#797771'] as const
 
 /** Neutral public chart styling. */
 export const POSTER_WINNER = '#D4D4D4'
@@ -41,8 +39,6 @@ export const POSTER_COMPARISON_SERIES = [
 /** Hard cap. A seventh model folds into a second poster, never a generated hue. */
 export const POSTER_MAX_SERIES = 6
 
-/** Neutral public chart styling. */
-export const POSTER_DESIGNER_SURFACE = '#12110F'
 
 /**
  * The model logo tile - an ivory chip the provider mark sits in.

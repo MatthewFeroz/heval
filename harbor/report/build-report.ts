@@ -30,6 +30,7 @@ import { DIMENSION_LABEL, MEASURE_LABEL, SLOW_TRIAL_SECONDS, type JobExport, typ
 import { renderSvg } from './render-svg'
 import { turnSummary } from './turn-summary'
 import { exportJob } from './trials'
+import { lockupSvg } from '../../src/brand'
 
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 const pct = (n: number) => `${Math.round(n * 100)}%`
@@ -678,7 +679,7 @@ async function render(exp: JobExport): Promise<string> {
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#171717">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
-<title>${esc(exp.job)} &middot; Heval report</title>
+<title>${esc(exp.job)} &middot; OpenEval report</title>
 <style>
 ${TOKENS_CSS}
 ${REPORT_CSS}
@@ -686,7 +687,7 @@ ${REPORT_CSS}
 </head>
 <body>
 <header class="topbar">
-  <a class="brand" href="/"><span>Heval evaluation report</span></a>
+  <a class="brand" href="/">${lockupSvg()}<span>Evaluation report</span></a>
   <div class="crumbs"><a href="/#reports">Reports</a><span>/</span><strong>${esc(exp.job)}</strong></div>
   <div class="actions">
     <div class="canvas-toggle" role="radiogroup" aria-label="Chart canvas">

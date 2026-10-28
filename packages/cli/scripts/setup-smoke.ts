@@ -10,7 +10,7 @@ import { execute } from '../src/setup'
 // This test creates its own unpaired worker and never reads real credentials.
 const root = resolve(import.meta.dirname, '../../..')
 const { name: packageName, version } = JSON.parse(readFileSync(join(root, 'packages/cli/package.json'), 'utf8'))
-const temporary = mkdtempSync(join(tmpdir(), 'heval-bootstrap-'))
+const temporary = mkdtempSync(join(tmpdir(), 'openeval-bootstrap-'))
 const worker = `heval-ci-${process.pid}-${Date.now()}`
 const volume = `${worker}-data`
 const node = realpathSync(Bun.which('node')!)
@@ -34,7 +34,7 @@ async function launch(cli: string) {
 }
 try {
   writeFileSync(join(temporary, 'package.json'), '{"private":true}')
-  const tarball = join(root, '.scratch', `mattferoz-heval-${version}.tgz`)
+  const tarball = join(root, '.scratch', `${packageName.replace(/^@/, '').replace('/', '-')}-${version}.tgz`)
   await execute('npm', ['install', '--offline', '--ignore-scripts', '--no-audit', '--no-fund', '--prefix', temporary, tarball], undefined, false, 60_000)
   const cli = join(temporary, 'node_modules', packageName, 'dist/cli.js')
   const plan = JSON.parse(await execute(node, [cli, 'setup', '--plan', '--json', '--name', worker]))
@@ -60,7 +60,7 @@ try {
   const page = await browser.newPage()
   await page.goto(url)
   await expect(page.getByRole('heading', { name: 'Connect your computer', exact: true })).toBeVisible()
-  await expect(page.getByRole('link', { name: 'Connect to Heval', exact: true })).toHaveAttribute('href', /\/machines\?setup=new#worker=/)
+  await expect(page.getByRole('link', { name: 'Connect to OpenEval', exact: true })).toHaveAttribute('href', /\/machines\?setup=new#worker=/)
   await expect(page.getByLabel('Merge Gateway API key')).not.toBeVisible()
   await expect(page.locator('input[name="harness"][value="pi"]')).toBeChecked()
   await expect(page.locator('input[name="harness"][value="codex"]')).not.toBeChecked()

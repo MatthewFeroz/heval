@@ -1,4 +1,4 @@
-# Deploy Heval on DigitalOcean
+# Deploy OpenEval on DigitalOcean
 
 Use two Linux VMs on the same private network: a web VM for Bun, Chromium exports, Caddy and persistent data, and a dedicated worker VM for disposable evaluation containers. Model inference uses the configured API, so these VMs do not need GPUs. Start with 4 GB RAM on the web VM and enough worker memory for the configured two 2 GB containers plus Docker overhead.
 
@@ -62,13 +62,13 @@ Signups require explicit consent, normalize and deduplicate emails, and enforce 
 
 The runner enforces approved models, invited users, per-user/global concurrency, daily attempt limits, timeouts, output limits and container cleanup. These limits constrain use; they are not an exact dollar budget. Set provider-side spending limits as appropriate. Unknown token counts and prices remain unavailable in the UI and exports.
 
-Agent containers have outbound network access. Browser evaluations receive a temporary, model-restricted token for the Heval inference proxy. Saved Gateway keys stay on the web server. Use a dedicated credential and worker VM. The grader runs in a separate networkless container with immutable tests. Hosted deployment still requires validation on your actual accounts, DNS and worker host; the repository's local tests cannot establish those external connections.
+Agent containers have outbound network access. Browser evaluations receive a temporary, model-restricted token for the OpenEval inference proxy. Saved Gateway keys stay on the web server. Use a dedicated credential and worker VM. The grader runs in a separate networkless container with immutable tests. Hosted deployment still requires validation on your actual accounts, DNS and worker host; the repository's local tests cannot establish those external connections.
 
 ## Provider connections
 
 The workbench includes Provider settings for connecting, validating, replacing and deleting a personal Merge Gateway key. Browser evaluations require a connection and currently support Pi Agent. The instance-wide `HEVAL_GATEWAY_API_KEY` is for local CLI use; it is never silently assigned to an evaluator. See [the provider flow](provider-connections.md).
 
-Set `HEVAL_CONNECTION_ENCRYPTION_KEY` to 32 cryptographically random bytes encoded as 64 hexadecimal characters before starting hosted Heval. Store this secret separately from database backups, preserve it across restarts, and never put it in a `VITE_` variable. Hosted startup fails if it is missing or malformed. Changing it without migrating saved credentials makes those connections unreadable.
+Set `HEVAL_CONNECTION_ENCRYPTION_KEY` to 32 cryptographically random bytes encoded as 64 hexadecimal characters before starting hosted OpenEval. Store this secret separately from database backups, preserve it across restarts, and never put it in a `VITE_` variable. Hosted startup fails if it is missing or malformed. Changing it without migrating saved credentials makes those connections unreadable.
 
 The worker must reach `https://<HEVAL_DOMAIN>/api/inference/chat/completions`. Caddy passes streaming responses through the same authenticated-by-run-token endpoint. Each token permits only the selected model, one concurrent request, 40 requests total, and up to 8192 output tokens per request. It expires at the run deadline and is revoked on completion, cancellation, replacement or deletion. These are request and token ceilings, not an exact dollar budget.
 

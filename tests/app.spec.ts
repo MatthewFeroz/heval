@@ -11,7 +11,7 @@ test('submits an early-access signup', async ({ page }) => {
     expect(route.request().postDataJSON()).toEqual({ email: 'dev@example.com', consent: true })
     await route.fulfill({ status: 201, json: { ok: true } })
   })
-  await page.getByLabel('I agree to receive Heval project updates by email.').check()
+  await page.getByLabel('I agree to receive OpenEval project updates by email.').check()
   await page.getByPlaceholder('you@company.com').fill('dev@example.com')
   await page.getByRole('button', { name: /get early access/i }).last().click()
   await expect(page.getByText('You’re on the list.')).toBeVisible()
@@ -48,9 +48,18 @@ test('browses published runs and shares a two-run comparison', async ({ page }) 
 })
 
 test('opens evaluations from the landing page', async ({ page }) => {
-  await page.getByRole('link', { name: 'Create an evaluation', exact: true }).click()
-  await expect(page).toHaveURL(/\/evaluations$/)
+  await page.getByRole('link', { name: 'Run a comparison', exact: true }).click()
+  await expect(page).toHaveURL(/\/library\?new=1$/)
   await expect(page.getByRole('heading', { name: /Create an evaluation|Evaluations are coming online/ })).toBeVisible()
+})
+
+test('Explore opens published comparisons without workspace storage or sign-in', async ({ page }) => {
+  await page.goto('/explore')
+  await expect(page.getByRole('heading', { name: 'Explore', exact: true })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Every published run. Pick any two.' })).toBeVisible()
+  await expect(page.getByRole('navigation', { name: 'Main navigation' }).getByRole('link', { name: 'Explore', exact: true })).toHaveAttribute('aria-current', 'page')
+  await page.setViewportSize({ width: 390, height: 844 })
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
 })
 
 test('selects chart runs with mouse and keyboard and keeps the shared comparison', async ({ page }) => {
@@ -96,7 +105,7 @@ test('selects chart runs with mouse and keyboard and keeps the shared comparison
 test('signup failure does not claim the email was saved', async ({ page }) => {
   await page.route('**/api/signups', route => route.fulfill({ status: 503, json: { error: 'Could not save your signup. Please retry.' } }))
   await page.getByPlaceholder('you@company.com').fill('dev@example.com')
-  await page.getByLabel('I agree to receive Heval project updates by email.').check()
+  await page.getByLabel('I agree to receive OpenEval project updates by email.').check()
   await page.getByRole('button', { name: /get early access/i }).last().click()
   await expect(page.getByRole('alert')).toContainText('Could not save')
   await expect(page.getByText('You’re on the list.')).toHaveCount(0)

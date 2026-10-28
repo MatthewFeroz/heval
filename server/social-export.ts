@@ -34,7 +34,7 @@ const hyperframes = join(root, 'node_modules/hyperframes/bin/hyperframes.mjs')
 
 function removeScratch(scratch: string) {
   const target = resolve(scratch)
-  if (!target.startsWith(resolve(tmpdir()) + sep) || !basename(target).startsWith('heval-social-export-')) throw new Error('Invalid render cleanup path')
+  if (!target.startsWith(resolve(tmpdir()) + sep) || !basename(target).startsWith('openeval-social-export-')) throw new Error('Invalid render cleanup path')
   rmSync(target, { recursive: true, force: true })
 }
 
@@ -44,7 +44,7 @@ function catalogJobs(): Set<string> {
 }
 
 function inputFor(job: string): string {
-  if (!/^[a-z0-9][a-z0-9-]*$/.test(job) || !catalogJobs().has(job)) throw new SocialExportError('Unknown Heval job', 404)
+  if (!/^[a-z0-9][a-z0-9-]*$/.test(job) || !catalogJobs().has(job)) throw new SocialExportError('Unknown OpenEval job', 404)
   const input = join(resultsRoot, `${job}.json`)
   if (!existsSync(input)) throw new SocialExportError('The normalized job export is missing', 404)
   return input
@@ -125,7 +125,7 @@ export async function renderSocialExport(
 
   let scratch: string | undefined
   try {
-    scratch = mkdtempSync(join(tmpdir(), 'heval-social-export-'))
+    scratch = mkdtempSync(join(tmpdir(), 'openeval-social-export-'))
     // Render from a private copy so the exported file matches the options this
     // request asked for, whatever else is being previewed.
     const compositionDir = join(scratch, 'composition')

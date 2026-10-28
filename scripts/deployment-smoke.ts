@@ -6,7 +6,7 @@ import { chromium, expect } from '@playwright/test'
 
 const root = resolve(import.meta.dirname, '..')
 const dist = join(root, 'dist')
-const temporary = await mkdtemp(join(tmpdir(), 'heval-deployment-'))
+const temporary = await mkdtemp(join(tmpdir(), 'openeval-deployment-'))
 const env = { ...process.env, VITE_CLERK_PUBLISHABLE_KEY: '', VITE_CONVEX_URL: '', CLERK_JWT_ISSUER_DOMAIN: '', HEVAL_ENABLE_RUNNER: '0', HEVAL_ENABLE_EXPORTS: '0' }
 const browser = await chromium.launch()
 let staticServer: ReturnType<typeof Bun.serve> | undefined
@@ -35,10 +35,10 @@ try {
   const errors: string[] = []
   page.on('pageerror', error => errors.push(error.message))
   await page.goto(String(staticServer.url))
-  await expect(page.getByRole('heading', { name: 'The open-source evaluation platform for coding agents.' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Compare coding agents. Inspect every trial. Share the evidence.' })).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Every published run. Pick any two.' })).toBeVisible()
   await expect(page.getByPlaceholder('you@company.com')).toHaveCount(0)
-  await page.getByRole('link', { name: 'Create an evaluation', exact: true }).click()
+  await page.getByRole('link', { name: 'Run a comparison', exact: true }).click()
   await expect(page.getByRole('heading', { name: 'Evaluations are coming online' })).toBeVisible()
   await page.goto(new URL('/studio?job=demo-evaluation&recipe=bar&x=modelShort&color=none&measure=passed', staticServer.url).href)
   await expect(page.getByRole('heading', { name: 'Sign in to Studio' })).toBeVisible()
@@ -49,7 +49,7 @@ try {
   await expect(page.getByRole('heading', { name: 'Sign in to Studio' })).toBeVisible()
   assert.equal(await Bun.file(join(dist, 'tests/fixtures/studio-auth.html')).exists(), false)
   await page.goto(new URL('/login', staticServer.url).href)
-  await expect(page.getByRole('heading', { name: 'The open-source evaluation platform for coding agents.' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Compare coding agents. Inspect every trial. Share the evidence.' })).toBeVisible()
   await page.setViewportSize({ width: 393, height: 851 })
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth), false)
   assert.deepEqual(apiRequests, [], 'The static deployment must not depend on Bun APIs')
@@ -71,7 +71,7 @@ try {
   backend = Bun.spawn(['bun', 'server/index.ts'], {
     cwd: root,
     env: { ...env, HOST: '127.0.0.1', PORT: '0', HEVAL_DATA_DIR: temporary, HEVAL_HOSTED: '1',
-      HEVAL_PUBLIC_ORIGIN: 'https://heval.example.invalid', HEVAL_CONNECTION_ENCRYPTION_KEY: 'ab'.repeat(32) },
+      HEVAL_PUBLIC_ORIGIN: 'https://openeval.example.invalid', HEVAL_CONNECTION_ENCRYPTION_KEY: 'ab'.repeat(32) },
     stdin: 'ignore', stdout: 'pipe', stderr: 'pipe',
   })
   const process = backend
@@ -96,8 +96,8 @@ try {
   assert.equal((await fetch(`${output}/api/runs`)).status, 401)
   await page.goto(output)
   await expect(page.getByRole('heading', { name: 'Show the work. Then compare.' })).toBeVisible()
-  await page.getByRole('link', { name: 'Report library', exact: true }).click()
-  await expect(page.getByRole('heading', { name: 'Saved reports are coming online' })).toBeVisible()
+  await page.getByRole('link', { name: 'Library', exact: true }).click()
+  await expect(page.getByRole('heading', { name: 'Your Library is coming online' })).toBeVisible()
   await page.goto(output)
   await page.getByRole('link', { name: 'Explore public results' }).click()
   await expect(page.getByRole('heading', { name: 'Sign in to Studio' })).toBeVisible()

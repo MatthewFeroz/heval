@@ -5,10 +5,11 @@ import type { Id } from '../../convex/_generated/dataModel'
 import { useAppAuth } from '../auth'
 import { Studio, type HostedStudioSession } from '../studio/Studio'
 import { reportArtifact, type ReportProject } from './project'
+import '../studio/studio.css'
 
-export function HostedStudio() {
+export function HostedStudio({ id: reportId, workspaceSection, onDirtyChange }: { id?: Id<'reports'>; workspaceSection?: 'analyze' | 'export'; onDirtyChange?: (dirty: boolean) => void } = {}) {
   const auth = useAppAuth(), { isLoading, isAuthenticated } = useConvexAuth()
-  const id = new URLSearchParams(location.search).get('report') as Id<'reports'>
+  const id = reportId ?? new URLSearchParams(location.search).get('report') as Id<'reports'>
   const report = useQuery(api.reports.get, isAuthenticated ? { id } : 'skip')
   const save = useMutation(api.reportProjects.saveDraft)
   const requestExport = useMutation(api.presentationExports.request)
@@ -34,7 +35,7 @@ export function HostedStudio() {
     const result = await save({ id, expectedVersion: version, document: JSON.stringify(document) })
     setVersion(result.version)
   }
-  return <Studio hosted={{ ...loaded, version, newerVersion: report.version > version, save: persist, enqueue: async (document, collection, requestId) => {
+  return <Studio workspaceSection={workspaceSection} onDirtyChange={onDirtyChange} hosted={{ ...loaded, version, newerVersion: report.version > version, save: persist, enqueue: async (document, collection, requestId) => {
     const result = await requestExport({ report: id, document: JSON.stringify(document), expectedVersion: version, collection, requestId })
     setVersion(result.version)
   } }} />

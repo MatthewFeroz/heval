@@ -26,7 +26,7 @@ export type MotionTheme = {
   display: string
   /** Font stack for everything else. */
   body: string
-  /** Whether a custom lockup is available. */
+  /** Whether frames draw the OpenEval lockup. */
   lockup: boolean
   /** Text beside the lockup. Empty renders nothing. */
   wordmark: string
@@ -50,8 +50,8 @@ export const MOTION_THEMES: Record<ThemeId, MotionTheme> = {
     series: ['#7FB2E5', '#71777B'],
     display: INTER,
     body: INTER,
-    lockup: false,
-    wordmark: 'Heval',
+    lockup: true,
+    wordmark: '',
     pattern: 0,
   },
   'plain-light': {
@@ -67,8 +67,8 @@ export const MOTION_THEMES: Record<ThemeId, MotionTheme> = {
     series: ['#2F6FA8', '#A9B0B4'],
     display: INTER,
     body: INTER,
-    lockup: false,
-    wordmark: 'Heval',
+    lockup: true,
+    wordmark: '',
     pattern: 0,
   },
 }

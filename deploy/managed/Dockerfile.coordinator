@@ -1,0 +1,20 @@
+FROM oven/bun:1.4.2 AS build
+WORKDIR /app
+COPY package.json bun.lock ./
+RUN bun install --frozen-lockfile --production
+COPY server/managed ./server/managed
+COPY convex/_generated/api.js ./convex/_generated/api.js
+COPY src ./src
+COPY packages/cli/src ./packages/cli/src
+COPY harbor/gateway ./harbor/gateway
+COPY harbor/report ./harbor/report
+COPY harbor/toolchain.json ./harbor/toolchain.json
+RUN bun build server/managed/main.ts --target=bun --packages=external --outfile=managed-coordinator.js
+
+FROM oven/bun:1.4.2
+WORKDIR /app
+COPY --from=build /app/node_modules ./node_modules
+COPY --from=build /app/managed-coordinator.js ./managed-coordinator.js
+ENV NODE_ENV=production
+USER bun
+CMD ["bun", "managed-coordinator.js"]

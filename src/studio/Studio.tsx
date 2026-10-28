@@ -12,7 +12,7 @@ import { ReportProvider } from '../reports/ReportProvider'
 import { NUMERIC, columnLabel, cellText } from './table-values'
 import { StatTiles, FilterBar, RunList, RunDrawer, type RunSort } from './TrialPanels'
 /**
- * Heval chart studio - the configurable graph editor over Harbor output.
+ * OpenEval chart studio - the configurable graph editor over Harbor output.
  *
  * The controls drive `buildChart` from src/charts/recipes.ts, which is the same
  * function the static report compiles headlessly. Whatever you see here is what
@@ -97,7 +97,7 @@ import {
   sourceFromArtifact,
   verifyContentHash,
   type EvaluationArtifact,
-  type HevalProject,
+  type OpenEvalProject,
   type Presentation,
 } from '../project/schema'
 import { CANVAS_IDS, MOTION_CANVASES } from '../charts/motion-options'
@@ -144,9 +144,19 @@ function readFilters(search: string): Filters {
 }
 
 export type HostedStudioSession = { id: string; initial: ReportProject; artifact: EvaluationArtifact; data: ReportData; version: number; newerVersion?: boolean; save: (document: ReportProject) => Promise<void>; enqueue: (document: ReportProject, collection: boolean, requestId: string) => Promise<void> }
-const fingerprint = (document: ReportProject) => JSON.stringify(document, (key, value) => key === 'createdAt' || key === 'updatedAt' ? undefined : value)
+const fingerprint = ({ project, mode, viewId, presentationId }: ReportProject) => JSON.stringify({ project, mode, viewId, presentationId }, (key, value) => key === 'createdAt' || key === 'updatedAt' ? undefined : value)
 
-export function Studio({ localViewer = false, hosted }: { localViewer?: boolean; hosted?: HostedStudioSession }) {
+export function Studio({ localViewer = false, hosted, workspaceSection, onDirtyChange }: { localViewer?: boolean; hosted?: HostedStudioSession; workspaceSection?: 'analyze' | 'export'; onDirtyChange?: (dirty: boolean) => void }) {
+  const studioElement = useRef<HTMLDivElement>(null)
+  const [compactEditor, setCompactEditor] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  useEffect(() => {
+    const element = studioElement.current
+    if (!element) return
+    const observer = new ResizeObserver(([entry]) => setCompactEditor(entry.contentRect.width <= 900))
+    observer.observe(element)
+    return () => observer.disconnect()
+  }, [])
   const serverExports = !localViewer && !STATIC_SITE && !hosted
   const auth = useAppAuth()
   const [runIds, setRunIds] = useState(() => new URLSearchParams(window.location.search).get('runs'))
@@ -164,6 +174,7 @@ export function Studio({ localViewer = false, hosted }: { localViewer?: boolean;
     setDocumentFilters(Object.entries(next).filter(([, values]) => values.length).map(([field, values]) => ({ field, values })))
   }
   const [mode, setMode] = useState<StudioMode>(() => hosted?.initial.mode ?? (new URLSearchParams(window.location.search).get('mode') === 'presentation' ? 'presentation' : 'analysis'))
+  const [previousWorkspaceSection, setPreviousWorkspaceSection] = useState<typeof workspaceSection>()
   const [index, setIndex] = useState<JobIndexEntry[]>([])
   const [catalogLoaded, setCatalogLoaded] = useState(!!hosted)
   const [job, setJob] = useState<string | null>(hosted ? null : initial.job)
@@ -175,7 +186,7 @@ export function Studio({ localViewer = false, hosted }: { localViewer?: boolean;
   const [selected, setSelected] = useState<string | null>(null)
   const [copied, setCopied] = useState<string | null>(null)
   const [runSort, setRunSort] = useState<RunSort>({ key: 'agent', dir: 1 })
-  const [project, setProject] = useState<HevalProject | null>(hosted?.initial.project ?? null)
+  const [project, setProject] = useState<OpenEvalProject | null>(hosted?.initial.project ?? null)
   const [artifacts, setArtifacts] = useState<Map<string, EvaluationArtifact>>(() => hosted ? new Map([[hosted.artifact.id, hosted.artifact]]) : new Map())
   const [activeViewId, setActiveViewId] = useState<string | null>(hosted?.initial.viewId ?? null)
   const [activePresentationId, setActivePresentationId] = useState<string | null>(hosted?.initial.presentationId ?? null)
@@ -297,7 +308,7 @@ export function Studio({ localViewer = false, hosted }: { localViewer?: boolean;
     else updatePresentation((current) => ({ ...current, graphOverrides: { ...current.graphOverrides, [key]: value }, updatedAt: new Date().toISOString() }))
   }, [mode, set, updatePresentation])
 
-  const switchMode = (next: StudioMode) => {
+  const switchMode = useCallback((next: StudioMode) => {
     if (next === 'presentation' && (!project || !activeView)) return
     if (next === 'presentation' && project && activeView) {
       const saved = saveDocument(activeView, editor.document)
@@ -308,6 +319,11 @@ export function Studio({ localViewer = false, hosted }: { localViewer?: boolean;
     setMode(next)
     setTab(next === 'presentation' && !localViewer ? 'social' : 'chart')
     setSpecDraft(null)
+  }, [project, activeView, activePresentation, editor.document, localViewer])
+
+  if (workspaceSection && previousWorkspaceSection !== workspaceSection) {
+    setPreviousWorkspaceSection(workspaceSection)
+    switchMode(workspaceSection === 'export' ? 'presentation' : 'analysis')
   }
 
   // -- url + theme -----------------------------------------------------------
@@ -414,7 +430,7 @@ export function Studio({ localViewer = false, hosted }: { localViewer?: boolean;
     setCopied(what)
   }
 
-  const installProject = async (next: HevalProject, embedded: EvaluationArtifact[] = []) => {
+  const installProject = async (next: OpenEvalProject, embedded: EvaluationArtifact[] = []) => {
     const loaded = new Map<string, EvaluationArtifact>()
     for (const artifact of embedded) {
       if (!await verifyContentHash(artifact)) throw new Error(`Content hash mismatch for ${artifact.label}`)
@@ -506,12 +522,13 @@ export function Studio({ localViewer = false, hosted }: { localViewer?: boolean;
 
   const saveProjectFile = () => {
     if (!project) return
-    download(`${project.label}.heval-project.json`, new Blob([JSON.stringify(projectWithDraft(), null, 2)], { type: 'application/json' }))
+    download(`${project.label}.openeval-project.json`, new Blob([JSON.stringify(projectWithDraft(), null, 2)], { type: 'application/json' }))
   }
 
   const presentationDocument: ReportProject | null = project && activeView ? { project: projectWithDraft()!, mode, viewId: activeView.id, presentationId: activePresentation?.id ?? null } : null
   const cloudDocument = hosted ? presentationDocument : null
   const cloudDirty = !!cloudDocument && fingerprint(cloudDocument) !== savedFingerprint
+  useEffect(() => { onDirtyChange?.(cloudDirty) }, [cloudDirty, onDirtyChange])
   useEffect(() => {
     if (!cloudDirty) return
     const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = '' }
@@ -529,7 +546,7 @@ export function Studio({ localViewer = false, hosted }: { localViewer?: boolean;
   const saveBundleFile = async () => {
     if (!project) return
     const bundle = await makeBundle(projectWithDraft()!, project.sources.map((source) => artifacts.get(source.artifactId)).filter((artifact): artifact is EvaluationArtifact => !!artifact))
-    download(`${project.label}.heval-bundle.json`, new Blob([JSON.stringify(bundle, null, 2)], { type: 'application/json' }))
+    download(`${project.label}.openeval-bundle.json`, new Blob([JSON.stringify(bundle, null, 2)], { type: 'application/json' }))
   }
 
   const toggleFilter = (key: FilterKey, value: string) =>
@@ -575,6 +592,7 @@ export function Studio({ localViewer = false, hosted }: { localViewer?: boolean;
 
   return (
     <div
+      ref={studioElement}
       className={`studio${dragging ? ' dragging' : ''}`}
       onDragOver={(e) => { e.preventDefault(); if (!hosted) setDragging(true) }}
       onDragLeave={() => setDragging(false)}
@@ -586,7 +604,7 @@ export function Studio({ localViewer = false, hosted }: { localViewer?: boolean;
       }}
     >
       <header className="topbar">
-        <div className="studio-brand"><Brand /><span className="beta-pill">{localViewer ? 'LOCAL RESULTS' : 'STUDIO'}</span></div>
+        {!workspaceSection && <div className="studio-brand"><Brand /><span className="beta-pill">{localViewer ? 'LOCAL RESULTS' : 'STUDIO'}</span></div>}
 
         <div className="crumbs" hidden={!!hosted}>
           <ChevronRight size={14} />
@@ -604,9 +622,9 @@ export function Studio({ localViewer = false, hosted }: { localViewer?: boolean;
         </div>
 
         <div className="actions">
-          {hosted && <><a className="btn" href={`/reports?id=${hosted.id}`}>View report</a><button className="btn primary" disabled={cloudBusy || !cloudDirty || hosted.newerVersion} onClick={() => void saveCloud()}>{cloudBusy ? 'Saving draft…' : 'Save draft'}</button></>}
-          {!localViewer && <a className="btn ghost" href="/reports">Saved reports</a>}
-          {!localViewer && <a className="btn ghost" href="/machines?setup=1" target="_blank" rel="noreferrer" title="Open worker setup in a new tab">Worker setup</a>}
+          {hosted && <>{!workspaceSection && <a className="btn" href={`/library?report=${hosted.id}`}>View report</a>}<button className="btn primary" disabled={cloudBusy || !cloudDirty || hosted.newerVersion} onClick={() => void saveCloud()}>{cloudBusy ? 'Saving draft…' : 'Save draft'}</button></>}
+          {!localViewer && !workspaceSection && <a className="btn ghost" href="/library">Library</a>}
+          {!localViewer && !workspaceSection && <a className="btn ghost" href="/settings?setup=1" target="_blank" rel="noreferrer" title="Open worker setup in a new tab">Worker setup</a>}
           <input
             ref={filePicker}
             type="file"
@@ -625,7 +643,7 @@ export function Studio({ localViewer = false, hosted }: { localViewer?: boolean;
           <button type="button" className="btn primary" hidden={!!hosted} onClick={() => copy('link', window.location.href)} disabled={!chart || !canShareLink} title={canShareLink ? undefined : "Download a bundle to share this project and its data"}>
             {copied === 'link' ? <Check size={14} /> : <Link2 size={14} />}{copied === 'link' ? 'Copied' : localViewer ? 'Copy local link' : 'Copy link'}
           </button>
-          {!localViewer && <AccountControls auth={auth} />}
+          {!localViewer && !workspaceSection && <AccountControls auth={auth} />}
         </div>
       </header>
 
@@ -634,10 +652,10 @@ export function Studio({ localViewer = false, hosted }: { localViewer?: boolean;
       {localViewer && <div className="local-viewer-note" role="note">
         <strong>Local results viewer</strong>
         <span>Explore trials and download SVG, PNG, or a bundle. Links work while this viewer is running; use a bundle to share results.</span>
-        <span>To open another Harbor job: <code>heval open ./jobs/my-job</code>. This release does not launch evaluations or render social images and videos.</span>
+        <span>To open another Harbor job: <code>openeval open ./jobs/my-job</code>. This release does not launch evaluations or render social images and videos.</span>
       </div>}
 
-      <div className="modebar">
+      <div className="modebar" hidden={!!workspaceSection}>
         <div className="mode-switch" role="tablist" aria-label="Studio mode">
           <button type="button" role="tab" aria-selected={mode === 'analysis'} onClick={() => switchMode('analysis')}>Analysis</button>
           <button type="button" role="tab" aria-selected={mode === 'presentation'} disabled={!project || !activeView} onClick={() => switchMode('presentation')}>Presentation</button>
@@ -648,6 +666,8 @@ export function Studio({ localViewer = false, hosted }: { localViewer?: boolean;
 
       <div className={`workspace${tab === 'social' ? ' publishing-simple' : ''}`}>
         <aside className="side" style={{ display: tab === 'social' ? 'none' : undefined }}>
+          {compactEditor && <button type="button" className="btn studio-settings-toggle" aria-expanded={settingsOpen} aria-controls="studio-settings-panel" onClick={() => setSettingsOpen(open => !open)}>{mode === 'analysis' ? 'Chart settings' : 'Presentation settings'}<ChevronRight size={14} aria-hidden="true" /></button>}
+          <div id="studio-settings-panel" className="studio-settings-panel" hidden={compactEditor && !settingsOpen}>
           {mode === 'analysis' && project && (
             <div className="group project-config">
               <div className="group-head"><span className="eyebrow"><Layers size={11} />Project</span></div>
@@ -847,13 +867,14 @@ export function Studio({ localViewer = false, hosted }: { localViewer?: boolean;
             </div>
           </div>
           </fieldset>
+          </div>
         </aside>
 
-        <main className="main">
+        <section className="main" aria-label={mode === 'analysis' ? 'Chart analysis' : 'Presentation editor'}>
           <div className="head">
             <div>
               <span className="eyebrow">{mode === 'analysis' ? 'Analysis project' : 'Pinned presentation'}</span>
-              <h1>{project?.label ?? job ?? 'No project loaded'}</h1>
+              {!workspaceSection && <h1>{project?.label ?? job ?? 'No project loaded'}</h1>}
               {project && (
                 <div className="meta">
                   <span><Rows3 size={12} />{allRows.length} trials{filtering ? ` · ${rows.length} shown` : ''}</span>
@@ -1054,7 +1075,7 @@ export function Studio({ localViewer = false, hosted }: { localViewer?: boolean;
               onSelect={(id) => setSelected((cur) => (cur === id ? null : id))}
             />
           )}
-        </main>
+        </section>
       </div>
 
       {selectedRow && (

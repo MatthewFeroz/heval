@@ -1,22 +1,24 @@
 # Run Harbor from the browser on connected machines
 
-The next CLI release includes [one-command setup](setup-command.md) for a
-persistent Linux worker, account pairing, and a local masked provider-key form.
-Published 0.2.0 still uses the manual commands below.
+The CLI includes [one-command setup](setup-command.md) for a persistent Linux
+worker, account pairing, and a local masked provider-key form. The manual
+commands below remain available for workers you prepare yourself.
 
-Heval CLI 0.2.0 includes the connected runner preview. The older npm 0.1.0 CLI does **not** contain these commands. Install 0.2.0 using the instructions below. The website and Convex backend must deploy compatible connected-runner code; installing the CLI does not update the hosted application.
+OpenEval CLI 0.3.0 is published as `@mattferoz/openeval` and includes setup and the
+connected runner. It replaces the earlier `@mattferoz/heval` package; the `heval`
+command still works as an alias for `openeval`. The website and Convex backend must deploy compatible connected-runner code; installing the CLI does not update the hosted application.
 
 ```text
 Browser on laptop / another browser session
                  │ Clerk sign-in
                  ▼
-      Hosted Heval + Convex workspace
+      Hosted OpenEval + Convex workspace
        machines · queue · results
                  ▲
                  │ outbound HTTPS; no inbound ports
           ┌──────┴──────┐
      Linux PC        Cloud Linux VM
-     Heval runner    Heval runner
+     OpenEval runner    OpenEval runner
        Harbor          Harbor
        Docker          Docker
 ```
@@ -29,19 +31,19 @@ Harbor and Docker and verifies the resulting combined report. Older archived
 manual smoke evidence may still record the Harbor version used when it was
 captured.
 
-This pin applies to the source-built CLI and the next release. Published CLI
-0.2.0 still requires Harbor 0.23.0. Build and install this checkout's tarball
-before upgrading an existing worker to 0.24.0.
+This pin applies to CLI 0.3.0 and later. The earlier `@mattferoz/heval@0.2.0`
+requires Harbor 0.23.0, so install CLI 0.3.0 before upgrading an existing worker
+to Harbor 0.24.0.
 
 ## Upgrading an existing worker to Harbor 0.24.0
 
-Finish or cancel active evaluations before replacing the worker runtime. Rebuild
-the CLI tarball, install it locally, then rerun `heval setup` for a managed
+Finish or cancel active evaluations before replacing the worker runtime. Install
+CLI 0.3.0 (or a newer tarball), then rerun `openeval setup` for a managed
 worker. Setup refuses to replace a container built from a different artifact;
 stop and remove only the container, preserving the worker's persistent volume,
 then rerun setup with the same name. See [worker upgrades](setup-command.md).
 For a manually prepared Linux worker, install the exact supported version with
-`uv tool install --upgrade 'harbor==0.24.0'`, then check `heval doctor` before
+`uv tool install --upgrade 'harbor==0.24.0'`, then check `openeval doctor` before
 restarting the daemon.
 
 Harbor 0.24.0 validates built-in agent options at preflight. Review custom kwargs
@@ -57,7 +59,7 @@ Keep historical artifacts unchanged. Record Harbor 0.24.0 and the resolved
 agent options with new evaluation snapshots; runs made under different runtime
 versions or reasoning settings are different treatments.
 
-New to this setup? Follow [Your first Heval evaluation](first-evaluation.md)
+New to this setup? Follow [Your first OpenEval evaluation](first-evaluation.md)
 for a command-by-command walkthrough from a fresh Ubuntu worker to a saved result.
 
 ## 1. Install the preview on Linux
@@ -66,29 +68,32 @@ Use a dedicated Linux machine or VM you control, with Node.js 22+, Docker Engine
 
 Docker access grants substantial control of the host. This is a personal/trusted-worker architecture, not a public sandbox for untrusted users. Approve task files and agent configuration on the worker itself. Start with one task and one attempt.
 
-Published CLI 0.2.0 uses Harbor 0.23.0. Its installation command is:
+CLI 0.3.0 uses Harbor 0.24.0. Its installation command is:
 
 ```sh
-npm install -g @mattferoz/heval@0.2.0
-heval --version
-heval --help
+npm install -g @mattferoz/openeval@0.3.1
+openeval --version
+openeval --help
 ```
 
-Expect version `0.2.0` and `runner connect`, `runner start`, and `runner setup`
-in the help output. Bun and a repository checkout are not required for the npm
+Expect version `0.3.1` and `setup`, `runner connect`, `runner start`, and
+`runner setup` in the help output. Bun and a repository checkout are not required for the npm
 installation. Use the same command to upgrade an older installation, after
 active evaluations finish.
 
-For Harbor 0.24.0, build the CLI from source (Bun is needed only for this
-build):
+If this machine has the earlier `@mattferoz/heval` package installed globally,
+run `npm uninstall -g @mattferoz/heval` first. Both packages provide the `heval`
+command, so npm refuses to install one over the other.
+
+To build the CLI from source instead (Bun is needed only for this build):
 
 ```sh
-git clone --branch main https://github.com/MatthewFeroz/heval.git
-cd heval
+git clone --branch main https://github.com/MatthewFeroz/openeval.git
+cd openeval
 bun install --frozen-lockfile
 bun run cli:pack
-npm install -g ./.scratch/mattferoz-heval-0.2.0.tgz
-heval --help
+npm install -g ./.scratch/mattferoz-openeval-0.3.1.tgz
+openeval --help
 ```
 
 Alternatively, copy the built tarball to each machine and install it with `npm install -g /path/to/package.tgz`. No Bun dependency is required on those machines. Don't install a tarball over a different CLI version while a run is active.
@@ -108,27 +113,27 @@ The connected runner expects Harbor and its Docker engine on the same Linux mach
 
 Runner setup presents four steps: **Set up your machine**, **Connect your
 computer**, **Connect your model provider**, and **Run your first evaluation**.
-With the setup-enabled CLI, `heval setup` prepares the worker and opens a local
-page. Choose **Connect to Heval**, sign in, name the computer, and authorize it.
+With the setup-enabled CLI, `openeval setup` prepares the worker and opens a local
+page. Choose **Connect to OpenEval**, sign in, name the computer, and authorize it.
 The browser returns to local setup to connect the provider. API keys stay local.
 
 For an existing Linux worker, open Runner setup, choose **Setup is open**, then
 **Use a pairing code instead**. Create a code and use the displayed deployment
-URL with `heval runner connect --url https://YOUR-DEPLOYMENT.convex.cloud`.
+URL with `openeval runner connect --url https://YOUR-DEPLOYMENT.convex.cloud`.
 Paste the one-time code when prompted. It expires after ten minutes. Start the
-worker with `heval runner start` (or `--harbor /absolute/path/to/harbor`).
+worker with `openeval runner start` (or `--harbor /absolute/path/to/harbor`).
 
 After connecting a model, **Run my first evaluation** checks Docker with the
 free Oracle reference task, then starts the model task only if that check
 passes. This model task uses provider credits. Results and run history live on
-Evaluations; Runner setup manages computers and connections.
+Library; Settings manages computers and connections.
 
 The daemon stores its credential, profiles, and runs under `~/.heval/runner` by default. Files containing connection state are written with mode `0600` inside a `0700` directory. Convex stores a digest of the credential. Use `--state /absolute/path` consistently when choosing another location. Pair each machine independently; do not copy `connection.json` to another host.
 
 ## 3. Approve a model-backed evaluation
 
 The **Connect your model provider** step on Runner setup links to a worker-local
-provider page. With an updated source-built CLI, run `heval provider setup merge`
+provider page. With an updated source-built CLI, run `openeval provider setup merge`
 on the worker. The page provides a masked key field, catalog validation, and
 model/harness selection for creating connection-smoke profiles. No model calls
 are made. Existing profiles are never overwritten. The hosted page accepts only
@@ -140,18 +145,18 @@ for WSL and SSH forwarding. Older npm builds retain the terminal flow below.
 For Merge Gateway, the CLI can now create the connection and profiles for you:
 
 ```sh
-heval provider connect merge
-heval provider status merge
-heval runner setup --model YOUR_MODEL_ID --harnesses codex,claude-code,opencode,pi
-heval runner test --profile merge-codex
+openeval provider connect merge
+openeval provider status merge
+openeval runner setup --model YOUR_MODEL_ID --harnesses codex,claude-code,opencode,pi
+openeval runner test --profile merge-codex
 ```
 
 The hidden key prompt validates the catalog; setup makes no model calls. The
 last command runs a real model-backed smoke test locally and uses credits.
 No pairing is needed for local testing. Once paired, these same profiles are
-available on the Evaluations configuration page. Use the same `--state`
+available under New comparison in Library. Use the same `--state`
 directory throughout.
-See [the CLI connection guide](../packages/cli/README.md#one-merge-gateway-key-for-heval-evaluations)
+See [the CLI connection guide](../packages/cli/README.md#one-merge-gateway-key-for-openeval-evaluations)
 for replacement, removal, per-harness tests, and storage details. Merge profiles
 use `"provider": "merge"` instead of `envFile`; mixing the two is rejected.
 
@@ -159,14 +164,14 @@ The browser can select only profiles advertised by its paired machine. It cannot
 
 ### Catalog benchmarks
 
-The Evaluations page lists task sets installed on the selected worker, using
+The custom comparison flow lists task sets installed on the selected worker, using
 `src/runners/benchmarks.ts` to identify pinned benchmarks by content hash. Add
 benchmarks from the worker terminal. For example, the five-task OpenThoughts-TBLite smoke set:
 
 ```sh
 git clone https://github.com/open-thoughts/OpenThoughts-TBLite ~/.heval/benchmarks/openthoughts-tblite
 git -C ~/.heval/benchmarks/openthoughts-tblite checkout 5c37b41f00ce04719a4453061076ae9f46b74b7d
-heval runner setup --benchmark tblite-smoke --source ~/.heval/benchmarks/openthoughts-tblite \
+openeval runner setup --benchmark tblite-smoke --source ~/.heval/benchmarks/openthoughts-tblite \
   --model YOUR_MODEL_ID --harnesses codex,claude-code,pi
 ```
 
@@ -174,7 +179,7 @@ Setup refuses tasks whose content differs from the pin. It copies them into the
 runner state and creates one profile per harness and model. Run it again with
 another `--model` to offer more models. Use `--benchmark tblite` with the same
 source checkout to install the full 100-task set. Both TBLite entries are preview
-benchmarks: their pinned content is installable, but a full Heval evaluation has
+benchmarks: their pinned content is installable, but a full OpenEval evaluation has
 not yet validated them.
 
 ### Run deadlines
@@ -206,7 +211,7 @@ Add an entry to `~/.heval/runner/profiles.json` while retaining the setup profil
     {
       "id": "heval-setup",
       "title": "Check this machine",
-      "benchmark": "Heval setup check v1",
+      "benchmark": "OpenEval setup check v1",
       "config": "setup.json",
       "timeoutSeconds": 300
     },
@@ -249,7 +254,7 @@ directories. The additional approval check preserves those existing content
 pins; a catalog that pins execution metadata would require a separate migration.
 Base image tags and provider model aliases may still change upstream; pin those
 yourself for published comparisons. Harness installation dependencies are not
-automatically frozen by Heval.
+automatically frozen by OpenEval.
 
 Upgrade workers when idle. The daemon automatically advertises the new approval
 digests without rewriting local profiles. Queued work selected under an older
@@ -263,13 +268,13 @@ Model calls use the credentials on the selected machine. Its owner pays for mode
 
 ## 4. Keep the machine connected
 
-Copy [the user-service example](../deploy/heval-runner.service.example) to `~/.config/systemd/user/heval-runner.service`, and replace its paths with `command -v heval`, `command -v harbor`, and your home/state directories. Then:
+Copy [the user-service example](../deploy/openeval-runner.service.example) to `~/.config/systemd/user/openeval-runner.service`, and replace its paths with `command -v openeval`, `command -v harbor`, and your home/state directories. Then:
 
 ```sh
 systemctl --user daemon-reload
-systemctl --user enable --now heval-runner
-systemctl --user status heval-runner
-journalctl --user -u heval-runner -f
+systemctl --user enable --now openeval-runner
+systemctl --user status openeval-runner
+journalctl --user -u openeval-runner -f
 ```
 
 Enable lingering for that dedicated account if the service must stay available after logout (`loginctl enable-linger USER`, with the privileges your distro requires). `KillMode=process` deliberately lets detached supervisors survive daemon restarts. Cancel active evaluations in the UI before intentionally shutting down the machine. Restart the daemon with the same state directory; keep the state disk persistent when replacing a VM.
@@ -278,16 +283,16 @@ The runner checks health every minute and polls every five seconds. Plan Convex 
 
 ## Sessions, moves, and failures
 
-- **Another browser/device:** sign into the same Heval account. Machine state, queued/running jobs, and saved reports come from Convex. Team report invitations do not grant machine-execution access.
+- **Another browser/device:** sign into the same OpenEval account. Machine state, queued/running jobs, and saved reports come from Convex. Team report invitations do not grant machine-execution access.
 - **Move queued work:** choose a destination on that evaluation's card. It must be connected and advertise the exact profile digest. Once a machine claims the run it cannot move.
 - **Daemon crash or network interruption:** the independent supervisor continues on that machine. The outcome is kept locally until reconnection. A new daemon session may wait up to 30 seconds for the previous connection lease to expire. Claims and report uploads are idempotent. Preserve the original state directory and pairing; re-pairing or deleting state is not a recovery step.
-- **Host reboot, supervisor crash, or missing state:** Heval marks the run interrupted and does not rerun it. A cleanup marker blocks further execution on that runner. Inspect local logs, then use `heval runner cleanup RUN_ID --state STATE_DIRECTORY` to stop any matching orphaned Harbor process and remove only Compose resources belonging to that recorded run. Removing the marker by hand can hide orphaned work; use the command after investigation.
+- **Host reboot, supervisor crash, or missing state:** OpenEval marks the run interrupted and does not rerun it. A cleanup marker blocks further execution on that runner. Inspect local logs, then use `openeval runner cleanup RUN_ID --state STATE_DIRECTORY` to stop any matching orphaned Harbor process and remove only Compose resources belonging to that recorded run. Removing the marker by hand can hide orphaned work; use the command after investigation.
 - **Cancel:** queued work cancels immediately. Running work shows cancellation pending until the machine acknowledges stopping and cleanup. An offline machine cannot be stopped instantaneously by the web client. With the updated source-built worker and backend, cleanup failures stay interrupted and the local cleanup marker blocks new execution. Available finished verifier outcomes are saved as a partial report; unfinished tasks are not scored.
 - **Switch off:** the switch in Runner setup stops a worker from claiming new runs; its current run finishes and queued work waits. Starting, enqueuing, or moving work onto it is refused until it is switched back on.
-- **Machine icon:** the worker reports its host kind (laptop, desktop, Mac mini, Mac Studio, server, cloud VM, or Linux/WSL). `heval setup` detects it on the host because a container only sees Docker's VM; manual container recipes set `HEVAL_MACHINE_KIND`. Override it from the row's menu. See [`machine.ts`](../packages/cli/src/runner/machine.ts).
+- **Machine icon:** the worker reports its host kind (laptop, desktop, Mac mini, Mac Studio, server, cloud VM, or Linux/WSL). `openeval setup` detects it on the host because a container only sees Docker's VM; manual container recipes set `HEVAL_MACHINE_KIND`. Override it from the row's menu. See [`machine.ts`](../packages/cli/src/runner/machine.ts).
 - **Disconnect:** the credential is revoked and queued work is cancelled. A connected daemon asks its current supervisor to stop; for an offline machine, inspect/stop its physical processes yourself. Reports remain saved.
-- **Local evidence:** `heval runner status` shows run IDs without credentials. Raw Harbor logs are under `STATE/runs/RUN_ID/jobs/evaluation`, with supervisor output in the parent directory. Heval uploads only normalized/sanitized trial results, not raw logs or configuration. Treat raw local output as potentially sensitive.
-- **Storage full:** successful local results stay on disk if the server rejects their upload. Do not delete the state directory to force a retry; recover the export locally with `heval open STATE/runs/RUN_ID/jobs/evaluation`.
+- **Local evidence:** `openeval runner status` shows run IDs without credentials. Raw Harbor logs are under `STATE/runs/RUN_ID/jobs/evaluation`, with supervisor output in the parent directory. OpenEval uploads only normalized/sanitized trial results, not raw logs or configuration. Treat raw local output as potentially sensitive.
+- **Storage full:** successful local results stay on disk if the server rejects their upload. Do not delete the state directory to force a retry; recover the export locally with `openeval open STATE/runs/RUN_ID/jobs/evaluation`.
 
 Preview limits: 3 connected workers per owner (disconnect one to pair another), 200 evaluation records and the existing 100 saved-report limit. Reports retain a 750 KB document limit; there is no separate trial-row cap. If a combined report exceeds that size, individual run reports and completion state remain available. Live container migration, automatic retries/failover, VM provisioning, organization-wide worker sharing, and dollar budgets are follow-up work.
 
@@ -315,12 +320,12 @@ HEVAL_SMOKE_HARBOR=/absolute/path/to/harbor \
 
 Use an isolated preview exactly as in [the report smoke instructions](hosted-reports.md#reproduce-the-smoke-test). The test installs its own short-lived JWT issuer there, uses real Convex functions and real Harbor/Docker execution, and must never target production. It exercises two separate runner state directories/processes on **one physical Linux host**; network reachability and firewall behavior on two actual physical machines remain a deployment check. Browser videos, screenshots and JSON evidence go to `recordings/connected-runner-flow/`. Revoke the temporary deploy key afterward.
 
-The new frontend routes are `/machines` and `/evaluations`. Deployment uses the same Vercel + Convex + Clerk configuration as saved reports. Merge/deploy matching frontend/backend revisions together. No paid cloud resources are provisioned by connecting a runner.
+The canonical frontend routes are `/settings` and `/library?new=1`. Existing `/machines` and `/evaluations` links remain supported. Deployment uses the same Vercel + Convex + Clerk configuration as saved reports. Merge/deploy matching frontend/backend revisions together. No paid cloud resources are provisioned by connecting a runner.
 
 
-## Configuring execution in Evaluations
+## Configuring execution in a comparison
 
-Updated workers advertise support for execution settings. In Evaluations, select
+Updated workers advertise support for execution settings. In Library, choose New comparison and Custom experiment, then select
 installed harness/model profiles, then open **Advanced settings**. You can set
 parallel trials within each run, retries per trial error, CPU cores and RAM
 (MiB) per trial, and a deadline in minutes for the whole harness/model run.
@@ -336,7 +341,7 @@ sequentially on one connected worker.
 Choose concurrency using the Docker engine or VM allocation, leaving headroom
 for its worker and other workloads. For example, two 4096-MiB task containers
 request 8192 MiB plus overhead; the worker container's own memory limit does not
-limit its sibling task containers. Heval does not automatically resize Docker
+limit its sibling task containers. OpenEval does not automatically resize Docker
 or reserve capacity. Provider rate limits also affect useful concurrency.
 Retries can increase spending; neither the deadline nor concurrency is a dollar
 cap. These controls do not impose a total task/trial count limit.

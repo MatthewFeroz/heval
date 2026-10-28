@@ -6,10 +6,10 @@ import type { JobExport } from '../../../src/charts/trial'
 const MAX_BYTES = 64 * 1024 * 1024
 
 export function validateExport(value: unknown): JobExport {
-  if (!value || typeof value !== 'object') throw new Error('Expected a Heval job export JSON object.')
+  if (!value || typeof value !== 'object') throw new Error('Expected a OpenEval job export JSON object.')
   const job = value as Partial<JobExport>
   if (job.schemaVersion !== 1 || typeof job.job !== 'string' || !job.job.trim() || !Array.isArray(job.rows)) {
-    throw new Error('Expected a normalized Heval job export (schemaVersion: 1, job, rows). Open project/bundle files with Studio’s “Open export” button.')
+    throw new Error('Expected a normalized OpenEval job export (schemaVersion: 1, job, rows). Open project/bundle files with Studio’s “Open export” button.')
   }
   if (!job.rows.length) throw new Error('No completed trials found. Wait for a Harbor trial to finish, then open this job again.')
   for (const [index, row] of job.rows.entries()) {

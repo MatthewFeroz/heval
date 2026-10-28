@@ -18,7 +18,7 @@ afterEach(async () => {
   for (const dir of temporary.splice(0)) rmSync(dir, { recursive: true, force: true })
 })
 function scratch() {
-  const dir = mkdtempSync(join(tmpdir(), 'heval-cli-test-'))
+  const dir = mkdtempSync(join(tmpdir(), 'openeval-cli-test-'))
   temporary.push(dir)
   return dir
 }

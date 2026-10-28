@@ -1,20 +1,20 @@
 # Hosted import → saved report → share → revoke
 
-Open `/reports` on your Heval deployment. The frontend runs on Vercel; reports persist in Convex, independently of frontend deployments or the uploader’s computer.
+Open `/reports` on your OpenEval deployment. The frontend runs on Vercel; reports persist in Convex, independently of frontend deployments or the uploader’s computer.
 
 ## User walkthrough
 
 1. **Open Report library and sign in.** Use this import path for results created
-   outside Heval's connected evaluation flow. Sign-in returns to the workspace.
+   outside OpenEval's connected evaluation flow. Sign-in returns to the workspace.
 2. **Choose Harbor JSON.** Import a normalized `schemaVersion: 1` export containing `rows`. An invalid file produces an explanation before anything is saved.
 3. **Review and name it.** Check trial, model, and task counts. Expand **Review exact saved data** to inspect the complete sanitized payload. Edit the title.
-4. **Save private report.** Heval saves the snapshot online and opens its report page. The badge says **Public link off**. Reloading preserves the report; **Your saved reports** lets you find it later.
+4. **Save private report.** OpenEval saves the snapshot online and opens its report page. The badge says **Public link off**. Reloading preserves the report; **Your saved reports** lets you find it later.
 5. **Read the result.** Inspect completion rates, filter by model, and expand the trial table. These controls explore the snapshot without changing the saved data. Small setup runs are explicitly not full benchmark scores.
 6. **Create share link → Copy link.** Sharing is an explicit action after saving. Anyone holding the link can read the complete report without signing in. The shared page has no owner controls.
 7. **Revoke link → Yes, revoke link.** Existing connected viewers switch to **This link is unavailable**. Fresh visits also fail. Your private report stays saved.
 8. **Share again when needed.** A new link gets a new token. The old link stays revoked.
 
-Revocation stops future access through Heval. It cannot erase screenshots or copies a recipient already saved. Links are unlisted capabilities, not invitations restricted to particular recipients. A disconnected shared page hides the report while it checks access again.
+Revocation stops future access through OpenEval. It cannot erase screenshots or copies a recipient already saved. Links are unlisted capabilities, not invitations restricted to particular recipients. A disconnected shared page hides the report while it checks access again.
 
 ## Team editing
 
@@ -83,7 +83,7 @@ and historical exports.
 ## First-release boundaries
 
 - Normalized Harbor JSON only: 1–500 trials, at most 750,000 bytes, up to 100 reports per account. Raw job folders, raw Harbor `result.json`, and Studio project/bundle files are not accepted.
-- Generate an export from a Heval checkout with `bun run report path/to/harbor-job`. Upload the resulting `results/harbor/<job>.json`. The published CLI can inspect results locally; this release does not add CLI upload or a CLI JSON-export command.
+- Generate an export from a OpenEval checkout with `bun run report path/to/harbor-job`. Upload the resulting `results/harbor/<job>.json`. The published CLI can inspect results locally; this release does not add CLI upload or a CLI JSON-export command.
 - The server independently validates every import. It stores an allowlist of trial labels, outcomes, timings, usage, cost, and selected provenance fields. Configuration, local source paths, error text, logs, and unknown fields are discarded. Labels can still contain sensitive text, so review them before sharing.
 - Imported evaluation data remains immutable. Chart drafts, saved views,
   presentation settings, and report titles can be edited in hosted Studio.
@@ -115,9 +115,9 @@ of pretending data was saved. Local CLI viewing remains account-free.
 ```sh
 bun run test:backend
 bunx convex deployment create smoke-reports --type preview --expiration 'in 1 day'
-bunx convex deployment token create heval-report-smoke \
-  --deployment preview/smoke-reports --save-env /tmp/heval-smoke.env
-HEVAL_SMOKE_ENV=/tmp/heval-smoke.env \
+bunx convex deployment token create openeval-report-smoke \
+  --deployment preview/smoke-reports --save-env /tmp/openeval-smoke.env
+HEVAL_SMOKE_ENV=/tmp/openeval-smoke.env \
 HEVAL_SMOKE_URL=https://YOUR-PREVIEW.convex.cloud \
   bun run test:reports:smoke
 ```
@@ -155,8 +155,8 @@ current action is shown. Evaluations owns configuration, live progress, and all
 run history, including older individual runs. The account menu's **Set up a
 computer** entry opens `/machines?setup=1`.
 
-The local setup page opens Heval with its loopback capability in a URL fragment.
-Heval removes it before sign-in and asks the user to confirm the connection.
+The local setup page opens OpenEval with its loopback capability in a URL fragment.
+OpenEval removes it before sign-in and asks the user to confirm the connection.
 A short-lived account pairing is returned to that local page, which connects the
 worker and guides provider configuration. Provider keys remain on the worker.
 `HEVAL_APP_URL` selects the hosted origin for a custom deployment or local test;
@@ -170,7 +170,7 @@ are excluded from the combined model report.
 
 Connection, profile, and result state determine progress. The browser remembers
 only the install acknowledgment and a temporary local handoff. Existing account
-completion preferences remain compatible. `heval setup` is still a preview and
+completion preferences remain compatible. `openeval setup` is still a preview and
 requires a setup-enabled CLI build until the next npm release.
 
 `bun run test:onboarding:ui` uses the real local setup server and product screens

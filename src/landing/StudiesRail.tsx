@@ -21,7 +21,7 @@ export function StudiesRail() {
   return (
     <section data-home-reveal className="studies-section shell" aria-labelledby="studies-heading">
       <div className="studies-head">
-        <h2 id="studies-heading">Published with Heval</h2>
+        <h2 id="studies-heading">Published with OpenEval</h2>
         <div className="studies-nav">
           <span>X views as of {shortDate(studyData.statsAsOf, false)}</span>
           <button type="button" aria-label="Previous studies" onClick={() => scroll(-1)}><ChevronLeft size={18} /></button>

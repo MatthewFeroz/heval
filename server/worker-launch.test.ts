@@ -16,7 +16,7 @@ afterEach(async () => {
 })
 
 test('Pi selects the requested Merge model and vendor without writing the key to its model file', async () => {
-  const directory = await mkdtemp(join(tmpdir(), 'heval-launch-test-')); directories.push(directory)
+  const directory = await mkdtemp(join(tmpdir(), 'openeval-launch-test-')); directories.push(directory)
   process.env.HEVAL_PROVIDER = 'merge-gateway'
   process.env.HEVAL_GATEWAY_API_KEY = 'fake-test-credential'
   process.env.HEVAL_GATEWAY_MODEL = 'nvidia/nemotron-super-3-120b'
@@ -30,7 +30,7 @@ test('Pi selects the requested Merge model and vendor without writing the key to
 })
 
 test('direct NVIDIA uses the Chat Completions endpoint and rejects unsupported harnesses', async () => {
-  const directory = await mkdtemp(join(tmpdir(), 'heval-launch-test-')); directories.push(directory)
+  const directory = await mkdtemp(join(tmpdir(), 'openeval-launch-test-')); directories.push(directory)
   process.env.HEVAL_PROVIDER = 'nvidia'
   process.env.HEVAL_GATEWAY_API_KEY = 'fake-test-credential'
   process.env.HEVAL_GATEWAY_MODEL = 'nvidia/nemotron-3.5-lightning-30b-a3b'

@@ -4,9 +4,9 @@ import assert from 'node:assert/strict'
 import { authReturnUrl, signInUrl } from '../src/auth-session'
 import { authorizedFetch, publicAuth } from '../src/auth'
 
-const origin = 'https://heval.example.com'
+const origin = 'https://openeval.example.com'
 for (const value of [undefined, '/', '/login', '/login/', '/index.html', '//evil.invalid', 'javascript:alert(1)', 'https://evil.invalid']) {
-  assert.equal(authReturnUrl(value, origin), `${origin}/evaluations`)
+  assert.equal(authReturnUrl(value, origin), `${origin}/library`)
 }
 const requested = '/studio?report=saved-report&recipe=scatter#draft'
 assert.equal(authReturnUrl(requested, origin), origin + requested)
@@ -14,7 +14,7 @@ const login = new URL(signInUrl('https://worker.example.com' + requested, origin
 assert.equal(login.origin, origin)
 assert.equal(login.pathname, '/login')
 assert.equal(login.searchParams.get('returnTo'), origin + requested)
-assert.equal(new URL(signInUrl('https://worker.example.com/login?returnTo=https://evil.invalid', origin)).searchParams.get('returnTo'), origin + '/evaluations')
+assert.equal(new URL(signInUrl('https://worker.example.com/login?returnTo=https://evil.invalid', origin)).searchParams.get('returnTo'), origin + '/library')
 
 const previousFetch = globalThis.fetch
 const previousLocation = Object.getOwnPropertyDescriptor(globalThis, 'location')

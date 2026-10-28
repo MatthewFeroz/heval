@@ -1,39 +1,61 @@
-# Heval
+<h1>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="public/openeval-lockup-white.png">
+    <img src="public/openeval-lockup-black.png" alt="OpenEval" height="48">
+  </picture>
+</h1>
 
-Heval runs coding-agent evaluations on connected Linux workers and helps users
+OpenEval runs coding-agent evaluations on connected Linux workers and helps users
 inspect, chart, and share results. The website manages configuration and reports;
 Harbor and Docker execute tasks on a worker controlled by the user.
 
 ## Run an evaluation
 
-A connected worker needs Linux, Node.js 22+, Python 3.12+, Harbor 0.24.0 (0.23.0
-for published CLI 0.2.0), Docker Engine and Compose. The browser can run on a different computer or OS.
+A connected worker needs Linux, Node.js 22+, Python 3.12+, Harbor 0.24.0, Docker
+Engine and Compose. The browser can run on a different computer or OS.
 
 Follow [Connected runners](docs/connected-runners.md) to install the runner,
 pair a machine, run the no-model setup check, and configure a model-backed
 profile. Merge Gateway support is included:
 
 ```sh
-heval provider connect merge
-heval provider status merge
-heval runner setup --model YOUR_MODEL_ID --harnesses codex,claude-code,pi
+openeval provider connect merge
+openeval provider status merge
+openeval runner setup --model YOUR_MODEL_ID --harnesses codex,claude-code,pi
 ```
 
-Select a worker and profile in Evaluations. Starting a model-backed evaluation
+Choose **New comparison** in your Library, then select a connected worker.
+Use the custom matrix for additional combinations and execution settings.
+Starting a model-backed evaluation
 uses that worker's compute and provider credits. Credentials remain on the worker.
 A setup check verifies execution; it is not a capability score.
 
 This checkout also includes guided first-run setup, per-run resource and
 parallelism controls, live trial monitoring, and public Merge Gateway model
-pricing. The upcoming `heval setup` command prepares a persistent Linux worker
+pricing. The upcoming `openeval setup` command prepares a persistent Linux worker
 in Docker; see [one-command setup](docs/setup-command.md) for source-build
 instructions and release status. The [first-evaluation guide](docs/first-evaluation.md)
 covers the manual setup supported by the published CLI.
 
+The source also includes guided harness/model comparisons, immutable baselines,
+and reviewed trial evidence. An invite-only managed execution path uses a
+Railway coordinator and disposable Daytona Linux VMs. It stays disabled until
+the operator configures and validates the worker artifact and provider accounts.
+See [managed comparison setup](docs/managed-comparisons.md). This source change
+does not publish a CLI release or deploy the hosted application.
+
+The hosted workspace uses **Library**, **Explore** and **Settings**. Library
+combines running comparisons, imported results and saved baselines. Each report
+opens **Results**, **Analyze**, **Export** and **Share**; chart drafts stay intact
+when moving between these sections. Import a normalized Harbor JSON from the
+Library, or open the file editor for an existing project or bundle. Settings
+manages connected workers and their provider setup. Explore shows the approved
+published comparisons without requiring sign-in.
+
 ## Explore results locally
 
 ```sh
-npx @mattferoz/heval@latest open
+npx @mattferoz/openeval@latest open
 ```
 
 The npm viewer needs Node.js 22+, with no Bun, Docker, or account required for
@@ -53,8 +75,8 @@ may contain earlier example data.
 Open your own normalized JSON export or raw Harbor job:
 
 ```sh
-heval open ./results.json
-heval open ./jobs/my-run
+openeval open ./results.json
+openeval open ./jobs/my-run
 ```
 
 Studio supports chart recipes, editable presentation settings, trial inspection,
@@ -111,9 +133,10 @@ commands is synthetic. See [the exporter guide](harbor/report/README.md) and
 - [Current evaluation flow](docs/current-evaluation-flow.md)
 - [Provider connections](docs/provider-connections.md)
 - [Reports and sharing](docs/hosted-reports.md)
+- [Task comparisons, recorded timelines and visual evidence](docs/run-inspection.md)
 - [Reproducing evaluations](docs/reproducing-evaluations.md)
 - [Publishing the CLI](docs/publishing-cli.md)
 - [Design system](docs/design-system.md)
 
-Heval's own source is currently marked `UNLICENSED`. Third-party dependencies
+OpenEval's own source is currently marked `UNLICENSED`. Third-party dependencies
 and assets retain their respective licenses. Harbor is installed separately.

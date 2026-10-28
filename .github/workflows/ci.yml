@@ -32,8 +32,8 @@ jobs:
       - run: bun run cli:smoke
       - uses: actions/upload-artifact@v7
         with:
-          name: heval-cli-node-22
-          path: .scratch/mattferoz-heval-*.tgz
+          name: openeval-cli-node-22
+          path: .scratch/mattferoz-openeval-*.tgz
           include-hidden-files: true
           if-no-files-found: error
 
@@ -90,6 +90,8 @@ jobs:
         run: bunx playwright install --with-deps chromium
       - name: Evaluation browser integration
         run: bun run test:evaluations:ui
+      - name: Run inspection browser integration
+        run: bun run test:runs:ui
       - name: First smoke test onboarding
         run: bun scripts/first-smoke-ui-smoke.ts --capture .scratch/onboarding-after
       - name: Capture onboarding before the change
@@ -101,9 +103,9 @@ jobs:
           if git diff --quiet "$ONBOARDING_BASE_SHA" HEAD -- src/onboarding scripts/first-smoke-ui-smoke.ts; then
             exit 0
           fi
-          git worktree add --detach "$RUNNER_TEMP/heval-onboarding-before" "$ONBOARDING_BASE_SHA"
-          ln -s "$GITHUB_WORKSPACE/node_modules" "$RUNNER_TEMP/heval-onboarding-before/node_modules"
-          cd "$RUNNER_TEMP/heval-onboarding-before"
+          git worktree add --detach "$RUNNER_TEMP/openeval-onboarding-before" "$ONBOARDING_BASE_SHA"
+          ln -s "$GITHUB_WORKSPACE/node_modules" "$RUNNER_TEMP/openeval-onboarding-before/node_modules"
+          cd "$RUNNER_TEMP/openeval-onboarding-before"
           bun scripts/first-smoke-ui-smoke.ts --capture "$GITHUB_WORKSPACE/.scratch/onboarding-before"
       - name: Upload onboarding review evidence
         if: always()

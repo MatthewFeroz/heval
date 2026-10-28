@@ -13,7 +13,7 @@ afterEach(async () => {
   for (const directory of directories.splice(0)) rmSync(directory, { recursive: true, force: true })
 })
 async function setup() {
-  const directory = mkdtempSync(join(tmpdir(), 'heval-provider-')); directories.push(directory)
+  const directory = mkdtempSync(join(tmpdir(), 'openeval-provider-')); directories.push(directory)
   const calls: string[] = []
   const { server, url } = await startProviderSetup(directory, resolve(import.meta.dirname, '../runner-task'), 0, (state, key) => connectMerge(state, key, async value => {
     calls.push(value)

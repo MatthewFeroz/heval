@@ -131,7 +131,7 @@ export async function setup(packageRoot: string, options: Options, openBrowser: 
   const selected = selectMergeHarnesses(options.harnesses ?? ['codex'])
   const name = workerName(options.name), volume = `${name}-data`
   const docker = await findDocker(options.distro)
-  const plan = { schemaVersion: 1, platform: process.platform, engine: docker?.description ?? null, name, volume, needsDocker: !docker, steps: [`Install the bundled Linux worker (Node, Harbor ${HARBOR_VERSION}, Docker CLI and Compose)`, 'Keep credentials and jobs in a persistent Docker volume', 'Pair your Heval account in the local browser', 'Verify a Merge key locally and prepare model profiles', 'Keep the worker running with Docker restart policy unless-stopped'], requirements: ['Node.js 22+', 'Local Linux Docker engine (4 GiB minimum; 8 GiB and 15 GiB free disk recommended)', 'Docker socket access lets the worker create sibling task containers'], recovery: 'Rerun the same command. Existing pairing, keys, profiles and jobs are preserved.', ...(docker ? {} : { next: prerequisiteHelp() }) }
+  const plan = { schemaVersion: 1, platform: process.platform, engine: docker?.description ?? null, name, volume, needsDocker: !docker, steps: [`Install the bundled Linux worker (Node, Harbor ${HARBOR_VERSION}, Docker CLI and Compose)`, 'Keep credentials and jobs in a persistent Docker volume', 'Pair your OpenEval account in the local browser', 'Verify a Merge key locally and prepare model profiles', 'Keep the worker running with Docker restart policy unless-stopped'], requirements: ['Node.js 22+', 'Local Linux Docker engine (4 GiB minimum; 8 GiB and 15 GiB free disk recommended)', 'Docker socket access lets the worker create sibling task containers'], recovery: 'Rerun the same command. Existing pairing, keys, profiles and jobs are preserved.', ...(docker ? {} : { next: prerequisiteHelp() }) }
   const selection = { ...plan, harnesses: harnessCatalog, selectedHarnesses: selected, harnessInstallation: 'Harbor installs selected harnesses inside task containers when evaluations start. Setup only prepares profiles and makes no model calls.' }
   if (options.plan) { console.log(options.json ? JSON.stringify(selection, null, 2) : `${JSON.stringify(selection, null, 2)}\nNo changes made.`); return }
   if (!docker) { console.log(prerequisiteHelp()); await installDocker(options.yes); return }
@@ -140,7 +140,7 @@ export async function setup(packageRoot: string, options: Options, openBrowser: 
   let container = await inspect(docker, 'container', name)
   if (container && (container.Config?.Labels?.[label] !== '1' || container.Config?.Labels?.['dev.heval.artifact'] !== digest)) throw new Error(`${name} belongs to another installation or artifact. Finish its evaluations, stop and remove that container (keep ${volume}), then rerun setup; or use --name heval-another. Setup never interrupts a worker to upgrade it.`)
   const existingVolume = await inspect(docker, 'volume', volume)
-  if (existingVolume && existingVolume.Labels?.[label] !== '1') throw new Error(`${volume} is not a managed Heval volume. Choose another --name.`)
+  if (existingVolume && existingVolume.Labels?.[label] !== '1') throw new Error(`${volume} is not a managed OpenEval volume. Choose another --name.`)
   if (!container) {
     console.log('Preparing the bundled Linux runtime. Docker caches completed layers for retries.')
     await dockerRun(docker, ['build', '--label', `${label}=1`, '--tag', image, '-'], context, true, 30 * 60_000)
@@ -175,7 +175,7 @@ export async function setup(packageRoot: string, options: Options, openBrowser: 
   const { server, url } = await startProviderSetup('', join(packageRoot, 'dist/runner-task'), 0, undefined, {
     status: () => rpc('status'), connect: key => rpc('connect', { key }), profiles: (model, harnesses) => rpc('profiles', { model, harnesses }), pair: (url, code) => rpc('pair', { url, code }),
   }, selected)
-  console.log(`Worker ready: ${name} (${docker.description}).\nComplete account and provider setup:\n${url}\nThe setup page expires after 15 minutes without an open setup page. Rerun setup to reopen it.\nThe worker continues after this terminal closes while Docker is running.\nIn Heval, run “Check this machine” to save a no-model evaluation to your account.\nStop: ${displayCommand([docker.command, ...docker.prefix, 'stop', name])}\nData remains in Docker volume ${volume}.`)
+  console.log(`Worker ready: ${name} (${docker.description}).\nComplete account and provider setup:\n${url}\nThe setup page expires after 15 minutes without an open setup page. Rerun setup to reopen it.\nThe worker continues after this terminal closes while Docker is running.\nIn OpenEval, run “Check this machine” to save a no-model evaluation to your account.\nStop: ${displayCommand([docker.command, ...docker.prefix, 'stop', name])}\nData remains in Docker volume ${volume}.`)
   if (!options.noBrowser) openBrowser(url)
   const close = () => { server.closeAllConnections(); server.close() }
   process.once('SIGINT', close); process.once('SIGTERM', close)

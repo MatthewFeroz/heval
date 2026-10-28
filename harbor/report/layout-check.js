@@ -1,5 +1,5 @@
 ﻿/* Shared by sandboxed previews and the PNG renderer. All measurements use SVG coordinates. */
-window.__hevalLayoutReady = (async () => {
+window.__openevalLayoutReady = (async () => {
   await document.fonts.ready
   const svg = document.querySelector('svg')
   const errors = [],
@@ -57,6 +57,6 @@ window.__hevalLayoutReady = (async () => {
     }
   }
   const result = { errors: [...new Set(errors)], adjustments }
-  window.parent.postMessage({ type: 'heval-layout', ...result }, '*')
+  window.parent.postMessage({ type: 'openeval-layout', ...result }, '*')
   return result
 })()

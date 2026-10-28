@@ -14,7 +14,7 @@ export function SavePresentationOnline({ document, data }: { document: ReportPro
     setBusy(true); setError('')
     try {
       const id = await save({ json: JSON.stringify(data), document: JSON.stringify(document) })
-      location.assign(`/studio?report=${id}`)
+      location.assign(`/library?report=${id}&tab=export`)
     } catch (e) { setError(e instanceof Error ? e.message : 'Could not save presentation.'); setBusy(false) }
   }
   return <div className="hosted-exports"><p>Save this presentation to your workspace to reopen it later and export PNGs or thread ZIPs online.</p>

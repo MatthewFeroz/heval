@@ -12,12 +12,16 @@ import { monitoringValidator } from './monitoringValidators'
 import { monitoringCounts, validateMonitoring } from '../src/runners/monitoring'
 import { summarizeRun, type RunResultSummary } from './runResults'
 import { assertReportCapacity, MAX_REPORTS, storedReportCount } from './reportCapacity'
+import { addEvidenceBatch, MAX_EVIDENCE_ITEMS } from './reportEvidence'
+import { evidenceInputValidator } from './evidenceValidators'
+import { lifecycleTimeline } from '../src/reports/runArtifacts'
 
 const secret = (value: string) => { if (!/^[a-f0-9]{64}$/.test(value)) throw new ConvexError('Invalid connection credential.'); return value }
 async function digest(value: string) { return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(secret(value)))), b => b.toString(16).padStart(2, '0')).join('') }
 async function ownerRunner(ctx: QueryCtx, id: Id<'runners'>) {
   const user = await identity(ctx), runner = await ctx.db.get(id)
   if (!runner || runner.owner !== user.subject) throw new ConvexError('Machine not found.')
+  if (runner.managed) throw new ConvexError('Use the managed comparison controls for this worker.')
   return runner
 }
 async function ownerRun(ctx: QueryCtx, id: Id<'runnerRuns'>) {
@@ -28,12 +32,12 @@ async function ownerRun(ctx: QueryCtx, id: Id<'runnerRuns'>) {
 async function authenticateRunner(ctx: QueryCtx, credential: string) {
   const hash = await digest(credential)
   const runner = await ctx.db.query('runners').withIndex('by_credential', q => q.eq('credentialHash', hash)).unique()
-  if (!runner || runner.revoked) throw new ConvexError('Machine credential revoked or invalid. Reconnect from Heval.')
+  if (!runner || runner.revoked) throw new ConvexError('Machine credential revoked or invalid. Reconnect from OpenEval.')
   return runner
 }
 /** Revoked workers stay as history; only connected ones count toward the limit. */
 async function assertWorkerCapacity(ctx: QueryCtx, owner: string) {
-  const workers = await ctx.db.query('runners').withIndex('by_owner_revoked', q => q.eq('owner', owner).eq('revoked', false)).take(MAX_WORKERS)
+  const workers = await ctx.db.query('runners').withIndex('by_owner_revoked', q => q.eq('owner', owner).eq('revoked', false)).filter(q => q.neq(q.field('managed'), true)).take(MAX_WORKERS)
   if (workers.length >= MAX_WORKERS) throw new ConvexError(`This workspace has ${MAX_WORKERS} connected workers. Disconnect one before adding another.`)
 }
 /** A switched-off worker finishes its current run but receives no new work. */
@@ -52,8 +56,8 @@ export const list = query({ args: {}, handler: async ctx => {
   // Fetch connected workers independently so newer revoked history cannot hide
   // them. Keep the remaining space for recent history, newest first overall.
   const [connected, revoked] = await Promise.all([
-    ctx.db.query('runners').withIndex('by_owner_revoked', q => q.eq('owner', owner).eq('revoked', false)).order('desc').take(50),
-    ctx.db.query('runners').withIndex('by_owner_revoked', q => q.eq('owner', owner).eq('revoked', true)).order('desc').take(50),
+    ctx.db.query('runners').withIndex('by_owner_revoked', q => q.eq('owner', owner).eq('revoked', false)).filter(q => q.neq(q.field('managed'), true)).order('desc').take(50),
+    ctx.db.query('runners').withIndex('by_owner_revoked', q => q.eq('owner', owner).eq('revoked', true)).filter(q => q.neq(q.field('managed'), true)).order('desc').take(50),
   ])
   return [...connected, ...revoked.slice(0, 50 - connected.length)].sort((a, b) => b._creationTime - a._creationTime).map(publicRunner)
 } })
@@ -85,7 +89,7 @@ export const pairingStatus = query({ args: { code: v.string() }, handler: async 
 export const connect = mutation({ args: { code: v.string(), credential: v.string() }, handler: async (ctx, { code, credential }) => {
   const codeHash = await digest(code), credentialHash = await digest(credential)
   const pairing = await ctx.db.query('runnerPairings').withIndex('by_hash', q => q.eq('codeHash', codeHash)).unique()
-  if (!pairing || pairing.expiresAt <= Date.now()) throw new ConvexError('This pairing code has expired or is invalid. Create a new code in Heval.')
+  if (!pairing || pairing.expiresAt <= Date.now()) throw new ConvexError('This pairing code has expired or is invalid. Create a new code in OpenEval.')
   if (pairing.runner) {
     const runner = await ctx.db.get(pairing.runner)
     if (!runner || runner.revoked || runner.credentialHash !== credentialHash) throw new ConvexError('This pairing code was already used.')
@@ -245,6 +249,14 @@ export const finish = mutation({ args: { ...claimArgs, status: v.union(v.literal
     if (await storedReportCount(ctx, run.owner) >= MAX_REPORTS) throw new ConvexError('Report storage is full. Results remain on the machine until storage is available.')
     report = await ctx.db.insert('reports', { owner: run.owner, title: run.profile.title.slice(0, 120), trials: data.rows.length, shareToken: null })
     await ctx.db.insert('reportData', { report, json: JSON.stringify(data) })
+    const monitoring = await ctx.db.query('runnerMonitoring').withIndex('by_run', q => q.eq('run', run._id)).unique()
+    if (monitoring) {
+      const timelines = data.rows.flatMap(row => {
+        const timeline = lifecycleTimeline(row.trial, monitoring.snapshot)
+        return timeline ? [{ trial: row.trial, title: 'Recorded trial lifecycle', kind: 'timeline' as const, text: JSON.stringify(timeline) }] : []
+      }).slice(0, MAX_EVIDENCE_ITEMS)
+      if (timelines.length) await addEvidenceBatch(ctx, report, timelines)
+    }
     resultSummary = summarizeRun(data.rows)
   }
   if (status === 'completed' && !report) throw new ConvexError('A completed evaluation must include its results.')
@@ -252,6 +264,30 @@ export const finish = mutation({ args: { ...claimArgs, status: v.union(v.literal
   if (runner.activeRun === run._id) await ctx.db.patch(runner._id, { activeRun: undefined })
   if (run.experiment) await materializeExperimentReport(ctx, run.experiment)
   return { report: report ?? null }
+} })
+
+/** Explicit reviewed artifacts, separate from metrics and automatic monitoring. */
+export const captureEvidence = mutation({ args: { ...claimArgs, entries: v.array(evidenceInputValidator) }, handler: async (ctx, args) => {
+  const { run } = await claimedRun(ctx, args)
+  if (!run.report || !(terminalStates as readonly string[]).includes(run.status)) throw new ConvexError('Save this run’s report before attaching evidence.')
+  if (!args.entries.length || args.entries.length > 12 || new TextEncoder().encode(JSON.stringify(args.entries)).length > 200_000) throw new ConvexError('Capture 1–12 reviewed artifacts up to 200 KB per batch.')
+  await addEvidenceBatch(ctx, run.report, args.entries)
+  if (run.experiment) {
+    const experiment = await ctx.db.get(run.experiment)
+    if (experiment?.report) {
+      const stored = await ctx.db.query('reportData').withIndex('by_report', q => q.eq('report', run.report!)).unique()
+      const rows = parseStoredReport(stored!.json).rows
+      try {
+        await addEvidenceBatch(ctx, experiment.report, args.entries.map(entry => ({ ...entry, trial: `${run.profile.id}:${rows.findIndex(row => row.trial === entry.trial) + 1}:${entry.trial}`.slice(0, 256) })))
+      } catch (error) {
+        // Batch preflight writes nothing on capacity failure. Keep the child
+        // evidence even when the optional aggregate has reached its limit.
+        if (!(error instanceof ConvexError) || error.data !== 'This report has reached its evidence storage limit.') throw error
+        return { captured: args.entries.length, combinedCaptured: false }
+      }
+    }
+  }
+  return { captured: args.entries.length, combinedCaptured: true }
 } })
 
 /** Operator-run migration. Fixed pages read at most ten source reports. */

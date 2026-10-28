@@ -1,9 +1,9 @@
 # Finish Sprint 1 acceptance
 
 Sprint 1 issue #10 is complete. The remaining criteria are in public issues
-[#9](https://github.com/MatthewFeroz/heval/issues/9),
-[#11](https://github.com/MatthewFeroz/heval/issues/11) and
-[#12](https://github.com/MatthewFeroz/heval/issues/12).
+[#9](https://github.com/MatthewFeroz/openeval/issues/9),
+[#11](https://github.com/MatthewFeroz/openeval/issues/11) and
+[#12](https://github.com/MatthewFeroz/openeval/issues/12).
 Sprint 2 issues #16, #17 and #18 track their unfinished work, not replacement
 features. Preserve delivered status reports; report later completion separately.
 

@@ -9,7 +9,7 @@ import type { RunnerProfile } from '../src/runners/protocol'
 
 const modules = import.meta.glob(['./**/*.ts', './**/*.js', '!./**/*.test.ts'])
 const value = (n: number) => n.toString(16).padStart(64, '0')
-const profile: RunnerProfile = { id: 'setup', digest: value(1), title: 'Setup check', benchmark: 'Heval setup', agent: 'oracle', model: 'Reference solution', tasks: 1, attempts: 1, timeoutSeconds: 300, setupCheck: true }
+const profile: RunnerProfile = { id: 'setup', digest: value(1), title: 'Setup check', benchmark: 'OpenEval setup', agent: 'oracle', model: 'Reference solution', tasks: 1, attempts: 1, timeoutSeconds: 300, setupCheck: true }
 const output = JSON.stringify({ ...fixture, rows: [fixture.rows[0]] })
 async function setup() {
   const t = convexTest(schema, modules), owner = t.withIdentity({ subject: 'owner' }), other = t.withIdentity({ subject: 'other' })
@@ -25,6 +25,25 @@ async function setup() {
   const enqueue = (runner = a.id, requestId = value(90)) => owner.mutation(api.runners.enqueue, { runner, profileId: profile.id, digest: profile.digest, requestId })
   return { t, owner, other, a, b, enqueue }
 }
+
+test('completed reports retain real lifecycle evidence; reviewed uploads are claim scoped, private and idempotent', async () => {
+  const { t, owner, a, b, enqueue } = await setup()
+  const id = await enqueue(); await a.poll()
+  const claim = { credential: a.credential, session: a.session, claimId: a.claimId, id }
+  const trial = fixture.rows[0].trial
+  await t.mutation(api.runners.monitor, { ...claim, snapshot: { sequence: 1, sampledAt: 100, trials: [{ id: trial, state: 'passed', startedAt: 10, updatedAt: 90, finishedAt: 90 }], events: [{ sequence: 1, at: 10, trial, state: 'running' }, { sequence: 2, at: 90, trial, state: 'passed' }] } })
+  const saved = await t.mutation(api.runners.finish, { ...claim, status: 'completed', json: output })
+  const entries = [{ trial, kind: 'html' as const, title: 'Demonstration output', text: '<h1>Synthetic demonstration</h1>' }]
+  await expect(t.mutation(api.runners.captureEvidence, { ...claim, credential: b.credential, session: b.session, entries })).rejects.toThrow('does not belong')
+  await expect(t.mutation(api.runners.captureEvidence, { ...claim, entries: [{ ...entries[0], trial: 'not-in-this-report' }] })).rejects.toThrow('actual trial')
+  await t.mutation(api.runners.captureEvidence, { ...claim, entries })
+  await t.mutation(api.runners.captureEvidence, { ...claim, entries })
+  const report = (await owner.query(api.reports.get, { id: saved.report! }))!
+  expect(report.evidence).toHaveLength(2)
+  expect(report.evidence.find(item => item.kind === 'timeline')!.text).toContain('Trial passed verification')
+  await owner.mutation(api.reports.share, { id: saved.report!, token: value(1000) })
+  expect((await t.query(api.reports.shared, { token: value(1000) }))!.evidence).toEqual([])
+})
 
 test('monitoring is claim scoped, owner only, bounded, replay safe and retained after completion', async () => {
   const { t, owner, other, a, b, enqueue } = await setup()

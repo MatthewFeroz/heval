@@ -1,12 +1,12 @@
 import { socialSettings } from '../charts/social-presets'
-import { adaptJobExportV1, sourceFromArtifact, type AnalysisView, type HevalProject, type Presentation } from '../project/schema'
+import { adaptJobExportV1, sourceFromArtifact, type AnalysisView, type OpenEvalProject, type Presentation } from '../project/schema'
 import { presentationAnalysis, presentationChart, projectFields, projectRows } from '../project/accessors'
 import { DEFAULT_STATE, buildChart, type ChartState } from '../charts/recipes'
 import { DIMENSIONS, MEASURES } from '../charts/trial'
 import { completionOptions } from '../charts/motion-options'
 import type { ReportData } from './format'
 
-export type ReportProject = { project: HevalProject; viewId: string; presentationId: string | null; mode: 'analysis' | 'presentation' }
+export type ReportProject = { project: OpenEvalProject; viewId: string; presentationId: string | null; mode: 'analysis' | 'presentation' }
 
 export async function reportArtifact(data: ReportData, id: string) {
   return adaptJobExportV1({ ...data, jobId: id, source: '', agentVersions: {} }, `heval:report/${id}`)
