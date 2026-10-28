@@ -89,5 +89,18 @@ function ReportSharing({ report }: { report: Report }) {
       {status && <p role="status">{status}</p>}{error && <p role="alert">{error}</p>}
     </section>
     <TeamAccess id={id} />
+    <DeleteReport report={report} />
   </>
+}
+
+function DeleteReport({ report }: { report: Report }) {
+  const remove = useMutation(api.reports.remove)
+  const [open, setOpen] = useState(false), [confirmation, setConfirmation] = useState(''), [busy, setBusy] = useState(false), [error, setError] = useState('')
+  return <section className="report-card" aria-label="Delete report"><h2>Delete report</h2><p>Permanently remove the saved data, chart drafts, evidence, team access and exports. Shared links will stop working. Downloaded copies cannot be recalled. Evaluation history remains.</p>
+    {!open ? <button type="button" onClick={() => setOpen(true)}>Delete report</button> : <div className="report-confirm" role="group" aria-label="Confirm report deletion">
+      <label>Type the report title to confirm<input value={confirmation} onChange={event => setConfirmation(event.target.value)} autoComplete="off" /></label><p>{report.title}</p>
+      <button disabled={busy || confirmation !== report.title} onClick={async () => { setBusy(true); setError(''); try { await remove({ id: report.id }); location.assign('/library') } catch (e) { setError(message(e)); setBusy(false) } }}>Permanently delete report</button>
+      <button disabled={busy} className="secondary" onClick={() => { setOpen(false); setConfirmation(''); setError('') }}>Keep report</button>
+    </div>}{error && <p role="alert">{error}</p>}
+  </section>
 }

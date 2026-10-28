@@ -1,11 +1,43 @@
 import { v, ConvexError } from 'convex/values'
 import { mutation, query } from './_generated/server'
-import { access, identity, projectState } from './reportAccess'
+import { access, identity, projectState, requireAccess } from './reportAccess'
+import { internal } from './_generated/api'
+import { terminalStates } from '../src/runners/protocol'
 import { parseReport } from '../src/reports/format'
 import { renderReportProject, initialReportProject, validateReportProject, type ReportProject } from '../src/reports/project'
 import type { AnalysisView } from '../src/project/schema'
 import { assertReportCapacity } from './reportCapacity'
 import { reportEvidence } from './reportEvidence'
+
+export const remove = mutation({ args: { id: v.id('reports') }, handler: async (ctx, { id }) => {
+  await requireAccess(ctx, id, 'owner')
+  if (await ctx.db.query('comparisonBaselines').withIndex('by_report', q => q.eq('report', id)).first()) throw new ConvexError('This report is a saved baseline. Baseline reports must be retained.')
+  const runs = await ctx.db.query('runnerRuns').withIndex('by_report', q => q.eq('report', id)).collect()
+  const experiments = await ctx.db.query('experiments').withIndex('by_report', q => q.eq('report', id)).collect()
+  const active = (status: string) => !(terminalStates as readonly string[]).includes(status)
+  if (runs.some(run => active(run.status))) throw new ConvexError('Wait for the evaluation to finish before deleting its report.')
+  for (const experiment of experiments) {
+    const children = await ctx.db.query('runnerRuns').withIndex('by_experiment', q => q.eq('experiment', experiment._id)).collect()
+    if (children.some(run => active(run.status))) throw new ConvexError('Wait for the comparison to finish before deleting its report.')
+  }
+  const exports = await ctx.db.query('presentationExports').withIndex('by_report', q => q.eq('report', id)).collect()
+  if (exports.some(job => job.status === 'rendering')) throw new ConvexError('Wait for the presentation export to finish before deleting this report.')
+  for (const run of runs) await ctx.db.patch(run._id, { report: undefined })
+  for (const experiment of experiments) await ctx.db.patch(experiment._id, { report: undefined })
+  for (const table of ['reportData', 'reportProjects', 'reportRevisions', 'reportMembers', 'reportInvites', 'reportEvidence'] as const) {
+    const rows = await ctx.db.query(table).withIndex('by_report', q => q.eq('report', id)).collect()
+    for (const row of rows) await ctx.db.delete(row._id)
+  }
+  for (const job of exports) {
+    const inputs = await ctx.db.query('presentationExportInputs').withIndex('by_job', q => q.eq('job', job._id)).collect()
+    for (const input of inputs) await ctx.db.delete(input._id)
+    await ctx.db.delete(job._id)
+  }
+  const paths = exports.flatMap(job => job.pathname ? [job.pathname] : [])
+  if (paths.length) await ctx.scheduler.runAfter(0, internal.presentationExportWorker.cleanup, { paths, attempt: 0 })
+  await ctx.db.delete(id)
+  // Used share tokens remain reserved so a revoked link can never be reused.
+} })
 
 export const list = query({ args: {}, handler: async ctx => {
   const user = (await identity(ctx)).subject

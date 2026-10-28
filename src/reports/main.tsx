@@ -1,3 +1,5 @@
+import { startObservability, captureApplicationError } from '../observability'
+void startObservability().catch(() => {})
 import { Component, StrictMode, type ReactNode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { ReportProvider } from './ReportProvider'
@@ -11,6 +13,7 @@ import './reports.css'
 
 class ReportErrorBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
   state = { failed: false }
+  componentDidCatch(error: Error) { captureApplicationError(error) }
   static getDerivedStateFromError() { return { failed: true } }
   render() {
     return this.state.failed ? <WorkspaceLayout active="reports"><section className="report-card report-welcome"><h1>Couldn’t load this report</h1><p>Check your connection and that you’re signed into the right account.</p><a href="/reports">Return to your reports</a></section></WorkspaceLayout> : this.props.children

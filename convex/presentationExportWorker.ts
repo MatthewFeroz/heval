@@ -4,6 +4,16 @@ import { internalAction } from './_generated/server'
 import { internal } from './_generated/api'
 import { renderHostedExport } from '../server/hosted-exports/render'
 
+export const cleanup = internalAction({ args: { paths: v.array(v.string()), attempt: v.number() }, handler: async (ctx, { paths, attempt }) => {
+  try {
+    const { del } = await import('@vercel/blob')
+    await del(paths, { token: process.env.BLOB_READ_WRITE_TOKEN })
+  } catch {
+    if (attempt >= 10) throw new Error('Deleted report export cleanup failed after retries. Inspect the scheduled cleanup job.')
+    await ctx.scheduler.runAfter(Math.min(3600_000, 30_000 * 2 ** attempt), internal.presentationExportWorker.cleanup, { paths, attempt: attempt + 1 })
+  }
+} })
+
 export const render = internalAction({ args: { job: v.id('presentationExports') }, handler: async (ctx, { job }) => {
   const input = await ctx.runQuery(internal.presentationExports.input, { job })
   if (!input) return
