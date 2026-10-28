@@ -12,12 +12,12 @@ unscoped `openeval` as too similar to the existing `open-eval` package, so from
 0.3.0 the package is `@mattferoz/openeval`.
 
 After 0.3.0 is published, deprecate the old package so its installs point here:
-`npm deprecate @mattferoz/heval "Renamed to openeval. Run: npm i -g @mattferoz/openeval"`.
+`npm deprecate @mattferoz/heval "Renamed to @mattferoz/openeval. Run: npm uninstall -g @mattferoz/heval && npm i -g @mattferoz/openeval"`.
 
 Under the old name, the initial version `0.1.0` was published with public access under the
 `mattferoz` account. The registry tarball SHA-1 is
 `9aaa6b1dd4dd96aca14c514f925120e08677ab30`, matching the tested release artifact.
-The release currently uses `UNLICENSED` for OpenEval's own code.
+Releases up to 0.3.1 were marked `UNLICENSED`. Later releases are Apache-2.0.
 
 Version `0.2.0` was published under the old name. Its registry tarball
 SHA-1 is `ff8393ee421283e3ecc21395c7c29ae8dd9e3687`, matching the tested local
@@ -32,6 +32,14 @@ Version `0.3.0` was published as `@mattferoz/openeval` with the `latest` tag on
 The fresh-cache registry installation and browser smoke checks passed on macOS.
 It is the first release with `setup`. The Docker setup smoke and the x64, ARM64,
 Docker Desktop and WSL setup checks were not run for this release.
+
+Version `0.3.1` was published with the `latest` tag on 2026-10-28. Its registry
+tarball SHA-1 is `f837a110c6442593e1747842ab86643f15be1db4`, matching the tested
+local artifact, and the fresh-cache registry smoke passed on macOS. It points
+the setup page at `https://openeval.howaiworks.io` instead of the `vercel.app`
+address. The Docker and cross-platform setup checks were not run. The stray
+`0.0.0-stage` version was unpublished. `@mattferoz/heval` is deprecated with a
+message pointing to this package.
 
 ## Prepare a release
 
@@ -96,9 +104,9 @@ npx @mattferoz/openeval@latest open
 ```
 
 Publishing the tested tarball avoids rebuilding between validation and upload.
-OpenEval's own license is a maintainer choice; the initial scaffold leaves it
-`UNLICENSED` until selected. Do not assume Harbor's license automatically
-licenses OpenEval or third-party artwork. The shipped viewer includes no Merge
+OpenEval is Apache-2.0, and the package ships `LICENSE` and `NOTICE`. That
+license does not cover third-party artwork such as the harness marks, and
+Harbor's license is separate. The shipped viewer includes no Merge
 font files or generated branded posters.
 
 ## Later releases

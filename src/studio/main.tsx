@@ -1,3 +1,5 @@
+import { startObservability } from '../observability'
+void startObservability().catch(() => {})
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { AuthBoundary } from '../AuthBoundary'

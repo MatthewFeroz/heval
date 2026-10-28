@@ -32,7 +32,7 @@ see [managed comparison setup](../managed-comparisons.md).
 
 | Priority | Evidence in source | Required outcome |
 | --- | --- | --- |
-| 1 | CLI manifest and README say `UNLICENSED`; the premature homepage claim has been removed | Maintainer chooses a license, ships its text and consistent metadata, and documents the hosted offering. Confirm rights for included assets and dependencies. |
+| 1 | Apache-2.0 source license and notices added after the 0.3.1 release | Verify LICENSE and NOTICE in the next CLI artifact; already published 0.3.1 retains its original metadata. Confirm rights for included assets and dependencies. |
 | 2 | Onboarding copies `npx @mattferoz/heval@latest setup`; setup docs say registry version 0.2.0 lacks that command | Publish a separately authorized, tested setup-enabled artifact, or make the primary onboarding path work with the actual stable release. A fresh user must be able to paste the displayed command successfully. |
 | 3 | Homepage copy now describes comparisons; the catalog retains explicit unsupported adapter states | Validate the supported launch combinations. Retain the documented Deep Agents accounting limitations. |
 | 4 | Available connection check is not a capability benchmark; both TBLite entries remain preview | Validate one useful task set and two supported harnesses end to end through the hosted flow. Record task pins, versions, all attempts and metric provenance. Keep larger unvalidated datasets labeled preview. |

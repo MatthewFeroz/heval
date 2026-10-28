@@ -125,8 +125,8 @@ The tarball includes the compiled Node CLI, prebuilt browser UI, one synthetic
 example, and bundled dependency notices. It excludes credentials, raw jobs,
 corporate branding assets, and generated social media assets.
 
-Until a project license is selected, OpenEval's own code is marked `UNLICENSED`;
-bundled third-party components retain their licenses in
+OpenEval is licensed under the Apache License 2.0 (see `LICENSE`).
+Bundled third-party components retain their licenses in
 `dist/THIRD_PARTY_NOTICES.txt`. Harbor is a separately installed Apache-2.0 tool
 and is not bundled.
 
