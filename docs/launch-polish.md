@@ -1,10 +1,5 @@
 # Launch polish
 
-The next CLI candidate is 0.3.2. Source and package metadata use Apache-2.0,
-with LICENSE and NOTICE in the tarball. Already published 0.3.1 keeps its original
-metadata. This change does not publish a package or alter older registry releases.
-Harness artwork, DM Sans, and bundled dependencies retain their own notices.
-
 The homepage includes Open Graph and Twitter metadata and a 1200×630
 `openeval-social.png` card. Private report pages remain noindex and do not
 expose report titles or evidence in social metadata.

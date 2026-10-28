@@ -138,7 +138,5 @@ commands is synthetic. See [the exporter guide](harbor/report/README.md) and
 - [Publishing the CLI](docs/publishing-cli.md)
 - [Design system](docs/design-system.md)
 
-OpenEval is licensed under the [Apache License 2.0](LICENSE). Third-party
-dependencies and assets, including the harness marks listed in
-`public/harnesses/SOURCES.md`, keep their own licenses and trademarks. Harbor is
-installed separately.
+OpenEval's own source is currently marked `UNLICENSED`. Third-party dependencies
+and assets retain their respective licenses. Harbor is installed separately.

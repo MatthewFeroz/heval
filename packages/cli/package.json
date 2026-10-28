@@ -1,12 +1,12 @@
 {
   "name": "@mattferoz/openeval",
-  "version": "0.3.2",
+  "version": "0.3.1",
   "description": "Run Harbor evaluations on connected Linux workers and explore coding-agent results",
   "type": "module",
   "bin": { "openeval": "dist/cli.js", "heval": "dist/cli.js" },
-  "files": ["dist", "scripts/check-package.mjs", "LICENSE", "NOTICE"],
+  "files": ["dist", "scripts/check-package.mjs"],
   "engines": { "node": ">=22" },
-  "license": "Apache-2.0",
+  "license": "UNLICENSED",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/MatthewFeroz/heval.git",
