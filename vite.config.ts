@@ -11,9 +11,9 @@ const root = import.meta.dirname
  * source, so they live outside the Vite root's asset graph: serve them from disk
  * in dev and copy them into dist on build.
  */
-function hevalResults(): Plugin {
+function openevalResults(): Plugin {
   return {
-    name: 'heval-results',
+    name: 'openeval-results',
     configureServer(server) {
       server.middlewares.use((req, _res, next) => {
         // /studio is a real page; without this the dev server 404s the pretty URL.
@@ -41,7 +41,7 @@ function hevalResults(): Plugin {
 }
 
 export default defineConfig({
-  plugins: [react(), hevalResults()],
+  plugins: [react(), openevalResults()],
   server: { proxy: { '/api': { target: 'http://127.0.0.1:4173', ws: true } } },
   // results/ is served straight from the project root in dev, which Vite allows
   // because it is inside the root; no extra fs.allow entry needed.

@@ -6,7 +6,7 @@ import { collectManagedEvidence, readReviewedEvidence } from './evidence'
 import fixture from '../../../../results/harbor/demo-evaluation.json'
 
 test('reviewed uploads use only the explicit bounded manifest and refuse symlinks', () => {
-  const directory = mkdtempSync(join(tmpdir(), 'heval-reviewed-evidence-'))
+  const directory = mkdtempSync(join(tmpdir(), 'openeval-reviewed-evidence-'))
   try {
     const path = join(directory, 'reviewed-evidence.json')
     const entry = { trial: fixture.rows[0].trial, title: 'Demonstration HTML', kind: 'html' as const, text: '<h1>Synthetic demonstration</h1>' }
@@ -20,7 +20,7 @@ test('reviewed uploads use only the explicit bounded manifest and refuse symlink
 })
 
 test('managed evidence requires acknowledged trials, redacts the key and refuses symlinks', () => {
-  const directory = mkdtempSync(join(tmpdir(), 'heval-evidence-'))
+  const directory = mkdtempSync(join(tmpdir(), 'openeval-evidence-'))
   try {
     const run = join(directory, 'runs', 'fixture'), artifact = join(run, 'jobs/evaluation', fixture.rows[0].trial, 'verifier')
     mkdirSync(artifact, { recursive: true })

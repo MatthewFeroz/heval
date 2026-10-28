@@ -28,8 +28,8 @@ const evidence = resolve(root, 'recordings/connected-runner-flow')
 await mkdir(evidence, { recursive: true })
 const { publicKey, privateKey } = await generateKeyPair('RS256')
 const jwk = { ...await exportJWK(publicKey), kid: 'smoke', alg: 'RS256', use: 'sig' }
-const issuer = 'https://heval-smoke.invalid'
-const jwt = async (subject: string) => new SignJWT({ email: `${subject}@example.invalid` }).setProtectedHeader({ alg: 'RS256', kid: 'smoke', typ: 'JWT' }).setSubject(subject).setIssuer(issuer).setAudience('heval-smoke').setIssuedAt().setExpirationTime('1h').sign(privateKey)
+const issuer = 'https://openeval-smoke.invalid'
+const jwt = async (subject: string) => new SignJWT({ email: `${subject}@example.invalid` }).setProtectedHeader({ alg: 'RS256', kid: 'smoke', typ: 'JWT' }).setSubject(subject).setIssuer(issuer).setAudience('openeval-smoke').setIssuedAt().setExpirationTime('1h').sign(privateKey)
 const ownerToken = await jwt(`smoke-owner-${Date.now()}`)
 const otherToken = await jwt(`smoke-other-${Date.now()}`)
 await mkdir(resolve(temporary, 'src/reports'), { recursive: true })
@@ -41,7 +41,7 @@ for (const test of new Bun.Glob('*.test.ts').scanSync(resolve(temporary, 'convex
 await cp(resolve(root, 'src'), resolve(temporary, 'src'), { recursive: true })
 await symlink(resolve(root, 'node_modules'), resolve(temporary, 'node_modules'))
 await writeFile(resolve(temporary, 'package.json'), JSON.stringify({ type: 'module', dependencies: { convex: '^1.45.0', '@vercel/sandbox': '3.3.0', '@vercel/blob': '2.8.0' } }))
-await writeFile(resolve(temporary, 'convex/auth.config.ts'), `export default ${JSON.stringify({ providers: [{ type: 'customJwt', issuer, applicationID: 'heval-smoke', algorithm: 'RS256', jwks: `data:text/plain;charset=utf-8;base64,${Buffer.from(JSON.stringify({ keys: [jwk] })).toString('base64')}` }] })}`)
+await writeFile(resolve(temporary, 'convex/auth.config.ts'), `export default ${JSON.stringify({ providers: [{ type: 'customJwt', issuer, applicationID: 'openeval-smoke', algorithm: 'RS256', jwks: `data:text/plain;charset=utf-8;base64,${Buffer.from(JSON.stringify({ keys: [jwk] })).toString('base64')}` }] })}`)
 const deploy = Bun.spawn(['bunx', 'convex', 'deploy', '-y'], { cwd: temporary, env: { ...process.env, CONVEX_DEPLOY_KEY: key, CONVEX_DEPLOYMENT: undefined }, stdout: 'pipe', stderr: 'pipe' })
 const output = await new Response(deploy.stderr).text()
 if (await deploy.exited) throw new Error(output.replaceAll(key, '[redacted]'))

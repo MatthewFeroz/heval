@@ -23,7 +23,7 @@ const TBLITE_COMMIT = tblite.commit
 
 export const BENCHMARKS: Benchmark[] = [
   {
-    id: 'heval-smoke', title: 'OpenEval connection smoke', publisher: 'OpenEval', tasks: 1, status: 'available',
+    id: 'openeval-smoke', title: 'OpenEval connection smoke', publisher: 'OpenEval', tasks: 1, status: 'available',
     summary: 'One bundled file-writing task. Confirms each harness reaches its model through Merge Gateway.',
     note: 'Checks the connection. It isn’t a capability score.',
     taskHashes: [['heval-setup', '991449f7fe5ebb2ff48390673ca91ce71bee08596a836f573d586b18bac63106']],

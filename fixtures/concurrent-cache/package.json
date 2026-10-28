@@ -1,1 +1,1 @@
-{"name":"heval-concurrent-cache","private":true,"type":"module","scripts":{"test":"bun test"}}
+{"name":"openeval-concurrent-cache","private":true,"type":"module","scripts":{"test":"bun test"}}

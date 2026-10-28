@@ -25,7 +25,7 @@ const combinedData={...reportFixture,job:'My harness comparison',rows:reportFixt
 const combinedProject=await initialReportProject(combinedData,'combined-report','My harness comparison')
 process.env.VITE_CONVEX_URL='https://wizard-test.convex.cloud'
 process.env.VITE_HEVAL_STATIC_SITE='1'
-const cacheDir=mkdtempSync(join(tmpdir(),'heval-evaluation-ui-cache-'))
+const cacheDir=mkdtempSync(join(tmpdir(),'openeval-evaluation-ui-cache-'))
 const server=await createServer({cacheDir,server:{host:'127.0.0.1',port:0},plugins:[{
  name:'evaluation-test-adapters',enforce:'pre',
  resolveId(source){if(source==='convex/react')return '\0wizard-convex';if(source==='../AuthBoundary'||source==='./AuthBoundary')return '\0wizard-auth'},

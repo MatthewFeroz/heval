@@ -32,7 +32,7 @@ function Footer() {
     <footer className="footer shell">
       <Brand />
       <p>A workbench for understanding coding-agent evaluations.</p>
-      <div><a href="#methodology">Methodology</a><a href="/library">Library</a><a href="/explore">Explore</a><a href="/settings">Settings</a><a href="https://github.com/MatthewFeroz/heval" target="_blank" rel="noreferrer">GitHub</a></div>
+      <div><a href="#methodology">Methodology</a><a href="/library">Library</a><a href="/explore">Explore</a><a href="/settings">Settings</a><a href="https://github.com/MatthewFeroz/openeval" target="_blank" rel="noreferrer">GitHub</a></div>
       <small>© 2026 OpenEval</small>
     </footer>
   )

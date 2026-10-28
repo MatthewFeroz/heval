@@ -11,7 +11,7 @@ dependencies or install scripts.
 
 Run `npx @mattferoz/openeval@latest setup` for a resumable Linux worker installation with
 local account pairing and a masked Merge key form. It reuses Docker on Linux,
-Docker Desktop, or Windows WSL. See the [setup walkthrough](https://github.com/MatthewFeroz/heval/blob/main/docs/setup-command.md)
+Docker Desktop, or Windows WSL. See the [setup walkthrough](https://github.com/MatthewFeroz/openeval/blob/main/docs/setup-command.md)
 for prerequisites, agent commands, persistence and upgrade behavior.
 
 For the local viewer:
@@ -90,7 +90,7 @@ informational because the viewer remains usable.
 ## Running evaluations
 
 This first release supports **setup checks and viewing existing results**.
-It does not yet include `heval run`, a job scheduler, live terminal replay, or
+It does not yet include `openeval run`, a job scheduler, live terminal replay, or
 social/video rendering. SVG/PNG chart downloads run in your browser.
 
 Use Harbor for execution, then open its output:
@@ -105,7 +105,7 @@ openeval open ./jobs/your-job-name
 
 Running Harbor requires the environment and credentials specified by your
 job, and can consume model credits. See the
-[OpenEval reproduction guide](https://github.com/MatthewFeroz/heval/blob/main/docs/reproducing-evaluations.md)
+[OpenEval reproduction guide](https://github.com/MatthewFeroz/openeval/blob/main/docs/reproducing-evaluations.md)
 for existing comparisons and [Harbor documentation](https://www.harborframework.com/docs)
 for execution concepts. Newer Harbor docs may describe features beyond the
 version supported here.
@@ -222,7 +222,7 @@ for Linux machines with Harbor 0.24.0 and Docker. Install with
 then keep the daemon
 running to execute locally approved profiles and save results to your account.
 The default Oracle setup check uses no model API calls. See the
-[connected runner setup guide](https://github.com/MatthewFeroz/heval/blob/main/docs/connected-runners.md)
+[connected runner setup guide](https://github.com/MatthewFeroz/openeval/blob/main/docs/connected-runners.md)
 for installation, credentials, a Linux service, and recovery.
 
 Use `--benchmark tblite` with the same pinned source checkout for all 100 tasks.

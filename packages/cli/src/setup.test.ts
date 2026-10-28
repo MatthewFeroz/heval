@@ -8,7 +8,7 @@ const directories: string[] = []
 afterEach(() => { for (const directory of directories.splice(0)) rmSync(directory, { recursive: true, force: true }) })
 
 test('Docker context contains only installed artifacts, round-trips long paths and is deterministic', async () => {
-  const root = mkdtempSync(join(tmpdir(), 'heval-context-')); directories.push(root)
+  const root = mkdtempSync(join(tmpdir(), 'openeval-context-')); directories.push(root)
   mkdirSync(join(root, 'dist/worker'), { recursive: true })
   writeFileSync(join(root, 'dist/worker/Dockerfile'), 'FROM scratch\n')
   writeFileSync(join(root, 'package.json'), '{"name":"test"}')
@@ -28,7 +28,7 @@ test('Docker context contains only installed artifacts, round-trips long paths a
 test('setup rejects unsafe names and package symlinks', () => {
   for (const name of ['worker', 'heval-../escape', 'heval-$(id)', 'heval-UPPER', 'heval-' + 'a'.repeat(42)]) expect(() => workerName(name)).toThrow()
   expect(workerName()).toBe('heval-worker')
-  const root = mkdtempSync(join(tmpdir(), 'heval-link-')); directories.push(root)
+  const root = mkdtempSync(join(tmpdir(), 'openeval-link-')); directories.push(root)
   mkdirSync(join(root, 'dist/worker'), { recursive: true })
   writeFileSync(join(root, 'dist/worker/Dockerfile'), 'FROM scratch\n')
   writeFileSync(join(root, 'package.json'), '{}')

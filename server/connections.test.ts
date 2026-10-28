@@ -16,7 +16,7 @@ const catalog: Catalog = { schemaVersion: 1, fetchedAt: new Date().toISOString()
 const cleanups: (() => Promise<unknown> | unknown)[] = []
 afterEach(async () => { for (const cleanup of cleanups.splice(0).reverse()) await cleanup() })
 async function setup() {
-  const directory = await mkdtemp(join(tmpdir(), 'heval-connections-'))
+  const directory = await mkdtemp(join(tmpdir(), 'openeval-connections-'))
   cleanups.push(() => rm(directory, { recursive: true, force: true }))
   const key = connectionEncryptionKey(directory)
   const store = createConnectionStore(directory, key, async key => { if (key === 'invalid') throw new Error('catalog fetch failed: 401'); return catalog })
@@ -66,7 +66,7 @@ test('run proxy hides the provider key, restricts model and endpoint, caps reque
     seen.push({ url, headers: new Headers(init.headers), body: JSON.parse(String(init.body)) })
     return Response.json({ choices: [] })
   }) as typeof fetch
-  const proxy = createInferenceProxy(store, 'https://heval.test/api/inference', upstream)
+  const proxy = createInferenceProxy(store, 'https://openeval.test/api/inference', upstream)
   const lease = proxy.issue('alice', 'nvidia/lightning', 60000); cleanups.push(lease.release)
   expect(lease.apiKey).not.toBe('private-alice-credential')
   expect((await proxy.handle(request(lease.apiKey, { model: 'different', messages: [] }))).status).toBe(400)

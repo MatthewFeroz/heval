@@ -1,6 +1,6 @@
 import { DEFAULT_STATE, type ChartState, type ChartField } from '../charts/recipes'
 import { DIMENSIONS, DIMENSION_LABEL, MEASURE_LABEL, type Measure, type TrialRow } from '../charts/trial'
-import type { CommonDimensionSemantic, CommonMetricSemantic, EvaluationArtifact, FieldMappings, HevalProject, ProjectSource, FieldDefinition, Presentation, AnalysisView } from './schema'
+import type { CommonDimensionSemantic, CommonMetricSemantic, EvaluationArtifact, FieldMappings, OpenEvalProject, ProjectSource, FieldDefinition, Presentation, AnalysisView } from './schema'
 
 const DIMENSION_KEY: Record<CommonDimensionSemantic, keyof TrialRow> = {
   'heval.trial': 'trial',
@@ -84,7 +84,7 @@ export function artifactRows(artifact: EvaluationArtifact, source: ProjectSource
   })
 }
 
-export function projectRows(project: HevalProject, artifacts: Map<string, EvaluationArtifact>, sourceIds: string[]): TrialRow[] {
+export function projectRows(project: OpenEvalProject, artifacts: Map<string, EvaluationArtifact>, sourceIds: string[]): TrialRow[] {
   const wanted = new Set(sourceIds)
   const selected = project.sources.filter((source) => wanted.has(source.id))
   return selected.flatMap((source) => {
@@ -95,7 +95,7 @@ export function projectRows(project: HevalProject, artifacts: Map<string, Evalua
   })
 }
 
-export function compatibleSources(project: HevalProject, artifacts: Map<string, EvaluationArtifact>, sourceIds: string[], measure: Measure): { sourceIds: string[]; incompatible: string[] } {
+export function compatibleSources(project: OpenEvalProject, artifacts: Map<string, EvaluationArtifact>, sourceIds: string[], measure: Measure): { sourceIds: string[]; incompatible: string[] } {
   const wanted = new Set(sourceIds)
   const sourceIdsOut: string[] = []
   const incompatible: string[] = []
@@ -128,7 +128,7 @@ export function fieldKey(field: FieldDefinition, mappings?: FieldMappings): stri
     : `custom:${encodeURIComponent(semantic ?? field.id).replaceAll('.', '%2E')}`
 }
 
-export function projectFields(project: HevalProject, artifacts: Map<string, EvaluationArtifact>, sourceIds: string[]): ChartField[] {
+export function projectFields(project: OpenEvalProject, artifacts: Map<string, EvaluationArtifact>, sourceIds: string[]): ChartField[] {
   const fields = new Map<string, ChartField>()
   for (const source of project.sources.filter((item) => sourceIds.includes(item.id))) {
     for (const field of artifacts.get(source.artifactId)?.fields ?? []) {
@@ -142,12 +142,12 @@ export function projectFields(project: HevalProject, artifacts: Map<string, Eval
   return [...fields.values()]
 }
 
-export function presentationAnalysis(project: HevalProject, presentation: Presentation): AnalysisView | null {
+export function presentationAnalysis(project: OpenEvalProject, presentation: Presentation): AnalysisView | null {
   return presentation.analysisSnapshot ?? project.analysisViews.find((item) => item.id === presentation.analysisViewId) ?? null
 }
 
 /** Pin legacy presentations on import, after checking the original bundle hash. */
-export function snapshotPresentations(project: HevalProject): HevalProject {
+export function snapshotPresentations(project: OpenEvalProject): OpenEvalProject {
   return { ...project, presentations: project.presentations.map((presentation) => {
     const view = presentationAnalysis(project, presentation)
     return { ...presentation, analysisSnapshot: view ? structuredClone(view) : undefined }

@@ -10,7 +10,7 @@ afterEach(() => {
 })
 
 test('resolves the owning package past metadata-only nested manifests', () => {
-  const root = mkdtempSync(join(tmpdir(), 'heval-package-license-'))
+  const root = mkdtempSync(join(tmpdir(), 'openeval-package-license-'))
   roots.push(root)
   const packageRoot = join(root, 'node_modules', 'convex')
   const moduleRoot = join(packageRoot, 'dist', 'esm')

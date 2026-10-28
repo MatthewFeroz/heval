@@ -97,7 +97,7 @@ test('connect, validate, configure, replace and delete a provider without browse
   expect(replacement).toBe(true)
   const storage = await page.evaluate(() => JSON.stringify({ local: { ...localStorage }, session: { ...sessionStorage } }))
   expect(storage).not.toContain('test-key')
-  await page.screenshot({ path: `/tmp/heval-provider-settings-${test.info().project.name}.png`, fullPage: true })
+  await page.screenshot({ path: `/tmp/openeval-provider-settings-${test.info().project.name}.png`, fullPage: true })
   await page.reload()
   await page.getByRole('button', { name: 'Provider settings', exact: true }).click()
   await expect(page.getByRole('button', { name: 'Replace key', exact: true })).toBeVisible()

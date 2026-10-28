@@ -115,9 +115,9 @@ of pretending data was saved. Local CLI viewing remains account-free.
 ```sh
 bun run test:backend
 bunx convex deployment create smoke-reports --type preview --expiration 'in 1 day'
-bunx convex deployment token create heval-report-smoke \
-  --deployment preview/smoke-reports --save-env /tmp/heval-smoke.env
-HEVAL_SMOKE_ENV=/tmp/heval-smoke.env \
+bunx convex deployment token create openeval-report-smoke \
+  --deployment preview/smoke-reports --save-env /tmp/openeval-smoke.env
+HEVAL_SMOKE_ENV=/tmp/openeval-smoke.env \
 HEVAL_SMOKE_URL=https://YOUR-PREVIEW.convex.cloud \
   bun run test:reports:smoke
 ```

@@ -30,7 +30,7 @@ done
 
 NAME=$(basename "$JOB")
 CFG="harbor/jobs/$NAME.yaml"
-OUT=/tmp/heval-status-report
+OUT=/tmp/openeval-status-report
 
 # Total trials expected = agents x tasks x attempts, read from the job config so
 # this stays correct if the config changes.
@@ -148,17 +148,17 @@ while :; do
   render
 
   if [ "$prev_fail" -ge 0 ] && [ "$fails" -gt "$prev_fail" ]; then
-    notify "heval: new failure" "$((fails - prev_fail)) new failure(s), $done/$TOTAL trials done"
+    notify "OpenEval: new failure" "$((fails - prev_fail)) new failure(s), $done/$TOTAL trials done"
   fi
   prev_fail=$fails
 
   if [ "$state" = "complete" ]; then
-    notify "heval: run complete" "$done/$TOTAL trials finished"
+    notify "OpenEval: run complete" "$done/$TOTAL trials finished"
     echo; echo "run complete."
     exit 0
   fi
   if [ "$state" = "dead" ]; then
-    notify "heval: run STOPPED" "died at $done/$TOTAL trials"
+    notify "OpenEval: run STOPPED" "died at $done/$TOTAL trials"
     echo; echo "run stopped early at $done/$TOTAL."
     exit 1
   fi

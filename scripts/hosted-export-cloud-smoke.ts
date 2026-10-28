@@ -12,7 +12,7 @@ if (!key || !url) throw new Error('Provide deployment credentials and CONVEX_URL
 const client = new ConvexHttpClient(url)
 // Convex exposes admin identity impersonation for deployment-side testing.
 // @ts-expect-error internal SDK API used only by this opt-in deployment script
-client.setAdminAuth(key, { subject: 'heval-deployment-smoke', issuer: 'https://heval-deployment-smoke.invalid', tokenIdentifier: 'heval-deployment-smoke' })
+client.setAdminAuth(key, { subject: 'openeval-deployment-smoke', issuer: 'https://openeval-deployment-smoke.invalid', tokenIdentifier: 'openeval-deployment-smoke' })
 const prior = (await client.query(api.reports.list, {})).find(r => r.title === 'Hosted export deployment smoke')
 const report = prior?.id ?? await client.mutation(api.reports.save, { json: JSON.stringify(fixture), title: 'Hosted export deployment smoke' })
 if (!(await client.query(api.presentationExports.available, {}))) throw new Error('Hosted export configuration is incomplete')

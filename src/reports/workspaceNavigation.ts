@@ -7,7 +7,7 @@ export const reportSections: { id: ReportSection; label: string }[] = [
   { id: 'export', label: 'Export' },
   { id: 'share', label: 'Share' },
 ]
-const event = 'heval-workspace-navigation'
+const event = 'openeval-workspace-navigation'
 function subscribe(listener: () => void) {
   window.addEventListener('popstate', listener)
   window.addEventListener(event, listener)

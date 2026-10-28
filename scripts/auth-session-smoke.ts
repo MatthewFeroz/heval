@@ -4,7 +4,7 @@ import assert from 'node:assert/strict'
 import { authReturnUrl, signInUrl } from '../src/auth-session'
 import { authorizedFetch, publicAuth } from '../src/auth'
 
-const origin = 'https://heval.example.com'
+const origin = 'https://openeval.example.com'
 for (const value of [undefined, '/', '/login', '/login/', '/index.html', '//evil.invalid', 'javascript:alert(1)', 'https://evil.invalid']) {
   assert.equal(authReturnUrl(value, origin), `${origin}/library`)
 }

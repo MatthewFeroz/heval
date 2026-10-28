@@ -13,12 +13,12 @@ const directories: string[] = []
 afterEach(async () => {
   for (const dir of directories.splice(0)) {
     const target = resolve(dir)
-    if (dirname(target) !== resolve(tmpdir()) || !basename(target).startsWith('heval-test-')) throw new Error('Unsafe test cleanup path')
+    if (dirname(target) !== resolve(tmpdir()) || !basename(target).startsWith('openeval-test-')) throw new Error('Unsafe test cleanup path')
     await rm(target, { recursive: true, force: true })
   }
 })
 async function setup(overrides: Partial<Parameters<typeof createRunner>[0]> = {}) {
-  const directory = await mkdtemp(join(tmpdir(), 'heval-test-'))
+  const directory = await mkdtemp(join(tmpdir(), 'openeval-test-'))
   directories.push(directory)
   let finish!: (code: number) => void
   let output!: (data: string) => void
@@ -138,8 +138,8 @@ test('Docker policy isolates agents and uses a networkless credential-free grade
 test('verified tokens require the expected issuer, audience, authorized origin, expiry, and user subject', async () => {
   const { privateKey, publicKey } = await generateKeyPair('RS256')
   const keys = createLocalJWKSet({ keys: [await exportJWK(publicKey)] })
-  const auth = createAuthenticator('https://auth.example.com', 'https://heval.example.com', keys)
-  const base = { aud: 'convex', azp: 'https://heval.example.com', sub: 'alice', iss: 'https://auth.example.com', exp: Math.floor(Date.now() / 1000) + 60 }
+  const auth = createAuthenticator('https://auth.example.com', 'https://openeval.example.com', keys)
+  const base = { aud: 'convex', azp: 'https://openeval.example.com', sub: 'alice', iss: 'https://auth.example.com', exp: Math.floor(Date.now() / 1000) + 60 }
   const token = (payload: object) => new SignJWT({ ...payload }).setProtectedHeader({ alg: 'RS256' }).sign(privateKey)
   for (const change of [{ sub: '' }, { sub: undefined }, { exp: undefined }, { exp: 1 }, { aud: 'other' }, { azp: 'https://other.example.com' }, { iss: 'https://other' }]) {
     expect(await auth(new Request('http://localhost', { headers: { authorization: `Bearer ${await token({ ...base, ...change })}` } }))).toBeNull()

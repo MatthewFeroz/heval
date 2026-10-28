@@ -6,7 +6,7 @@ import { collectMonitoring } from './monitoring'
 import { monitoringCounts, validateMonitoring } from '../../../../src/runners/monitoring'
 
 test('live artifacts survive partial writes and reconnect without exposing configs or transcripts', () => {
-  const root = mkdtempSync(join(tmpdir(), 'heval-monitor-'))
+  const root = mkdtempSync(join(tmpdir(), 'openeval-monitor-'))
   const trial = join(root, 'jobs/evaluation/task__one')
   try {
     mkdirSync(join(trial, 'agent'), { recursive: true })
@@ -31,7 +31,7 @@ test('live artifacts survive partial writes and reconnect without exposing confi
 })
 
 test('missing rewards and execution errors remain separate from failed verification', () => {
-  const root = mkdtempSync(join(tmpdir(), 'heval-monitor-'))
+  const root = mkdtempSync(join(tmpdir(), 'openeval-monitor-'))
   try {
     for (const [id, result] of Object.entries({
       failed: { verifier_result: { rewards: { reward: 0 } } },
@@ -49,7 +49,7 @@ test('missing rewards and execution errors remain separate from failed verificat
 })
 
 test('ignores symlinked trial directories and bounds the replay window', () => {
-  const root = mkdtempSync(join(tmpdir(), 'heval-monitor-'))
+  const root = mkdtempSync(join(tmpdir(), 'openeval-monitor-'))
   try {
     const job = join(root, 'jobs/evaluation'); mkdirSync(job, { recursive: true })
     const external = join(root, 'external'); mkdirSync(external); writeFileSync(join(external, 'config.json'), '{}')
@@ -65,7 +65,7 @@ test('ignores symlinked trial directories and bounds the replay window', () => {
 })
 
 test('observed trials still finish after new folders push them beyond the discovery window', () => {
-  const root = mkdtempSync(join(tmpdir(), 'heval-monitor-displaced-'))
+  const root = mkdtempSync(join(tmpdir(), 'openeval-monitor-displaced-'))
   try {
     const job = join(root, 'jobs/evaluation'), tracked = join(job, 'z-trial')
     mkdirSync(tracked, { recursive: true })
@@ -91,7 +91,7 @@ test('observed trials still finish after new folders push them beyond the discov
 
 
 test('a retried execution error updates to running and success in the same Harbor trial directory', () => {
- const root=mkdtempSync(join(tmpdir(),'heval-monitor-retry-'))
+ const root=mkdtempSync(join(tmpdir(),'openeval-monitor-retry-'))
  try {
   const dir=join(root,'jobs/evaluation/retried'); mkdirSync(dir,{recursive:true})
   writeFileSync(join(dir,'config.json'),'{}')

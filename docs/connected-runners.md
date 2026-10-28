@@ -88,8 +88,8 @@ command, so npm refuses to install one over the other.
 To build the CLI from source instead (Bun is needed only for this build):
 
 ```sh
-git clone --branch main https://github.com/MatthewFeroz/heval.git
-cd heval
+git clone --branch main https://github.com/MatthewFeroz/openeval.git
+cd openeval
 bun install --frozen-lockfile
 bun run cli:pack
 npm install -g ./.scratch/mattferoz-openeval-0.3.1.tgz
@@ -268,13 +268,13 @@ Model calls use the credentials on the selected machine. Its owner pays for mode
 
 ## 4. Keep the machine connected
 
-Copy [the user-service example](../deploy/heval-runner.service.example) to `~/.config/systemd/user/heval-runner.service`, and replace its paths with `command -v openeval`, `command -v harbor`, and your home/state directories. Then:
+Copy [the user-service example](../deploy/openeval-runner.service.example) to `~/.config/systemd/user/openeval-runner.service`, and replace its paths with `command -v openeval`, `command -v harbor`, and your home/state directories. Then:
 
 ```sh
 systemctl --user daemon-reload
-systemctl --user enable --now heval-runner
-systemctl --user status heval-runner
-journalctl --user -u heval-runner -f
+systemctl --user enable --now openeval-runner
+systemctl --user status openeval-runner
+journalctl --user -u openeval-runner -f
 ```
 
 Enable lingering for that dedicated account if the service must stay available after logout (`loginctl enable-linger USER`, with the privileges your distro requires). `KillMode=process` deliberately lets detached supervisors survive daemon restarts. Cancel active evaluations in the UI before intentionally shutting down the machine. Restart the daemon with the same state directory; keep the state disk persistent when replacing a VM.
